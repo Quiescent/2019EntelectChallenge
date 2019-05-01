@@ -1,6 +1,14 @@
 * 2019 Entelect Challenge
 This is my submission to the 2019 Entelect Challenge.
 
+* Project Notes
+** TODO Port the starter bot to this RIO app
+** TODO Strip out playing logic
+** TODO Model moves
+** TODO Implement engine
+** TODO Model search tree type
+** TODO Implement search function
+
 * License
 Copyright Edward John Steere (c) 2019
 
