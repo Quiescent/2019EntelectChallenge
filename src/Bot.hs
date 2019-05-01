@@ -15,17 +15,16 @@ import qualified RIO.ByteString.Lazy as B
 import Data.Bits
 import System.IO
 import System.Random
-import Data.Aeson (decode, withObject, (.:), FromJSON, ToJSON, parseJSON)
+import Data.Aeson (decode, withObject, (.:), FromJSON, parseJSON)
 
 type GameMap = V.Vector Cell
 
 data State = State { currentWormId :: Int,
-                     myPlayer :: Player,
-                     opponent :: Opponent,
-                     gameMap :: GameMap }
+                     myPlayer      :: Player,
+                     opponent      :: Player,
+                     gameMap       :: GameMap }
              deriving (Show, Generic, Eq)
 
-instance ToJSON   State
 instance FromJSON State where
   parseJSON = withObject "State" $ \ v ->
     toState <$> v .: "currentWormId"
@@ -33,51 +32,66 @@ instance FromJSON State where
             <*> v .: "opponents"
             <*> v .: "map"
 
+data Player = Player Int (V.Vector Worm)
+  deriving (Show, Generic, Eq)
+
 -- TODO: If there is no opponent then I'll bail out here :/
-toState :: Int -> Player -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
+toState :: Int -> ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
 toState currentWormId' myPlayer' opponents' gameMap' =
   case (opponents' V.!? 0) of
     Just opponent' -> State currentWormId'
-                            myPlayer'
-                            opponent'
+                            (toPlayer myPlayer')
+                            (opponentToPlayer opponent')
                             (V.concat $ V.toList gameMap')
     Nothing       -> error "There was no opponent to play against..."
 
-data Player = Player { score :: Int,
-                       health :: Int,
-                       worms :: V.Vector Worm }
-              deriving (Show, Generic, Eq)
+opponentToPlayer :: Opponent -> Player
+opponentToPlayer (Opponent score' worms') = Player score' $ fmap fromOpponentWorm worms'
 
-instance FromJSON Player
-instance ToJSON   Player
+fromOpponentWorm :: OpponentWorm -> Worm
+fromOpponentWorm (OpponentWorm id' health' position' _ _) = Worm id' health' position'
+
+toPlayer :: ScratchPlayer -> Player
+toPlayer (ScratchPlayer score' _ worms') = Player score' $ fmap fromScratchWorm worms'
+
+fromScratchWorm :: ScratchWorm -> Worm
+fromScratchWorm (ScratchWorm id' health' position' _ _ _) = Worm id' health' position'
+
+data Worm = Worm Int Int Coord
+  deriving (Show, Generic, Eq)
+
+data ScratchPlayer = ScratchPlayer { score  :: Int,
+                                     health :: Int,
+                                     worms  :: V.Vector ScratchWorm }
+                   deriving (Show, Generic, Eq)
+
+instance FromJSON ScratchPlayer
 
 data Opponent = Opponent { opponentsScore :: Int,
                            opponentsWorms :: V.Vector OpponentWorm }
               deriving (Show, Generic, Eq)
 
-instance ToJSON   Opponent
 instance FromJSON Opponent where
   parseJSON = withObject "Opponent" $ \ v ->
     Opponent <$> v .: "score"
              <*> v .: "worms"
 
-data Worm = Worm { wormId :: Int,
-                   wormHealth :: Int,
-                   position :: Coord,
-                   weapon :: Weapon,
-                   diggingRange :: Int,
-                   movementRange :: Int }
+data ScratchWorm = ScratchWorm { wormId        :: Int,
+                                 wormHealth    :: Int,
+                                 position      :: Coord,
+                                 weapon        :: Weapon,
+                                 diggingRange  :: Int,
+                                 movementRange :: Int }
             deriving (Show, Generic, Eq)
 
-instance ToJSON   Worm
-instance FromJSON Worm where
+instance FromJSON ScratchWorm where
   parseJSON = withObject "Worm" $ \ v ->
-    Worm <$> v .: "id"
-         <*> v .: "health"
-         <*> v .: "position"
-         <*> v .: "weapon"
-         <*> v .: "diggingRange"
-         <*> v .: "movementRange"
+    ScratchWorm <$> v .: "id"
+                <*> v .: "health"
+                <*> v .: "position"
+                <*> v .: "weapon"
+                <*> v .: "diggingRange"
+                <*> v .: "movementRange"
 
 data OpponentWorm = OpponentWorm { opWormId :: Int,
                                    opWormHealth :: Int,
@@ -86,7 +100,6 @@ data OpponentWorm = OpponentWorm { opWormId :: Int,
                                    opMovementRange :: Int }
             deriving (Show, Generic, Eq)
 
-instance ToJSON   OpponentWorm
 instance FromJSON OpponentWorm where
   parseJSON = withObject "OpponentWorm" $ \ v ->
     OpponentWorm <$> v .: "id"
@@ -98,7 +111,6 @@ instance FromJSON OpponentWorm where
 data Coord = Coord Int
   deriving (Generic, Eq)
 
-instance ToJSON   Coord
 instance FromJSON Coord where
   parseJSON = withObject "Coord" $ \ v ->
     toCoord <$> v .: "x"
@@ -126,14 +138,12 @@ data Weapon = Weapon { damage :: Int,
               deriving (Show, Generic, Eq)
 
 instance FromJSON Weapon
-instance ToJSON   Weapon
 
 data Cell = AIR
           | DIRT
           | DEEP_SPACE
           deriving (Show, Generic, Eq)
 
-instance ToJSON   Cell
 instance FromJSON Cell where
   parseJSON = withObject "Cell" $ \ v ->
     toCell <$> v .: "type"
@@ -212,15 +222,15 @@ makeMove moves =
   in (makeMyMove myMove) . (makeOpponentsMove opponentsMove)
 
 makeMyMove :: Move -> State -> State
-makeMyMove move state@(State currentWormId me opponent map) =
-  case (V.find ((==currentWormId) . wormId) $ worms me) of
+makeMyMove move state@(State currentWormId (Player score' worms') opponent map) =
+  case V.find (\ (Worm id' _ _) -> id' == currentWormId) worms' of
     Nothing                                                        -> state
-    Just (Worm _ _ position' weapon' diggingRange' movementRange') ->
+    Just (Worm _ health' position') ->
       undefined
 
 makeOpponentsMove :: Move -> State -> State
-makeOpponentsMove move (State currentWormId me opponent map) =
-  let opponentsWorm = V.find ((==currentWormId) . opWormId) $ opponentsWorms opponent
+makeOpponentsMove move (State currentWormId me (Player score' worms') map) =
+  let opponentsWorm = V.find (\ (Worm id' _ _) -> id' == currentWormId) worms'
   in undefined
 
 readRound :: RIO App Int
