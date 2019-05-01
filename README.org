@@ -1,0 +1,7 @@
+* 2019 Entelect Challenge
+This is my submission to the 2019 Entelect Challenge.
+
+* License
+Copyright Edward John Steere (c) 2019
+
+Distributed under the GNU General Public License, version 3.
