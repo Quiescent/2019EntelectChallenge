@@ -112,17 +112,17 @@ instance FromJSON Coord where
     toCoord <$> v .: "x"
             <*> v .: "y"
 
-mapSize :: Int
-mapSize = 33
+mapDim :: Int
+mapDim = 33
 
 toCoord :: Int -> Int -> Coord
 toCoord xCoord yCoord =
-  Coord $ mapSize * yCoord + xCoord
+  Coord $ mapDim * yCoord + xCoord
 
 -- Consider whether to use applicative here and get rid of the tuple
 fromCoord :: Coord -> (Int, Int)
 fromCoord (Coord xy) =
-  case (divMod xy mapSize) of
+  case (divMod xy mapDim) of
     (y', x') -> (x', y')
 
 instance Show Coord where
@@ -183,7 +183,26 @@ formatMove dir xy xs =
        Nothing         -> "nothing"
 
 displaceCoordByMove :: Coord -> Move -> Coord
-displaceCoordByMove = undefined
+displaceCoordByMove (Coord xy) moveDir@(Move dir) =
+  case dir - 8 of
+    -- N
+    0 -> Coord $ xy - mapDim
+    -- NE
+    1 -> Coord $ xy - mapDim + 1
+    -- E
+    2 -> Coord $ xy + 1
+    -- SE
+    3 -> Coord $ xy + mapDim + 1
+    -- S
+    4 -> Coord $ xy + mapDim
+    -- SW
+    5 -> Coord $ xy + mapDim - 1
+    -- W
+    6 -> Coord $ xy - 1
+    -- NW
+    7 -> Coord $ xy - mapDim - 1
+    -- Invalid Move
+    _ -> error $ "Attempted to move in invalid direction with " ++ show moveDir
 
 readRound :: RIO App Int
 readRound = liftIO readLn
