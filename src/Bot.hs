@@ -207,8 +207,19 @@ toMoves (CombinedMove moves) =
   (Move $ moves .&. 15, Move $ (moves .&. (15 `shiftL` 4)) `shiftR` 4)
 
 makeMove :: CombinedMove -> State -> State
-makeMove (CombinedMove moves) (State currentWormId me opponent map) =
-  undefined
+makeMove moves =
+  let (myMove, opponentsMove) = toMoves moves
+  in (makeMyMove myMove) . (makeOpponentsMove opponentsMove)
+
+makeMyMove :: Move -> State -> State
+makeMyMove move (State currentWormId me opponent map) =
+  let myWorm = V.find ((==currentWormId) . wormId) $ worms me
+  in undefined
+
+makeOpponentsMove :: Move -> State -> State
+makeOpponentsMove move (State currentWormId me opponent map) =
+  let opponentsWorm = V.find ((==currentWormId) . opWormId) $ opponentsWorms opponent
+  in undefined
 
 readRound :: RIO App Int
 readRound = liftIO readLn
