@@ -93,16 +93,22 @@ from the command line to invoke the bot program.
      - CLOSING NOTE [2019-05-01 Wed 15:14]
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 14:58]
      :END:
-**** IN_PROGRESS Make weapon a state level attribute
+**** DONE Make weapon a state level attribute
+     CLOSED: [2019-05-01 Wed 15:23]
      :LOGBOOK:
+     - CLOSING NOTE [2019-05-01 Wed 15:23]
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 15:15]
      :END:
-**** IN_PROGRESS Make diggingRange a state level attribute
+**** DONE Make diggingRange a state level attribute
+     CLOSED: [2019-05-01 Wed 15:23]
      :LOGBOOK:
+     - CLOSING NOTE [2019-05-01 Wed 15:23]
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 15:17]
      :END:
-**** IN_PROGRESS Make movementRange a state level attribute
+**** DONE Make movementRange a state level attribute
+     CLOSED: [2019-05-01 Wed 15:23]
      :LOGBOOK:
+     - CLOSING NOTE [2019-05-01 Wed 15:23]
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 15:17]
      :END:
 *** TODO Create Test Harness

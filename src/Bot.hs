@@ -20,6 +20,10 @@ import Data.Aeson (decode, withObject, (.:), FromJSON, parseJSON)
 type GameMap = V.Vector Cell
 
 data State = State { currentWormId :: Int,
+                     weaponRange   :: Int,
+                     weaponDamage  :: Int,
+                     digRange      :: Int,
+                     moveRange     :: Int,
                      myPlayer      :: Player,
                      opponent      :: Player,
                      gameMap       :: GameMap }
@@ -38,11 +42,25 @@ data Player = Player Int (V.Vector Worm)
 -- TODO: If there is no opponent then I'll bail out here :/
 toState :: Int -> ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
 toState currentWormId' myPlayer' opponents' gameMap' =
-  case (opponents' V.!? 0) of
-    Just opponent' -> State currentWormId'
-                            (toPlayer myPlayer')
-                            (opponentToPlayer opponent')
-                            (V.concat $ V.toList gameMap')
+  let state = do
+        opponent'        <- opponents'       V.!? 0
+        exampleWorm      <- (worms myPlayer') V.!? 0
+        let weapon'       = weapon        exampleWorm
+        let weaponRange'  = range         weapon'
+        let weaponDamage' = damage        weapon'
+        let moveRange'    = movementRange exampleWorm
+        let digRange'     = diggingRange  exampleWorm
+        return (opponent', weaponRange', weaponDamage', moveRange', digRange')
+  in case state of
+    Just (opponent', weaponRange', weaponDamage', moveRange', digRange') ->
+      State currentWormId'
+            weaponRange'
+            weaponDamage'
+            moveRange'
+            digRange'
+            (toPlayer myPlayer')
+            (opponentToPlayer opponent')
+            (V.concat $ V.toList gameMap')
     Nothing       -> error "There was no opponent to play against..."
 
 opponentToPlayer :: Opponent -> Player
@@ -222,14 +240,14 @@ makeMove moves =
   in (makeMyMove myMove) . (makeOpponentsMove opponentsMove)
 
 makeMyMove :: Move -> State -> State
-makeMyMove move state@(State currentWormId (Player score' worms') opponent map) =
+makeMyMove move state@(State _ _ _ _ currentWormId (Player score' worms') opponent map) =
   case V.find (\ (Worm id' _ _) -> id' == currentWormId) worms' of
     Nothing                                                        -> state
     Just (Worm _ health' position') ->
       undefined
 
 makeOpponentsMove :: Move -> State -> State
-makeOpponentsMove move (State currentWormId me (Player score' worms') map) =
+makeOpponentsMove move (State _ _ _ _ currentWormId me (Player score' worms') map) =
   let opponentsWorm = V.find (\ (Worm id' _ _) -> id' == currentWormId) worms'
   in undefined
 
