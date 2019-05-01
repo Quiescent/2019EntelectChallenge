@@ -43,8 +43,7 @@ toState currentWormId' myPlayer' opponents' gameMap' =
                             (V.concat $ V.toList gameMap')
     Nothing       -> error "There was no opponent to play against..."
 
-data Player = Player { id :: Int,
-                       score :: Int,
+data Player = Player { score :: Int,
                        health :: Int,
                        worms :: V.Vector Worm }
               deriving (Show, Generic, Eq)
@@ -52,16 +51,14 @@ data Player = Player { id :: Int,
 instance FromJSON Player
 instance ToJSON   Player
 
-data Opponent = Opponent { opponentsId :: Int,
-                           opponentsScore :: Int,
+data Opponent = Opponent { opponentsScore :: Int,
                            opponentsWorms :: V.Vector OpponentWorm }
               deriving (Show, Generic, Eq)
 
 instance ToJSON   Opponent
 instance FromJSON Opponent where
   parseJSON = withObject "Opponent" $ \ v ->
-    Opponent <$> v .: "id"
-             <*> v .: "score"
+    Opponent <$> v .: "score"
              <*> v .: "worms"
 
 data Worm = Worm { wormId :: Int,
