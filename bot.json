@@ -1,0 +1,11 @@
+{
+    "author": "Edward John Steere",
+    "email": "edward.steere@gmail.com",
+    "nickName": "Quiescent",
+    "botLocation": "/bin",
+    "botFileName": "2019EntelectChallenge-exe",
+    "botLanguage": "haskell",
+    "arguments": {
+        "coreCount": 1
+    }
+}

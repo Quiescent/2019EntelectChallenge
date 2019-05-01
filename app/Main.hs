@@ -3,30 +3,13 @@
 module Main (main) where
 
 import Import
-import Run
-import RIO.Process
-import Options.Applicative.Simple
-import qualified Paths_2019EntelectChallenge
+import Bot
+
+import System.Random
 
 main :: IO ()
 main = do
-  (options, ()) <- simpleOptions
-    $(simpleVersion Paths_2019EntelectChallenge.version)
-    "Header for command line arguments"
-    "Program description, also for command line arguments"
-    (Options
-       <$> switch ( long "verbose"
-                 <> short 'v'
-                 <> help "Verbose output?"
-                  )
-    )
-    empty
-  lo <- logOptionsHandle stderr (optionsVerbose options)
-  pc <- mkDefaultProcessContext
-  withLogFunc lo $ \lf ->
-    let app = App
-          { appLogFunc = lf
-          , appProcessContext = pc
-          , appOptions = options
-          }
-     in runRIO app run
+  hSetBuffering stdout NoBuffering
+  let app = App {}
+  g <- getStdGen
+  runRIO app (startBot g 1)

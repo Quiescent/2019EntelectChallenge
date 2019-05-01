@@ -1,12 +1,44 @@
 * 2019 Entelect Challenge
 This is my submission to the 2019 Entelect Challenge.
 
+* Getting Started
+Haskell is a purely functional programming language.  You can find out
+more about Haskell [here](https://www.haskell.org/).
+
+** Environment Requirements
+Install the [[https://www.haskell.org/platform/][Haskell Platform]] and ensure that the =stack= executable is
+on the path.
+
+** Building
+Simply run:
+
+#+BEGIN_SRC bash
+  stack install --local-bin-path bin
+#+END_SRC
+
+to build the binary and put it into a folder in the root of the
+project called `bin`.
+
+** Running
+Haskell creates native binaries so you can simply run:
+
+#+BEGIN_SRC bash
+  ./bin/haskell-bot-exe
+#+END_SRC
+
+from the command line to invoke the bot program.
+
 * Project Notes
   :PROPERTIES:
   :ORDERED:  t
   :END:
-** IN_PROGRESS Port the starter bot to this RIO app
+** DONE Port the starter bot to this RIO app
+   CLOSED: [2019-05-01 Wed 09:39]
    :LOGBOOK:
+   - CLOSING NOTE [2019-05-01 Wed 09:39] \\
+     Important discovery: =liftIO= can be used to bring any standard =IO=
+     function into the =RIO Monad= because it's a transformer from =IO=
+     already.
    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 08:49]
    :END:
 ** TODO Strip out playing logic
