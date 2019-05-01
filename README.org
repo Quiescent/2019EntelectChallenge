@@ -41,8 +41,10 @@ from the command line to invoke the bot program.
      already.
    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 08:49]
    :END:
-** IN_PROGRESS Strip out playing logic
+** DONE Strip out playing logic
+   CLOSED: [2019-05-01 Wed 09:44]
    :LOGBOOK:
+   - CLOSING NOTE [2019-05-01 Wed 09:44]
    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 09:41]
    :END:
 ** TODO Model moves
