@@ -212,9 +212,11 @@ makeMove moves =
   in (makeMyMove myMove) . (makeOpponentsMove opponentsMove)
 
 makeMyMove :: Move -> State -> State
-makeMyMove move (State currentWormId me opponent map) =
-  let myWorm = V.find ((==currentWormId) . wormId) $ worms me
-  in undefined
+makeMyMove move state@(State currentWormId me opponent map) =
+  case (V.find ((==currentWormId) . wormId) $ worms me) of
+    Nothing                                                        -> state
+    Just (Worm _ _ position' weapon' diggingRange' movementRange') ->
+      undefined
 
 makeOpponentsMove :: Move -> State -> State
 makeOpponentsMove move (State currentWormId me opponent map) =
