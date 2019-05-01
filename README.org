@@ -77,8 +77,10 @@ from the command line to invoke the bot program.
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 14:01]
    :END:
-*** IN_PROGRESS Model Combined Moves
+*** DONE Model Combined Moves
+    CLOSED: [2019-05-01 Wed 14:21]
     :LOGBOOK:
+    - CLOSING NOTE [2019-05-01 Wed 14:21]
     - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 14:01]
     :END:
 *** TODO Implement =makeMove=
