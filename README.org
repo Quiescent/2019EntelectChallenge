@@ -55,8 +55,12 @@ from the command line to invoke the bot program.
     :LOGBOOK:
     - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 12:23]
     :END:
-**** IN_PROGRESS Model a Cell as an Int
+**** DONE Model a Cell as an Int
+     CLOSED: [2019-05-01 Wed 12:36]
      :LOGBOOK:
+     - CLOSING NOTE [2019-05-01 Wed 12:36] \\
+       Having things in the same file immediately flagged when I moved the
+       size out of the structure because it re-declared the function.
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 12:24]
      :END:
 **** TODO Model a Coordinate as an Int

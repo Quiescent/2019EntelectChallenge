@@ -20,7 +20,6 @@ type GameMap = V.Vector (V.Vector Cell)
 
 data State = State { currentRound :: Int,
                      maxRounds :: Int,
-                     mapSize :: Int,
                      currentWormId :: Int,
                      consecutiveDoNothingCount :: Int,
                      myPlayer :: Player,
@@ -102,17 +101,21 @@ data Weapon = Weapon { damage :: Int,
 instance FromJSON Weapon
 instance ToJSON   Weapon
 
-data Cell = Cell { x :: Int,
-                   y :: Int,
-                   cellType :: String }
-            deriving (Show, Generic, Eq)
+data Cell = Cell Int
+          deriving (Show, Generic, Eq)
 
 instance ToJSON   Cell
 instance FromJSON Cell where
   parseJSON = withObject "Cell" $ \ v ->
-    Cell <$> v .: "x"
-         <*> v .: "y"
-         <*> v .: "type"
+    toCell <$> v .: "x"
+           <*> v .: "y"
+
+mapSize :: Int
+mapSize = 33
+
+toCell :: Int -> Int -> Cell
+toCell xCoord yCoord =
+  mapSize * yCoord + xCoord
 
 readGameState :: Int -> RIO App (Maybe State)
 readGameState r = do
