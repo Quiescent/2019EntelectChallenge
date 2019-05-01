@@ -51,6 +51,9 @@ from the command line to invoke the bot program.
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 10:24]
    :END:
+*** TODO Model a map as a single dimensional array
+**** TODO Model a Cell as an Int
+**** TODO Model a Coordinate as an Int
 ** TODO Implement engine
 ** TODO Model search tree type
 ** TODO Implement search function
