@@ -47,12 +47,16 @@ from the command line to invoke the bot program.
    - CLOSING NOTE [2019-05-01 Wed 09:44]
    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 09:41]
    :END:
-** IN_PROGRESS Model moves
+** DONE Model moves
+   CLOSED: [2019-05-01 Wed 13:58]
    :LOGBOOK:
+   - CLOSING NOTE [2019-05-01 Wed 13:58]
    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 10:24]
    :END:
-*** IN_PROGRESS Model a map as a single dimensional array
+*** DONE Model a map as a single dimensional array
+    CLOSED: [2019-05-01 Wed 13:58]
     :LOGBOOK:
+    - CLOSING NOTE [2019-05-01 Wed 13:58]
     - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 12:23]
     :END:
 **** DONE Model a Cell as an Int
