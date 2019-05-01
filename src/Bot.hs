@@ -61,7 +61,7 @@ toState currentWormId' myPlayer' opponents' gameMap' =
             (toPlayer myPlayer')
             (opponentToPlayer opponent')
             (V.concat $ V.toList gameMap')
-    Nothing       -> error "There was no opponent to play against..."
+    Nothing -> error "There was no opponent to play against..."
 
 opponentToPlayer :: Opponent -> Player
 opponentToPlayer (Opponent score' worms') = Player score' $ fmap fromOpponentWorm worms'
