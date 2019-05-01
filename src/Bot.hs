@@ -184,23 +184,23 @@ formatMove dir xy xs =
 
 displaceCoordByMove :: Coord -> Move -> Coord
 displaceCoordByMove (Coord xy) moveDir@(Move dir) =
-  case dir - 8 of
+  case dir of
     -- N
-    0 -> Coord $ xy - mapDim
+    8 -> Coord $ xy - mapDim
     -- NE
-    1 -> Coord $ xy - mapDim + 1
+    9 -> Coord $ xy - mapDim + 1
     -- E
-    2 -> Coord $ xy + 1
+    10 -> Coord $ xy + 1
     -- SE
-    3 -> Coord $ xy + mapDim + 1
+    11 -> Coord $ xy + mapDim + 1
     -- S
-    4 -> Coord $ xy + mapDim
+    12 -> Coord $ xy + mapDim
     -- SW
-    5 -> Coord $ xy + mapDim - 1
+    13 -> Coord $ xy + mapDim - 1
     -- W
-    6 -> Coord $ xy - 1
+    14 -> Coord $ xy - 1
     -- NW
-    7 -> Coord $ xy - mapDim - 1
+    15 -> Coord $ xy - mapDim - 1
     -- Invalid Move
     _ -> error $ "Attempted to move in invalid direction with " ++ show moveDir
 
