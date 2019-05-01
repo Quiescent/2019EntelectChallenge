@@ -24,7 +24,7 @@ data State = State { currentRound :: Int,
                      consecutiveDoNothingCount :: Int,
                      myPlayer :: Player,
                      opponents :: V.Vector Opponent,
-                     map :: GameMap }
+                     gameMap :: GameMap }
              deriving (Show, Generic, Eq)
 
 instance ToJSON   State
@@ -39,14 +39,14 @@ instance FromJSON State where
             <*> v .: "map"
 
 toState :: Int -> Int -> Int -> Int -> Player -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
-toState currentRound' maxRounds' currentWormId' consecutiveDoNothingCount' myPlayer' opponents' map' =
+toState currentRound' maxRounds' currentWormId' consecutiveDoNothingCount' myPlayer' opponents' gameMap' =
   State currentRound'
         maxRounds'
         currentWormId'
         consecutiveDoNothingCount'
         myPlayer'
         opponents'
-        (V.concat $ V.toList map')
+        (V.concat $ V.toList gameMap')
 
 data Player = Player { id :: Int,
                        score :: Int,
@@ -104,7 +104,7 @@ instance FromJSON OpponentWorm where
                  <*> v .: "movementRange"
 
 data Coord = Coord Int
-  deriving (Show, Generic, Eq)
+  deriving (Generic, Eq)
 
 instance ToJSON   Coord
 instance FromJSON Coord where
@@ -118,6 +118,16 @@ mapSize = 33
 toCoord :: Int -> Int -> Coord
 toCoord xCoord yCoord =
   Coord $ mapSize * yCoord + xCoord
+
+-- Consider whether to use applicative here and get rid of the tuple
+fromCoord :: Coord -> (Int, Int)
+fromCoord (Coord xy) =
+  case (divMod xy mapSize) of
+    (y', x') -> (x', y')
+
+instance Show Coord where
+  show xy = case fromCoord xy of
+    (x', y') -> show x' ++ " " ++ show y'
 
 data Weapon = Weapon { damage :: Int,
                        range :: Int }
@@ -146,6 +156,34 @@ readGameState :: Int -> RIO App (Maybe State)
 readGameState r = do
   stateString <- B.readFile $ "./rounds/" ++ show r ++ "/state.json"
   return $ decode stateString
+
+data Move = Move Int
+  deriving (Show)
+
+moves :: V.Vector Move
+moves = fmap Move $ V.fromList [0..17]
+
+formatMove :: Move -> Coord -> GameMap -> String
+-- Shoot
+formatMove (Move 0) _ _ = "shoot N"
+formatMove (Move 1) _ _ = "shoot NE"
+formatMove (Move 2) _ _ = "shoot E"
+formatMove (Move 3) _ _ = "shoot SE"
+formatMove (Move 4) _ _ = "shoot S"
+formatMove (Move 5) _ _ = "shoot SW"
+formatMove (Move 6) _ _ = "shoot W"
+formatMove (Move 7) _ _ = "shoot NW"
+-- Move or Dig
+formatMove dir xy xs =
+  let (Coord xy') = displaceCoordByMove xy dir
+  in case xs V.!? xy' of
+       Just AIR        -> "move " ++ show xy'
+       Just DIRT       -> "dig "  ++ show xy'
+       Just DEEP_SPACE -> "nothing"
+       Nothing         -> "nothing"
+
+displaceCoordByMove :: Coord -> Move -> Coord
+displaceCoordByMove = undefined
 
 readRound :: RIO App Int
 readRound = liftIO readLn
