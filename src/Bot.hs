@@ -186,9 +186,9 @@ displaceCoordByMove :: Coord -> Move -> Coord
 displaceCoordByMove (Coord xy) moveDir@(Move dir) =
   case dir of
     -- N
-    8 -> Coord $ xy - mapDim
+    8  -> Coord $ xy - mapDim
     -- NE
-    9 -> Coord $ xy - mapDim + 1
+    9  -> Coord $ xy - mapDim + 1
     -- E
     10 -> Coord $ xy + 1
     -- SE
@@ -202,7 +202,7 @@ displaceCoordByMove (Coord xy) moveDir@(Move dir) =
     -- NW
     15 -> Coord $ xy - mapDim - 1
     -- Invalid Move
-    _ -> error $ "Attempted to move in invalid direction with " ++ show moveDir
+    _  -> error $ "Attempted to move in invalid direction with " ++ show moveDir
 
 readRound :: RIO App Int
 readRound = liftIO readLn
