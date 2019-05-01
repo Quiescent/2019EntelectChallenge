@@ -2,7 +2,10 @@
 This is my submission to the 2019 Entelect Challenge.
 
 * Project Notes
-** TODO Port the starter bot to this RIO app
+** IN_PROGRESS Port the starter bot to this RIO app
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 08:49]
+   :END:
 ** TODO Strip out playing logic
 ** TODO Model moves
 ** TODO Implement engine
