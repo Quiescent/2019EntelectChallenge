@@ -235,21 +235,16 @@ toMoves (CombinedMove moves) =
   (Move $ moves .&. 15, Move $ (moves .&. (15 `shiftL` 4)) `shiftR` 4)
 
 makeMove :: CombinedMove -> State -> State
-makeMove moves =
+makeMove moves state@(State currentWormId' weaponRange' weaponDamage' digRange' moveRange' myPlayer' opponent' gameMap') =
   let (myMove, opponentsMove) = toMoves moves
-  in (makeMyMove myMove) . (makeOpponentsMove opponentsMove)
+  in state
 
-makeMyMove :: Move -> State -> State
-makeMyMove move state@(State _ _ _ _ currentWormId (Player score' worms') opponent map) =
-  case V.find (\ (Worm id' _ _) -> id' == currentWormId) worms' of
-    Nothing                                                        -> state
+makeOposingMove :: Move -> Int -> Int -> Int -> Int -> Int -> Player -> Player -> GameMap -> State
+makeOposingMove move currentWormId' weaponRange' weaponDamage' digRange' moveRange' this'@(Player score' worms') other =
+  case V.find (\ (Worm id' _ _) -> id' == currentWormId') worms' of
+    Nothing -> State currentWormId' weaponRange' weaponDamage' digRange' moveRange' this' other
     Just (Worm _ health' position') ->
       undefined
-
-makeOpponentsMove :: Move -> State -> State
-makeOpponentsMove move (State _ _ _ _ currentWormId me (Player score' worms') map) =
-  let opponentsWorm = V.find (\ (Worm id' _ _) -> id' == currentWormId) worms'
-  in undefined
 
 readRound :: RIO App Int
 readRound = liftIO readLn
