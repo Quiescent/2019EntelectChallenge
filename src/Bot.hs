@@ -16,7 +16,7 @@ import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), FromJSON, ToJSON, parseJSON)
 
-type GameMap = V.Vector (V.Vector Cell)
+type GameMap = V.Vector Cell
 
 data State = State { currentRound :: Int,
                      maxRounds :: Int,
@@ -27,8 +27,26 @@ data State = State { currentRound :: Int,
                      map :: GameMap }
              deriving (Show, Generic, Eq)
 
-instance FromJSON State
 instance ToJSON   State
+instance FromJSON State where
+  parseJSON = withObject "State" $ \ v ->
+    toState <$> v .: "currentRound"
+            <*> v .: "maxRounds"
+            <*> v .: "currentWormId"
+            <*> v .: "consecutiveDoNothingCount"
+            <*> v .: "myPlayer"
+            <*> v .: "opponents"
+            <*> v .: "map"
+
+toState :: Int -> Int -> Int -> Int -> Player -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
+toState currentRound' maxRounds' currentWormId' consecutiveDoNothingCount' myPlayer' opponents' map' =
+  State currentRound'
+        maxRounds'
+        currentWormId'
+        consecutiveDoNothingCount'
+        myPlayer'
+        opponents'
+        (V.concat $ V.toList map')
 
 data Player = Player { id :: Int,
                        score :: Int,
@@ -85,14 +103,21 @@ instance FromJSON OpponentWorm where
                  <*> v .: "diggingRange"
                  <*> v .: "movementRange"
 
-data Coord = Coord { xCoord :: Int, yCoord :: Int }
+data Coord = Coord Int
   deriving (Show, Generic, Eq)
 
 instance ToJSON   Coord
 instance FromJSON Coord where
   parseJSON = withObject "Coord" $ \ v ->
-    Coord <$> v .: "x"
-          <*> v .: "y"
+    toCoord <$> v .: "x"
+            <*> v .: "y"
+
+mapSize :: Int
+mapSize = 33
+
+toCoord :: Int -> Int -> Coord
+toCoord xCoord yCoord =
+  Coord $ mapSize * yCoord + xCoord
 
 data Weapon = Weapon { damage :: Int,
                        range :: Int }
@@ -101,21 +126,21 @@ data Weapon = Weapon { damage :: Int,
 instance FromJSON Weapon
 instance ToJSON   Weapon
 
-data Cell = Cell Int
+data Cell = AIR
+          | DIRT
+          | DEEP_SPACE
           deriving (Show, Generic, Eq)
 
 instance ToJSON   Cell
 instance FromJSON Cell where
   parseJSON = withObject "Cell" $ \ v ->
-    toCell <$> v .: "x"
-           <*> v .: "y"
+    toCell <$> v .: "type"
 
-mapSize :: Int
-mapSize = 33
-
-toCell :: Int -> Int -> Cell
-toCell xCoord yCoord =
-  mapSize * yCoord + xCoord
+toCell :: String -> Cell
+toCell "AIR"        = AIR
+toCell "DIRT"       = DIRT
+toCell "DEEP_SPACE" = DEEP_SPACE
+toCell cellType     = error $ "Can't create a cell with type: " ++ cellType
 
 readGameState :: Int -> RIO App (Maybe State)
 readGameState r = do
@@ -128,6 +153,7 @@ readRound = liftIO readLn
 startBot :: StdGen -> Int -> RIO App ()
 startBot g roundNumber = do
   round <- readRound
-  _     <- readGameState round
+  state <- readGameState round
+  liftIO $ putStrLn $ show state
   liftIO $ putStrLn $ "C;" ++ show roundNumber ++ ";nothing\n"
   startBot g (roundNumber + 1)
