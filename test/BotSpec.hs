@@ -19,8 +19,18 @@ spec = do
     it "W  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 14) `shouldBe` (toCoord 0 1)
     it "NW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 15) `shouldBe` (toCoord 0 0)
     prop "Move back and forth" $ \ (i, j) ->
-      let coordInMap  = Coord $ j `mod` (mapDim * mapDim)
-          indexOfMove = (i `mod` 8)
+      let coordInMap  = Coord $ (abs j) `mod` (mapDim * mapDim)
+          indexOfMove = ((abs i) `mod` 8)
           randomMove  = Move $ indexOfMove + 8
           moveBack    = Move $ ((indexOfMove + 4) `mod` 8) + 8
       in displaceCoordByMove (displaceCoordByMove coordInMap randomMove) moveBack `shouldBe` coordInMap
+  describe "combined moves" $ do
+    prop "Can always be extracted" $ \ (i, j) ->
+      let iMove = Move $ (abs i) `mod` 16
+          jMove = Move $ (abs j) `mod` 16
+      in toMoves (fromMoves iMove jMove) `shouldBe` (iMove, jMove)
+  describe "coordinates" $ do
+    prop "Can always be extracted" $ \ (i, j) ->
+      let x' = (abs i) `mod` mapDim
+          y' = (abs j) `mod` mapDim
+      in fromCoord (toCoord x' y') `shouldBe` (x', y')

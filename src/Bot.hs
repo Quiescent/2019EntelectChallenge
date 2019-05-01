@@ -12,6 +12,7 @@ import Import hiding (round)
 import qualified RIO.Vector.Boxed as V
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
+import Data.Bits
 import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), FromJSON, ToJSON, parseJSON)
@@ -158,10 +159,10 @@ readGameState r = do
   return $ decode stateString
 
 data Move = Move Int
-  deriving (Show)
+  deriving (Show, Eq)
 
-moves :: V.Vector Move
-moves = fmap Move $ V.fromList [0..17]
+allMoves :: V.Vector Move
+allMoves = fmap Move $ V.fromList [0..17]
 
 formatMove :: Move -> Coord -> GameMap -> String
 -- Shoot
@@ -203,6 +204,16 @@ displaceCoordByMove (Coord xy) moveDir@(Move dir) =
     15 -> Coord $ xy - mapDim - 1
     -- Invalid Move
     _  -> error $ "Attempted to move in invalid direction with " ++ show moveDir
+
+data CombinedMove = CombinedMove Int
+
+fromMoves :: Move -> Move -> CombinedMove
+fromMoves (Move myMove) (Move opponentsMove) =
+  CombinedMove $ myMove .|. (opponentsMove `shiftL` 4)
+
+toMoves :: CombinedMove -> (Move, Move)
+toMoves (CombinedMove moves) =
+  (Move $ moves .&. 15, Move $ (moves .&. (15 `shiftL` 4)) `shiftR` 4)
 
 readRound :: RIO App Int
 readRound = liftIO readLn
