@@ -83,7 +83,10 @@ from the command line to invoke the bot program.
     - CLOSING NOTE [2019-05-01 Wed 14:21]
     - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 14:01]
     :END:
-*** TODO Implement =makeMove=
+*** IN_PROGRESS Implement =makeMove=
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 14:21]
+    :END:
 *** TODO Create Test Harness
 ** TODO Model search tree type
 ** TODO Implement search function
