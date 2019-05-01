@@ -19,35 +19,29 @@ import Data.Aeson (decode, withObject, (.:), FromJSON, ToJSON, parseJSON)
 
 type GameMap = V.Vector Cell
 
-data State = State { currentRound :: Int,
-                     maxRounds :: Int,
-                     currentWormId :: Int,
-                     consecutiveDoNothingCount :: Int,
+data State = State { currentWormId :: Int,
                      myPlayer :: Player,
-                     opponents :: V.Vector Opponent,
+                     opponent :: Opponent,
                      gameMap :: GameMap }
              deriving (Show, Generic, Eq)
 
 instance ToJSON   State
 instance FromJSON State where
   parseJSON = withObject "State" $ \ v ->
-    toState <$> v .: "currentRound"
-            <*> v .: "maxRounds"
-            <*> v .: "currentWormId"
-            <*> v .: "consecutiveDoNothingCount"
+    toState <$> v .: "currentWormId"
             <*> v .: "myPlayer"
             <*> v .: "opponents"
             <*> v .: "map"
 
-toState :: Int -> Int -> Int -> Int -> Player -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
-toState currentRound' maxRounds' currentWormId' consecutiveDoNothingCount' myPlayer' opponents' gameMap' =
-  State currentRound'
-        maxRounds'
-        currentWormId'
-        consecutiveDoNothingCount'
-        myPlayer'
-        opponents'
-        (V.concat $ V.toList gameMap')
+-- TODO: If there is no opponent then I'll bail out here :/
+toState :: Int -> Player -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
+toState currentWormId' myPlayer' opponents' gameMap' =
+  case (opponents' V.!? 0) of
+    Just opponent' -> State currentWormId'
+                            myPlayer'
+                            opponent'
+                            (V.concat $ V.toList gameMap')
+    Nothing       -> error "There was no opponent to play against..."
 
 data Player = Player { id :: Int,
                        score :: Int,
@@ -214,6 +208,10 @@ fromMoves (Move myMove) (Move opponentsMove) =
 toMoves :: CombinedMove -> (Move, Move)
 toMoves (CombinedMove moves) =
   (Move $ moves .&. 15, Move $ (moves .&. (15 `shiftL` 4)) `shiftR` 4)
+
+makeMove :: CombinedMove -> State -> State
+makeMove (CombinedMove moves) (State currentWormId me opponent map) =
+  undefined
 
 readRound :: RIO App Int
 readRound = liftIO readLn
