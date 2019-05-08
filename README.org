@@ -111,10 +111,21 @@ from the command line to invoke the bot program.
      - CLOSING NOTE [2019-05-01 Wed 15:23]
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 15:17]
      :END:
+**** IN_PROGRESS Implement Move
+     :LOGBOOK:
+     - State "IN_PROGRESS" from "TODO"       [2019-05-08 Wed 10:37]
+     :END:
+**** TODO Implement Score Changes for Move
+**** TODO Implement Dig
+**** TODO Implement Score Changes for Digging
+**** TODO Implement Shoot
+**** TODO Implement Score Changes for Shoot
 *** TODO Create Test Harness
 ** TODO Model search tree type
 ** TODO Implement search function
 
+* Questions About the Engine
+** TODO Do two worms always get to move?  (Or do you miss turns when your other worms die)
 * License
 Copyright Edward John Steere (c) 2019
 
