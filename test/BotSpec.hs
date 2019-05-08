@@ -38,14 +38,32 @@ spec = do
       in fromCoord (toCoord x' y') `shouldBe` (x', y')
   describe "thisCurrentWorm" $ do
     it "shouldn't be found when the index is negative" $
-      thisCurrentWorm aState `shouldBe` Nothing
+      thisCurrentWorm (aState { currentWormId = -1 }) `shouldBe` Nothing
+    it "shouldn't be found when the index is greater than the original number of worms" $
+      thisCurrentWorm (aState { currentWormId = 6 }) `shouldBe` Nothing
+    it "shouldn't be found when searching for a worm in a gap in the sequence" $
+      thisCurrentWorm (aState { currentWormId = 4 }) `shouldBe` Nothing
+  describe "thatCurrentWorm" $ do
+    it "shouldn't be found when the index is negative" $
+      thatCurrentWorm (aState { currentWormId = -1 }) `shouldBe` Nothing
+    it "shouldn't be found when the index is greater than the original number of worms" $
+      thatCurrentWorm (aState { currentWormId = 6 }) `shouldBe` Nothing
+    it "shouldn't be found when searching for a worm in a gap in the sequence" $
+      thatCurrentWorm (aState { currentWormId = 2 }) `shouldBe` Nothing
 
-aState = State (-1) 10 10 10 10 aPlayer aPlayer aGameMap
+aState = State 1 10 10 10 10 aPlayer (withWorms someOtherWorms aPlayer) aGameMap
+
+withWorms worms' (Player health' _) = Player health' worms'
 
 aPlayer = Player 300 someWorms
 
-someWorms = V.fromList [aWorm, aWorm, aWorm, aWorm]
+someWorms = V.fromList [aWorm, withIdOf 2 aWorm, withIdOf 3 aWorm, withIdOf 5 aWorm]
 
-aWorm = Worm 0 10 (Coord 20)
+someOtherWorms = V.fromList [aWorm, withIdOf 3 aWorm, withIdOf 4 aWorm, withIdOf 5 aWorm]
+
+aWorm = Worm 1 10 (Coord 20)
+
+withIdOf :: Int -> Worm -> Worm
+withIdOf id' (Worm _ health' position') = Worm id' health' position'
 
 aGameMap = V.fromList [AIR, AIR, AIR]
