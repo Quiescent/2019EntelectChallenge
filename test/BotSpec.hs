@@ -4,6 +4,8 @@ module BotSpec (spec) where
 import Bot
 import Import
 
+import qualified RIO.Vector.Boxed as V
+
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
@@ -34,3 +36,16 @@ spec = do
       let x' = (abs i) `mod` mapDim
           y' = (abs j) `mod` mapDim
       in fromCoord (toCoord x' y') `shouldBe` (x', y')
+  describe "thisCurrentWorm" $ do
+    it "shouldn't be found when the index is negative" $
+      thisCurrentWorm aState `shouldBe` Nothing
+
+aState = State (-1) 10 10 10 10 aPlayer aPlayer aGameMap
+
+aPlayer = Player 300 someWorms
+
+someWorms = V.fromList [aWorm, aWorm, aWorm, aWorm]
+
+aWorm = Worm 0 10 (Coord 20)
+
+aGameMap = V.fromList [AIR, AIR, AIR]
