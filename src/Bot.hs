@@ -235,9 +235,18 @@ toMoves (CombinedMove moves) =
   (Move $ moves .&. 15, Move $ (moves .&. (15 `shiftL` 4)) `shiftR` 4)
 
 makeMove :: CombinedMove -> State -> State
-makeMove moves state@(State currentWormId' weaponRange' weaponDamage' digRange' moveRange' myPlayer' opponent' gameMap') =
+makeMove moves =
   let (myMove, opponentsMove) = toMoves moves
-  in state
+  in makeShootMoves myMove opponentsMove . makeDigMoves myMove opponentsMove . makeMoveMoves myMove opponentsMove
+
+makeMoveMoves :: Move -> Move -> State -> State
+makeMoveMoves this' other' state' = state'
+
+makeDigMoves :: Move -> Move -> State -> State
+makeDigMoves this' other' state' = state'
+
+makeShootMoves :: Move -> Move -> State -> State
+makeShootMoves this' other' state' = state'
 
 makeOposingMove :: Move -> Int -> Int -> Int -> Int -> Int -> Player -> Player -> GameMap -> State
 makeOposingMove move currentWormId' weaponRange' weaponDamage' digRange' moveRange' this'@(Player score' worms') other =
