@@ -99,13 +99,13 @@ from the command line to invoke the bot program.
      - CLOSING NOTE [2019-05-01 Wed 15:23]
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 15:15]
      :END:
-**** DONE Make diggingRange a state level attribute
+**** DONE Make =diggingRange= a state level attribute
      CLOSED: [2019-05-01 Wed 15:23]
      :LOGBOOK:
      - CLOSING NOTE [2019-05-01 Wed 15:23]
      - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 15:17]
      :END:
-**** DONE Make movementRange a state level attribute
+**** DONE Make =movementRange= a state level attribute
      CLOSED: [2019-05-01 Wed 15:23]
      :LOGBOOK:
      - CLOSING NOTE [2019-05-01 Wed 15:23]
@@ -121,11 +121,40 @@ from the command line to invoke the bot program.
       - CLOSING NOTE [2019-05-08 Wed 11:02]
       - State "IN_PROGRESS" from "TODO"       [2019-05-08 Wed 11:02]
       :END:
+***** TODO Rule 2: Moving to dirt does not move the worm
+***** TODO Rule 3: Moving to space does not move the worm
+***** TODO Rule 4: Moving to air does move the worm
+***** TODO Rule 5: Moving to the same square causes one of the worms to remain where it is
+      :LOGBOOK:
+      - Note taken on [2019-05-08 Wed 11:05] \\
+        This is controlled by the pure value `thisMoveWins' which will only be
+        evaluated (creating the random variable) when we need it to adjudicate
+        who wins.
+      :END:
 **** TODO Implement Score Changes for Move
+***** TODO Rule 1: Moving to dirt penalises your score by 4
+***** TODO Rule 2: Moving to space penalises your score by 4
+***** TODO Rule 3: Moving to air increases your score by 5
 **** TODO Implement Dig
+***** TODO Rule 1: Digging air does nothing
+***** TODO Rule 2: Digging dirt clears the square
+***** TODO Rule 3: Digging space does nothing
 **** TODO Implement Score Changes for Digging
+***** TODO Rule 1: Digging air penalises your score by 4
+***** TODO Rule 2: Digging dirt increases your score by 7
+***** TODO Rule 3: Digging space penalises your score by 4
 **** TODO Implement Shoot
+***** TODO Rule 1: A shot hits the first target in range
+***** TODO Rule 2: A shot hits nothing if nothing is in range in that direction
+***** TODO Rule 3: A shot is blocked by dirt and deep space
+***** TODO Rule 4: Worms reduced to zero health are removed from the map
+***** TODO Rule 5: A shot causes x points of damage (Where x is defined in the state file)
+***** TODO Rule 6: A shots range is d euclidean units (where d is defined in the state file)
 **** TODO Implement Score Changes for Shoot
+***** TODO Rule 1: A shot which hits one of your worms penalises your score by 20
+***** TODO Rule 2: A shot which hits an enemy worm increases your score by 20
+***** TODO Rule 3: A shot which knocks an enemy worm unconscious gives you 40
+***** TODO Rule 4: A shot which hits nothing increases your score by 4
 *** TODO Create Test Harness
 ** TODO Model search tree type
 ** TODO Implement search function
