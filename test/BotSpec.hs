@@ -43,6 +43,8 @@ spec = do
       thisCurrentWorm (aState { currentWormId = 6 }) `shouldBe` Nothing
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
       thisCurrentWorm (aState { currentWormId = 4 }) `shouldBe` Nothing
+    it "should find a worm when it's in the sequence" $
+      thisCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 aWorm)
   describe "thatCurrentWorm" $ do
     it "shouldn't be found when the index is negative" $
       thatCurrentWorm (aState { currentWormId = -1 }) `shouldBe` Nothing
@@ -50,6 +52,8 @@ spec = do
       thatCurrentWorm (aState { currentWormId = 6 }) `shouldBe` Nothing
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
       thatCurrentWorm (aState { currentWormId = 2 }) `shouldBe` Nothing
+    it "should find a worm when it's in the sequence" $
+      thatCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 aWorm)
 
 aState = State 1 10 10 10 10 aPlayer (withWorms someOtherWorms aPlayer) aGameMap
 
