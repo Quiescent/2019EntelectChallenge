@@ -115,8 +115,10 @@ from the command line to invoke the bot program.
      :LOGBOOK:
      - State "IN_PROGRESS" from "TODO"       [2019-05-08 Wed 10:37]
      :END:
-***** IN_PROGRESS Rule: Two do nothings should do nothing
+***** DONE Rule 1: Two do nothings should do nothing
+      CLOSED: [2019-05-08 Wed 11:02]
       :LOGBOOK:
+      - CLOSING NOTE [2019-05-08 Wed 11:02]
       - State "IN_PROGRESS" from "TODO"       [2019-05-08 Wed 11:02]
       :END:
 **** TODO Implement Score Changes for Move

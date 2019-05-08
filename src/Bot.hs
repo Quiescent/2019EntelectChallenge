@@ -13,6 +13,7 @@ import qualified RIO.Vector.Boxed as V
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import Data.Bits
+import Data.Maybe
 import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), FromJSON, parseJSON)
@@ -193,6 +194,8 @@ formatMove (Move 4) _ _ = "shoot S"
 formatMove (Move 5) _ _ = "shoot SW"
 formatMove (Move 6) _ _ = "shoot W"
 formatMove (Move 7) _ _ = "shoot NW"
+-- Nothing
+formatMove (Move 16) _ _ = "nothing"
 -- Move or Dig
 formatMove dir xy xs =
   let (Coord xy') = displaceCoordByMove xy dir
@@ -228,11 +231,11 @@ data CombinedMove = CombinedMove Int
 
 fromMoves :: Move -> Move -> CombinedMove
 fromMoves (Move myMove) (Move opponentsMove) =
-  CombinedMove $ myMove .|. (opponentsMove `shiftL` 4)
+  CombinedMove $ myMove .|. (opponentsMove `shiftL` 5)
 
 toMoves :: CombinedMove -> (Move, Move)
 toMoves (CombinedMove moves) =
-  (Move $ moves .&. 15, Move $ (moves .&. (15 `shiftL` 4)) `shiftR` 4)
+  (Move $ moves .&. 31, Move $ (moves .&. (31 `shiftL` 5)) `shiftR` 5)
 
 makeMove :: Bool -> CombinedMove -> State -> State
 makeMove thisMoveWins moves =
@@ -259,21 +262,34 @@ thatPlayersWorms = (\ (Player _ worms') -> worms') . opponent
 
 makeMoveMoves :: Bool -> Move -> Move -> State -> State
 makeMoveMoves thisMoveWins this that state =
-  let (Coord thisTarget)   = targetOfThisMove this state
-      (Coord thatTarget)   = targetOfThatMove that state
-      thisTargetIsValid    = (gameMap state V.!? thisTarget) == Just AIR
-      thatTargetIsValid    = (gameMap state V.!? thatTarget) == Just AIR
+  let thisMoveMove         = if isAMoveMove this then Just this else Nothing
+      thatMoveMove         = if isAMoveMove that then Just that else Nothing
+      thisTarget           = thisMoveMove >>= ((flip targetOfThisMove) state)
+      thatTarget           = thatMoveMove >>= ((flip targetOfThatMove) state)
+      thisTargetIsValid    = (thisTarget >>= mapAtCoord state) == Just AIR
+      thatTargetIsValid    = (thatTarget >>= mapAtCoord state) == Just AIR
+      -- fromJust is valid because we test whether it's Just on the above two lines
+      validThisTarget      = fromJust thisTarget
+      validThatTarget      = fromJust thatTarget
       thisWormMovedIfValid = if thisTargetIsValid
-                             then moveThisWorm (Coord thisTarget) state
+                             then moveThisWorm validThisTarget state
                              else state
       thatWormMovedIfValid = if thatTargetIsValid
-                             then moveThatWorm (Coord thatTarget) thisWormMovedIfValid
+                             then moveThatWorm validThatTarget thisWormMovedIfValid
                              else thisWormMovedIfValid
   in if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget
      then knockBackDamage $ if thisMoveWins
-                                          then moveThisWorm (Coord thisTarget) state
-                                          else moveThatWorm (Coord thatTarget) state
+                            then moveThisWorm validThisTarget state
+                            else moveThatWorm validThatTarget state
      else thatWormMovedIfValid
+
+isAMoveMove :: Move -> Bool
+isAMoveMove (Move x)
+  | x >= 8 && x < 16 = True
+  | otherwise        = False
+
+mapAtCoord :: State -> Coord -> Maybe Cell
+mapAtCoord state (Coord target) = gameMap state V.!? target
 
 knockBackDamage :: State -> State
 knockBackDamage = undefined
@@ -284,11 +300,19 @@ moveThisWorm = undefined
 moveThatWorm :: Coord -> State -> State
 moveThatWorm = undefined
 
-targetOfThisMove :: Move -> State -> Coord
-targetOfThisMove = undefined
+targetOfThisMove :: Move -> State -> Maybe Coord
+targetOfThisMove dir =
+  fmap (targetOfMove dir) . thisCurrentWorm
 
-targetOfThatMove :: Move -> State -> Coord
-targetOfThatMove = undefined
+targetOfThatMove :: Move -> State -> Maybe Coord
+targetOfThatMove dir =
+  fmap (targetOfMove dir) . thatCurrentWorm
+
+targetOfMove :: Move -> Worm -> Coord
+targetOfMove = flip go
+  where
+    go :: Worm -> Move -> Coord
+    go (Worm _ _ xy) = displaceCoordByMove xy
 
 makeDigMoves :: Move -> Move -> State -> State
 makeDigMoves this other state = state

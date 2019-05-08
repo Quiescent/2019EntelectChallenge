@@ -60,6 +60,11 @@ spec = do
   describe "thatPlayersWorms" $ do
     it "should produce that players worms" $
       thatPlayersWorms aState == someOtherWorms
+  describe "makeMove" $ do
+    it "should not change anything when it receives two 'nothing's" $
+      makeMove True (fromMoves doNothing doNothing) aState `shouldBe` aState
+
+doNothing = Move 16
 
 aState = State 1 10 10 10 10 aPlayer (withWorms someOtherWorms aPlayer) aGameMap
 
