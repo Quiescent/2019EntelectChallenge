@@ -61,6 +61,7 @@ spec = do
     it "should produce that players worms" $
       thatPlayersWorms aState == someOtherWorms
   describe "makeMove" $ do
+    -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
       makeMove True (fromMoves doNothing doNothing) aState `shouldBe` aState
 
