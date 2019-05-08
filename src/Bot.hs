@@ -241,14 +241,60 @@ makeMove thisMoveWins moves =
      makeDigMoves                myMove opponentsMove .
      makeMoveMoves  thisMoveWins myMove opponentsMove
 
+thisCurrentWorm :: State -> Maybe Worm
+thisCurrentWorm state =
+  let currentWormId' = currentWormId state
+  in V.find (\ (Worm id' _ _) -> id' == currentWormId') $ thisPlayersWorms state
+
+thisPlayersWorms :: State -> V.Vector Worm
+thisPlayersWorms = (\ (Player _ worms') -> worms') . myPlayer
+
+thatCurrentWorm :: State -> Maybe Worm
+thatCurrentWorm state =
+  let currentWormId' = currentWormId state
+  in V.find (\ (Worm id' _ _) -> id' == currentWormId') $ thatPlayersWorms state
+
+thatPlayersWorms :: State -> V.Vector Worm
+thatPlayersWorms = (\ (Player _ worms') -> worms') . opponent
+
 makeMoveMoves :: Bool -> Move -> Move -> State -> State
-makeMoveMoves thisMoveWins this' other' state' = state'
+makeMoveMoves thisMoveWins this that state =
+  let (Coord thisTarget)   = targetOfThisMove this state
+      (Coord thatTarget)   = targetOfThatMove that state
+      thisTargetIsValid    = (gameMap state V.!? thisTarget) == Just AIR
+      thatTargetIsValid    = (gameMap state V.!? thatTarget) == Just AIR
+      thisWormMovedIfValid = if thisTargetIsValid
+                             then moveThisWorm (Coord thisTarget) state
+                             else state
+      thatWormMovedIfValid = if thatTargetIsValid
+                             then moveThatWorm (Coord thatTarget) thisWormMovedIfValid
+                             else thisWormMovedIfValid
+  in if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget
+     then knockBackDamage $ if thisMoveWins
+                                          then moveThisWorm (Coord thisTarget) state
+                                          else moveThatWorm (Coord thatTarget) state
+     else thatWormMovedIfValid
+
+knockBackDamage :: State -> State
+knockBackDamage = undefined
+
+moveThisWorm :: Coord -> State -> State
+moveThisWorm = undefined
+
+moveThatWorm :: Coord -> State -> State
+moveThatWorm = undefined
+
+targetOfThisMove :: Move -> State -> Coord
+targetOfThisMove = undefined
+
+targetOfThatMove :: Move -> State -> Coord
+targetOfThatMove = undefined
 
 makeDigMoves :: Move -> Move -> State -> State
-makeDigMoves this' other' state' = state'
+makeDigMoves this other state = state
 
 makeShootMoves :: Move -> Move -> State -> State
-makeShootMoves this' other' state' = state'
+makeShootMoves this other state = state
 
 makeOposingMove :: Move -> Int -> Int -> Int -> Int -> Int -> Player -> Player -> GameMap -> State
 makeOposingMove move currentWormId' weaponRange' weaponDamage' digRange' moveRange' this'@(Player score' worms') other =
