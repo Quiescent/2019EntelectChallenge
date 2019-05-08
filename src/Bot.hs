@@ -234,13 +234,15 @@ toMoves :: CombinedMove -> (Move, Move)
 toMoves (CombinedMove moves) =
   (Move $ moves .&. 15, Move $ (moves .&. (15 `shiftL` 4)) `shiftR` 4)
 
-makeMove :: CombinedMove -> State -> State
-makeMove moves =
+makeMove :: Bool -> CombinedMove -> State -> State
+makeMove thisMoveWins moves =
   let (myMove, opponentsMove) = toMoves moves
-  in makeShootMoves myMove opponentsMove . makeDigMoves myMove opponentsMove . makeMoveMoves myMove opponentsMove
+  in makeShootMoves              myMove opponentsMove .
+     makeDigMoves                myMove opponentsMove .
+     makeMoveMoves  thisMoveWins myMove opponentsMove
 
-makeMoveMoves :: Move -> Move -> State -> State
-makeMoveMoves this' other' state' = state'
+makeMoveMoves :: Bool -> Move -> Move -> State -> State
+makeMoveMoves thisMoveWins this' other' state' = state'
 
 makeDigMoves :: Move -> Move -> State -> State
 makeDigMoves this' other' state' = state'
