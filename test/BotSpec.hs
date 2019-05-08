@@ -54,6 +54,12 @@ spec = do
       thatCurrentWorm (aState { currentWormId = 2 }) `shouldBe` Nothing
     it "should find a worm when it's in the sequence" $
       thatCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 aWorm)
+  describe "thisPlayersWorms" $ do
+    it "should produce this players worms" $
+      thisPlayersWorms aState == someWorms
+  describe "thatPlayersWorms" $ do
+    it "should produce that players worms" $
+      thatPlayersWorms aState == someOtherWorms
 
 aState = State 1 10 10 10 10 aPlayer (withWorms someOtherWorms aPlayer) aGameMap
 
