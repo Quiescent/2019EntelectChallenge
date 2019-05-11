@@ -40,7 +40,7 @@ splitGameMap (GameMap xs) =
   where
     iter xs'
       | V.null xs' = []
-      | otherwise = PV.take mapDim xs' : (iter $ PV.drop mapDim xs')
+      | otherwise = V.take mapDim xs' : (iter $ V.drop mapDim xs')
 
 data State = State { currentWormId :: Int,
                      weaponRange   :: Int,
