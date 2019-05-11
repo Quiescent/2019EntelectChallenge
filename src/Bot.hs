@@ -354,7 +354,24 @@ knockBackDamage :: State -> State
 knockBackDamage = undefined
 
 moveThisWorm :: Coord -> State -> State
-moveThisWorm = undefined
+moveThisWorm newCoord' = mapWorm withThisWorm (moveWorm newCoord')
+
+moveWorm :: Coord -> Worm -> Worm
+moveWorm position' (Worm id' health' _) = Worm id' health' position'
+
+mapWorm :: (State -> (Worm -> Worm) -> State) -> (Worm -> Worm) -> State -> State
+mapWorm withWorm f = (flip withWorm) f
+
+withThisWorm :: State -> (Worm -> Worm) -> State
+withThisWorm state@(State { currentWormId = currentWormId', myPlayer = myPlayer' }) f =
+  state { myPlayer = mapWorms myPlayer' (withCurrentWorm currentWormId' f) }
+
+withCurrentWorm :: Int -> (Worm -> Worm) -> Worms -> Worms
+withCurrentWorm i f = M.adjust f i
+
+mapWorms :: Player -> (Worms -> Worms) -> Player
+mapWorms (Player health' worms') f =
+  Player health' $ f worms'
 
 moveThatWorm :: Coord -> State -> State
 moveThatWorm = undefined
