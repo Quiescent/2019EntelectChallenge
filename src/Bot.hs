@@ -10,7 +10,7 @@ module Bot
 import Import hiding (round)
 
 import qualified RIO.Vector.Boxed as V
-import qualified RIO.Vector.Boxed as PV -- Only used in show
+import qualified RIO.HashMap as M
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import Data.Bits
@@ -80,8 +80,10 @@ instance FromJSON State where
             <*> v .: "opponents"
             <*> v .: "map"
 
-data Player = Player Int (V.Vector Worm)
+data Player = Player Int Worms
   deriving (Show, Generic, Eq)
+
+type Worms = M.HashMap Int Worm
 
 -- TODO: If there is no opponent then I'll bail out here :/
 toState :: Int -> ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
@@ -108,13 +110,22 @@ toState currentWormId' myPlayer' opponents' gameMap' =
     Nothing -> error "There was no opponent to play against..."
 
 opponentToPlayer :: Opponent -> Player
-opponentToPlayer (Opponent score' worms') = Player score' $ fmap fromOpponentWorm worms'
+opponentToPlayer (Opponent score' worms') =
+  Player score' $
+  wormsToMap $
+  fmap fromOpponentWorm worms'
+
+wormsToMap :: V.Vector Worm -> Worms
+wormsToMap = V.foldl' (\ acc worm@(Worm id' _ _) -> M.insert id' worm acc) M.empty
 
 fromOpponentWorm :: OpponentWorm -> Worm
 fromOpponentWorm (OpponentWorm id' health' position' _ _) = Worm id' health' position'
 
 toPlayer :: ScratchPlayer -> Player
-toPlayer (ScratchPlayer score' _ worms') = Player score' $ fmap fromScratchWorm worms'
+toPlayer (ScratchPlayer score' _ worms') =
+  Player score' $
+  wormsToMap $
+  fmap fromScratchWorm worms'
 
 fromScratchWorm :: ScratchWorm -> Worm
 fromScratchWorm (ScratchWorm id' health' position' _ _ _) = Worm id' health' position'
@@ -295,17 +306,17 @@ makeMove thisMoveWins moves =
 thisCurrentWorm :: State -> Maybe Worm
 thisCurrentWorm state =
   let currentWormId' = currentWormId state
-  in V.find (\ (Worm id' _ _) -> id' == currentWormId') $ thisPlayersWorms state
+  in M.lookup currentWormId' $ thisPlayersWorms state
 
-thisPlayersWorms :: State -> V.Vector Worm
+thisPlayersWorms :: State -> Worms
 thisPlayersWorms = (\ (Player _ worms') -> worms') . myPlayer
 
 thatCurrentWorm :: State -> Maybe Worm
 thatCurrentWorm state =
   let currentWormId' = currentWormId state
-  in V.find (\ (Worm id' _ _) -> id' == currentWormId') $ thatPlayersWorms state
+  in M.lookup currentWormId' $ thatPlayersWorms state
 
-thatPlayersWorms :: State -> V.Vector Worm
+thatPlayersWorms :: State -> Worms
 thatPlayersWorms = (\ (Player _ worms') -> worms') . opponent
 
 makeMoveMoves :: Bool -> Move -> Move -> State -> State
@@ -370,7 +381,7 @@ makeShootMoves this other state = state
 
 makeOposingMove :: Move -> Int -> Int -> Int -> Int -> Int -> Player -> Player -> GameMap -> State
 makeOposingMove move currentWormId' weaponRange' weaponDamage' digRange' moveRange' this'@(Player score' worms') other =
-  case V.find (\ (Worm id' _ _) -> id' == currentWormId') worms' of
+  case M.lookup currentWormId' worms' of
     Nothing -> State currentWormId' weaponRange' weaponDamage' digRange' moveRange' this' other
     Just (Worm _ health' position') ->
       undefined

@@ -80,9 +80,9 @@ withWorms worms' (Player health' _) = Player health' worms'
 
 aPlayer = Player 300 someWorms
 
-someWorms = V.fromList [aWorm, withIdOf 2 aWorm, withIdOf 3 aWorm, withIdOf 5 aWorm]
+someWorms = wormsToMap $ V.fromList [aWorm, withIdOf 2 aWorm, withIdOf 3 aWorm, withIdOf 5 aWorm]
 
-someOtherWorms = V.fromList [aWorm, withIdOf 3 aWorm, withIdOf 4 aWorm, withIdOf 5 aWorm]
+someOtherWorms = wormsToMap $ V.fromList [aWorm, withIdOf 3 aWorm, withIdOf 4 aWorm, withIdOf 5 aWorm]
 
 aWorm = Worm 1 10 (Coord 1087)
 
