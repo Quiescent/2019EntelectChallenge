@@ -10,6 +10,7 @@ module Bot
 import Import hiding (round)
 
 import qualified RIO.Vector.Boxed as V
+import qualified RIO.Vector.Boxed as PV -- Only used in show
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import Data.Bits
@@ -18,7 +19,28 @@ import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), FromJSON, parseJSON)
 
-type GameMap = V.Vector Cell
+-- DEBUG
+import RIO.List
+
+data GameMap = GameMap (V.Vector Cell)
+  deriving (Generic, Eq)
+
+instance Show GameMap where
+  show = showRows . splitGameMap
+
+showRows :: [V.Vector Cell] -> String
+showRows xs =
+  "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|\n" ++
+  (foldr (\ nextRow gameMap' -> gameMap' ++ "|" ++ (foldr (++) "" $ fmap show nextRow) ++ "|\n") "" xs) ++
+  "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|"
+
+splitGameMap :: GameMap -> [V.Vector Cell]
+splitGameMap (GameMap xs) =
+  iter xs
+  where
+    iter xs'
+      | V.null xs' = []
+      | otherwise = PV.take mapDim xs' : (iter $ PV.drop mapDim xs')
 
 data State = State { currentWormId :: Int,
                      weaponRange   :: Int,
@@ -28,7 +50,28 @@ data State = State { currentWormId :: Int,
                      myPlayer      :: Player,
                      opponent      :: Player,
                      gameMap       :: GameMap }
-             deriving (Show, Generic, Eq)
+             deriving (Generic, Eq)
+
+instance Show State where
+  show (State currentWormId'
+              weaponRange'
+              weaponDamage'
+              digRange'
+              moveRange'
+              myPlayer'
+              opponent'
+              gameMap') =
+    "State {\n" ++
+    "  currentWormId' = " ++ show currentWormId' ++ "\n" ++
+    "  weaponRange'   = " ++ show weaponRange'   ++ "\n" ++
+    "  weaponDamage'  = " ++ show weaponDamage'  ++ "\n" ++
+    "  digRange'      = " ++ show digRange'      ++ "\n" ++
+    "  moveRange'     = " ++ show moveRange'     ++ "\n" ++
+    "  myPlayer'      = " ++ show myPlayer'      ++ "\n" ++
+    "  opponent'      = " ++ show opponent'      ++ "\n" ++
+    "  gameMap':\n" ++
+    show gameMap' ++
+    "}"
 
 instance FromJSON State where
   parseJSON = withObject "State" $ \ v ->
@@ -61,7 +104,7 @@ toState currentWormId' myPlayer' opponents' gameMap' =
             digRange'
             (toPlayer myPlayer')
             (opponentToPlayer opponent')
-            (V.concat $ V.toList gameMap')
+            (GameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
 
 opponentToPlayer :: Opponent -> Player
@@ -161,7 +204,12 @@ instance FromJSON Weapon
 data Cell = AIR
           | DIRT
           | DEEP_SPACE
-          deriving (Show, Generic, Eq)
+          deriving (Generic, Eq)
+
+instance Show Cell where
+  show AIR        = "_"
+  show DIRT       = "#"
+  show DEEP_SPACE = " "
 
 instance FromJSON Cell where
   parseJSON = withObject "Cell" $ \ v ->
@@ -197,7 +245,7 @@ formatMove (Move 7) _ _ = "shoot NW"
 -- Nothing
 formatMove (Move 16) _ _ = "nothing"
 -- Move or Dig
-formatMove dir xy xs =
+formatMove dir xy (GameMap xs) =
   let (Coord xy') = displaceCoordByMove xy dir
   in case xs V.!? xy' of
        Just AIR        -> "move " ++ show xy'
@@ -289,7 +337,7 @@ isAMoveMove (Move x)
   | otherwise        = False
 
 mapAtCoord :: State -> Coord -> Maybe Cell
-mapAtCoord state (Coord target) = gameMap state V.!? target
+mapAtCoord State { gameMap = gameMap' } (Coord target) = (\(GameMap xs) -> xs V.!? target) gameMap'
 
 knockBackDamage :: State -> State
 knockBackDamage = undefined

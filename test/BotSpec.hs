@@ -89,10 +89,17 @@ aWorm = Worm 1 10 (Coord 1087)
 withIdOf :: Int -> Worm -> Worm
 withIdOf id' (Worm _ health' position') = Worm id' health' position'
 
-aGameMap = V.fromList $
-  (take mapDim $ repeat DEEP_SPACE) ++
-  ([DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]) ++
-  (take mapDim $ repeat DEEP_SPACE)
+withCoordOf position' (Worm id' health' _) = Worm id' health' position'
+
+aGameMap = GameMap $ V.fromList $
+  spaceRow ++
+  dirtRow ++
+  foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
+  dirtRow ++
+  spaceRow
   where
+    dirtRow = [DEEP_SPACE] ++ (take (mapDim - 2) $ repeat AIR) ++ [DEEP_SPACE]
+    spaceRow = take mapDim $ repeat DEEP_SPACE
+    middleRow = [DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]
     tenAir = (take 10 $ repeat AIR)
     someDirt = (take (mapDim - 22) $ repeat DIRT)
