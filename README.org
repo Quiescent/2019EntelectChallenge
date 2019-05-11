@@ -121,7 +121,11 @@ from the command line to invoke the bot program.
       - CLOSING NOTE [2019-05-08 Wed 11:02]
       - State "IN_PROGRESS" from "TODO"       [2019-05-08 Wed 11:02]
       :END:
-***** TODO Rule 2: Moving to dirt does not move the worm
+***** DONE Rule 2: Moving to dirt does not move the worm
+      CLOSED: [2019-05-11 Sat 13:05]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-05-11 Sat 13:05]
+      :END:
 ***** TODO Rule 3: Moving to space does not move the worm
 ***** TODO Rule 4: Moving to air does move the worm
 ***** TODO Rule 5: Moving to the same square causes one of the worms to remain where it is

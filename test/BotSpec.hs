@@ -5,6 +5,7 @@ import Bot
 import Import
 
 import qualified RIO.Vector.Boxed as V
+import RIO.List
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -64,8 +65,14 @@ spec = do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
       makeMove True (fromMoves doNothing doNothing) aState `shouldBe` aState
+    it "moving my worm to dirt should not move the worm" $
+      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe` aState
+    it "moving opponents worm to dirt should not move the worm" $
+      makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` aState
 
 doNothing = Move 16
+
+moveNorth = Move 8
 
 aState = State 1 10 10 10 10 aPlayer (withWorms someOtherWorms aPlayer) aGameMap
 
@@ -77,9 +84,15 @@ someWorms = V.fromList [aWorm, withIdOf 2 aWorm, withIdOf 3 aWorm, withIdOf 5 aW
 
 someOtherWorms = V.fromList [aWorm, withIdOf 3 aWorm, withIdOf 4 aWorm, withIdOf 5 aWorm]
 
-aWorm = Worm 1 10 (Coord 20)
+aWorm = Worm 1 10 (Coord 1087)
 
 withIdOf :: Int -> Worm -> Worm
 withIdOf id' (Worm _ health' position') = Worm id' health' position'
 
-aGameMap = V.fromList [AIR, AIR, AIR]
+aGameMap = V.fromList $
+  (take mapDim $ repeat DEEP_SPACE) ++
+  ([DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]) ++
+  (take mapDim $ repeat DEEP_SPACE)
+  where
+    tenAir = (take 10 $ repeat AIR)
+    someDirt = (take (mapDim - 22) $ repeat DIRT)
