@@ -79,6 +79,10 @@ spec = do
     it "moving opponents worm into air should move the worm to that spot" $
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
       aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent }
+    it "moving to the same square should favor player if true and damage both worms" $
+      makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe` aState
+    it "moving to the same square should favor the opponent if false and damage both worms" $
+      makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe` aState
 
 doNothing = Move 16
 
@@ -87,6 +91,10 @@ moveNorth = Move 8
 moveSouth = Move 12
 
 moveEast = Move 10
+
+moveWest = Move 14
+
+aStateWithImpendingCollision = aState
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
