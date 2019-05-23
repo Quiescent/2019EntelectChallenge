@@ -45,7 +45,7 @@ spec = do
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
       thisCurrentWorm (aState { currentWormId = 4 }) `shouldBe` Nothing
     it "should find a worm when it's in the sequence" $
-      thisCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 aWorm)
+      thisCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 thisWorm3)
   describe "thatCurrentWorm" $ do
     it "shouldn't be found when the index is negative" $
       thatCurrentWorm (aState { currentWormId = -1 }) `shouldBe` Nothing
@@ -54,7 +54,7 @@ spec = do
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
       thatCurrentWorm (aState { currentWormId = 2 }) `shouldBe` Nothing
     it "should find a worm when it's in the sequence" $
-      thatCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 aWorm)
+      thatCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 thatWorm3)
   describe "thisPlayersWorms" $ do
     it "should produce this players worms" $
       thisPlayersWorms aState == someWorms
@@ -96,29 +96,35 @@ withWorms worms' (Player health' _) = Player health' worms'
 
 aPlayer = Player 300 someWorms
 
-someWorms = wormsToMap $ V.fromList [
-  aWorm,
-  withIdOf 2 aWorm,
-  withIdOf 3 aWorm,
-  withIdOf 5 aWorm]
+thisWorm1 = aWorm
+thisWorm2 = withCoordOf (toCoord 1 31) $ withIdOf 2 aWorm
+thisWorm3 = withCoordOf (toCoord 1 30) $ withIdOf 3 aWorm
+thisWorm5 = withCoordOf (toCoord 1 15) $ withIdOf 5 aWorm
+
+someWorms = wormsToMap $ V.fromList [thisWorm1, thisWorm2, thisWorm3, thisWorm5]
 
 someWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
-  withCoordOf (toCoord 16 31) aWorm,
-  withIdOf 2 aWorm,
-  withIdOf 3 aWorm,
-  withIdOf 5 aWorm]
+  withCoordOf (toCoord 16 31) thisWorm1,
+  thisWorm2,
+  thisWorm3,
+  thisWorm5]
+
+thatWorm1 = withCoordOf (toCoord 16 1) aWorm
+thatWorm3 = withCoordOf (toCoord 19 1) $ withIdOf 3 aWorm
+thatWorm4 = withCoordOf (toCoord 20 1) $ withIdOf 4 aWorm
+thatWorm5 = withCoordOf (toCoord 1 20) $ withIdOf 5 aWorm
 
 someOtherWorms = wormsToMap $ V.fromList [
-  aWorm,
-  withIdOf 3 aWorm,
-  withIdOf 4 aWorm,
-  withIdOf 5 aWorm]
+  thatWorm1,
+  thatWorm3,
+  thatWorm4,
+  thatWorm5]
 
 someOtherWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
-  withCoordOf (toCoord 16 31) aWorm,
-  withIdOf 3 aWorm,
-  withIdOf 4 aWorm,
-  withIdOf 5 aWorm]
+  withCoordOf (toCoord 17 1) thatWorm1,
+  thatWorm3,
+  thatWorm4,
+  thatWorm5]
 
 aWorm = Worm 1 10 $ toCoord 15 31
 
