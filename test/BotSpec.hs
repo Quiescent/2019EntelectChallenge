@@ -80,9 +80,11 @@ spec = do
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
       aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent }
     it "moving to the same square should favor player if true and damage both worms" $
-      makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe` aState
+      makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
+      aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInMyFavour }
     it "moving to the same square should favor the opponent if false and damage both worms" $
-      makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe` aState
+      makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
+      aStateWithImpendingCollision { opponent = opponentWithCollisionResolvedInHisFavour }
 
 doNothing = Move 16
 
@@ -94,13 +96,21 @@ moveEast = Move 10
 
 moveWest = Move 14
 
-aStateWithImpendingCollision = aState
+aStateWithImpendingCollision = aState { opponent = anOpponentWithImpendingCollision }
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
 anOpponent = withWorms someOtherWorms aPlayer
 
+anOpponentWithImpendingCollision = withWorms someOtherWormsWithImpendingCollision anOpponent
+
+opponentWithCollisionResolvedInHisFavour =
+  withWorms someOtherWormsWithCollisionResolvedInHisFavour anOpponent
+
 withWorms worms' (Player health' _) = Player health' worms'
+
+aPlayerWithCollisionResolvedInMyFavour =
+  withWorms someWormsWithCurrentMovedEast aPlayer
 
 aPlayer = Player 300 someWorms
 
@@ -130,6 +140,18 @@ someOtherWorms = wormsToMap $ V.fromList [
 
 someOtherWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
   withCoordOf (toCoord 17 1) thatWorm1,
+  thatWorm3,
+  thatWorm4,
+  thatWorm5]
+
+someOtherWormsWithImpendingCollision = wormsToMap $ V.fromList [
+  withCoordOf (toCoord 17 31) thatWorm1,
+  thatWorm3,
+  thatWorm4,
+  thatWorm5]
+
+someOtherWormsWithCollisionResolvedInHisFavour = wormsToMap $ V.fromList [
+  withCoordOf (toCoord 16 31) thatWorm1,
   thatWorm3,
   thatWorm4,
   thatWorm5]
