@@ -374,7 +374,11 @@ mapWorms (Player health' worms') f =
   Player health' $ f worms'
 
 moveThatWorm :: Coord -> State -> State
-moveThatWorm = undefined
+moveThatWorm newCoord' = mapWorm withThatWorm (moveWorm newCoord')
+
+withThatWorm :: State -> (Worm -> Worm) -> State
+withThatWorm state@(State { currentWormId = currentWormId', opponent = opponent' }) f =
+  state { opponent = mapWorms opponent' (withCurrentWorm currentWormId' f) }
 
 targetOfThisMove :: Move -> State -> Maybe Coord
 targetOfThisMove dir =

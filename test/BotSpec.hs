@@ -69,22 +69,58 @@ spec = do
       makeMove True (fromMoves moveNorth doNothing) aState `shouldBe` aState
     it "moving opponents worm to dirt should not move the worm" $
       makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` aState
+    it "moving my worm into space should not move the worm" $
+      makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` aState
+    it "moving opponents worm into space should not move the worm" $
+      makeMove True (fromMoves doNothing moveSouth) aState `shouldBe` aState
+    it "moving my worm into air should move the worm to that spot" $
+      makeMove True (fromMoves moveEast doNothing) aState `shouldBe`
+      aState { myPlayer = withWorms someWormsWithCurrentMovedEast aPlayer }
+    it "moving opponents worm into air should move the worm to that spot" $
+      makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
+      aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent }
 
 doNothing = Move 16
 
 moveNorth = Move 8
 
-aState = State 1 10 10 10 10 aPlayer (withWorms someOtherWorms aPlayer) aGameMap
+moveSouth = Move 12
+
+moveEast = Move 10
+
+aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+anOpponent = withWorms someOtherWorms aPlayer
 
 withWorms worms' (Player health' _) = Player health' worms'
 
 aPlayer = Player 300 someWorms
 
-someWorms = wormsToMap $ V.fromList [aWorm, withIdOf 2 aWorm, withIdOf 3 aWorm, withIdOf 5 aWorm]
+someWorms = wormsToMap $ V.fromList [
+  aWorm,
+  withIdOf 2 aWorm,
+  withIdOf 3 aWorm,
+  withIdOf 5 aWorm]
 
-someOtherWorms = wormsToMap $ V.fromList [aWorm, withIdOf 3 aWorm, withIdOf 4 aWorm, withIdOf 5 aWorm]
+someWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
+  withCoordOf (toCoord 16 31) aWorm,
+  withIdOf 2 aWorm,
+  withIdOf 3 aWorm,
+  withIdOf 5 aWorm]
 
-aWorm = Worm 1 10 (Coord 1087)
+someOtherWorms = wormsToMap $ V.fromList [
+  aWorm,
+  withIdOf 3 aWorm,
+  withIdOf 4 aWorm,
+  withIdOf 5 aWorm]
+
+someOtherWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
+  withCoordOf (toCoord 16 31) aWorm,
+  withIdOf 3 aWorm,
+  withIdOf 4 aWorm,
+  withIdOf 5 aWorm]
+
+aWorm = Worm 1 10 $ toCoord 15 31
 
 withIdOf :: Int -> Worm -> Worm
 withIdOf id' (Worm _ health' position') = Worm id' health' position'

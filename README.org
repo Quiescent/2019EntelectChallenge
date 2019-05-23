@@ -126,8 +126,16 @@ from the command line to invoke the bot program.
       :LOGBOOK:
       - CLOSING NOTE [2019-05-11 Sat 13:05]
       :END:
-***** TODO Rule 3: Moving to space does not move the worm
-***** TODO Rule 4: Moving to air does move the worm
+***** DONE Rule 3: Moving to space does not move the worm
+      CLOSED: [2019-05-23 Thu 12:43]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-05-23 Thu 12:43]
+      :END:
+***** DONE Rule 4: Moving to air does move the worm
+      CLOSED: [2019-05-23 Thu 12:43]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-05-23 Thu 12:43]
+      :END:
 ***** TODO Rule 5: Moving to the same square causes one of the worms to remain where it is
       :LOGBOOK:
       - Note taken on [2019-05-08 Wed 11:05] \\
