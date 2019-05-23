@@ -136,7 +136,7 @@ from the command line to invoke the bot program.
       :LOGBOOK:
       - CLOSING NOTE [2019-05-23 Thu 12:43]
       :END:
-***** IN_PROGRESS Rule 5: Moving to the same square causes one of the worms to remain where it is
+***** IN_PROGRESS Rule 5: Moving to the same square causes one of the worms to remain where it is and both to take damage
       :LOGBOOK:
       - State "IN_PROGRESS" from "TODO"       [2019-05-23 Thu 12:52]
       - Note taken on [2019-05-08 Wed 11:05] \\
@@ -144,6 +144,7 @@ from the command line to invoke the bot program.
         evaluated (creating the random variable) when we need it to adjudicate
         who wins.
       :END:
+***** TODO Rule 6: Moving to a square which is occupied by another worm results in no change
 **** TODO Implement Score Changes for Move
 ***** TODO Rule 1: Moving to dirt penalises your score by 4
 ***** TODO Rule 2: Moving to space penalises your score by 4
