@@ -79,12 +79,14 @@ spec = do
     it "moving opponents worm into air should move the worm to that spot" $
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
       aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent }
-    it "moving to the same square should favor player if true and damage both worms" $
+    it "moving to the same square should favour player if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInMyFavour }
-    it "moving to the same square should favor the opponent if false and damage both worms" $
+      aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInMyFavour,
+                                     opponent = opponentWithCollisionResolvedInMyFavour }
+    it "moving to the same square should favour the opponent if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      aStateWithImpendingCollision { opponent = opponentWithCollisionResolvedInHisFavour }
+      aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInHisFavour,
+                                     opponent = opponentWithCollisionResolvedInHisFavour }
 
 doNothing = Move 16
 
@@ -107,10 +109,16 @@ anOpponentWithImpendingCollision = withWorms someOtherWormsWithImpendingCollisio
 opponentWithCollisionResolvedInHisFavour =
   withWorms someOtherWormsWithCollisionResolvedInHisFavour anOpponent
 
+opponentWithCollisionResolvedInMyFavour =
+  withWorms someOtherWormsWithCollisionResolvedInMyFavour anOpponent
+
 withWorms worms' (Player health' _) = Player health' worms'
 
 aPlayerWithCollisionResolvedInMyFavour =
-  withWorms someWormsWithCurrentMovedEast aPlayer
+  withWorms someWormsWithCollisionResolvedInMyFavour aPlayer
+
+aPlayerWithCollisionResolvedInHisFavour =
+  withWorms someWormsWithCollisionResolvedInHisFavour aPlayer
 
 aPlayer = Player 300 someWorms
 
@@ -123,6 +131,18 @@ someWorms = wormsToMap $ V.fromList [thisWorm1, thisWorm2, thisWorm3, thisWorm5]
 
 someWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
   withCoordOf (toCoord 16 31) thisWorm1,
+  thisWorm2,
+  thisWorm3,
+  thisWorm5]
+
+someWormsWithCollisionResolvedInMyFavour = wormsToMap $ V.fromList [
+  withHealthOf 9 $ withCoordOf (toCoord 16 31) thisWorm1,
+  thisWorm2,
+  thisWorm3,
+  thisWorm5]
+
+someWormsWithCollisionResolvedInHisFavour = wormsToMap $ V.fromList [
+  withHealthOf 9 thisWorm1,
   thisWorm2,
   thisWorm3,
   thisWorm5]
@@ -151,15 +171,22 @@ someOtherWormsWithImpendingCollision = wormsToMap $ V.fromList [
   thatWorm5]
 
 someOtherWormsWithCollisionResolvedInHisFavour = wormsToMap $ V.fromList [
-  withCoordOf (toCoord 16 31) thatWorm1,
+  withHealthOf 9 $ withCoordOf (toCoord 16 31) thatWorm1,
+  thatWorm3,
+  thatWorm4,
+  thatWorm5]
+
+someOtherWormsWithCollisionResolvedInMyFavour = wormsToMap $  V.fromList [
+  withHealthOf 9 $ withCoordOf (toCoord 17 31) thatWorm1,
   thatWorm3,
   thatWorm4,
   thatWorm5]
 
 aWorm = Worm 1 10 $ toCoord 15 31
 
-withIdOf :: Int -> Worm -> Worm
 withIdOf id' (Worm _ health' position') = Worm id' health' position'
+
+withHealthOf health' (Worm id' _ position') = Worm id' health' position'
 
 withCoordOf position' (Worm id' health' _) = Worm id' health' position'
 

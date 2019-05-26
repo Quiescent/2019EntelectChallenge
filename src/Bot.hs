@@ -350,8 +350,15 @@ isAMoveMove (Move x)
 mapAtCoord :: State -> Coord -> Maybe Cell
 mapAtCoord State { gameMap = gameMap' } (Coord target) = (\(GameMap xs) -> xs V.!? target) gameMap'
 
+-- TODO: get actual amount of damage
+knockBackDamageAmount :: Int
+knockBackDamageAmount = 1
+
 knockBackDamage :: State -> State
-knockBackDamage = undefined
+knockBackDamage =
+  mapWorm withThisWorm knockBackDamage' . mapWorm withThatWorm knockBackDamage'
+  where
+    knockBackDamage' (Worm id' health' position') = (Worm id' (health' - knockBackDamageAmount) position')
 
 moveThisWorm :: Coord -> State -> State
 moveThisWorm newCoord' = mapWorm withThisWorm (moveWorm newCoord')
