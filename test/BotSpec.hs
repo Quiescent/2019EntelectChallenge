@@ -88,6 +88,14 @@ spec = do
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInHisFavour,
                                      opponent = opponentWithCollisionResolvedInHisFavour }
+    it "moving my worm to a square occupied by one of my worms does nothing" $
+      True `shouldBe` False
+    it "moving my worm to a square occupied by one of the the opponents worms does nothing " $
+      True `shouldBe` False
+    it "moving an opponents worm to a square occupied by one of my worms does nothing" $
+      True `shouldBe` False
+    it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
+      True `shouldBe` False
 
 doNothing = Move 16
 
@@ -162,7 +170,6 @@ someOtherWormsWithCollisionResolvedInHisFavour =
 someOtherWormsWithCollisionResolvedInMyFavour =
   modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someOtherWorms
 
-modifyWormWithId :: Int -> (Worm -> Worm) -> Worms -> Worms
 modifyWormWithId = flip M.adjust
 
 aWorm = Worm 1 10 $ toCoord 15 31
