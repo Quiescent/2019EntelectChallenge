@@ -5,6 +5,7 @@ import Bot
 import Import
 
 import qualified RIO.Vector.Boxed as V
+import qualified RIO.HashMap as M
 import RIO.List
 
 import Test.Hspec
@@ -129,23 +130,14 @@ thisWorm5 = withCoordOf (toCoord 1 15) $ withIdOf 5 aWorm
 
 someWorms = wormsToMap $ V.fromList [thisWorm1, thisWorm2, thisWorm3, thisWorm5]
 
-someWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
-  withCoordOf (toCoord 16 31) thisWorm1,
-  thisWorm2,
-  thisWorm3,
-  thisWorm5]
+someWormsWithCurrentMovedEast =
+  modifyWormWithId 1 (withCoordOf (toCoord 16 31)) someWorms
 
-someWormsWithCollisionResolvedInMyFavour = wormsToMap $ V.fromList [
-  withHealthOf 9 $ withCoordOf (toCoord 16 31) thisWorm1,
-  thisWorm2,
-  thisWorm3,
-  thisWorm5]
+someWormsWithCollisionResolvedInMyFavour =
+  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 16 31)) someWorms
 
-someWormsWithCollisionResolvedInHisFavour = wormsToMap $ V.fromList [
-  withHealthOf 9 thisWorm1,
-  thisWorm2,
-  thisWorm3,
-  thisWorm5]
+someWormsWithCollisionResolvedInHisFavour =
+  modifyWormWithId 1 (withHealthOf 9) someWorms
 
 thatWorm1 = withCoordOf (toCoord 16 1) aWorm
 thatWorm3 = withCoordOf (toCoord 19 1) $ withIdOf 3 aWorm
@@ -158,29 +150,20 @@ someOtherWorms = wormsToMap $ V.fromList [
   thatWorm4,
   thatWorm5]
 
-someOtherWormsWithCurrentMovedEast = wormsToMap $ V.fromList [
-  withCoordOf (toCoord 17 1) thatWorm1,
-  thatWorm3,
-  thatWorm4,
-  thatWorm5]
+someOtherWormsWithCurrentMovedEast =
+  modifyWormWithId 1 (withCoordOf (toCoord 17 1)) someOtherWorms
 
-someOtherWormsWithImpendingCollision = wormsToMap $ V.fromList [
-  withCoordOf (toCoord 17 31) thatWorm1,
-  thatWorm3,
-  thatWorm4,
-  thatWorm5]
+someOtherWormsWithImpendingCollision =
+  modifyWormWithId 1 (withCoordOf (toCoord 17 31)) someOtherWorms
 
-someOtherWormsWithCollisionResolvedInHisFavour = wormsToMap $ V.fromList [
-  withHealthOf 9 $ withCoordOf (toCoord 16 31) thatWorm1,
-  thatWorm3,
-  thatWorm4,
-  thatWorm5]
+someOtherWormsWithCollisionResolvedInHisFavour =
+  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 16 31)) someOtherWorms
 
-someOtherWormsWithCollisionResolvedInMyFavour = wormsToMap $  V.fromList [
-  withHealthOf 9 $ withCoordOf (toCoord 17 31) thatWorm1,
-  thatWorm3,
-  thatWorm4,
-  thatWorm5]
+someOtherWormsWithCollisionResolvedInMyFavour =
+  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someOtherWorms
+
+modifyWormWithId :: Int -> (Worm -> Worm) -> Worms -> Worms
+modifyWormWithId = flip M.adjust
 
 aWorm = Worm 1 10 $ toCoord 15 31
 
