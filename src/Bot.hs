@@ -325,7 +325,7 @@ makeMoveMoves thisMoveWins this that state =
       thatMoveMove         = if isAMoveMove that then Just that else Nothing
       thisTarget           = thisMoveMove >>= ((flip targetOfThisMove) state)
       thatTarget           = thatMoveMove >>= ((flip targetOfThatMove) state)
-      thisTargetIsValid    = (thisTarget >>= mapAtCoord state) == Just AIR
+      thisTargetIsValid    = (thisTarget >>= mapAtCoord state) == Just AIR && (fmap (containsAnyWorm state) thisTarget) == Just False
       thatTargetIsValid    = (thatTarget >>= mapAtCoord state) == Just AIR
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget      = fromJust thisTarget
@@ -341,6 +341,16 @@ makeMoveMoves thisMoveWins this that state =
                             then moveThisWorm validThisTarget state
                             else moveThatWorm validThatTarget state
      else thatWormMovedIfValid
+
+containsAnyWorm :: State -> Coord -> Bool
+containsAnyWorm State { opponent = (Player _ opponentWorms),
+                        myPlayer = (Player _ myWorms)} coord' =
+  (M.foldl' matchesCoord False $ M.map coordOf opponentWorms) ||
+  (M.foldl' matchesCoord False $ M.map coordOf myWorms)
+  where
+    coordOf (Worm _ _ position') = position'
+    matchesCoord True  _         = True
+    matchesCoord False wormCoord = coord' == wormCoord
 
 isAMoveMove :: Move -> Bool
 isAMoveMove (Move x)
