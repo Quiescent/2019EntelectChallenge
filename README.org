@@ -146,7 +146,11 @@ from the command line to invoke the bot program.
         evaluated (creating the random variable) when we need it to adjudicate
         who wins.
       :END:
-***** TODO Rule 6: Moving to a square which is occupied by another worm results in no change
+***** IN_PROGRESS Rule 6: Moving to a square which is occupied by another worm results in no change
+      :LOGBOOK:
+      - State "IN_PROGRESS" from "TODO"       [2019-05-26 Sun 09:42]
+      :END:
+***** TODO Rule 7: Moving to a square which contains a medipack changes that square to air and increases that worms health
 **** TODO Implement Score Changes for Move
 ***** TODO Rule 1: Moving to dirt penalises your score by 4
 ***** TODO Rule 2: Moving to space penalises your score by 4
