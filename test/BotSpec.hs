@@ -95,7 +95,8 @@ spec = do
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToAnEnemy `shouldBe`
       aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of my worms does nothing" $
-      True `shouldBe` False
+      makeMove True (fromMoves doNothing moveWest) aStateWithMyWormNextToAnEnemy `shouldBe`
+      aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
       True `shouldBe` False
 
@@ -111,7 +112,7 @@ moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
-aStateWithMyWormNextToAnEnemy = aState { opponent = opponentWithHisWormNextToMin }
+aStateWithMyWormNextToAnEnemy = aState { opponent = opponentWithHisWormNextToMine }
 
 aStateWithMyWormsNextToEachOther = aState { myPlayer = aPlayerWithWormsNextToEachother }
 
@@ -127,7 +128,7 @@ opponentWithCollisionResolvedInHisFavour =
 opponentWithCollisionResolvedInMyFavour =
   withWorms someOtherWormsWithCollisionResolvedInMyFavour anOpponent
 
-opponentWithHisWormNextToMin =
+opponentWithHisWormNextToMine =
   withWorms someOtherWormsWithAWormNextToMine anOpponent
 
 withWorms worms' (Player health' _) = Player health' worms'

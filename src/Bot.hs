@@ -326,7 +326,7 @@ makeMoveMoves thisMoveWins this that state =
       thisTarget           = thisMoveMove >>= ((flip targetOfThisMove) state)
       thatTarget           = thatMoveMove >>= ((flip targetOfThatMove) state)
       thisTargetIsValid    = (thisTarget >>= mapAtCoord state) == Just AIR && (fmap (containsAnyWorm state) thisTarget) == Just False
-      thatTargetIsValid    = (thatTarget >>= mapAtCoord state) == Just AIR
+      thatTargetIsValid    = (thatTarget >>= mapAtCoord state) == Just AIR && (fmap (containsAnyWorm state) thatTarget) == Just False
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget      = fromJust thisTarget
       validThatTarget      = fromJust thatTarget
