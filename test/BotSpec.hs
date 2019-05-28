@@ -11,6 +11,7 @@ import RIO.List
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
+-- TODO test that moving to the left at a boundary is invalid!!!
 spec :: Spec
 spec = do
   describe "desplaceCoordByMove" $ do
@@ -98,7 +99,8 @@ spec = do
       makeMove True (fromMoves doNothing moveWest) aStateWithMyWormNextToAnEnemy `shouldBe`
       aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
-      True `shouldBe` False
+      makeMove True (fromMoves doNothing moveWest) aStateWithEnemyWormsNextToEachother `shouldBe`
+      aStateWithEnemyWormsNextToEachother
 
 doNothing = Move 16
 
@@ -111,6 +113,8 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+aStateWithEnemyWormsNextToEachother = aState { opponent = opponentWithHisWormsNextToEachother }
 
 aStateWithMyWormNextToAnEnemy = aState { opponent = opponentWithHisWormNextToMine }
 
@@ -130,6 +134,9 @@ opponentWithCollisionResolvedInMyFavour =
 
 opponentWithHisWormNextToMine =
   withWorms someOtherWormsWithAWormNextToMine anOpponent
+
+opponentWithHisWormsNextToEachother =
+  withWorms someOtherWormsWithTwoNextToEachother anOpponent
 
 withWorms worms' (Player health' _) = Player health' worms'
 
@@ -188,6 +195,9 @@ someOtherWormsWithCollisionResolvedInMyFavour =
 
 someOtherWormsWithAWormNextToMine =
   modifyWormWithId 1 (withCoordOf (toCoord 16 31)) someOtherWorms
+
+someOtherWormsWithTwoNextToEachother =
+  modifyWormWithId 1 (withCoordOf (toCoord 20 1)) someOtherWorms
 
 modifyWormWithId = flip M.adjust
 
