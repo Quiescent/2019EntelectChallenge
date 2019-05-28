@@ -92,7 +92,8 @@ spec = do
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
       aStateWithMyWormsNextToEachOther
     it "moving my worm to a square occupied by one of the the opponents worms does nothing " $
-      True `shouldBe` False
+      makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToAnEnemy `shouldBe`
+      aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of my worms does nothing" $
       True `shouldBe` False
     it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
@@ -110,6 +111,8 @@ moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
+aStateWithMyWormNextToAnEnemy = aState { opponent = opponentWithHisWormNextToMin }
+
 aStateWithMyWormsNextToEachOther = aState { myPlayer = aPlayerWithWormsNextToEachother }
 
 aStateWithImpendingCollision = aState { opponent = anOpponentWithImpendingCollision }
@@ -123,6 +126,9 @@ opponentWithCollisionResolvedInHisFavour =
 
 opponentWithCollisionResolvedInMyFavour =
   withWorms someOtherWormsWithCollisionResolvedInMyFavour anOpponent
+
+opponentWithHisWormNextToMin =
+  withWorms someOtherWormsWithAWormNextToMine anOpponent
 
 withWorms worms' (Player health' _) = Player health' worms'
 
@@ -178,6 +184,9 @@ someOtherWormsWithCollisionResolvedInHisFavour =
 
 someOtherWormsWithCollisionResolvedInMyFavour =
   modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someOtherWorms
+
+someOtherWormsWithAWormNextToMine =
+  modifyWormWithId 1 (withCoordOf (toCoord 16 31)) someOtherWorms
 
 modifyWormWithId = flip M.adjust
 
