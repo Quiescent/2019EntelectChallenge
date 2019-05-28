@@ -11,7 +11,6 @@ import RIO.List
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
--- TODO test that moving to the left at a boundary is invalid!!!
 spec :: Spec
 spec = do
   describe "desplaceCoordByMove" $ do

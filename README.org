@@ -153,6 +153,7 @@ from the command line to invoke the bot program.
       - State "IN_PROGRESS" from "TODO"       [2019-05-26 Sun 09:42]
       :END:
 ***** TODO Rule 7: Moving to a square which contains a medipack changes that square to air and increases that worms health
+***** TODO Rule 8: Moving off the edge of the map does nothing
 **** TODO Implement Score Changes for Move
 ***** TODO Rule 1: Moving to dirt penalises your score by 4
 ***** TODO Rule 2: Moving to space penalises your score by 4
