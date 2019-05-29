@@ -36,7 +36,7 @@ showRows xs =
 
 splitGameMap :: GameMap -> [V.Vector Cell]
 splitGameMap (GameMap xs) =
-  iter xs
+  reverse $ iter xs
   where
     iter xs'
       | V.null xs' = []
