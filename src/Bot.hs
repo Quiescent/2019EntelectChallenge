@@ -215,12 +215,14 @@ instance FromJSON Weapon
 data Cell = AIR
           | DIRT
           | DEEP_SPACE
+          | MEDIPACK
           deriving (Generic, Eq)
 
 instance Show Cell where
   show AIR        = "_"
   show DIRT       = "#"
   show DEEP_SPACE = " "
+  show MEDIPACK   = "+"
 
 instance FromJSON Cell where
   parseJSON = withObject "Cell" $ \ v ->
@@ -262,6 +264,7 @@ formatMove dir xy (GameMap xs) =
        Just AIR        -> "move " ++ show xy'
        Just DIRT       -> "dig "  ++ show xy'
        Just DEEP_SPACE -> "nothing"
+       Just MEDIPACK   -> "nothing"
        Nothing         -> "nothing"
 
 displaceCoordByMove :: Coord -> Move -> Coord
