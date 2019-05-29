@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module BotSpec (spec) where
 
 import Bot
@@ -100,6 +101,12 @@ spec = do
     it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
       makeMove True (fromMoves doNothing moveWest) aStateWithEnemyWormsNextToEachother `shouldBe`
       aStateWithEnemyWormsNextToEachother
+    it "moving my worm onto the medipack increases my worms health by 10 and changes that square to AIR" $
+      makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
+      aStateWithMyWormOnTheMedipack -- TODO add health to that worm
+    it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
+      makeMove True (fromMoves doNothing moveEast) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
+      aStateWithOpponentsWormOnTheMedipack -- TODO add health to that worm
 
 doNothing = Move 16
 
@@ -112,6 +119,18 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+aStateWithOpponentsWormNextToTheMedipack = aState {
+  opponent = opponentWithAWormNextToTheMedipack,
+  gameMap = aGameMapWithAMedipack }
+
+aStateWithOpponentsWormOnTheMedipack = aState { opponent = opponentWithAWormOnTheMedipack }
+
+aStateWithMyWormNextToTheMedipack = aState {
+  myPlayer = aPlayerWithAWormNextToTheMedipack,
+  gameMap = aGameMapWithAMedipack }
+
+aStateWithMyWormOnTheMedipack = aState { myPlayer = aPlayerWithAWormOnTheMedipack }
 
 aStateWithEnemyWormsNextToEachother = aState { opponent = opponentWithHisWormsNextToEachother }
 
@@ -137,6 +156,12 @@ opponentWithHisWormNextToMine =
 opponentWithHisWormsNextToEachother =
   withWorms someOtherWormsWithTwoNextToEachother anOpponent
 
+opponentWithAWormNextToTheMedipack =
+  withWorms someOtherWormsWithOneNextToTheMedipack anOpponent
+
+opponentWithAWormOnTheMedipack =
+  withWorms someOtherWormsWithOneOnTheMedipack anOpponent
+
 withWorms worms' (Player health' _) = Player health' worms'
 
 aPlayerWithCollisionResolvedInMyFavour =
@@ -147,6 +172,12 @@ aPlayerWithCollisionResolvedInHisFavour =
 
 aPlayerWithWormsNextToEachother =
   withWorms someWormsWithWormsNextToEachother aPlayer
+
+aPlayerWithAWormNextToTheMedipack =
+  withWorms someWormsWithOneNextToTheMedipack aPlayer
+
+aPlayerWithAWormOnTheMedipack =
+  withWorms someWormsWithOneOnTheMedipack aPlayer
 
 aPlayer = Player 300 someWorms
 
@@ -168,6 +199,12 @@ someWormsWithCollisionResolvedInHisFavour =
 
 someWormsWithWormsNextToEachother =
   modifyWormWithId 2 (withCoordOf (toCoord 16 31)) someWorms
+
+someWormsWithOneNextToTheMedipack =
+  modifyWormWithId 1 (withCoordOf (toCoord 30 31)) someWorms
+
+someWormsWithOneOnTheMedipack =
+  modifyWormWithId 1 (withCoordOf (toCoord 31 31)) someWorms
 
 thatWorm1 = withCoordOf (toCoord 16 1) aWorm
 thatWorm3 = withCoordOf (toCoord 19 1) $ withIdOf 3 aWorm
@@ -198,6 +235,12 @@ someOtherWormsWithAWormNextToMine =
 someOtherWormsWithTwoNextToEachother =
   modifyWormWithId 1 (withCoordOf (toCoord 20 1)) someOtherWorms
 
+someOtherWormsWithOneNextToTheMedipack =
+  modifyWormWithId 1 (withCoordOf (toCoord 30 31)) someOtherWorms
+
+someOtherWormsWithOneOnTheMedipack =
+  modifyWormWithId 1 (withCoordOf (toCoord 31 31)) someOtherWorms
+
 modifyWormWithId = flip M.adjust
 
 aWorm = Worm 1 10 $ toCoord 15 31
@@ -208,15 +251,24 @@ withHealthOf health' (Worm id' _ position') = Worm id' health' position'
 
 withCoordOf position' (Worm id' health' _) = Worm id' health' position'
 
+-- Medipack is at 31 31
+aGameMapWithAMedipack = GameMap $ V.fromList $
+  spaceRow ++
+  dirtRow ++
+  foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
+  dirtRowWithMedipack ++
+  spaceRow
+
+dirtRowWithMedipack = [DEEP_SPACE] ++ (take (mapDim - 3) $ repeat AIR) ++ [MEDIPACK, DEEP_SPACE]
+dirtRow = [DEEP_SPACE] ++ (take (mapDim - 2) $ repeat AIR) ++ [DEEP_SPACE]
+spaceRow = take mapDim $ repeat DEEP_SPACE
+middleRow = [DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]
+  where tenAir = (take 10 $ repeat AIR)
+someDirt = (take (mapDim - 22) $ repeat DIRT)
+
 aGameMap = GameMap $ V.fromList $
   spaceRow ++
   dirtRow ++
   foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
   dirtRow ++
   spaceRow
-  where
-    dirtRow = [DEEP_SPACE] ++ (take (mapDim - 2) $ repeat AIR) ++ [DEEP_SPACE]
-    spaceRow = take mapDim $ repeat DEEP_SPACE
-    middleRow = [DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]
-    tenAir = (take 10 $ repeat AIR)
-    someDirt = (take (mapDim - 22) $ repeat DIRT)
