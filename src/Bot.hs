@@ -339,16 +339,26 @@ makeMoveMoves thisMoveWins this that state =
       validThisTarget       = fromJust thisTarget
       validThatTarget       = fromJust thatTarget
       thisWormMovedIfValid  = if thisTargetIsValid
-                              then moveThisWorm validThisTarget state
+                              then if thisTargetIsAMedipack
+                                   then giveMedipackToThisWorm $ moveThisWorm validThisTarget state
+                                   else moveThisWorm validThisTarget state
                               else state
       thatWormMovedIfValid  = if thatTargetIsValid
-                              then moveThatWorm validThatTarget thisWormMovedIfValid
+                              then if thatTargetIsAMedipack
+                                   then giveMediPackToThatWorm $ moveThatWorm validThatTarget thisWormMovedIfValid
+                                   else moveThatWorm validThatTarget thisWormMovedIfValid
                               else thisWormMovedIfValid
   in if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget
      then knockBackDamage $ if thisMoveWins
                             then moveThisWorm validThisTarget state
                             else moveThatWorm validThatTarget state
      else thatWormMovedIfValid
+
+giveMediPackToThatWorm :: State -> State
+giveMediPackToThatWorm = undefined
+
+giveMedipackToThisWorm :: State -> State
+giveMedipackToThisWorm = undefined
 
 containsAnyWorm :: State -> Coord -> Bool
 containsAnyWorm State { opponent = (Player _ opponentWorms),
