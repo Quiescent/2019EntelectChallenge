@@ -327,21 +327,23 @@ thatPlayersWorms = (\ (Player _ worms') -> worms') . opponent
 
 makeMoveMoves :: Bool -> Move -> Move -> State -> State
 makeMoveMoves thisMoveWins this that state =
-  let thisMoveMove         = if isAMoveMove this then Just this else Nothing
-      thatMoveMove         = if isAMoveMove that then Just that else Nothing
-      thisTarget           = thisMoveMove >>= ((flip targetOfThisMove) state)
-      thatTarget           = thatMoveMove >>= ((flip targetOfThatMove) state)
-      thisTargetIsValid    = (thisTarget >>= mapAtCoord state) == Just AIR && (fmap (containsAnyWorm state) thisTarget) == Just False
-      thatTargetIsValid    = (thatTarget >>= mapAtCoord state) == Just AIR && (fmap (containsAnyWorm state) thatTarget) == Just False
+  let thisMoveMove          = if isAMoveMove this then Just this else Nothing
+      thatMoveMove          = if isAMoveMove that then Just that else Nothing
+      thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
+      thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
+      thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thisTarget) == Just False
+      thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
+      thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thatTarget) == Just False
+      thatTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
       -- fromJust is valid because we test whether it's Just on the above two lines
-      validThisTarget      = fromJust thisTarget
-      validThatTarget      = fromJust thatTarget
-      thisWormMovedIfValid = if thisTargetIsValid
-                             then moveThisWorm validThisTarget state
-                             else state
-      thatWormMovedIfValid = if thatTargetIsValid
-                             then moveThatWorm validThatTarget thisWormMovedIfValid
-                             else thisWormMovedIfValid
+      validThisTarget       = fromJust thisTarget
+      validThatTarget       = fromJust thatTarget
+      thisWormMovedIfValid  = if thisTargetIsValid
+                              then moveThisWorm validThisTarget state
+                              else state
+      thatWormMovedIfValid  = if thatTargetIsValid
+                              then moveThatWorm validThatTarget thisWormMovedIfValid
+                              else thisWormMovedIfValid
   in if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget
      then knockBackDamage $ if thisMoveWins
                             then moveThisWorm validThisTarget state
