@@ -333,8 +333,8 @@ makeMoveMoves thisMoveWins this that state =
       thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
       thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thisTarget) == Just False
       thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
-      thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thatTarget) == Just False
-      thatTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
+      thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thatTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thatTarget) == Just False
+      thatTargetIsAMedipack = (thatTarget >>= mapAtCoord state) == Just MEDIPACK
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget       = fromJust thisTarget
       validThatTarget       = fromJust thatTarget
