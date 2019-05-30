@@ -103,10 +103,10 @@ spec = do
       aStateWithEnemyWormsNextToEachother
     it "moving my worm onto the medipack increases my worms health by 10 and changes that square to AIR" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
-      aStateWithMyWormOnTheMedipack -- TODO add health to that worm
+      aStateWithMyWormOnTheMedipack
     it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
-      aStateWithOpponentsWormOnTheMedipack -- TODO add health to that worm
+      aStateWithOpponentsWormOnTheMedipack
 
 doNothing = Move 16
 
@@ -204,7 +204,7 @@ someWormsWithOneNextToTheMedipack =
   modifyWormWithId 1 (withCoordOf (toCoord 30 31)) someWorms
 
 someWormsWithOneOnTheMedipack =
-  modifyWormWithId 1 (withCoordOf (toCoord 31 31)) someWorms
+  modifyWormWithId 1 (withHealthOf 20 . withCoordOf (toCoord 31 31)) someWorms
 
 thatWorm1 = withCoordOf (toCoord 16 1) aWorm
 thatWorm3 = withCoordOf (toCoord 19 1) $ withIdOf 3 aWorm
@@ -239,7 +239,7 @@ someOtherWormsWithOneNextToTheMedipack =
   modifyWormWithId 1 (withCoordOf (toCoord 30 31)) someOtherWorms
 
 someOtherWormsWithOneOnTheMedipack =
-  modifyWormWithId 1 (withCoordOf (toCoord 31 31)) someOtherWorms
+  modifyWormWithId 1 (withHealthOf 20 . withCoordOf (toCoord 31 31)) someOtherWorms
 
 modifyWormWithId = flip M.adjust
 

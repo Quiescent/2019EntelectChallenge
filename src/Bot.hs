@@ -192,6 +192,9 @@ instance FromJSON Coord where
 mapDim :: Int
 mapDim = 33
 
+healthPackHealth :: Int
+healthPackHealth = 10
+
 toCoord :: Int -> Int -> Coord
 toCoord xCoord yCoord =
   Coord $ mapDim * yCoord + xCoord
