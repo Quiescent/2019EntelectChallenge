@@ -338,7 +338,7 @@ makeMoveMoves thisMoveWins this that state =
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget       = fromJust thisTarget
       validThatTarget       = fromJust thatTarget
-      medipackThisWorm      = if thisTargetIsAMedipack then giveMedipackToThisWorm else id
+      medipackThisWorm      = if thisTargetIsAMedipack then giveMedipackToThisWorm else id -- TODO Remove the medipack
       medipackThatWorm      = if thatTargetIsAMedipack then giveMedipackToThatWorm else id
       moveThisWormToTarget  = if thisTargetIsValid then moveThisWorm validThisTarget else id
       moveThatWormToTarget  = if thatTargetIsValid then moveThatWorm validThatTarget else id
