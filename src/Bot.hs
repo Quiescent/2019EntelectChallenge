@@ -338,24 +338,19 @@ makeMoveMoves thisMoveWins this that state =
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget       = fromJust thisTarget
       validThatTarget       = fromJust thatTarget
-      thisWormMovedIfValid  = if thisTargetIsValid
-                              then if thisTargetIsAMedipack
-                                   then giveMedipackToThisWorm $ moveThisWorm validThisTarget state
-                                   else moveThisWorm validThisTarget state
-                              else state
-      thatWormMovedIfValid  = if thatTargetIsValid
-                              then if thatTargetIsAMedipack
-                                   then giveMediPackToThatWorm $ moveThatWorm validThatTarget thisWormMovedIfValid
-                                   else moveThatWorm validThatTarget thisWormMovedIfValid
-                              else thisWormMovedIfValid
-  in if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget
-     then knockBackDamage $ if thisMoveWins
-                            then moveThisWorm validThisTarget state
-                            else moveThatWorm validThatTarget state
-     else thatWormMovedIfValid
+      medipackThisWorm      = if thisTargetIsAMedipack then giveMedipackToThisWorm else id
+      medipackThatWorm      = if thatTargetIsAMedipack then giveMedipackToThatWorm else id
+      moveThisWormToTarget  = if thisTargetIsValid then moveThisWorm validThisTarget else id
+      moveThatWormToTarget  = if thatTargetIsValid then moveThatWorm validThatTarget else id
+      moveThisWormIfValid   = medipackThisWorm . moveThisWormToTarget
+      moveThatWormIfValid   = medipackThatWorm . moveThatWormToTarget
+      moveWorms             = moveThisWormIfValid . moveThatWormIfValid
+      moveWinner            = (if thisMoveWins then moveThisWormIfValid else moveThatWormIfValid) . knockBackDamage
+      collideWorms          = if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget then moveWinner else moveWorms
+  in collideWorms state
 
-giveMediPackToThatWorm :: State -> State
-giveMediPackToThatWorm = undefined
+giveMedipackToThatWorm :: State -> State
+giveMedipackToThatWorm = undefined
 
 giveMedipackToThisWorm :: State -> State
 giveMedipackToThisWorm = undefined
