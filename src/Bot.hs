@@ -350,10 +350,14 @@ makeMoveMoves thisMoveWins this that state =
   in collideWorms state
 
 giveMedipackToThatWorm :: State -> State
-giveMedipackToThatWorm = undefined
+giveMedipackToThatWorm = (flip withThatWorm) increaseHealth
+
+increaseHealth :: Worm -> Worm
+increaseHealth (Worm id' health' position') =
+  Worm id' (health' + healthPackHealth) position'
 
 giveMedipackToThisWorm :: State -> State
-giveMedipackToThisWorm = undefined
+giveMedipackToThisWorm = (flip withThisWorm) increaseHealth
 
 containsAnyWorm :: State -> Coord -> Bool
 containsAnyWorm State { opponent = (Player _ opponentWorms),
