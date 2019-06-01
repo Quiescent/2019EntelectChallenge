@@ -113,13 +113,38 @@ spec = do
     it "moving both worms onto the same medipack results that worm getting the medipack when that worm won" $
       makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
       aStateWhereOpponentGotTheMedipack
-    it "moving my worm off the edge of left edge of the map changes nothing" $
+    -- Top
+    it "moving my worm off the top edge of the map changes nothing" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTop `shouldBe`
       aStateWithMyWormOnTop
-    it "moving opponent worm off the edge of left edge of the map changes nothing" $
-      makeMove True (fromMoves moveNorth doNothing) aStateWithOpponentWormOnTop `shouldBe`
+    it "moving opponent worm off the top edge of the map changes nothing" $
+      makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTop `shouldBe`
       aStateWithOpponentWormOnTop
-
+    -- Left edge
+    it "moving my worm north on the left edge of the map moves that worm north" $
+      makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
+      aStateWithMyWormUpwardsOnLeftEdge
+    it "moving opponent worm north on the left edge of the map moves that worm north" $
+      makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnLeftEdge `shouldBe`
+      aStateWithOpponentWormUpwardOnLeftEdge
+    it "moving my worm south on the left edge of the map moves that worm south" $
+      makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
+      aStateWithMyWormDownwardOnLeftEdge
+    it "moving opponent worm south on the left edge of the map moves that worm south" $
+      makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnLeftEdge `shouldBe`
+      aStateWithOpponentWormDownwardOnLeftEdge
+    it "moving my worm east on the left edge of the map moves that worm south" $
+      makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
+      aStateWithMyWormRightFromLeftEdge
+    it "moving opponent worm east on the left edge of the map moves that worm south" $
+      makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnLeftEdge `shouldBe`
+      aStateWithOpponentWormRightFromLeftEdge
+    it "moving my worm off the edge on the left of the map changes nothing" $
+      makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
+      aStateWithMyWormOnLeftEdge
+    it "moving opponent worm off the edge on left of the map changes nothing" $
+      makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnLeftEdge `shouldBe`
+      aStateWithOpponentWormOnLeftEdge
 
 doNothing = Move 16
 
@@ -133,10 +158,37 @@ moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
-aStateWithOpponentWormOnTop = aState {
+aStateWithOnlyAirOnMap = aState {
+  gameMap = aGameMapWithOnlyAir }
+
+aStateWithMyWormDownwardOnLeftEdge =
+  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 16))
+
+aStateWithMyWormRightFromLeftEdge =
+  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 1 15))
+
+aStateWithMyWormUpwardsOnLeftEdge =
+  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 14))
+
+aStateWithMyWormOnLeftEdge =
+  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 15))
+
+aStateWithOpponentWormDownwardOnLeftEdge =
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 16))
+
+aStateWithOpponentWormUpwardOnLeftEdge =
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 14))
+
+aStateWithOpponentWormRightFromLeftEdge =
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 16))
+
+aStateWithOpponentWormOnLeftEdge =
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 15))
+
+aStateWithOpponentWormOnTop = aStateWithOnlyAirOnMap {
   myPlayer = opponentWithAWormAtTop }
 
-aStateWithMyWormOnTop = aState {
+aStateWithMyWormOnTop = aStateWithOnlyAirOnMap {
   myPlayer = aPlayerWithAWormAtTop }
 
 aStateWhereIGotTheMedipack = knockBackDamage $ aState {
@@ -316,3 +368,8 @@ aGameMap = vectorGameMapToHashGameMap $ V.fromList $
   foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
   dirtRow ++
   spaceRow
+
+airRow = take mapDim $ repeat DEEP_SPACE
+
+aGameMapWithOnlyAir = vectorGameMapToHashGameMap $ V.fromList $
+  foldl' (++) [] (take mapDim $ repeat airRow)
