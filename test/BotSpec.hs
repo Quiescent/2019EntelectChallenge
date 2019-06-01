@@ -116,6 +116,10 @@ spec = do
     it "moving my worm off the edge of left edge of the map changes nothing" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTop `shouldBe`
       aStateWithMyWormOnTop
+    it "moving opponent worm off the edge of left edge of the map changes nothing" $
+      makeMove True (fromMoves moveNorth doNothing) aStateWithOpponentWormOnTop `shouldBe`
+      aStateWithOpponentWormOnTop
+
 
 doNothing = Move 16
 
@@ -128,6 +132,9 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+aStateWithOpponentWormOnTop = aState {
+  myPlayer = opponentWithAWormAtTop }
 
 aStateWithMyWormOnTop = aState {
   myPlayer = aPlayerWithAWormAtTop }
@@ -186,6 +193,9 @@ opponentWithAWormNextToTheMedipack =
 
 opponentWithAWormOnTheMedipack =
   withWorms someOtherWormsWithOneOnTheMedipack anOpponent
+
+opponentWithAWormAtTop =
+  withWorms someOtherWormsWithOneAtTop anOpponent
 
 withWorms worms' (Player health' _) = Player health' worms'
 
@@ -271,6 +281,9 @@ someOtherWormsWithOneNextToTheMedipack =
 
 someOtherWormsWithOneOnTheMedipack =
   modifyWormWithId 1 (withHealthOf 20 . withCoordOf (toCoord 31 31)) someOtherWorms
+
+someOtherWormsWithOneAtTop =
+  modifyWormWithId 1 (withCoordOf (toCoord 15 0)) someOtherWorms
 
 modifyWormWithId = flip M.adjust
 
