@@ -36,7 +36,7 @@ showRows xs =
 
 splitGameMap :: GameMap -> [[Cell]]
 splitGameMap (GameMap xs) =
-  reverse $ iter $ M.elems xs
+  reverse $ iter $ map snd $ sortOn fst $ M.toList xs
   where
     iter []  = []
     iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
