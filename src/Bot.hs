@@ -263,36 +263,50 @@ formatMove (Move 7) _ _ = "shoot NW"
 -- Nothing
 formatMove (Move 16) _ _ = "nothing"
 -- Move or Dig
-formatMove dir xy (GameMap xs) =
-  let (Coord xy') = displaceCoordByMove xy dir
-  in case M.lookup xy' xs of
-       Just AIR        -> "move " ++ show xy'
-       Just DIRT       -> "dig "  ++ show xy'
-       Just DEEP_SPACE -> "nothing"
-       Just MEDIPACK   -> "nothing"
-       Nothing         -> "nothing"
+formatMove dir xy gameMap' = moveFromMaybe $ do
+  newCoord     <- displaceCoordByMove xy dir
+  targetSquare <- lookupCoord newCoord gameMap'
+  return $ case targetSquare of
+    AIR        -> "move " ++ show newCoord
+    DIRT       -> "dig "  ++ show newCoord
+    DEEP_SPACE -> "nothing"
+    MEDIPACK   -> "nothing"
+  where
+    moveFromMaybe (Just move) = move
+    moveFromMaybe Nothing     = "nothing"
 
-displaceCoordByMove :: Coord -> Move -> Coord
-displaceCoordByMove (Coord xy) moveDir@(Move dir) =
-  case dir of
+lookupCoord :: Coord -> GameMap -> Maybe Cell
+lookupCoord (Coord xy') (GameMap xs) =
+  M.lookup xy' xs
+
+displaceCoordByMove :: Coord -> Move -> Maybe Coord
+displaceCoordByMove xy moveDir@(Move dir) =
+  fmap (uncurry toCoord) $ isOOB $
+  let (x', y') = fromCoord xy
+  in case dir of
     -- N
-    8  -> Coord $ xy - mapDim
+    8  -> (x', y' - 1)
     -- NE
-    9  -> Coord $ xy - mapDim + 1
+    9  -> (x' + 1, y' - 1)
     -- E
-    10 -> Coord $ xy + 1
+    10 -> (x' + 1, y')
     -- SE
-    11 -> Coord $ xy + mapDim + 1
+    11 -> (x' + 1, y' + 1)
     -- S
-    12 -> Coord $ xy + mapDim
+    12 -> (x', y' + 1)
     -- SW
-    13 -> Coord $ xy + mapDim - 1
+    13 -> (x' - 1, y' + 1)
     -- W
-    14 -> Coord $ xy - 1
+    14 -> (x' - 1, y')
     -- NW
-    15 -> Coord $ xy - mapDim - 1
+    15 -> (x' - 1, y' - 1)
     -- Invalid Move
     _  -> error $ "Attempted to move in invalid direction with " ++ show moveDir
+
+isOOB :: (Int, Int) -> Maybe (Int, Int)
+isOOB (x', y')
+  | x' >= 0 && x' < mapDim && y' >= 0 && y' < mapDim = Just (x', y')
+  | otherwise                                        = Nothing
 
 data CombinedMove = CombinedMove Int
 
@@ -432,17 +446,17 @@ mapThatWorm state@(State { currentWormId = currentWormId', opponent = opponent' 
   state { opponent = mapWorms opponent' (mapCurrentWorm currentWormId' f) }
 
 targetOfThisMove :: Move -> State -> Maybe Coord
-targetOfThisMove dir =
-  fmap (targetOfMove dir) . thisCurrentWorm
+targetOfThisMove dir state =
+  thisCurrentWorm state >>= targetOfMove dir
 
 targetOfThatMove :: Move -> State -> Maybe Coord
-targetOfThatMove dir =
-  fmap (targetOfMove dir) . thatCurrentWorm
+targetOfThatMove dir state =
+  thatCurrentWorm state >>= targetOfMove dir
 
-targetOfMove :: Move -> Worm -> Coord
+targetOfMove :: Move -> Worm -> Maybe Coord
 targetOfMove = flip go
   where
-    go :: Worm -> Move -> Coord
+    go :: Worm -> Move -> Maybe Coord
     go (Worm _ _ xy) = displaceCoordByMove xy
 
 makeDigMoves :: Move -> Move -> State -> State

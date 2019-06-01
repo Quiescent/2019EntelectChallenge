@@ -14,21 +14,21 @@ import Test.Hspec.QuickCheck
 
 spec :: Spec
 spec = do
-  describe "desplaceCoordByMove" $ do
-    it "N  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 8)  `shouldBe` (toCoord 1 0)
-    it "NE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 9)  `shouldBe` (toCoord 2 0)
-    it "E  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 10) `shouldBe` (toCoord 2 1)
-    it "SE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 11) `shouldBe` (toCoord 2 2)
-    it "S  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 12) `shouldBe` (toCoord 1 2)
-    it "SW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 13) `shouldBe` (toCoord 0 2)
-    it "W  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 14) `shouldBe` (toCoord 0 1)
-    it "NW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 15) `shouldBe` (toCoord 0 0)
+  describe "displaceCoordByMove" $ do
+    it "N  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 8)  `shouldBe` Just (toCoord 1 0)
+    it "NE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 9)  `shouldBe` Just (toCoord 2 0)
+    it "E  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 10) `shouldBe` Just (toCoord 2 1)
+    it "SE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 11) `shouldBe` Just (toCoord 2 2)
+    it "S  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 12) `shouldBe` Just (toCoord 1 2)
+    it "SW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 13) `shouldBe` Just (toCoord 0 2)
+    it "W  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 14) `shouldBe` Just (toCoord 0 1)
+    it "NW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 15) `shouldBe` Just (toCoord 0 0)
     prop "Move back and forth" $ \ (i, j) ->
-      let coordInMap  = Coord $ (abs j) `mod` (mapDim * mapDim)
+      let coordInMap  = Coord $ mapDim + ((abs j) `mod` (mapDim * mapDim - 2 * mapDim))
           indexOfMove = ((abs i) `mod` 8)
           randomMove  = Move $ indexOfMove + 8
           moveBack    = Move $ ((indexOfMove + 4) `mod` 8) + 8
-      in displaceCoordByMove (displaceCoordByMove coordInMap randomMove) moveBack `shouldBe` coordInMap
+      in ((displaceCoordByMove coordInMap randomMove) >>= (\ newCoord -> displaceCoordByMove newCoord moveBack)) `shouldBe` Just coordInMap
   describe "combined moves" $ do
     prop "Can always be extracted" $ \ (i, j) ->
       let iMove = Move $ (abs i) `mod` 16
@@ -151,10 +151,10 @@ spec = do
     it "moving opponent worm south on the left edge of the map moves that worm south" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnLeftEdge `shouldBe`
       aStateWithOpponentWormDownwardOnLeftEdge
-    it "moving my worm east on the left edge of the map moves that worm south" $
+    it "moving my worm east on the left edge of the map moves that worm east" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
       aStateWithMyWormRightFromLeftEdge
-    it "moving opponent worm east on the left edge of the map moves that worm south" $
+    it "moving opponent worm east on the left edge of the map moves that worm east" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnLeftEdge `shouldBe`
       aStateWithOpponentWormRightFromLeftEdge
     it "moving my worm off the edge on the left of the map changes nothing" $
@@ -186,7 +186,7 @@ spec = do
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
       aStateWithMyWormUpFromTheBottomEdge
     it "moving opponent worm to the north from the bottom edge results in that worm moving up" $
-      makeMove True (fromMoves doNothing moveNorth) aStateWithMyWormOnTheBottomEdge `shouldBe`
+      makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
       aStateWithOpponentWormUpFromTheBottomEdge
     -- Right edge
     it "moving my worm east from the right edge results in no change" $
@@ -227,28 +227,28 @@ moveWest = Move 14
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
-  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 30 15))
+  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 15))
 
 aStateWithOpponentWormOnTheRightEdgeMovedDown =
-  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 16))
+  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 32 16))
 
 aStateWithOpponentWormOnTheRightEdgeMovedUp =
-  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 14))
+  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 32 14))
 
 aStateWithOpponentWormOnTheRightEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 31 15))
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 32 15))
 
 aStateWithOpponentWormUpFromTheBottomEdge =
-  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 4 30))
+  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 4 31))
 
 aStateWithOpponentWormOnTheBottomEdgeMovedLeft =
-  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 3 31))
+  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 3 32))
 
 aStateWithOpponentWormOnTheBottomEdgeMovedRight =
-  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 5 31))
+  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 5 32))
 
 aStateWithOpponentWormOnTheBottomEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 4 31))
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 4 32))
 
 aStateWithOpponentWormDownwardOnLeftEdge =
   mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 16))
@@ -257,22 +257,22 @@ aStateWithOpponentWormUpwardOnLeftEdge =
   mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 14))
 
 aStateWithOpponentWormRightFromLeftEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 16))
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 1 15))
 
 aStateWithOpponentWormOnLeftEdge =
   mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 15))
 
 aStateWithOpponentWormOnTop = aStateWithOnlyAirOnMap {
-  myPlayer = opponentWithAWormAtTop }
+  opponent = opponentWithAWormAtTop }
 
 aStateWithOpponentWormOnTopMovedRight =
-  mapThisWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 16 0))
+  mapThatWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 16 0))
 
 aStateWithOpponentWormOnTopMovedLeft =
-  mapThisWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 14 0))
+  mapThatWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 14 0))
 
 aStateWithOpponentWormOnTopMovedDown =
-  mapThisWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 15 1))
+  mapThatWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 15 1))
 
 aStateWithOnlyAirOnMap = aState {
   gameMap = aGameMapWithOnlyAir }
@@ -302,28 +302,28 @@ aStateWithMyWormOnTopMovedDown =
   mapThisWorm aStateWithMyWormOnTop (withCoordOf (toCoord 15 1))
 
 aStateWithMyWormOnTheBottomEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 4 31))
+  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 4 32))
 
 aStateWithMyWormOnTheBottomEdgeMovedRight =
-  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 5 31))
+  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 5 32))
 
 aStateWithMyWormOnTheBottomEdgeMovedLeft =
-  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 3 31))
+  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 3 32))
 
 aStateWithMyWormUpFromTheBottomEdge =
-  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 4 30))
+  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 4 31))
 
 aStateWithMyWormOnTheRightEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 31 15))
+  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 32 15))
 
 aStateWithMyWormOnTheRightEdgeMovedUp =
-  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 31 14))
+  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 32 14))
 
 aStateWithMyWormOnTheRightEdgeMovedDown =
-  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 31 16))
+  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 32 16))
 
 aStateWithMyWormMovedLeftFromTheRightEdge =
-  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 30 15))
+  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 31 15))
 
 aStateWhereIGotTheMedipack = knockBackDamage $ aState {
   opponent = opponentWithAWormNextToTheMedipack,
