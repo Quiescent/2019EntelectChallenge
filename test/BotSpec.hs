@@ -113,6 +113,9 @@ spec = do
     it "moving both worms onto the same medipack results that worm getting the medipack when that worm won" $
       makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
       aStateWhereOpponentGotTheMedipack
+    it "moving my worm off the edge of left edge of the map changes nothing" $
+      makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTop `shouldBe`
+      aStateWithMyWormOnTop
 
 doNothing = Move 16
 
@@ -125,6 +128,9 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+aStateWithMyWormOnTop = aState {
+  myPlayer = aPlayerWithAWormAtTop }
 
 aStateWhereIGotTheMedipack = knockBackDamage $ aState {
   opponent = opponentWithAWormNextToTheMedipack,
@@ -198,6 +204,9 @@ aPlayerWithAWormNextToTheMedipack =
 aPlayerWithAWormOnTheMedipack =
   withWorms someWormsWithOneOnTheMedipack aPlayer
 
+aPlayerWithAWormAtTop =
+  withWorms someWormsWithOneAtTop aPlayer
+
 aPlayer = Player 300 someWorms
 
 thisWorm1 = aWorm
@@ -224,6 +233,9 @@ someWormsWithOneNextToTheMedipack =
 
 someWormsWithOneOnTheMedipack =
   modifyWormWithId 1 (withHealthOf 20 . withCoordOf (toCoord 31 31)) someWorms
+
+someWormsWithOneAtTop =
+  modifyWormWithId 1 (withCoordOf (toCoord 15 0)) someWorms
 
 thatWorm1 = withCoordOf (toCoord 16 1) aWorm
 thatWorm3 = withCoordOf (toCoord 19 1) $ withIdOf 3 aWorm
