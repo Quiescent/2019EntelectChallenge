@@ -107,6 +107,10 @@ spec = do
     it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
       aStateWithOpponentsWormOnTheMedipack
+    it "moving both worms onto the same medipack results in this worm getting the medipack when this worm won" $
+      True `shouldBe` False
+    it "moving both worms onto the same medipack results that worm getting the medipack when that worm won" $
+      True `shouldBe` False
 
 doNothing = Move 16
 
