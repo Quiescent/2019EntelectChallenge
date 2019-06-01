@@ -188,6 +188,31 @@ spec = do
     it "moving opponent worm to the north from the bottom edge results in that worm moving up" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithMyWormOnTheBottomEdge `shouldBe`
       aStateWithOpponentWormUpFromTheBottomEdge
+    -- Right edge
+    it "moving my worm east from the right edge results in no change" $
+      makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
+      aStateWithMyWormOnTheRightEdge
+    it "moving opponent worm east from the right edge results in no change" $
+      makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnTheRightEdge `shouldBe`
+      aStateWithOpponentWormOnTheRightEdge
+    it "moving my worm north from the right edge results in that worm moving up" $
+      makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
+      aStateWithMyWormOnTheRightEdgeMovedUp
+    it "moving opponent worm north from the right edge results in that worm moving up" $
+      makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTheRightEdge `shouldBe`
+      aStateWithOpponentWormOnTheRightEdgeMovedUp
+    it "moving my worm south from the right edge results in that worm moving down" $
+      makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
+      aStateWithMyWormOnTheRightEdgeMovedDown
+    it "moving opponent worm south from the right edge results in that worm moving down" $
+      makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnTheRightEdge `shouldBe`
+      aStateWithOpponentWormOnTheRightEdgeMovedDown
+    it "moving my worm to the west from the right edge results in that worm moving left" $
+      makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
+      aStateWithMyWormMovedLeftFromTheRightEdge
+    it "moving opponent worm to the west from the right edge results in that worm moving left" $
+      makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTheRightEdge `shouldBe`
+      aStateWithOpponentWormMovedLeftFromTheRightEdge
 
 doNothing = Move 16
 
@@ -200,6 +225,18 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+aStateWithOpponentWormMovedLeftFromTheRightEdge =
+  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 30 15))
+
+aStateWithOpponentWormOnTheRightEdgeMovedDown =
+  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 16))
+
+aStateWithOpponentWormOnTheRightEdgeMovedUp =
+  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 14))
+
+aStateWithOpponentWormOnTheRightEdge =
+  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 31 15))
 
 aStateWithOpponentWormUpFromTheBottomEdge =
   mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 4 30))
@@ -275,6 +312,18 @@ aStateWithMyWormOnTheBottomEdgeMovedLeft =
 
 aStateWithMyWormUpFromTheBottomEdge =
   mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 4 30))
+
+aStateWithMyWormOnTheRightEdge =
+  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 31 15))
+
+aStateWithMyWormOnTheRightEdgeMovedUp =
+  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 31 14))
+
+aStateWithMyWormOnTheRightEdgeMovedDown =
+  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 31 16))
+
+aStateWithMyWormMovedLeftFromTheRightEdge =
+  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 30 15))
 
 aStateWhereIGotTheMedipack = knockBackDamage $ aState {
   opponent = opponentWithAWormNextToTheMedipack,
