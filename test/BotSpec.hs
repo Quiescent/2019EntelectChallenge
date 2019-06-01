@@ -252,7 +252,7 @@ withHealthOf health' (Worm id' _ position') = Worm id' health' position'
 withCoordOf position' (Worm id' health' _) = Worm id' health' position'
 
 -- Medipack is at 31 31
-aGameMapWithAMedipack = GameMap $ V.fromList $
+aGameMapWithAMedipack = vectorGameMapToHashGameMap $ V.fromList $
   spaceRow ++
   dirtRow ++
   foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
@@ -266,7 +266,7 @@ middleRow = [DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]
   where tenAir = (take 10 $ repeat AIR)
 someDirt = (take (mapDim - 22) $ repeat DIRT)
 
-aGameMap = GameMap $ V.fromList $
+aGameMap = vectorGameMapToHashGameMap $ V.fromList $
   spaceRow ++
   dirtRow ++
   foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++

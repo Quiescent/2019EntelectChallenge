@@ -22,25 +22,24 @@ import Data.Aeson (decode, withObject, (.:), FromJSON, parseJSON)
 -- DEBUG
 import RIO.List
 
-data GameMap = GameMap (V.Vector Cell)
+data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
 
 instance Show GameMap where
   show = showRows . splitGameMap
 
-showRows :: [V.Vector Cell] -> String
+showRows :: [[Cell]] -> String
 showRows xs =
   "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|\n" ++
   (foldr (\ nextRow gameMap' -> gameMap' ++ "|" ++ (foldr (++) "" $ fmap show nextRow) ++ "|\n") "" xs) ++
   "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|"
 
-splitGameMap :: GameMap -> [V.Vector Cell]
+splitGameMap :: GameMap -> [[Cell]]
 splitGameMap (GameMap xs) =
-  reverse $ iter xs
+  reverse $ iter $ M.elems xs
   where
-    iter xs'
-      | V.null xs' = []
-      | otherwise = V.take mapDim xs' : (iter $ V.drop mapDim xs')
+    iter []  = []
+    iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
 
 data State = State { currentWormId :: Int,
                      weaponRange   :: Int,
@@ -106,8 +105,11 @@ toState currentWormId' myPlayer' opponents' gameMap' =
             digRange'
             (toPlayer myPlayer')
             (opponentToPlayer opponent')
-            (GameMap $ V.concat $ V.toList gameMap')
+            (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
+
+vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
+vectorGameMapToHashGameMap = GameMap . M.fromList . V.toList . V.zip (V.fromList [0..])
 
 opponentToPlayer :: Opponent -> Player
 opponentToPlayer (Opponent score' worms') =
@@ -263,7 +265,7 @@ formatMove (Move 16) _ _ = "nothing"
 -- Move or Dig
 formatMove dir xy (GameMap xs) =
   let (Coord xy') = displaceCoordByMove xy dir
-  in case xs V.!? xy' of
+  in case M.lookup xy' xs of
        Just AIR        -> "move " ++ show xy'
        Just DIRT       -> "dig "  ++ show xy'
        Just DEEP_SPACE -> "nothing"
@@ -338,8 +340,8 @@ makeMoveMoves thisMoveWins this that state =
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget       = fromJust thisTarget
       validThatTarget       = fromJust thatTarget
-      medipackThisWorm      = if thisTargetIsAMedipack then giveMedipackToThisWorm else id -- TODO Remove the medipack
-      medipackThatWorm      = if thatTargetIsAMedipack then giveMedipackToThatWorm else id
+      medipackThisWorm      = if thisTargetIsAMedipack then giveMedipackToThisWorm . removeMedipack validThisTarget else id
+      medipackThatWorm      = if thatTargetIsAMedipack then giveMedipackToThatWorm . removeMedipack validThatTarget else id
       moveThisWormToTarget  = if thisTargetIsValid then moveThisWorm validThisTarget else id
       moveThatWormToTarget  = if thatTargetIsValid then moveThatWorm validThatTarget else id
       moveThisWormIfValid   = medipackThisWorm . moveThisWormToTarget
@@ -351,6 +353,17 @@ makeMoveMoves thisMoveWins this that state =
 
 giveMedipackToThatWorm :: State -> State
 giveMedipackToThatWorm = (flip withThatWorm) increaseHealth
+
+removeMedipack :: Coord -> State -> State
+removeMedipack position' =
+  (flip withGameMap) (cellTo position' AIR)
+
+cellTo :: Coord -> Cell -> GameMap -> GameMap
+cellTo position' gameMap' newCell =
+  undefined
+
+withGameMap :: State -> (GameMap -> GameMap) -> State
+withGameMap = undefined
 
 increaseHealth :: Worm -> Worm
 increaseHealth (Worm id' health' position') =
@@ -375,7 +388,7 @@ isAMoveMove (Move x)
   | otherwise        = False
 
 mapAtCoord :: State -> Coord -> Maybe Cell
-mapAtCoord State { gameMap = gameMap' } (Coord target) = (\(GameMap xs) -> xs V.!? target) gameMap'
+mapAtCoord State { gameMap = gameMap' } (Coord target) = (\(GameMap xs) -> M.lookup target xs) gameMap'
 
 -- TODO: get actual amount of damage
 knockBackDamageAmount :: Int
