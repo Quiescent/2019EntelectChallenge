@@ -358,12 +358,16 @@ removeMedipack :: Coord -> State -> State
 removeMedipack position' =
   (flip withGameMap) (cellTo position' AIR)
 
+always :: a -> b -> a
+always x _ = x
+
 cellTo :: Coord -> Cell -> GameMap -> GameMap
-cellTo position' gameMap' newCell =
-  undefined
+cellTo (Coord position') newCell (GameMap xs) =
+  GameMap $ M.adjust (always newCell) position' xs
 
 withGameMap :: State -> (GameMap -> GameMap) -> State
-withGameMap = undefined
+withGameMap state@(State { gameMap = gameMap' }) f =
+  state { gameMap = f gameMap' }
 
 increaseHealth :: Worm -> Worm
 increaseHealth (Worm id' health' position') =
