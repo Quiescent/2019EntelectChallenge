@@ -23,8 +23,10 @@ spec = do
     it "SW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 13) `shouldBe` Just (toCoord 0 2)
     it "W  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 14) `shouldBe` Just (toCoord 0 1)
     it "NW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 15) `shouldBe` Just (toCoord 0 0)
-    prop "Move back and forth" $ \ (i, j) ->
-      let coordInMap  = Coord $ mapDim + ((abs j) `mod` (mapDim * mapDim - 2 * mapDim))
+    prop "Move back and forth" $ \ (i, j, k) ->
+      let x'          = 1 + (j `mod` (mapDim - 2))
+          y'          = 1 + (k `mod` (mapDim - 2))
+          coordInMap  = toCoord x' y'
           indexOfMove = ((abs i) `mod` 8)
           randomMove  = Move $ indexOfMove + 8
           moveBack    = Move $ ((indexOfMove + 4) `mod` 8) + 8
@@ -47,7 +49,7 @@ spec = do
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
       thisCurrentWorm (aState { currentWormId = 4 }) `shouldBe` Nothing
     it "should find a worm when it's in the sequence" $
-      thisCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 thisWorm3)
+      thisCurrentWorm (aState { currentWormId = 3 }) `shouldBe` (Just $ withIdOf 3 thisWorm3)
   describe "thatCurrentWorm" $ do
     it "shouldn't be found when the index is negative" $
       thatCurrentWorm (aState { currentWormId = -1 }) `shouldBe` Nothing
@@ -56,7 +58,7 @@ spec = do
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
       thatCurrentWorm (aState { currentWormId = 2 }) `shouldBe` Nothing
     it "should find a worm when it's in the sequence" $
-      thatCurrentWorm (aState {currentWormId = 3}) `shouldBe` (Just $ withIdOf 3 thatWorm3)
+      thatCurrentWorm (aState { currentWormId = 3 }) `shouldBe` (Just $ withIdOf 3 thatWorm3)
   describe "thisPlayersWorms" $ do
     it "should produce this players worms" $
       thisPlayersWorms aState == someWorms
