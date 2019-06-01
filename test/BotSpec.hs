@@ -105,12 +105,14 @@ spec = do
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
       aStateWithMyWormOnTheMedipack
     it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
-      makeMove True (fromMoves doNothing moveEast) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
+      makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
       aStateWithOpponentsWormOnTheMedipack
     it "moving both worms onto the same medipack results in this worm getting the medipack when this worm won" $
-      True `shouldBe` False
+      makeMove True (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
+      aStateWhereIGotTheMedipack
     it "moving both worms onto the same medipack results that worm getting the medipack when that worm won" $
-      True `shouldBe` False
+      makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
+      aStateWhereOpponentGotTheMedipack
 
 doNothing = Move 16
 
@@ -123,6 +125,19 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+aStateWhereIGotTheMedipack = knockBackDamage $ aState {
+  opponent = opponentWithAWormNextToTheMedipack,
+  myPlayer = aPlayerWithAWormOnTheMedipack }
+
+aStateWhereOpponentGotTheMedipack = knockBackDamage $ aState {
+  opponent = opponentWithAWormOnTheMedipack,
+  myPlayer = aPlayerWithAWormNextToTheMedipack }
+
+aStateWithBothWormNextToTheMedipack = aState {
+  opponent = opponentWithAWormNextToTheMedipack,
+  gameMap  = aGameMapWithAMedipack,
+  myPlayer = aPlayerWithAWormNextToTheMedipack }
 
 aStateWithOpponentsWormNextToTheMedipack = aState {
   opponent = opponentWithAWormNextToTheMedipack,
@@ -240,7 +255,7 @@ someOtherWormsWithTwoNextToEachother =
   modifyWormWithId 1 (withCoordOf (toCoord 20 1)) someOtherWorms
 
 someOtherWormsWithOneNextToTheMedipack =
-  modifyWormWithId 1 (withCoordOf (toCoord 30 31)) someOtherWorms
+  modifyWormWithId 1 (withCoordOf (toCoord 31 30)) someOtherWorms
 
 someOtherWormsWithOneOnTheMedipack =
   modifyWormWithId 1 (withHealthOf 20 . withCoordOf (toCoord 31 31)) someOtherWorms
