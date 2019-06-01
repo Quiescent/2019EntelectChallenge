@@ -352,11 +352,11 @@ makeMoveMoves thisMoveWins this that state =
   in collideWorms state
 
 giveMedipackToThatWorm :: State -> State
-giveMedipackToThatWorm = (flip withThatWorm) increaseHealth
+giveMedipackToThatWorm = (flip mapThatWorm) increaseHealth
 
 removeMedipack :: Coord -> State -> State
 removeMedipack position' =
-  (flip withGameMap) (cellTo position' AIR)
+  (flip mapGameMap) (cellTo position' AIR)
 
 always :: a -> b -> a
 always x _ = x
@@ -365,8 +365,8 @@ cellTo :: Coord -> Cell -> GameMap -> GameMap
 cellTo (Coord position') newCell (GameMap xs) =
   GameMap $ M.adjust (always newCell) position' xs
 
-withGameMap :: State -> (GameMap -> GameMap) -> State
-withGameMap state@(State { gameMap = gameMap' }) f =
+mapGameMap :: State -> (GameMap -> GameMap) -> State
+mapGameMap state@(State { gameMap = gameMap' }) f =
   state { gameMap = f gameMap' }
 
 increaseHealth :: Worm -> Worm
@@ -374,7 +374,7 @@ increaseHealth (Worm id' health' position') =
   Worm id' (health' + healthPackHealth) position'
 
 giveMedipackToThisWorm :: State -> State
-giveMedipackToThisWorm = (flip withThisWorm) increaseHealth
+giveMedipackToThisWorm = (flip mapThisWorm) increaseHealth
 
 containsAnyWorm :: State -> Coord -> Bool
 containsAnyWorm State { opponent = (Player _ opponentWorms),
@@ -400,36 +400,36 @@ knockBackDamageAmount = 1
 
 knockBackDamage :: State -> State
 knockBackDamage =
-  mapWorm withThisWorm knockBackDamage' . mapWorm withThatWorm knockBackDamage'
+  mapWorm mapThisWorm knockBackDamage' . mapWorm mapThatWorm knockBackDamage'
   where
     knockBackDamage' (Worm id' health' position') = (Worm id' (health' - knockBackDamageAmount) position')
 
 moveThisWorm :: Coord -> State -> State
-moveThisWorm newCoord' = mapWorm withThisWorm (moveWorm newCoord')
+moveThisWorm newCoord' = mapWorm mapThisWorm (moveWorm newCoord')
 
 moveWorm :: Coord -> Worm -> Worm
 moveWorm position' (Worm id' health' _) = Worm id' health' position'
 
 mapWorm :: (State -> (Worm -> Worm) -> State) -> (Worm -> Worm) -> State -> State
-mapWorm withWorm f = (flip withWorm) f
+mapWorm mapWorm' f = (flip mapWorm') f
 
-withThisWorm :: State -> (Worm -> Worm) -> State
-withThisWorm state@(State { currentWormId = currentWormId', myPlayer = myPlayer' }) f =
-  state { myPlayer = mapWorms myPlayer' (withCurrentWorm currentWormId' f) }
+mapThisWorm :: State -> (Worm -> Worm) -> State
+mapThisWorm state@(State { currentWormId = currentWormId', myPlayer = myPlayer' }) f =
+  state { myPlayer = mapWorms myPlayer' (mapCurrentWorm currentWormId' f) }
 
-withCurrentWorm :: Int -> (Worm -> Worm) -> Worms -> Worms
-withCurrentWorm i f = M.adjust f i
+mapCurrentWorm :: Int -> (Worm -> Worm) -> Worms -> Worms
+mapCurrentWorm i f = M.adjust f i
 
 mapWorms :: Player -> (Worms -> Worms) -> Player
 mapWorms (Player health' worms') f =
   Player health' $ f worms'
 
 moveThatWorm :: Coord -> State -> State
-moveThatWorm newCoord' = mapWorm withThatWorm (moveWorm newCoord')
+moveThatWorm newCoord' = mapWorm mapThatWorm (moveWorm newCoord')
 
-withThatWorm :: State -> (Worm -> Worm) -> State
-withThatWorm state@(State { currentWormId = currentWormId', opponent = opponent' }) f =
-  state { opponent = mapWorms opponent' (withCurrentWorm currentWormId' f) }
+mapThatWorm :: State -> (Worm -> Worm) -> State
+mapThatWorm state@(State { currentWormId = currentWormId', opponent = opponent' }) f =
+  state { opponent = mapWorms opponent' (mapCurrentWorm currentWormId' f) }
 
 targetOfThisMove :: Move -> State -> Maybe Coord
 targetOfThisMove dir =
