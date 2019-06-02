@@ -136,9 +136,11 @@ from the command line to invoke the bot program.
       :LOGBOOK:
       - CLOSING NOTE [2019-05-23 Thu 12:43]
       :END:
-***** DONE Rule 5: Moving to the same square causes one of the worms to remain where it is and both to take damage
-      CLOSED: [2019-05-26 Sun 09:38]
+***** IN_PROGRESS Rule 5: Moving to the same square causes one of the worms to remain where it is and both to take damage
       :LOGBOOK:
+      - Note taken on [2019-06-02 Sun 10:41] \\
+        See rule 8 for the reason that this is being re-worked.
+      - State "IN_PROGRESS" from "DONE"       [2019-06-02 Sun 10:41]
       - CLOSING NOTE [2019-05-26 Sun 09:38]
       - State "IN_PROGRESS" from "TODO"       [2019-05-23 Thu 12:52]
       - Note taken on [2019-05-08 Wed 11:05] \\
