@@ -163,8 +163,10 @@ from the command line to invoke the bot program.
       - CLOSING NOTE [2019-06-01 Sat 10:58]
       - State "IN_PROGRESS" from "TODO"       [2019-06-01 Sat 10:48]
       :END:
-***** IN_PROGRESS Rule 9: Moving off the edge of the map does nothing
+***** DONE Rule 9: Moving off the edge of the map does nothing
+      CLOSED: [2019-06-02 Sun 09:18]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-02 Sun 09:18]
       - State "IN_PROGRESS" from "TODO"       [2019-06-01 Sat 17:04]
       :END:
 **** TODO Implement Score Changes for Move
