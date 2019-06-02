@@ -410,7 +410,7 @@ aPlayer = Player 300 someWorms
 thisWorm1 = aWorm
 thisWorm2 = withCoordOf (toCoord 1 31) $ withIdOf 2 aWorm
 thisWorm3 = withCoordOf (toCoord 1 30) $ withIdOf 3 aWorm
-thisWorm5 = withCoordOf (toCoord 1 15) $ withIdOf 5 aWorm
+thisWorm5 = withCoordOf (toCoord 1 16) $ withIdOf 5 aWorm
 
 someWorms = wormsToMap $ V.fromList [thisWorm1, thisWorm2, thisWorm3, thisWorm5]
 
