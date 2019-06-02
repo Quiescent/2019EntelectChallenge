@@ -253,15 +253,6 @@ moveEast = Move 10
 
 moveWest = Move 14
 
-awardPointsForMovingToAir :: Player -> Player
-awardPointsForMovingToAir = modifyScore 5
-
-awardPointsToThisPlayerForMovingToAir :: State -> State
-awardPointsToThisPlayerForMovingToAir = mapThisPlayer awardPointsForMovingToAir
-
-awardPointsToThatPlayerForMovingToAir :: State -> State
-awardPointsToThatPlayerForMovingToAir = mapThatPlayer awardPointsForMovingToAir
-
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
