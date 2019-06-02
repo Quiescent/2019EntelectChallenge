@@ -86,7 +86,7 @@ spec = do
     it "moving opponents worm to dirt should not move the worm" $
       makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving my worm into space should not move the worm" $
-      makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
+      makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` penaliseThisPlayerForAnInvalidCommand aState
     it "moving opponents worm into space should not move the worm" $
       makeMove True (fromMoves doNothing moveSouth) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving my worm into air should move the worm to that spot" $
@@ -105,10 +105,10 @@ spec = do
                                      opponent = opponentWithCollisionResolvedInHisFavour }
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
-      penaliseThatPlayerForAnInvalidCommand aStateWithMyWormsNextToEachOther
+      penaliseThisPlayerForAnInvalidCommand aStateWithMyWormsNextToEachOther
     it "moving my worm to a square occupied by one of the the opponents worms does nothing " $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToAnEnemy `shouldBe`
-      penaliseThatPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy
+      penaliseThisPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves doNothing moveWest) aStateWithMyWormNextToAnEnemy `shouldBe`
       penaliseThatPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy
@@ -130,10 +130,10 @@ spec = do
     -- Top
     it "moving my worm off the top edge of the map changes nothing" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTop `shouldBe`
-      aStateWithMyWormOnTop
+      penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnTop
     it "moving opponent worm off the top edge of the map changes nothing" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTop `shouldBe`
-      aStateWithOpponentWormOnTop
+      penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTop
     it "moving my worm on the top to the east results in the worm moving east" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTop `shouldBe`
       aStateWithMyWormOnTopMovedRight
@@ -173,17 +173,17 @@ spec = do
       aStateWithOpponentWormRightFromLeftEdge
     it "moving my worm off the edge on the left of the map changes nothing" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
-      aStateWithMyWormOnLeftEdge
+      penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnLeftEdge
     it "moving opponent worm off the edge on left of the map changes nothing" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      aStateWithOpponentWormOnLeftEdge
+      penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnLeftEdge
     -- Bottom edge
     it "moving my worm south from the bottom edge results in no change" $
       makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
-      aStateWithMyWormOnTheBottomEdge
+      penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnTheBottomEdge
     it "moving opponent worm south from the bottom edge results in no change" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      aStateWithOpponentWormOnTheBottomEdge
+      penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTheBottomEdge
     it "moving my worm to the east from the bottom edge results in that worm moving right" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
       aStateWithMyWormOnTheBottomEdgeMovedRight
@@ -205,10 +205,10 @@ spec = do
     -- Right edge
     it "moving my worm east from the right edge results in no change" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
-      aStateWithMyWormOnTheRightEdge
+      penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnTheRightEdge
     it "moving opponent worm east from the right edge results in no change" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      aStateWithOpponentWormOnTheRightEdge
+      penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTheRightEdge
     it "moving my worm north from the right edge results in that worm moving up" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
       aStateWithMyWormOnTheRightEdgeMovedUp
@@ -239,27 +239,6 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
-
-mapThisPlayer :: (Player -> Player) -> State -> State
-mapThisPlayer f state@(State { myPlayer = player' }) =
-  state { myPlayer = f player' }
-
-mapThatPlayer :: (Player -> Player) -> State -> State
-mapThatPlayer f state@(State { opponent = opponent' }) =
-  state { opponent = f opponent' }
-
-modifyScore :: Int -> Player -> Player
-modifyScore delta (Player score' worms') =
-  Player (score' + delta) worms'
-
-penaliseForInvalidCommand :: Player -> Player
-penaliseForInvalidCommand = modifyScore (-4)
-
-penaliseThisPlayerForAnInvalidCommand :: State -> State
-penaliseThisPlayerForAnInvalidCommand = mapThisPlayer penaliseForInvalidCommand
-
-penaliseThatPlayerForAnInvalidCommand :: State -> State
-penaliseThatPlayerForAnInvalidCommand = mapThatPlayer penaliseForInvalidCommand
 
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
   mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 15))

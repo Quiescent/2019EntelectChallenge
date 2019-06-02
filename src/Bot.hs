@@ -356,6 +356,9 @@ makeMoveMoves thisMoveWins this that state =
       validThatTarget       = fromJust thatTarget
       medipackThisWorm      = if thisTargetIsAMedipack then giveMedipackToThisWorm . removeMedipack validThisTarget else id
       medipackThatWorm      = if thatTargetIsAMedipack then giveMedipackToThatWorm . removeMedipack validThatTarget else id
+      penaliseThisMove      = if (thisTargetIsValid || thisMoveMove == Nothing) then id else penaliseThisPlayerForAnInvalidCommand
+      penaliseThatMove      = if (thatTargetIsValid || thatMoveMove == Nothing) then id else penaliseThatPlayerForAnInvalidCommand
+      applyPenalties        = penaliseThisMove . penaliseThatMove
       moveThisWormToTarget  = if thisTargetIsValid then moveThisWorm validThisTarget else id
       moveThatWormToTarget  = if thatTargetIsValid then moveThatWorm validThatTarget else id
       moveThisWormIfValid   = medipackThisWorm . moveThisWormToTarget
@@ -363,7 +366,8 @@ makeMoveMoves thisMoveWins this that state =
       moveWorms             = moveThisWormIfValid . moveThatWormIfValid
       moveWinner            = (if thisMoveWins then moveThisWormIfValid else moveThatWormIfValid) . knockBackDamage
       collideWorms          = if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget then moveWinner else moveWorms
-  in collideWorms state
+      move                  = applyPenalties . collideWorms
+  in move state
 
 giveMedipackToThatWorm :: State -> State
 giveMedipackToThatWorm = (flip mapThatWorm) increaseHealth
@@ -458,6 +462,27 @@ targetOfMove = flip go
   where
     go :: Worm -> Move -> Maybe Coord
     go (Worm _ _ xy) = displaceCoordByMove xy
+
+mapThisPlayer :: (Player -> Player) -> State -> State
+mapThisPlayer f state@(State { myPlayer = player' }) =
+  state { myPlayer = f player' }
+
+mapThatPlayer :: (Player -> Player) -> State -> State
+mapThatPlayer f state@(State { opponent = opponent' }) =
+  state { opponent = f opponent' }
+
+modifyScore :: Int -> Player -> Player
+modifyScore delta (Player score' worms') =
+  Player (score' + delta) worms'
+
+penaliseForInvalidCommand :: Player -> Player
+penaliseForInvalidCommand = modifyScore (-4)
+
+penaliseThisPlayerForAnInvalidCommand :: State -> State
+penaliseThisPlayerForAnInvalidCommand = mapThisPlayer penaliseForInvalidCommand
+
+penaliseThatPlayerForAnInvalidCommand :: State -> State
+penaliseThatPlayerForAnInvalidCommand = mapThatPlayer penaliseForInvalidCommand
 
 makeDigMoves :: Move -> Move -> State -> State
 makeDigMoves this other state = state
