@@ -82,9 +82,9 @@ spec = do
     it "should not change anything when it receives two 'nothing's" $
       makeMove True (fromMoves doNothing doNothing) aState `shouldBe` aState
     it "moving my worm to dirt should not move the worm" $
-      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe` aState
+      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe` penaliseThisPlayerForMovingToDirt aState
     it "moving opponents worm to dirt should not move the worm" $
-      makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` aState
+      makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` penaliseThatPlayerForMovingToDirt aState
     it "moving my worm into space should not move the worm" $
       makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` aState
     it "moving opponents worm into space should not move the worm" $
