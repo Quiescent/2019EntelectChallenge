@@ -136,8 +136,10 @@ from the command line to invoke the bot program.
       :LOGBOOK:
       - CLOSING NOTE [2019-05-23 Thu 12:43]
       :END:
-***** IN_PROGRESS Rule 5: Moving to the same square causes one of the worms to remain where it is and both to take damage
+***** DONE Rule 5: Moving to the same square causes one of the worms to remain where it is and both to take damage
+      CLOSED: [2019-06-02 Sun 11:39]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-02 Sun 11:39]
       - Note taken on [2019-06-02 Sun 10:41] \\
         See rule 8 for the reason that this is being re-worked.
       - State "IN_PROGRESS" from "DONE"       [2019-06-02 Sun 10:41]
@@ -159,8 +161,10 @@ from the command line to invoke the bot program.
       :LOGBOOK:
       - CLOSING NOTE [2019-06-01 Sat 10:48]
       :END:
-***** IN_PROGRESS Rule 8: Simultaneous moves to a medipack result in only one worm getting the health from the medipack
+***** DONE Rule 8: Simultaneous moves to a medipack result in only one worm getting the health from the medipack
+      CLOSED: [2019-06-02 Sun 11:39]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-02 Sun 11:39]
       - Note taken on [2019-06-02 Sun 10:39] \\
         I've discovered that this interpretation is not correct.  From the
         rules: Worms will either swap places or stay in their current
