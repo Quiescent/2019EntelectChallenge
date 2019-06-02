@@ -108,16 +108,16 @@ spec = do
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent })
     -- TODO: fix.  Worms swap places or stay in the same place.  No worm wins...
-    it "moving to the same square should favour player if true and damage both worms" $
+    it "moving to the same square should swap the worms if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
-       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInMyFavour,
-                                     opponent = opponentWithCollisionResolvedInMyFavour })
-    it "moving to the same square should favour the opponent if false and damage both worms" $
+       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedBySwapping,
+                                      opponent = opponentWithCollisionResolvedBySwapping })
+    it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
-       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInHisFavour,
-                                     opponent = opponentWithCollisionResolvedInHisFavour })
+       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedByNotMoving,
+                                      opponent = opponentWithCollisionResolvedByNotMoving })
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
       penaliseThisPlayerForAnInvalidCommand aStateWithMyWormsNextToEachOther
@@ -136,12 +136,14 @@ spec = do
     it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
       awardPointsToThatPlayerForMovingToAir aStateWithOpponentsWormOnTheMedipack
-    it "moving both worms onto the same medipack results in this worm getting the medipack when this worm won" $
-      makeMove True (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
-      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir aStateWhereIGotTheMedipack)
-    it "moving both worms onto the same medipack results that worm getting the medipack when that worm won" $
-      makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
-      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir aStateWhereOpponentGotTheMedipack)
+    it "moving both worms onto the same medipack results in a swap when the bit is set" $
+      makeMove True (fromMoves moveEast moveSouth) aStateWithBothWormsNextToTheMedipack `shouldBe`
+      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir aStateWhereWeSwappedOverTheMedipack)
+    it "moving both worms onto the same medipack results no swap when the bit is set" $
+      makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormsNextToTheMedipack `shouldBe`
+      (knockBackDamage $
+       awardPointsToThatPlayerForMovingToAir $
+       awardPointsToThisPlayerForMovingToAir aStateWhereOpponentGotTheMedipack)
     -- Top
     it "moving my worm off the top edge of the map changes nothing" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTop `shouldBe`
@@ -354,15 +356,17 @@ aStateWithMyWormOnTheRightEdgeMovedDown =
 aStateWithMyWormMovedLeftFromTheRightEdge =
   mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 31 15))
 
-aStateWhereIGotTheMedipack = knockBackDamage $ aState {
-  opponent = opponentWithAWormNextToTheMedipack,
-  myPlayer = aPlayerWithAWormOnTheMedipack }
+aStateWhereWeSwappedOverTheMedipack =
+  knockBackDamage $
+  (flip mapThisWorm) (withCoordOf (toCoord 31 30)) $
+  (flip mapThatWorm) (withCoordOf (toCoord 30 31)) $
+  aState
 
 aStateWhereOpponentGotTheMedipack = knockBackDamage $ aState {
   opponent = opponentWithAWormOnTheMedipack,
   myPlayer = aPlayerWithAWormNextToTheMedipack }
 
-aStateWithBothWormNextToTheMedipack = aState {
+aStateWithBothWormsNextToTheMedipack = aState {
   opponent = opponentWithAWormNextToTheMedipack,
   gameMap  = aGameMapWithAMedipack,
   myPlayer = aPlayerWithAWormNextToTheMedipack }
@@ -391,11 +395,11 @@ anOpponent = withWorms someOtherWorms aPlayer
 
 anOpponentWithImpendingCollision = withWorms someOtherWormsWithImpendingCollision anOpponent
 
-opponentWithCollisionResolvedInHisFavour =
+opponentWithCollisionResolvedByNotMoving =
   withWorms someOtherWormsWithCollisionResolvedInHisFavour anOpponent
 
-opponentWithCollisionResolvedInMyFavour =
-  withWorms someOtherWormsWithCollisionResolvedInMyFavour anOpponent
+opponentWithCollisionResolvedBySwapping =
+  withWorms someOtherWormsWithCollisionResolvedBySwapping anOpponent
 
 opponentWithHisWormNextToMine =
   withWorms someOtherWormsWithAWormNextToMine anOpponent
@@ -414,11 +418,11 @@ opponentWithAWormAtTop =
 
 withWorms worms' (Player health' _) = Player health' worms'
 
-aPlayerWithCollisionResolvedInMyFavour =
-  withWorms someWormsWithCollisionResolvedInMyFavour aPlayer
+aPlayerWithCollisionResolvedBySwapping =
+  withWorms someWormsWithCollisionResolvedBySwapping aPlayer
 
-aPlayerWithCollisionResolvedInHisFavour =
-  withWorms someWormsWithCollisionResolvedInHisFavour aPlayer
+aPlayerWithCollisionResolvedByNotMoving =
+  withWorms someWormsWithCollisionResolvedByNotMoving aPlayer
 
 aPlayerWithWormsNextToEachother =
   withWorms someWormsWithWormsNextToEachother aPlayer
@@ -444,10 +448,10 @@ someWorms = wormsToMap $ V.fromList [thisWorm1, thisWorm2, thisWorm3, thisWorm5]
 someWormsWithCurrentMovedEast =
   modifyWormWithId 1 (withCoordOf (toCoord 16 31)) someWorms
 
-someWormsWithCollisionResolvedInMyFavour =
-  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 16 31)) someWorms
+someWormsWithCollisionResolvedBySwapping =
+  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someWorms
 
-someWormsWithCollisionResolvedInHisFavour =
+someWormsWithCollisionResolvedByNotMoving =
   modifyWormWithId 1 (withHealthOf 9) someWorms
 
 someWormsWithWormsNextToEachother =
@@ -480,10 +484,10 @@ someOtherWormsWithImpendingCollision =
   modifyWormWithId 1 (withCoordOf (toCoord 17 31)) someOtherWorms
 
 someOtherWormsWithCollisionResolvedInHisFavour =
-  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 16 31)) someOtherWorms
+  modifyWormWithId 1 (withHealthOf 9) someOtherWorms
 
-someOtherWormsWithCollisionResolvedInMyFavour =
-  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someOtherWorms
+someOtherWormsWithCollisionResolvedBySwapping =
+  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 15 31)) someOtherWorms
 
 someOtherWormsWithAWormNextToMine =
   modifyWormWithId 1 (withCoordOf (toCoord 16 31)) someOtherWorms
