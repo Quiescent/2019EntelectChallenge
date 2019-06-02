@@ -65,6 +65,18 @@ spec = do
   describe "thatPlayersWorms" $ do
     it "should produce that players worms" $
       thatPlayersWorms aState == someOtherWorms
+  describe "penaliseForMovingToDirt" $ do
+    it "should reduce the given players score by 4" $
+      penaliseForMovingToDirt aPlayer `shouldBe`
+      Player 296 someWorms
+  describe "penaliseThatPlayerForMovingToDirt" $ do
+    it "should reduce the points of the opponent by 4" $
+      penaliseThatPlayerForMovingToDirt aState `shouldBe`
+      aState { opponent = Player 296 someOtherWorms }
+  describe "penaliseThisPlayerForMovingToDirt" $ do
+    it "should reduce the points of the player by 4" $
+      penaliseThisPlayerForMovingToDirt aState `shouldBe`
+      aState { myPlayer = Player 296 someWorms }
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -227,6 +239,27 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+mapThisPlayer :: (Player -> Player) -> State -> State
+mapThisPlayer f state@(State { myPlayer = player' }) =
+  state { myPlayer = f player' }
+
+mapThatPlayer :: (Player -> Player) -> State -> State
+mapThatPlayer f state@(State { opponent = opponent' }) =
+  state { opponent = f opponent' }
+
+modifyScore :: Int -> Player -> Player
+modifyScore delta (Player score' worms') =
+  Player (score' + delta) worms'
+
+penaliseForMovingToDirt :: Player -> Player
+penaliseForMovingToDirt = modifyScore (-4)
+
+penaliseThisPlayerForMovingToDirt :: State -> State
+penaliseThisPlayerForMovingToDirt = mapThisPlayer penaliseForMovingToDirt
+
+penaliseThatPlayerForMovingToDirt :: State -> State
+penaliseThatPlayerForMovingToDirt = mapThatPlayer penaliseForMovingToDirt
 
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
   mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 15))
