@@ -157,9 +157,13 @@ from the command line to invoke the bot program.
       :LOGBOOK:
       - CLOSING NOTE [2019-06-01 Sat 10:48]
       :END:
-***** DONE Rule 8: Simultaneous moves to a medipack result in only one worm getting the health from the medipack
-      CLOSED: [2019-06-01 Sat 10:58]
+***** IN_PROGRESS Rule 8: Simultaneous moves to a medipack result in only one worm getting the health from the medipack
       :LOGBOOK:
+      - Note taken on [2019-06-02 Sun 10:39] \\
+        I've discovered that this interpretation is not correct.  From the
+        rules: Worms will either swap places or stay in their current
+        positions (with an equal probability)
+      - State "IN_PROGRESS" from "DONE"       [2019-06-02 Sun 10:39]
       - CLOSING NOTE [2019-06-01 Sat 10:58]
       - State "IN_PROGRESS" from "TODO"       [2019-06-01 Sat 10:48]
       :END:
