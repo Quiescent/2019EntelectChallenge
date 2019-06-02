@@ -170,16 +170,22 @@ from the command line to invoke the bot program.
       - State "IN_PROGRESS" from "TODO"       [2019-06-01 Sat 17:04]
       :END:
 **** TODO Implement Score Changes for Move
-***** IN_PROGRESS Rule 1: Moving to dirt penalises your score by 4
+***** DONE Rule 1: Moving to dirt penalises your score by 4
+      CLOSED: [2019-06-02 Sun 10:21]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-02 Sun 10:21]
       - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 09:18]
       :END:
-***** IN_PROGRESS Rule 2: Moving to space penalises your score by 4
+***** DONE Rule 2: Moving to space penalises your score by 4
+      CLOSED: [2019-06-02 Sun 10:21]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-02 Sun 10:21]
       - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 09:46]
       :END:
-***** IN_PROGRESS Rule 3: Moving to an occupied cell penalises your score by 4
+***** DONE Rule 3: Moving to an occupied cell penalises your score by 4
+      CLOSED: [2019-06-02 Sun 10:21]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-02 Sun 10:21]
       - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 09:47]
       :END:
 ***** TODO Rule 4: Moving to air increases your score by 5
