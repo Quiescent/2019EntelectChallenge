@@ -143,7 +143,7 @@ spec = do
       makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormsNextToTheMedipack `shouldBe`
       (knockBackDamage $
        awardPointsToThatPlayerForMovingToAir $
-       awardPointsToThisPlayerForMovingToAir aStateWhereOpponentGotTheMedipack)
+       awardPointsToThisPlayerForMovingToAir aStateWhereNoSwapHappened)
     -- Top
     it "moving my worm off the top edge of the map changes nothing" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTop `shouldBe`
@@ -360,11 +360,10 @@ aStateWhereWeSwappedOverTheMedipack =
   knockBackDamage $
   (flip mapThisWorm) (withCoordOf (toCoord 31 30)) $
   (flip mapThatWorm) (withCoordOf (toCoord 30 31)) $
-  aState
+  aState { gameMap = aGameMapWithAMedipack }
 
-aStateWhereOpponentGotTheMedipack = knockBackDamage $ aState {
-  opponent = opponentWithAWormOnTheMedipack,
-  myPlayer = aPlayerWithAWormNextToTheMedipack }
+aStateWhereNoSwapHappened =
+  aStateWithBothWormsNextToTheMedipack
 
 aStateWithBothWormsNextToTheMedipack = aState {
   opponent = opponentWithAWormNextToTheMedipack,
@@ -452,7 +451,7 @@ someWormsWithCollisionResolvedBySwapping =
   modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someWorms
 
 someWormsWithCollisionResolvedByNotMoving =
-  modifyWormWithId 1 (withHealthOf 9) someWorms
+  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 15 31)) someWorms
 
 someWormsWithWormsNextToEachother =
   modifyWormWithId 2 (withCoordOf (toCoord 16 31)) someWorms
@@ -484,7 +483,7 @@ someOtherWormsWithImpendingCollision =
   modifyWormWithId 1 (withCoordOf (toCoord 17 31)) someOtherWorms
 
 someOtherWormsWithCollisionResolvedInHisFavour =
-  modifyWormWithId 1 (withHealthOf 9) someOtherWorms
+  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someOtherWorms
 
 someOtherWormsWithCollisionResolvedBySwapping =
   modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 15 31)) someOtherWorms

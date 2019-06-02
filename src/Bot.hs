@@ -319,11 +319,11 @@ toMoves (CombinedMove moves) =
   (Move $ moves .&. 31, Move $ (moves .&. (31 `shiftL` 5)) `shiftR` 5)
 
 makeMove :: Bool -> CombinedMove -> State -> State
-makeMove thisMoveWins moves =
+makeMove swapping moves =
   let (myMove, opponentsMove) = toMoves moves
   in makeShootMoves              myMove opponentsMove .
      makeDigMoves                myMove opponentsMove .
-     makeMoveMoves  thisMoveWins myMove opponentsMove
+     makeMoveMoves  swapping myMove opponentsMove
 
 thisCurrentWorm :: State -> Maybe Worm
 thisCurrentWorm state =
@@ -341,12 +341,18 @@ thatCurrentWorm state =
 thatPlayersWorms :: State -> Worms
 thatPlayersWorms = (\ (Player _ worms') -> worms') . opponent
 
+wormPosition :: Worm -> Coord
+wormPosition (Worm _ _ position') = position'
+
 makeMoveMoves :: Bool -> Move -> Move -> State -> State
-makeMoveMoves thisMoveWins this that state =
+makeMoveMoves swapping this that state =
   let thisMoveMove          = if isAMoveMove this then Just this else Nothing
       thatMoveMove          = if isAMoveMove that then Just that else Nothing
       thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
       thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
+      -- ASSUME: that a worm won't be on an invalid square
+      thisWormsPosition     = fromJust $ fmap wormPosition $ thisCurrentWorm state
+      thatWormsPosition     = fromJust $ fmap wormPosition $ thatCurrentWorm state
       thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thisTarget) == Just False
       thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
       thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thatTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thatTarget) == Just False
@@ -367,8 +373,9 @@ makeMoveMoves thisMoveWins this that state =
       moveThisWormIfValid   = medipackThisWorm . moveThisWormToTarget
       moveThatWormIfValid   = medipackThatWorm . moveThatWormToTarget
       moveWorms             = moveThisWormIfValid . moveThatWormIfValid
-      moveWinner            = (if thisMoveWins then moveThisWormIfValid else moveThatWormIfValid) . knockBackDamage
-      collideWorms          = if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget then moveWinner else moveWorms
+      swapWorms             = moveThisWorm thatWormsPosition . moveThatWorm thisWormsPosition
+      swapIfSwapping        = knockBackDamage . if swapping then swapWorms else id
+      collideWorms          = if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget then swapIfSwapping else moveWorms
       move                  = awardPoints . applyPenalties . collideWorms
   in move state
 
