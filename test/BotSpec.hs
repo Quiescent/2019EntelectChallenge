@@ -103,19 +103,21 @@ spec = do
       makeMove True (fromMoves doNothing moveSouth) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving my worm into air should move the worm to that spot" $
       makeMove True (fromMoves moveEast doNothing) aState `shouldBe`
-      aState { myPlayer = withWorms someWormsWithCurrentMovedEast aPlayer }
+      (awardPointsToThisPlayerForMovingToAir $ aState { myPlayer = withWorms someWormsWithCurrentMovedEast aPlayer })
     it "moving opponents worm into air should move the worm to that spot" $
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
-      aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent }
+      (awardPointsToThatPlayerForMovingToAir $ aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent })
     -- TODO: fix.  Worms swap places or stay in the same place.  No worm wins...
     it "moving to the same square should favour player if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInMyFavour,
-                                     opponent = opponentWithCollisionResolvedInMyFavour }
+      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
+       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInMyFavour,
+                                     opponent = opponentWithCollisionResolvedInMyFavour })
     it "moving to the same square should favour the opponent if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInHisFavour,
-                                     opponent = opponentWithCollisionResolvedInHisFavour }
+      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
+       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedInHisFavour,
+                                     opponent = opponentWithCollisionResolvedInHisFavour })
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
       penaliseThisPlayerForAnInvalidCommand aStateWithMyWormsNextToEachOther
@@ -130,16 +132,16 @@ spec = do
       penaliseThatPlayerForAnInvalidCommand aStateWithEnemyWormsNextToEachother
     it "moving my worm onto the medipack increases my worms health by 10 and changes that square to AIR" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
-      aStateWithMyWormOnTheMedipack
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheMedipack
     it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
-      aStateWithOpponentsWormOnTheMedipack
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentsWormOnTheMedipack
     it "moving both worms onto the same medipack results in this worm getting the medipack when this worm won" $
       makeMove True (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
-      aStateWhereIGotTheMedipack
+      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir aStateWhereIGotTheMedipack)
     it "moving both worms onto the same medipack results that worm getting the medipack when that worm won" $
       makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormNextToTheMedipack `shouldBe`
-      aStateWhereOpponentGotTheMedipack
+      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir aStateWhereOpponentGotTheMedipack)
     -- Top
     it "moving my worm off the top edge of the map changes nothing" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTop `shouldBe`
@@ -149,41 +151,41 @@ spec = do
       penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTop
     it "moving my worm on the top to the east results in the worm moving east" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTop `shouldBe`
-      aStateWithMyWormOnTopMovedRight
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTopMovedRight
     it "moving opponent worm on the top to the east results in the worm moving east" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnTop `shouldBe`
-      aStateWithOpponentWormOnTopMovedRight
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTopMovedRight
     it "moving my worm on the top to the west results in the worm moving west" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnTop `shouldBe`
-      aStateWithMyWormOnTopMovedLeft
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTopMovedLeft
     it "moving opponent worm on the top to the west results in the worm moving west" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTop `shouldBe`
-      aStateWithOpponentWormOnTopMovedLeft
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTopMovedLeft
     it "moving my worm south from the top of the map results in that worm moving down" $
       makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnTop `shouldBe`
-      aStateWithMyWormOnTopMovedDown
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTopMovedDown
     it "moving opponent worm south from the top of the map results in that worm moving down" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnTop `shouldBe`
-      aStateWithOpponentWormOnTopMovedDown
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTopMovedDown
     -- Left edge
     it "moving my worm north on the left edge of the map moves that worm north" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
-      aStateWithMyWormUpwardsOnLeftEdge
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormUpwardsOnLeftEdge
     it "moving opponent worm north on the left edge of the map moves that worm north" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      aStateWithOpponentWormUpwardOnLeftEdge
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormUpwardOnLeftEdge
     it "moving my worm south on the left edge of the map moves that worm south" $
       makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
-      aStateWithMyWormDownwardOnLeftEdge
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormDownwardOnLeftEdge
     it "moving opponent worm south on the left edge of the map moves that worm south" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      aStateWithOpponentWormDownwardOnLeftEdge
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormDownwardOnLeftEdge
     it "moving my worm east on the left edge of the map moves that worm east" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
-      aStateWithMyWormRightFromLeftEdge
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormRightFromLeftEdge
     it "moving opponent worm east on the left edge of the map moves that worm east" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      aStateWithOpponentWormRightFromLeftEdge
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormRightFromLeftEdge
     it "moving my worm off the edge on the left of the map changes nothing" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
       penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnLeftEdge
@@ -199,22 +201,22 @@ spec = do
       penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTheBottomEdge
     it "moving my worm to the east from the bottom edge results in that worm moving right" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
-      aStateWithMyWormOnTheBottomEdgeMovedRight
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheBottomEdgeMovedRight
     it "moving opponent worm to the east from the bottom edge results in that worm moving right" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      aStateWithOpponentWormOnTheBottomEdgeMovedRight
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheBottomEdgeMovedRight
     it "moving my worm to the west from the bottom edge results in that worm moving left" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
-      aStateWithMyWormOnTheBottomEdgeMovedLeft
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheBottomEdgeMovedLeft
     it "moving opponent to the west from the bottom edge results in that worm moving left" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      aStateWithOpponentWormOnTheBottomEdgeMovedLeft
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheBottomEdgeMovedLeft
     it "moving my worm to the north from the bottom edge results in that worm moving up" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
-      aStateWithMyWormUpFromTheBottomEdge
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormUpFromTheBottomEdge
     it "moving opponent worm to the north from the bottom edge results in that worm moving up" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      aStateWithOpponentWormUpFromTheBottomEdge
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormUpFromTheBottomEdge
     -- Right edge
     it "moving my worm east from the right edge results in no change" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
@@ -224,22 +226,22 @@ spec = do
       penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTheRightEdge
     it "moving my worm north from the right edge results in that worm moving up" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
-      aStateWithMyWormOnTheRightEdgeMovedUp
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheRightEdgeMovedUp
     it "moving opponent worm north from the right edge results in that worm moving up" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      aStateWithOpponentWormOnTheRightEdgeMovedUp
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheRightEdgeMovedUp
     it "moving my worm south from the right edge results in that worm moving down" $
       makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
-      aStateWithMyWormOnTheRightEdgeMovedDown
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheRightEdgeMovedDown
     it "moving opponent worm south from the right edge results in that worm moving down" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      aStateWithOpponentWormOnTheRightEdgeMovedDown
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheRightEdgeMovedDown
     it "moving my worm to the west from the right edge results in that worm moving left" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
-      aStateWithMyWormMovedLeftFromTheRightEdge
+      awardPointsToThisPlayerForMovingToAir aStateWithMyWormMovedLeftFromTheRightEdge
     it "moving opponent worm to the west from the right edge results in that worm moving left" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      aStateWithOpponentWormMovedLeftFromTheRightEdge
+      awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormMovedLeftFromTheRightEdge
 
 doNothing = Move 16
 
