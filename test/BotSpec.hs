@@ -77,6 +77,18 @@ spec = do
     it "should reduce the points of the player by 4" $
       penaliseThisPlayerForAnInvalidCommand aState `shouldBe`
       aState { myPlayer = Player 296 someWorms }
+  describe "awardPointsForMovingToAir" $ do
+    it "should increment the points of a player by 5" $
+      awardPointsForMovingToAir aPlayer `shouldBe`
+      Player 305 someWorms
+  describe "awardPointsToThatPlayerForMovingToAir" $ do
+    it "should increment the points of opponent by 5" $
+      awardPointsToThatPlayerForMovingToAir aState `shouldBe`
+      aState { opponent = Player 305 someOtherWorms }
+  describe "awardPointsToThisPlayerForMovingToAir" $ do
+    it "should increment the points of my player by 5" $
+      awardPointsToThisPlayerForMovingToAir aState `shouldBe`
+      aState { myPlayer = Player 305 someWorms }
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -237,6 +249,15 @@ moveSouth = Move 12
 moveEast = Move 10
 
 moveWest = Move 14
+
+awardPointsForMovingToAir :: Player -> Player
+awardPointsForMovingToAir = modifyScore 5
+
+awardPointsToThisPlayerForMovingToAir :: State -> State
+awardPointsToThisPlayerForMovingToAir = mapThisPlayer awardPointsForMovingToAir
+
+awardPointsToThatPlayerForMovingToAir :: State -> State
+awardPointsToThatPlayerForMovingToAir = mapThatPlayer awardPointsForMovingToAir
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
