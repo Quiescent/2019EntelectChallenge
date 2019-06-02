@@ -174,8 +174,15 @@ from the command line to invoke the bot program.
       :LOGBOOK:
       - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 09:18]
       :END:
-***** TODO Rule 2: Moving to space penalises your score by 4
-***** TODO Rule 3: Moving to air increases your score by 5
+***** IN_PROGRESS Rule 2: Moving to space penalises your score by 4
+      :LOGBOOK:
+      - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 09:46]
+      :END:
+***** IN_PROGRESS Rule 3: Moving to an occupied cell penalises your score by 4
+      :LOGBOOK:
+      - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 09:47]
+      :END:
+***** TODO Rule 4: Moving to air increases your score by 5
 **** TODO Implement Dig
 ***** TODO Rule 1: Digging air does nothing
 ***** TODO Rule 2: Digging dirt clears the square
