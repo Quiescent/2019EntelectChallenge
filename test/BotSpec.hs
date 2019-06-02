@@ -65,30 +65,30 @@ spec = do
   describe "thatPlayersWorms" $ do
     it "should produce that players worms" $
       thatPlayersWorms aState == someOtherWorms
-  describe "penaliseForMovingToDirt" $ do
+  describe "penaliseForInvalidCommand" $ do
     it "should reduce the given players score by 4" $
-      penaliseForMovingToDirt aPlayer `shouldBe`
+      penaliseForInvalidCommand aPlayer `shouldBe`
       Player 296 someWorms
-  describe "penaliseThatPlayerForMovingToDirt" $ do
+  describe "penaliseThatPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the opponent by 4" $
-      penaliseThatPlayerForMovingToDirt aState `shouldBe`
+      penaliseThatPlayerForAnInvalidCommand aState `shouldBe`
       aState { opponent = Player 296 someOtherWorms }
-  describe "penaliseThisPlayerForMovingToDirt" $ do
+  describe "penaliseThisPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the player by 4" $
-      penaliseThisPlayerForMovingToDirt aState `shouldBe`
+      penaliseThisPlayerForAnInvalidCommand aState `shouldBe`
       aState { myPlayer = Player 296 someWorms }
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
       makeMove True (fromMoves doNothing doNothing) aState `shouldBe` aState
     it "moving my worm to dirt should not move the worm" $
-      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe` penaliseThisPlayerForMovingToDirt aState
+      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe` penaliseThisPlayerForAnInvalidCommand aState
     it "moving opponents worm to dirt should not move the worm" $
-      makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` penaliseThatPlayerForMovingToDirt aState
+      makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving my worm into space should not move the worm" $
-      makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` aState
+      makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving opponents worm into space should not move the worm" $
-      makeMove True (fromMoves doNothing moveSouth) aState `shouldBe` aState
+      makeMove True (fromMoves doNothing moveSouth) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving my worm into air should move the worm to that spot" $
       makeMove True (fromMoves moveEast doNothing) aState `shouldBe`
       aState { myPlayer = withWorms someWormsWithCurrentMovedEast aPlayer }
@@ -105,16 +105,16 @@ spec = do
                                      opponent = opponentWithCollisionResolvedInHisFavour }
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
-      aStateWithMyWormsNextToEachOther
+      penaliseThatPlayerForAnInvalidCommand aStateWithMyWormsNextToEachOther
     it "moving my worm to a square occupied by one of the the opponents worms does nothing " $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToAnEnemy `shouldBe`
-      aStateWithMyWormNextToAnEnemy
+      penaliseThatPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves doNothing moveWest) aStateWithMyWormNextToAnEnemy `shouldBe`
-      aStateWithMyWormNextToAnEnemy
+      penaliseThatPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
       makeMove True (fromMoves doNothing moveWest) aStateWithEnemyWormsNextToEachother `shouldBe`
-      aStateWithEnemyWormsNextToEachother
+      penaliseThatPlayerForAnInvalidCommand aStateWithEnemyWormsNextToEachother
     it "moving my worm onto the medipack increases my worms health by 10 and changes that square to AIR" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
       aStateWithMyWormOnTheMedipack
@@ -252,14 +252,14 @@ modifyScore :: Int -> Player -> Player
 modifyScore delta (Player score' worms') =
   Player (score' + delta) worms'
 
-penaliseForMovingToDirt :: Player -> Player
-penaliseForMovingToDirt = modifyScore (-4)
+penaliseForInvalidCommand :: Player -> Player
+penaliseForInvalidCommand = modifyScore (-4)
 
-penaliseThisPlayerForMovingToDirt :: State -> State
-penaliseThisPlayerForMovingToDirt = mapThisPlayer penaliseForMovingToDirt
+penaliseThisPlayerForAnInvalidCommand :: State -> State
+penaliseThisPlayerForAnInvalidCommand = mapThisPlayer penaliseForInvalidCommand
 
-penaliseThatPlayerForMovingToDirt :: State -> State
-penaliseThatPlayerForMovingToDirt = mapThatPlayer penaliseForMovingToDirt
+penaliseThatPlayerForAnInvalidCommand :: State -> State
+penaliseThatPlayerForAnInvalidCommand = mapThatPlayer penaliseForInvalidCommand
 
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
   mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 15))
