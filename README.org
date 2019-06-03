@@ -206,8 +206,12 @@ from the command line to invoke the bot program.
       - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 10:21]
       :END:
 **** TODO Implement Dig
-***** IN_PROGRESS Rule 1: Digging air does nothing
+***** DONE Rule 1: Digging air does nothing
+      CLOSED: [2019-06-03 Mon 19:22]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-03 Mon 19:22] \\
+        This is covered by the fact that my game engine models moving into
+        dirt as digging it.  i.e. you cannot command a worm to dig air.
       - State "IN_PROGRESS" from "TODO"       [2019-06-03 Mon 13:07]
       :END:
 ***** TODO Rule 2: Digging dirt clears the square
