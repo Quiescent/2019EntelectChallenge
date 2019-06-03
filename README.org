@@ -215,7 +215,13 @@ from the command line to invoke the bot program.
       - State "IN_PROGRESS" from "TODO"       [2019-06-03 Mon 13:07]
       :END:
 ***** TODO Rule 2: Digging dirt clears the square
-***** TODO Rule 3: Digging space does nothing
+***** DONE Rule 3: Digging space does nothing
+      CLOSED: [2019-06-03 Mon 19:23]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-06-03 Mon 19:23] \\
+        This is not possible in my game engine because moving into space is an
+        invalid move and moving into dirt is the only way to dig it.
+      :END:
 **** TODO Implement Score Changes for Digging
 ***** TODO Rule 1: Digging air penalises your score by 4
 ***** TODO Rule 2: Digging dirt increases your score by 7
