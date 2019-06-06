@@ -244,18 +244,45 @@ spec = do
     it "moving opponent worm to the west from the right edge results in that worm moving left" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTheRightEdge `shouldBe`
       awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormMovedLeftFromTheRightEdge
+    -- Digging
+    it "should remove dirt when my player digs a dirt block" $
+      makeMove True (fromMoves digNorth doNothing) aState `shouldBe`
+      aStateWithDirtMissingAboveMyWorm
+    it "should remove dirt when opponent digs a dirt block" $
+      makeMove True (fromMoves digSouth doNothing) aStateWithOpponentBeneathDirt `shouldBe`
+      aStateWithDirtMissingAboveOpponentWorm
 
 doNothing = Move 16
 
 moveNorth = Move 8
 
+digNorth = moveNorth
+
 moveSouth = Move 12
+
+digSouth = moveSouth
 
 moveEast = Move 10
 
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+aStateWithOpponentBeneathDirt =
+  mapThatWorm aState (withCoordOf (toCoord 14 31))
+
+aStateWithDirtMissingAboveOpponentWorm =
+  mapGameMap aStateWithOpponentBeneathDirt (removeDirtAt (toCoord 14 30))
+
+aStateWithDirtMissingAboveMyWorm =
+  mapGameMap aState (removeDirtAt (toCoord 15 30))
+
+removeDirtAt :: Coord -> GameMap -> GameMap
+removeDirtAt = (flip mapSquareAt) (always AIR)
+
+mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
+mapSquareAt (Coord coord) f (GameMap xs) =
+  GameMap $ M.adjust f coord xs
 
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
   mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 15))
