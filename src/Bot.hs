@@ -321,8 +321,8 @@ toMoves (CombinedMove moves) =
 makeMove :: Bool -> CombinedMove -> State -> State
 makeMove swapping moves =
   let (myMove, opponentsMove) = toMoves moves
-  in makeShootMoves              myMove opponentsMove .
-     makeDigMoves                myMove opponentsMove .
+  in makeShootMoves          myMove opponentsMove .
+     makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
 
 thisCurrentWorm :: State -> Maybe Worm
@@ -396,6 +396,16 @@ cellTo (Coord position') newCell (GameMap xs) =
 mapGameMap :: State -> (GameMap -> GameMap) -> State
 mapGameMap state@(State { gameMap = gameMap' }) f =
   state { gameMap = f gameMap' }
+
+removeDirtAt :: Coord -> GameMap -> GameMap
+removeDirtAt = (flip mapSquareAt) (always AIR)
+
+removeDirtFromMapAt :: Coord -> State -> State
+removeDirtFromMapAt coord = (flip mapGameMap) (removeDirtAt coord)
+
+mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
+mapSquareAt (Coord coord) f (GameMap xs) =
+  GameMap $ M.adjust f coord xs
 
 increaseHealth :: Worm -> Worm
 increaseHealth (Worm id' health' position') =
@@ -504,7 +514,20 @@ awardPointsToThatPlayerForMovingToAir :: State -> State
 awardPointsToThatPlayerForMovingToAir = mapThatPlayer awardPointsForMovingToAir
 
 makeDigMoves :: Move -> Move -> State -> State
-makeDigMoves this other state = state
+makeDigMoves this that state =
+  let thisMoveMove          = if isAMoveMove this then Just this else Nothing
+      thatMoveMove          = if isAMoveMove that then Just that else Nothing
+      thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
+      thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
+      thisTargetIsValid     = (thisTarget >>= mapAtCoord state) == Just DIRT
+      thatTargetIsValid     = (thatTarget >>= mapAtCoord state) == Just DIRT
+      -- fromJust is valid because we test whether it's Just on the above two lines
+      validThisTarget       = fromJust thisTarget
+      validThatTarget       = fromJust thatTarget
+      digOutThisTarget      = if thisTargetIsValid then removeDirtFromMapAt validThisTarget else id
+      digOutThatTarget      = if thatTargetIsValid then removeDirtFromMapAt validThatTarget else id
+      dig                   = digOutThatTarget . digOutThisTarget
+  in dig state
 
 makeShootMoves :: Move -> Move -> State -> State
 makeShootMoves this other state = state

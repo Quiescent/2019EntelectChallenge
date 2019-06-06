@@ -277,13 +277,6 @@ aStateWithDirtMissingAboveOpponentWorm =
 aStateWithDirtMissingAboveMyWorm =
   mapGameMap aState (removeDirtAt (toCoord 15 30))
 
-removeDirtAt :: Coord -> GameMap -> GameMap
-removeDirtAt = (flip mapSquareAt) (always AIR)
-
-mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
-mapSquareAt (Coord coord) f (GameMap xs) =
-  GameMap $ M.adjust f coord xs
-
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
   mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 15))
 
