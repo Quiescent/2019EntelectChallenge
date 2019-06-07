@@ -231,8 +231,10 @@ from the command line to invoke the bot program.
         This is not possible in my game engine because moving into space is an
         invalid move and moving into dirt is the only way to dig it.
       :END:
-**** IN_PROGRESS Implement Score Changes for Digging
+**** DONE Implement Score Changes for Digging
+     CLOSED: [2019-06-07 Fri 11:17]
      :LOGBOOK:
+     - CLOSING NOTE [2019-06-07 Fri 11:17]
      - State "IN_PROGRESS" from "TODO"       [2019-06-07 Fri 11:01]
      :END:
 ***** DONE Rule 1: Digging air penalises your score by 4
@@ -243,8 +245,10 @@ from the command line to invoke the bot program.
         move and the only way to dig is to move into dirt.
       - State "IN_PROGRESS" from "TODO"       [2019-06-07 Fri 11:01]
       :END:
-***** IN_PROGRESS Rule 2: Digging dirt increases your score by 7
+***** DONE Rule 2: Digging dirt increases your score by 7
+      CLOSED: [2019-06-07 Fri 11:17]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-07 Fri 11:17]
       - State "IN_PROGRESS" from "TODO"       [2019-06-07 Fri 11:05]
       :END:
 ***** DONE Rule 3: Digging space penalises your score by 4
