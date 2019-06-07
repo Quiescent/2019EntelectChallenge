@@ -577,7 +577,16 @@ rocketDamage :: Int
 rocketDamage = 10
 
 hitsWorm :: Coord -> Direction -> Worms -> Maybe Worm
-hitsWorm origin direction worms = undefined
+hitsWorm origin direction worms' =
+  find (\ (Worm _ _ position') -> elem position' $ possibleHitCoordinates origin direction) worms'
+
+possibleHitCoordinates :: Coord -> Direction -> [Coord]
+possibleHitCoordinates coord W =
+  let (x', y') = fromCoord coord
+  in zipWith toCoord (zipWith (-) (repeat x') (take 3 [1..])) $ repeat y'
+possibleHitCoordinates coord E =
+  let (x', y') = fromCoord coord
+  in zipWith toCoord (zipWith (+) (repeat x') (take 3 [1..])) $ repeat y'
 
 thisWormsCoord :: State -> Coord
 thisWormsCoord = fromJust . fmap wormPosition . thisCurrentWorm
