@@ -558,16 +558,27 @@ makeShootMoves this _ state =
       thatWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thatPlayersWorms state))
       thatWormWasHitFromThisShot = isJust thatWormHitFromThisShot
       thatTargetFromThis         = fromJust thatWormHitFromThisShot
+      thisWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thisPlayersWorms state))
+      thisWormWasHitFromThisShot = isJust thisWormHitFromThisShot
+      thisTargetFromThis         = fromJust thisWormHitFromThisShot
+      harmThisWormWithThisShot   = if thisWormWasHitFromThisShot then harmThisWormByWormWithRocket thisTargetFromThis else id
       harmThatWormWithThisShot   = if thatWormWasHitFromThisShot then harmThatWormByWormWithRocket thatTargetFromThis else id
-      harmWorms                  = harmThatWormWithThisShot
+      harmWorms                  = harmThisWormWithThisShot . harmThatWormWithThisShot
   in harmWorms state
 
 mapThatWormByWorm :: Worm -> (Worm -> Worm) -> State -> State
 mapThatWormByWorm (Worm id' _ _) f state@(State { opponent = opponent' }) =
   state { opponent = mapWorms opponent' (mapCurrentWorm id' f) }
 
+mapThisWormByWorm :: Worm -> (Worm -> Worm) -> State -> State
+mapThisWormByWorm (Worm id' _ _) f state@(State { myPlayer = myPlayer' }) =
+  state { myPlayer = mapWorms myPlayer' (mapCurrentWorm id' f) }
+
 harmThatWormByWormWithRocket :: Worm -> State -> State
 harmThatWormByWormWithRocket worm = mapThatWormByWorm worm harmWormWithRocket
+
+harmThisWormByWormWithRocket :: Worm -> State -> State
+harmThisWormByWormWithRocket worm = mapThisWormByWorm worm harmWormWithRocket
 
 harmWormWithRocket :: Worm -> Worm
 harmWormWithRocket (Worm id' health' position') =

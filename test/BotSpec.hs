@@ -283,7 +283,7 @@ spec = do
           shot       = if deltaX > 0 then shootEast else shootWest
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
-    prop "should hit this players first target in range when it's a friendly worm" $ \ (i, j, k) ->
+    prop "should hit this players first horizontal target in range when it's a friendly worm" $ \ (i, j, k) ->
       let thisX      = 3 + (i `mod` (mapDim - 6))
           thisY      = j `mod` mapDim
           thisCoord  = toCoord thisX thisY
@@ -297,10 +297,42 @@ spec = do
           shot       = if deltaX > 0 then shootEast else shootWest
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
+    prop "should hit this players first vertical target in range when it's an opponent worm" $ \ (i, j, k) ->
+      let thisX      = 3 + (i `mod` (mapDim - 6))
+          thisY      = j `mod` mapDim
+          thisCoord  = toCoord thisX thisY
+          deltaY     = (k `mod` 7) - 3
+          thatCoord  = toCoord thisX (thisY + (if deltaY == 0 then -1 else deltaY))
+          theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
+          thoseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thatCoord]
+          thisPlayer = Player 300 theseWorms
+          thatPlayer = Player 300 thoseWorms
+          state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
+          shot       = if deltaY > 0 then shootSouth else shootNorth
+      in makeMove True (fromMoves shot doNothing) state `shouldBe`
+         state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
+    prop "should hit this players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
+      let thisX      = 3 + (i `mod` (mapDim - 6))
+          thisY      = j `mod` mapDim
+          thisCoord  = toCoord thisX thisY
+          deltaY     = (k `mod` 7) - 3
+          thatCoord  = toCoord thisX (thisY + (if deltaY == 0 then -1 else deltaY))
+          theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
+          thoseWorms = wormsToMap $ V.fromList $ []
+          thisPlayer = Player 300 theseWorms
+          thatPlayer = Player 300 thoseWorms
+          state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
+          shot       = if deltaY > 0 then shootSouth else shootNorth
+      in makeMove True (fromMoves shot doNothing) state `shouldBe`
+         state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
 
 shootEast = Move 2
 
 shootWest = Move 6
+
+shootNorth = Move 0
+
+shootSouth = Move 4
 
 doNothing = Move 16
 
