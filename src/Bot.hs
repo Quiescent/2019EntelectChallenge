@@ -346,8 +346,8 @@ wormPosition (Worm _ _ position') = position'
 
 makeMoveMoves :: Bool -> Move -> Move -> State -> State
 makeMoveMoves swapping this that state =
-  let thisMoveMove          = if isAMoveMove this then Just this else Nothing
-      thatMoveMove          = if isAMoveMove that then Just that else Nothing
+  let thisMoveMove          = if isAMoveMove this && (not $ targetOfThisMoveIsDirt this state) then Just this else Nothing
+      thatMoveMove          = if isAMoveMove that && (not $ targetOfThatMoveIsDirt that state) then Just that else Nothing
       thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
       thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
       -- ASSUME: that a worm won't be on an invalid square
@@ -378,6 +378,14 @@ makeMoveMoves swapping this that state =
       collideWorms          = if thisTargetIsValid && thatTargetIsValid && thisTarget == thatTarget then swapIfSwapping else moveWorms
       move                  = awardPoints . applyPenalties . collideWorms
   in move state
+
+targetOfThisMoveIsDirt :: Move -> State -> Bool
+targetOfThisMoveIsDirt move state =
+  (targetOfThisMove move state >>= mapAtCoord state) == Just DIRT
+
+targetOfThatMoveIsDirt :: Move -> State -> Bool
+targetOfThatMoveIsDirt move state =
+  (targetOfThatMove move state >>= mapAtCoord state) == Just DIRT
 
 giveMedipackToThatWorm :: State -> State
 giveMedipackToThatWorm = (flip mapThatWorm) increaseHealth
