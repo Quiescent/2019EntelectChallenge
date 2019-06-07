@@ -351,7 +351,7 @@ makeMoveMoves swapping this that state =
       thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
       thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
       -- ASSUME: that a worm won't be on an invalid square
-      thisWormsPosition     = fromJust $ fmap wormPosition $ thisCurrentWorm state
+      thisWormsPosition     = thisWormsCoord state
       thatWormsPosition     = fromJust $ fmap wormPosition $ thatCurrentWorm state
       thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thisTarget) == Just False
       thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
@@ -550,14 +550,62 @@ awardPointsToThatPlayerForDigging :: State -> State
 awardPointsToThatPlayerForDigging = mapThatPlayer awardPointsForDigging
 
 makeShootMoves :: Move -> Move -> State -> State
-makeShootMoves this other state = state
+makeShootMoves this _ state =
+  let thisShootMove              = if isAShootMove this then Just this else Nothing
+      -- ASSUME: that a worm won't be on an invalid square
+      thisWormsPosition          = thisWormsCoord state
+      thisShotsDir               = thisShootMove >>= directionOfShot
+      thatWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thatPlayersWorms state))
+      thatWormWasHitFromThisShot = isJust thatWormHitFromThisShot
+      thatTargetFromThis         = fromJust thatWormHitFromThisShot
+      harmThatWormWithThisShot   = if thatWormWasHitFromThisShot then harmThatWormByWormWithRocket thatTargetFromThis else id
+      harmWorms                  = harmThatWormWithThisShot
+  in harmWorms state
 
-makeOposingMove :: Move -> Int -> Int -> Int -> Int -> Int -> Player -> Player -> GameMap -> State
-makeOposingMove move currentWormId' weaponRange' weaponDamage' digRange' moveRange' this'@(Player score' worms') other =
-  case M.lookup currentWormId' worms' of
-    Nothing -> State currentWormId' weaponRange' weaponDamage' digRange' moveRange' this' other
-    Just (Worm _ health' position') ->
-      undefined
+mapThatWormByWorm :: Worm -> (Worm -> Worm) -> State -> State
+mapThatWormByWorm (Worm id' _ _) f state@(State { opponent = opponent' }) =
+  state { opponent = mapWorms opponent' (mapCurrentWorm id' f) }
+
+harmThatWormByWormWithRocket :: Worm -> State -> State
+harmThatWormByWormWithRocket worm = mapThatWormByWorm worm harmWormWithRocket
+
+harmWormWithRocket :: Worm -> Worm
+harmWormWithRocket (Worm id' health' position') =
+  Worm id' (health' - rocketDamage) position'
+
+rocketDamage :: Int
+rocketDamage = 10
+
+hitsWorm :: Coord -> Direction -> Worms -> Maybe Worm
+hitsWorm origin direction worms = undefined
+
+thisWormsCoord :: State -> Coord
+thisWormsCoord = fromJust . fmap wormPosition . thisCurrentWorm
+
+data Direction = N
+               | NE
+               | E
+               | SE
+               | S
+               | SW
+               | W
+               | NW
+
+directionOfShot :: Move -> Maybe Direction
+directionOfShot (Move 0) = Just N
+directionOfShot (Move 1) = Just NE
+directionOfShot (Move 2) = Just E
+directionOfShot (Move 3) = Just SE
+directionOfShot (Move 4) = Just S
+directionOfShot (Move 5) = Just SW
+directionOfShot (Move 6) = Just W
+directionOfShot (Move 7) = Just NW
+directionOfShot _        = Nothing
+
+isAShootMove :: Move -> Bool
+isAShootMove (Move x)
+  | x < 8 && x > 0 = True
+  | otherwise      = False
 
 readRound :: RIO App Int
 readRound = liftIO readLn

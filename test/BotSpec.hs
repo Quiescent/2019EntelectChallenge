@@ -105,14 +105,6 @@ spec = do
     it "should remove health from the worm" $
       (harmWormWithRocket $ Worm 1 10 $ toCoord 15 31) `shouldBe`
       (Worm 1 0 $ toCoord 15 31)
-  describe "harmThisWormWithRocket" $ do
-    it "should remove health from this worm" $
-      harmThisWormWithRocket aState `shouldBe`
-      aState { myPlayer = Player 300 (modifyWormWithId 1 (withHealthOf 0) someWorms) }
-  describe "harmThatWormWithRocket" $ do
-    it "should remove health from that worm" $
-      harmThatWormWithRocket aState `shouldBe`
-      aState { opponent = Player 300 (modifyWormWithId 1 (withHealthOf 0) someOtherWorms) }
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -290,19 +282,9 @@ spec = do
           state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
           shot       = if deltaX > 0 then shootEast else shootWest
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         harmThatWormWithRocket state
-harmWormWithRocket :: Worm -> Worm
-harmWormWithRocket (Worm id' health' position') =
-  Worm id' (health' - rocketDamage) position'
-
-harmThisWormWithRocket :: State -> State
-harmThisWormWithRocket = (flip mapThisWorm) harmWormWithRocket
-
-harmThatWormWithRocket :: State -> State
-harmThatWormWithRocket = (flip mapThatWorm) harmWormWithRocket
-
-rocketDamage :: Int
-rocketDamage = 10
+         state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
+    prop "should hit that players first target in range when it's a friendly worm" $
+      True `shouldBe` False
 
 shootEast = Move 2
 
