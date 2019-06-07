@@ -205,7 +205,11 @@ from the command line to invoke the bot program.
       - CLOSING NOTE [2019-06-02 Sun 10:38]
       - State "IN_PROGRESS" from "TODO"       [2019-06-02 Sun 10:21]
       :END:
-**** TODO Implement Dig
+**** DONE Implement Dig
+     CLOSED: [2019-06-07 Fri 11:01]
+     :LOGBOOK:
+     - CLOSING NOTE [2019-06-07 Fri 11:01]
+     :END:
 ***** DONE Rule 1: Digging air does nothing
       CLOSED: [2019-06-03 Mon 19:22]
       :LOGBOOK:
