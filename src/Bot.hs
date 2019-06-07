@@ -534,8 +534,20 @@ makeDigMoves this that state =
       validThatTarget       = fromJust thatTarget
       digOutThisTarget      = if thisTargetIsValid then removeDirtFromMapAt validThisTarget else id
       digOutThatTarget      = if thatTargetIsValid then removeDirtFromMapAt validThatTarget else id
-      dig                   = digOutThatTarget . digOutThisTarget
+      awardPointsToThisMove = if thisTargetIsValid then awardPointsToThisPlayerForDigging else id
+      awardPointsToThatMove = if thatTargetIsValid then awardPointsToThatPlayerForDigging else id
+      awardPoints           = awardPointsToThatMove . awardPointsToThisMove
+      dig                   = awardPoints . digOutThatTarget . digOutThisTarget
   in dig state
+
+awardPointsForDigging :: Player -> Player
+awardPointsForDigging = modifyScore 7
+
+awardPointsToThisPlayerForDigging :: State -> State
+awardPointsToThisPlayerForDigging = mapThisPlayer awardPointsForDigging
+
+awardPointsToThatPlayerForDigging :: State -> State
+awardPointsToThatPlayerForDigging = mapThatPlayer awardPointsForDigging
 
 makeShootMoves :: Move -> Move -> State -> State
 makeShootMoves this other state = state

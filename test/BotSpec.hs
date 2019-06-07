@@ -280,15 +280,6 @@ moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
 
-awardPointsForDigging :: Player -> Player
-awardPointsForDigging = modifyScore 7
-
-awardPointsToThisPlayerForDigging :: State -> State
-awardPointsToThisPlayerForDigging = mapThisPlayer awardPointsForDigging
-
-awardPointsToThatPlayerForDigging :: State -> State
-awardPointsToThatPlayerForDigging = mapThatPlayer awardPointsForDigging
-
 aStateWithOpponentBeneathDirt =
   mapThatWorm aState (withCoordOf (toCoord 14 31))
 
