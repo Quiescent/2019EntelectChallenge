@@ -101,6 +101,10 @@ spec = do
     it "should increment that players points by 7" $
       awardPointsToThatPlayerForDigging aState `shouldBe`
       aState { opponent = Player 307 someOtherWorms }
+  describe "harmWormWithRocket" $ do
+    it "should remove health from the worm" $
+      (harmWormWithRocket $ Worm 1 10 $ toCoord 15 31) `shouldBe`
+      (Worm 1 0 $ toCoord 15 31)
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -265,6 +269,12 @@ spec = do
     it "should remove dirt when opponent digs a dirt block" $
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
       awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm
+harmWormWithRocket :: Worm -> Worm
+harmWormWithRocket (Worm id' health' position') =
+  Worm id' (health' - rocketDamage) position'
+
+rocketDamage :: Int
+rocketDamage = 10
 
 doNothing = Move 16
 
