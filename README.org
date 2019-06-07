@@ -214,8 +214,10 @@ from the command line to invoke the bot program.
         dirt as digging it.  i.e. you cannot command a worm to dig air.
       - State "IN_PROGRESS" from "TODO"       [2019-06-03 Mon 13:07]
       :END:
-***** IN_PROGRESS Rule 2: Digging dirt clears the square
+***** DONE Rule 2: Digging dirt clears the square
+      CLOSED: [2019-06-07 Fri 11:00]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-07 Fri 11:00]
       - State "IN_PROGRESS" from "TODO"       [2019-06-03 Mon 19:24]
       :END:
 ***** DONE Rule 3: Digging space does nothing
