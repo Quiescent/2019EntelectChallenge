@@ -276,6 +276,21 @@ spec = do
     it "should remove dirt when opponent digs a dirt block" $
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
       awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm
+    -- Shooting
+    prop "should hit this players first left-right target in range when it's an opponent worm" $ \ (i, j, k) ->
+      let thisX      = 3 + (i `mod` (mapDim - 6))
+          thisY      = j `mod` mapDim
+          thisCoord  = toCoord thisX thisY
+          deltaX     = (k `mod` 7) - 3
+          thatCoord  = toCoord (thisX + (if deltaX == 0 then -1 else deltaX)) thisY
+          theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
+          thoseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thatCoord]
+          thisPlayer = Player 300 theseWorms
+          thatPlayer = Player 300 thoseWorms
+          state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
+          shot       = if deltaX > 0 then shootEast else shootWest
+      in makeMove True (fromMoves shot doNothing) state `shouldBe`
+         harmThatWormWithRocket state
 harmWormWithRocket :: Worm -> Worm
 harmWormWithRocket (Worm id' health' position') =
   Worm id' (health' - rocketDamage) position'
@@ -288,6 +303,10 @@ harmThatWormWithRocket = (flip mapThatWorm) harmWormWithRocket
 
 rocketDamage :: Int
 rocketDamage = 10
+
+shootEast = Move 2
+
+shootWest = Move 6
 
 doNothing = Move 16
 
