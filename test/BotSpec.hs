@@ -89,6 +89,18 @@ spec = do
     it "should increment the points of my player by 5" $
       awardPointsToThisPlayerForMovingToAir aState `shouldBe`
       aState { myPlayer = Player 305 someWorms }
+  describe "awardPointsForDigging" $ do
+    it "should increment the points of a player by 7" $
+      awardPointsForDigging aPlayer `shouldBe`
+      Player 307 someWorms
+  describe "awardPointsToThisPlayerForDigging" $ do
+    it "should increment this players points by 7" $
+      awardPointsToThisPlayerForDigging aState `shouldBe`
+      aState { myPlayer = Player 307 someWorms }
+  describe "awardPointsToThatPlayerForDigging" $ do
+    it "should increment that players points by 7" $
+      awardPointsToThatPlayerForDigging aState `shouldBe`
+      aState { opponent = Player 307 someOtherWorms }
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -265,6 +277,15 @@ moveEast = Move 10
 moveWest = Move 14
 
 aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+
+awardPointsForDigging :: Player -> Player
+awardPointsForDigging = modifyScore 7
+
+awardPointsToThisPlayerForDigging :: State -> State
+awardPointsToThisPlayerForDigging = mapThisPlayer awardPointsForDigging
+
+awardPointsToThatPlayerForDigging :: State -> State
+awardPointsToThatPlayerForDigging = mapThatPlayer awardPointsForDigging
 
 aStateWithOpponentBeneathDirt =
   mapThatWorm aState (withCoordOf (toCoord 14 31))
