@@ -243,7 +243,10 @@ from the command line to invoke the bot program.
         move and the only way to dig is to move into dirt.
       - State "IN_PROGRESS" from "TODO"       [2019-06-07 Fri 11:01]
       :END:
-***** TODO Rule 2: Digging dirt increases your score by 7
+***** IN_PROGRESS Rule 2: Digging dirt increases your score by 7
+      :LOGBOOK:
+      - State "IN_PROGRESS" from "TODO"       [2019-06-07 Fri 11:05]
+      :END:
 ***** DONE Rule 3: Digging space penalises your score by 4
       CLOSED: [2019-06-07 Fri 11:02]
       :LOGBOOK:
