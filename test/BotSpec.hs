@@ -105,6 +105,14 @@ spec = do
     it "should remove health from the worm" $
       (harmWormWithRocket $ Worm 1 10 $ toCoord 15 31) `shouldBe`
       (Worm 1 0 $ toCoord 15 31)
+  describe "harmThisWormWithRocket" $ do
+    it "should remove health from this worm" $
+      harmThisWormWithRocket aState `shouldBe`
+      aState { myPlayer = Player 300 (modifyWormWithId 1 (withHealthOf 0) someWorms) }
+  describe "harmThatWormWithRocket" $ do
+    it "should remove health from that worm" $
+      harmThatWormWithRocket aState `shouldBe`
+      aState { opponent = Player 300 (modifyWormWithId 1 (withHealthOf 0) someOtherWorms) }
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -271,6 +279,12 @@ spec = do
 harmWormWithRocket :: Worm -> Worm
 harmWormWithRocket (Worm id' health' position') =
   Worm id' (health' - rocketDamage) position'
+
+harmThisWormWithRocket :: State -> State
+harmThisWormWithRocket = (flip mapThisWorm) harmWormWithRocket
+
+harmThatWormWithRocket :: State -> State
+harmThatWormWithRocket = (flip mapThatWorm) harmWormWithRocket
 
 rocketDamage :: Int
 rocketDamage = 10
