@@ -125,7 +125,6 @@ spec = do
     it "moving opponents worm into air should move the worm to that spot" $
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent })
-    -- TODO: fix.  Worms swap places or stay in the same place.  No worm wins...
     it "moving to the same square should swap the worms if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
