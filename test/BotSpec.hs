@@ -269,7 +269,7 @@ spec = do
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
       awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm
     -- Shooting
-    prop "should hit this players first left-right target in range when it's an opponent worm" $ \ (i, j, k) ->
+    prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let thisX      = 3 + (i `mod` (mapDim - 6))
           thisY      = j `mod` mapDim
           thisCoord  = toCoord thisX thisY
@@ -283,8 +283,20 @@ spec = do
           shot       = if deltaX > 0 then shootEast else shootWest
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
-    prop "should hit that players first target in range when it's a friendly worm" $
-      True `shouldBe` False
+    prop "should hit this players first target in range when it's a friendly worm" $ \ (i, j, k) ->
+      let thisX      = 3 + (i `mod` (mapDim - 6))
+          thisY      = j `mod` mapDim
+          thisCoord  = toCoord thisX thisY
+          deltaX     = (k `mod` 7) - 3
+          thatCoord  = toCoord (thisX + (if deltaX == 0 then -1 else deltaX)) thisY
+          theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
+          thoseWorms = wormsToMap $ V.fromList $ []
+          thisPlayer = Player 300 theseWorms
+          thatPlayer = Player 300 thoseWorms
+          state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
+          shot       = if deltaX > 0 then shootEast else shootWest
+      in makeMove True (fromMoves shot doNothing) state `shouldBe`
+         state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
 
 shootEast = Move 2
 
