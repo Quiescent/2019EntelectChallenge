@@ -106,13 +106,15 @@ spec = do
     it "should not change anything when it receives two 'nothing's" $
       makeMove True (fromMoves doNothing doNothing) aState `shouldBe` aState
     it "moving my worm to dirt should dig out that dirt" $
-      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe` aStateWithDirtMissingAboveMyWorm
+      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe`
+      (awardPointsToThisPlayerForDigging aStateWithDirtMissingAboveMyWorm)
     it "moving opponents worm to space should not move the worm" $
       makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving my worm into space should not move the worm" $
       makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` penaliseThisPlayerForAnInvalidCommand aState
     it "moving opponents worm into dirt should dig out the dirt" $
-      makeMove True (fromMoves doNothing moveSouth) aState `shouldBe` removeDirtFromMapAt (toCoord 16 2) aState
+      makeMove True (fromMoves doNothing moveSouth) aState `shouldBe`
+      (awardPointsToThatPlayerForDigging $ removeDirtFromMapAt (toCoord 16 2) aState)
     it "moving my worm into air should move the worm to that spot" $
       makeMove True (fromMoves moveEast doNothing) aState `shouldBe`
       (awardPointsToThisPlayerForMovingToAir $ aState { myPlayer = withWorms someWormsWithCurrentMovedEast aPlayer })
@@ -259,10 +261,10 @@ spec = do
     -- Digging
     it "should remove dirt when my player digs a dirt block" $
       makeMove True (fromMoves digNorth doNothing) aState `shouldBe`
-      aStateWithDirtMissingAboveMyWorm
+      awardPointsToThisPlayerForDigging aStateWithDirtMissingAboveMyWorm
     it "should remove dirt when opponent digs a dirt block" $
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
-      aStateWithDirtMissingAboveOpponentWorm
+      awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm
 
 doNothing = Move 16
 
