@@ -235,12 +235,22 @@ from the command line to invoke the bot program.
      :LOGBOOK:
      - State "IN_PROGRESS" from "TODO"       [2019-06-07 Fri 11:01]
      :END:
-***** IN_PROGRESS Rule 1: Digging air penalises your score by 4
+***** DONE Rule 1: Digging air penalises your score by 4
+      CLOSED: [2019-06-07 Fri 11:02]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-07 Fri 11:02] \\
+        It's not possible to dig into air because moving into air is a valid
+        move and the only way to dig is to move into dirt.
       - State "IN_PROGRESS" from "TODO"       [2019-06-07 Fri 11:01]
       :END:
 ***** TODO Rule 2: Digging dirt increases your score by 7
-***** TODO Rule 3: Digging space penalises your score by 4
+***** DONE Rule 3: Digging space penalises your score by 4
+      CLOSED: [2019-06-07 Fri 11:02]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-06-07 Fri 11:02] \\
+        It's not possible to dig into space with this engine, because moving
+        into dirt is what is considered digging.
+      :END:
 **** TODO Implement Shoot
 ***** TODO Rule 1: A shot hits the first target in range
 ***** TODO Rule 2: A shot hits nothing if nothing is in range in that direction
