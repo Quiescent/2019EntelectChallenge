@@ -370,7 +370,7 @@ spec = do
           shot       = if delta' > 0 then shootNorthEast else shootSouthWest
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms )) }
-    prop "shoudl hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
+    prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
       let thatX      = 3 + (i `mod` (mapDim - 4))
           thatY      = j `mod` mapDim
           thatCoord  = toCoord thatX thatY
