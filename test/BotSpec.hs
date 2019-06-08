@@ -326,8 +326,8 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
     prop "should hit this players first NW-SE diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
-      let thisX      = 2 + (i `mod` (mapDim - 4))
-          thisY      = 2 + (j `mod` (mapDim - 4))
+      let thisX      = inBoundsWithDiagonalPadding i
+          thisY      = inBoundsWithDiagonalPadding j
           thisCoord  = toCoord thisX thisY
           delta      = (k `mod` 5) - 2
           delta'     = if delta == 0 then -1 else delta
@@ -341,8 +341,8 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
     prop "should hit this players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
-      let thisX      = 2 + (i `mod` (mapDim - 4))
-          thisY      = 2 + (j `mod` (mapDim - 4))
+      let thisX      = inBoundsWithDiagonalPadding i
+          thisY      = inBoundsWithDiagonalPadding j
           thisCoord  = toCoord thisX thisY
           delta      = (k `mod` 5) - 2
           delta'     = if delta == 0 then -1 else delta
@@ -356,8 +356,8 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
     prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
-      let thisX      = 2 + (i `mod` (mapDim - 4))
-          thisY      = 2 + (j `mod` (mapDim - 4))
+      let thisX      = inBoundsWithDiagonalPadding i
+          thisY      = inBoundsWithDiagonalPadding j
           thisCoord  = toCoord thisX thisY
           delta      = (k `mod` 5) - 2
           delta'     = if delta == 0 then -1 else delta
@@ -371,7 +371,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms )) }
     prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
-      let thatX      = 3 + (i `mod` (mapDim - 4))
+      let thatX      = inBoundsWithDiagonalPadding i
           thatY      = inBoundsWithNoPadding j
           thatCoord  = toCoord thatX thatY
           deltaX     = (k `mod` 7) - 3
@@ -400,6 +400,8 @@ spec = do
          state { opponent = (Player 300 (modifyWormWithId 3 (withHealthOf 0) thoseWorms)) }
 
 inBoundsWithNonDiagonalPadding x = 3 + (x `mod` (mapDim - 6))
+
+inBoundsWithDiagonalPadding x = 3 + (x `mod` (mapDim - 4))
 
 inBoundsWithNoPadding x = x `mod` mapDim
 
