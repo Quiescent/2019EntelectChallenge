@@ -565,14 +565,19 @@ makeShootMoves this that state =
       thatTargetFromThis         = fromJust thatWormHitFromThisShot
       thisTargetFromThat         = fromJust thisWormHitFromThatShot
       thisWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thisPlayersWorms state))
+      thatWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition)) (thatPlayersWorms state))
       thisWormWasHitFromThisShot = isJust thisWormHitFromThisShot
+      thatWormWasHitFromThatShot = isJust thatWormHitFromThatShot
       thisTargetFromThis         = fromJust thisWormHitFromThisShot
+      thatTargetFromThat         = fromJust thatWormHitFromThatShot
       harmThisWormWithThisShot   = if thisWormWasHitFromThisShot then harmThisWormByWormWithRocket thisTargetFromThis else id
       harmThatWormWithThisShot   = if thatWormWasHitFromThisShot then harmThatWormByWormWithRocket thatTargetFromThis else id
       harmThisWormWithThatShot   = if thisWormWasHitFromThatShot then harmThisWormByWormWithRocket thisTargetFromThat else id
+      harmThatWormWithThatShot   = if thatWormWasHitFromThatShot then harmThatWormByWormWithRocket thatTargetFromThat else id
       harmWorms                  = harmThisWormWithThatShot .
                                    harmThisWormWithThisShot .
-                                   harmThatWormWithThisShot
+                                   harmThatWormWithThisShot .
+                                   harmThatWormWithThatShot
   in harmWorms state
 
 mapThatWormByWorm :: Worm -> (Worm -> Worm) -> State -> State
