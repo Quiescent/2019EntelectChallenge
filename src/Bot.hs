@@ -598,6 +598,12 @@ possibleHitCoordinates coord W =
 possibleHitCoordinates coord E =
   let (x', y') = fromCoord coord
   in zipWith toCoord (zipWith (+) (repeat x') (take 3 [1..])) $ repeat y'
+possibleHitCoordinates coord N =
+  let (x', y') = fromCoord coord
+  in zipWith toCoord (repeat x') (zipWith (-) (repeat y') (take 3 [1..]))
+possibleHitCoordinates coord S =
+  let (x', y') = fromCoord coord
+  in zipWith toCoord (repeat x') (zipWith (+) (repeat y') (take 3 [1..]))
 
 thisWormsCoord :: State -> Coord
 thisWormsCoord = fromJust . fmap wormPosition . thisCurrentWorm
@@ -624,8 +630,8 @@ directionOfShot _        = Nothing
 
 isAShootMove :: Move -> Bool
 isAShootMove (Move x)
-  | x < 8 && x > 0 = True
-  | otherwise      = False
+  | x < 8 && x >= 0 = True
+  | otherwise       = False
 
 readRound :: RIO App Int
 readRound = liftIO readLn

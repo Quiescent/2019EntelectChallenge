@@ -298,8 +298,8 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
     prop "should hit this players first vertical target in range when it's an opponent worm" $ \ (i, j, k) ->
-      let thisX      = 3 + (i `mod` (mapDim - 6))
-          thisY      = j `mod` mapDim
+      let thisX      = i `mod` mapDim
+          thisY      = 3 + (j `mod` (mapDim - 6))
           thisCoord  = toCoord thisX thisY
           deltaY     = (k `mod` 7) - 3
           thatCoord  = toCoord thisX (thisY + (if deltaY == 0 then -1 else deltaY))
@@ -312,8 +312,8 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
     prop "should hit this players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
-      let thisX      = 3 + (i `mod` (mapDim - 6))
-          thisY      = j `mod` mapDim
+      let thisX      = i `mod` mapDim
+          thisY      = 3 + (j `mod` (mapDim - 6))
           thisCoord  = toCoord thisX thisY
           deltaY     = (k `mod` 7) - 3
           thatCoord  = toCoord thisX (thisY + (if deltaY == 0 then -1 else deltaY))
