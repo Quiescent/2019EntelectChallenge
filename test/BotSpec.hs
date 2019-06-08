@@ -405,6 +405,22 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 3 (withHealthOf 0) thoseWorms)) }
 
+type GenerateCoordinate     = Int ->Int -> Coord
+type DisplaceFromCoordinate = Coord -> Int -> (Coord, Int)
+type ShotSwitch             = Int -> Move
+type GenerateThisPlayer     = Coord -> Coord -> Player
+type GenerateThatPlayer     = Coord -> Coord -> Player
+
+generateShotScenario :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GenerateThisPlayer -> GenerateThatPlayer -> (Int, Int, Int) -> (State, Move)
+generateShotScenario generateCoord displace switchShot generateThisPlayer generateThatPlayer = \ (i, j, k) ->
+  let originatingCoord        = generateCoord i j
+      (displacedCoord, delta) = displace      originatingCoord k
+      shot                    = switchShot    delta
+      thisPlayer              = generateThisPlayer originatingCoord displacedCoord
+      thatPlayer              = generateThatPlayer originatingCoord displacedCoord
+      state                   = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
+  in (state, shot)
+
 nonDiagonalDelta x = (x `mod` 7) - 3
 
 diagonalDelta x = (x `mod` 5) - 2
