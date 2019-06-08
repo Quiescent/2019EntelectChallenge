@@ -273,7 +273,7 @@ spec = do
       let thisX      = inBoundsWithNonDiagonalPadding i
           thisY      = inBoundsWithNoPadding j
           thisCoord  = toCoord thisX thisY
-          delta      = (k `mod` 7) - 3
+          delta      = nonDiagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thatCoord  = toCoord (thisX + delta') thisY
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
@@ -288,7 +288,7 @@ spec = do
       let thisX      = inBoundsWithNonDiagonalPadding i
           thisY      = inBoundsWithNoPadding j
           thisCoord  = toCoord thisX thisY
-          delta      = (k `mod` 7) - 3
+          delta      = nonDiagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thatCoord  = toCoord (thisX + delta') thisY
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
@@ -303,7 +303,7 @@ spec = do
       let thisX      = inBoundsWithNoPadding i
           thisY      = inBoundsWithNonDiagonalPadding j
           thisCoord  = toCoord thisX thisY
-          delta      = (k `mod` 7) - 3
+          delta      = nonDiagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thatCoord  = toCoord thisX (thisY + delta')
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
@@ -318,7 +318,7 @@ spec = do
       let thisX      = inBoundsWithNoPadding i
           thisY      = inBoundsWithNonDiagonalPadding j
           thisCoord  = toCoord thisX thisY
-          delta      = (k `mod` 7) - 3
+          delta      = nonDiagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thatCoord  = toCoord thisX (thisY + delta')
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
@@ -333,7 +333,7 @@ spec = do
       let thisX      = inBoundsWithDiagonalPadding i
           thisY      = inBoundsWithDiagonalPadding j
           thisCoord  = toCoord thisX thisY
-          delta      = (k `mod` 5) - 2
+          delta      = diagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thatCoord  = toCoord (thisX + delta') (thisY + delta')
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
@@ -348,7 +348,7 @@ spec = do
       let thisX      = inBoundsWithDiagonalPadding i
           thisY      = inBoundsWithDiagonalPadding j
           thisCoord  = toCoord thisX thisY
-          delta      = (k `mod` 5) - 2
+          delta      = diagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thatCoord  = toCoord (thisX + delta') (thisY + delta')
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
@@ -363,7 +363,7 @@ spec = do
       let thisX      = inBoundsWithDiagonalPadding i
           thisY      = inBoundsWithDiagonalPadding j
           thisCoord  = toCoord thisX thisY
-          delta      = (k `mod` 5) - 2
+          delta      = diagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thatCoord  = toCoord (thisX + delta') (thisY - delta')
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
@@ -378,7 +378,7 @@ spec = do
       let thatX      = inBoundsWithDiagonalPadding i
           thatY      = inBoundsWithNoPadding j
           thatCoord  = toCoord thatX thatY
-          delta      = (k `mod` 7) - 3
+          delta      = nonDiagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thisCoord  = toCoord (thatX + delta') thatY
           theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
@@ -393,7 +393,7 @@ spec = do
       let thatX      = inBoundsWithNonDiagonalPadding i
           thatY      = inBoundsWithNoPadding j
           thatCoord  = toCoord thatX thatY
-          delta      = (k `mod` 7) - 3
+          delta      = nonDiagonalDelta k
           delta'     = if delta == 0 then -1 else delta
           thisCoord  = toCoord (thatX + delta') thatY
           theseWorms = wormsToMap $ V.fromList $ []
@@ -404,6 +404,10 @@ spec = do
           shot       = if delta' > 0 then shootEast else shootWest
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 3 (withHealthOf 0) thoseWorms)) }
+
+nonDiagonalDelta x = (x `mod` 7) - 3
+
+diagonalDelta x = (x `mod` 5) - 2
 
 inBoundsWithNonDiagonalPadding x = 3 + (x `mod` (mapDim - 6))
 
