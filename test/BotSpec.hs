@@ -337,7 +337,7 @@ spec = do
           thisPlayer = Player 300 theseWorms
           thatPlayer = Player 300 thoseWorms
           state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
-          shot       = if delta > 0 then shootSouthEast else shootNorthWest
+          shot       = if delta' > 0 then shootSouthEast else shootNorthWest
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
     prop "should hit this players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -352,9 +352,28 @@ spec = do
           thisPlayer = Player 300 theseWorms
           thatPlayer = Player 300 thoseWorms
           state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
-          shot       = if delta > 0 then shootSouthEast else shootNorthWest
+          shot       = if delta' > 0 then shootSouthEast else shootNorthWest
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
+    prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
+      let thisX      = 2 + (i `mod` (mapDim - 4))
+          thisY      = 2 + (j `mod` (mapDim - 4))
+          thisCoord  = toCoord thisX thisY
+          delta      = (k `mod` 5) - 2
+          delta'     = if delta == 0 then -1 else delta
+          thatCoord  = toCoord (thisX + delta') (thisY - delta')
+          theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
+          thoseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thatCoord]
+          thisPlayer = Player 300 theseWorms
+          thatPlayer = Player 300 thoseWorms
+          state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
+          shot       = if delta' > 0 then shootNorthEast else shootSouthWest
+      in makeMove True (fromMoves shot doNothing) state `shouldBe`
+         state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms )) }
+
+shootNorthEast = Move 1
+
+shootSouthWest = Move 5
 
 shootSouthEast = Move 3
 
