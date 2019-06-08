@@ -596,23 +596,18 @@ possibleHitCoordinates coord W  = iterateHorizontally coord (-)
 possibleHitCoordinates coord E  = iterateHorizontally coord (+)
 possibleHitCoordinates coord N  = iterateVertically   coord (-)
 possibleHitCoordinates coord S  = iterateVertically   coord (+)
-possibleHitCoordinates coord SE =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (zipWith (+) (repeat x') (take 2 [1..])) (zipWith (+) (repeat y') (take 2 [1..]))
-possibleHitCoordinates coord NW =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (zipWith (-) (repeat x') (take 2 [1..])) (zipWith (-) (repeat y') (take 2 [1..]))
-possibleHitCoordinates coord SW =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (zipWith (-) (repeat x') (take 2 [1..])) (zipWith (+) (repeat y') (take 2 [1..]))
-possibleHitCoordinates coord NE =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (zipWith (+) (repeat x') (take 2 [1..])) (zipWith (-) (repeat y') (take 2 [1..]))
+possibleHitCoordinates coord SE = iterateDiagonally   coord (+) (+)
+possibleHitCoordinates coord NW = iterateDiagonally   coord (-) (-)
+possibleHitCoordinates coord SW = iterateDiagonally   coord (-) (+)
+possibleHitCoordinates coord NE = iterateDiagonally   coord (+) (-)
 
 type Operator = Int -> Int -> Int
 
 idOperator :: Operator
 idOperator x _ = x
+
+iterateDiagonally :: Coord -> Operator -> Operator -> [Coord]
+iterateDiagonally coord fX fY = iterateCoordinate coord 2 fX fY
 
 iterateVertically :: Coord -> Operator -> [Coord]
 iterateVertically coord fY = iterateCoordinate coord 3 idOperator fY
