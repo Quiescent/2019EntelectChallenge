@@ -549,6 +549,9 @@ awardPointsToThisPlayerForDigging = mapThisPlayer awardPointsForDigging
 awardPointsToThatPlayerForDigging :: State -> State
 awardPointsToThatPlayerForDigging = mapThatPlayer awardPointsForDigging
 
+-- TODO improve the tests.  Need:
+--  - worms in front of worms in all cases;
+--  - worms out of range and not hit;
 makeShootMoves :: Move -> Move -> State -> State
 makeShootMoves this that state =
   let thisShootMove              = if isAShootMove this then Just this else Nothing
