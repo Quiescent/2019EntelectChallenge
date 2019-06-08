@@ -352,7 +352,7 @@ makeMoveMoves swapping this that state =
       thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
       -- ASSUME: that a worm won't be on an invalid square
       thisWormsPosition     = thisWormsCoord state
-      thatWormsPosition     = fromJust $ fmap wormPosition $ thatCurrentWorm state
+      thatWormsPosition     = thatWormsCoord state
       thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thisTarget) == Just False
       thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
       thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thatTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thatTarget) == Just False
@@ -550,20 +550,29 @@ awardPointsToThatPlayerForDigging :: State -> State
 awardPointsToThatPlayerForDigging = mapThatPlayer awardPointsForDigging
 
 makeShootMoves :: Move -> Move -> State -> State
-makeShootMoves this _ state =
+makeShootMoves this that state =
   let thisShootMove              = if isAShootMove this then Just this else Nothing
+      thatShootMove              = if isAShootMove that then Just that else Nothing
       -- ASSUME: that a worm won't be on an invalid square
       thisWormsPosition          = thisWormsCoord state
+      thatWormsPosition          = thatWormsCoord state
       thisShotsDir               = thisShootMove >>= directionOfShot
+      thatShotsDir               = thatShootMove >>= directionOfShot
       thatWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thatPlayersWorms state))
+      thisWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition)) (thisPlayersWorms state))
       thatWormWasHitFromThisShot = isJust thatWormHitFromThisShot
+      thisWormWasHitFromThatShot = isJust thisWormHitFromThatShot
       thatTargetFromThis         = fromJust thatWormHitFromThisShot
+      thisTargetFromThat         = fromJust thisWormHitFromThatShot
       thisWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thisPlayersWorms state))
       thisWormWasHitFromThisShot = isJust thisWormHitFromThisShot
       thisTargetFromThis         = fromJust thisWormHitFromThisShot
       harmThisWormWithThisShot   = if thisWormWasHitFromThisShot then harmThisWormByWormWithRocket thisTargetFromThis else id
       harmThatWormWithThisShot   = if thatWormWasHitFromThisShot then harmThatWormByWormWithRocket thatTargetFromThis else id
-      harmWorms                  = harmThisWormWithThisShot . harmThatWormWithThisShot
+      harmThisWormWithThatShot   = if thisWormWasHitFromThatShot then harmThisWormByWormWithRocket thisTargetFromThat else id
+      harmWorms                  = harmThisWormWithThatShot .
+                                   harmThisWormWithThisShot .
+                                   harmThatWormWithThisShot
   in harmWorms state
 
 mapThatWormByWorm :: Worm -> (Worm -> Worm) -> State -> State
@@ -625,6 +634,9 @@ iterateCoordinate coord depth fX fY =
 
 thisWormsCoord :: State -> Coord
 thisWormsCoord = fromJust . fmap wormPosition . thisCurrentWorm
+
+thatWormsCoord :: State -> Coord
+thatWormsCoord = fromJust . fmap wormPosition . thatCurrentWorm
 
 data Direction = N
                | NE
