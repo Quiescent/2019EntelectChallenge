@@ -610,6 +610,12 @@ possibleHitCoordinates coord SE =
 possibleHitCoordinates coord NW =
   let (x', y') = fromCoord coord
   in zipWith toCoord (zipWith (-) (repeat x') (take 2 [1..])) (zipWith (-) (repeat y') (take 2 [1..]))
+possibleHitCoordinates coord SW =
+  let (x', y') = fromCoord coord
+  in zipWith toCoord (zipWith (-) (repeat x') (take 2 [1..])) (zipWith (+) (repeat y') (take 2 [1..]))
+possibleHitCoordinates coord NE =
+  let (x', y') = fromCoord coord
+  in zipWith toCoord (zipWith (+) (repeat x') (take 2 [1..])) (zipWith (-) (repeat y') (take 2 [1..]))
 
 thisWormsCoord :: State -> Coord
 thisWormsCoord = fromJust . fmap wormPosition . thisCurrentWorm
