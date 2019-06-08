@@ -592,14 +592,10 @@ hitsWorm origin direction worms' =
   find (\ (Worm _ _ position') -> elem position' $ possibleHitCoordinates origin direction) worms'
 
 possibleHitCoordinates :: Coord -> Direction -> [Coord]
-possibleHitCoordinates coord W = iterateHorizontally coord (-)
-possibleHitCoordinates coord E = iterateHorizontally coord (+)
-possibleHitCoordinates coord N =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (repeat x') (zipWith (-) (repeat y') (take 3 [1..]))
-possibleHitCoordinates coord S =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (repeat x') (zipWith (+) (repeat y') (take 3 [1..]))
+possibleHitCoordinates coord W  = iterateHorizontally coord (-)
+possibleHitCoordinates coord E  = iterateHorizontally coord (+)
+possibleHitCoordinates coord N  = iterateVertically   coord (-)
+possibleHitCoordinates coord S  = iterateVertically   coord (+)
 possibleHitCoordinates coord SE =
   let (x', y') = fromCoord coord
   in zipWith toCoord (zipWith (+) (repeat x') (take 2 [1..])) (zipWith (+) (repeat y') (take 2 [1..]))
@@ -617,6 +613,9 @@ type Operator = Int -> Int -> Int
 
 idOperator :: Operator
 idOperator x _ = x
+
+iterateVertically :: Coord -> Operator -> [Coord]
+iterateVertically coord fY = iterateCoordinate coord 3 idOperator fY
 
 iterateHorizontally :: Coord -> Operator -> [Coord]
 iterateHorizontally coord fX = iterateCoordinate coord 3 fX idOperator
