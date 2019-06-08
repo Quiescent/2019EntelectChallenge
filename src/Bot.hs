@@ -592,12 +592,8 @@ hitsWorm origin direction worms' =
   find (\ (Worm _ _ position') -> elem position' $ possibleHitCoordinates origin direction) worms'
 
 possibleHitCoordinates :: Coord -> Direction -> [Coord]
-possibleHitCoordinates coord W =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (zipWith (-) (repeat x') (take 3 [1..])) $ repeat y'
-possibleHitCoordinates coord E =
-  let (x', y') = fromCoord coord
-  in zipWith toCoord (zipWith (+) (repeat x') (take 3 [1..])) $ repeat y'
+possibleHitCoordinates coord W = iterateHorizontally coord (-)
+possibleHitCoordinates coord E = iterateHorizontally coord (+)
 possibleHitCoordinates coord N =
   let (x', y') = fromCoord coord
   in zipWith toCoord (repeat x') (zipWith (-) (repeat y') (take 3 [1..]))
@@ -616,6 +612,22 @@ possibleHitCoordinates coord SW =
 possibleHitCoordinates coord NE =
   let (x', y') = fromCoord coord
   in zipWith toCoord (zipWith (+) (repeat x') (take 2 [1..])) (zipWith (-) (repeat y') (take 2 [1..]))
+
+type Operator = Int -> Int -> Int
+
+idOperator :: Operator
+idOperator x _ = x
+
+iterateHorizontally :: Coord -> Operator -> [Coord]
+iterateHorizontally coord fX = iterateCoordinate coord 3 fX idOperator
+
+iterateCoordinate :: Coord -> Int -> Operator -> Operator -> [Coord]
+iterateCoordinate coord depth fX fY =
+  let (x', y') = fromCoord coord
+  in zipWith
+     toCoord
+     (zipWith fX (repeat x') (take depth [1..]))
+     (zipWith fY (repeat y') (take depth [1..]))
 
 thisWormsCoord :: State -> Coord
 thisWormsCoord = fromJust . fmap wormPosition . thisCurrentWorm
