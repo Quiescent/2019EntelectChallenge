@@ -260,8 +260,21 @@ from the command line to invoke the bot program.
         It's not possible to dig into space with this engine, because moving
         into dirt is what is considered digging.
       :END:
-**** TODO Implement Shoot
-***** TODO Implement a Scenario Generator and Test It
+**** IN_PROGRESS Implement Shoot
+     :LOGBOOK:
+     - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 13:58]
+     :END:
+***** IN_PROGRESS Implement a Scenario Generator and Test It
+      :LOGBOOK:
+      - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 13:58]
+      :END:
+****** IN_PROGRESS Implement worms hitting other worms in range scenarios
+       :LOGBOOK:
+       - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 13:58]
+       :END:
+****** TODO Implement shots being blocked by dirt or space scenarios
+****** TODO Implement worms being just out of range scenarios
+****** TODO Implement simultaneous shots scenarios
 ***** TODO Rule 1: A shot hits the first target in range
 ***** TODO Rule 2: A shot hits nothing if nothing is in range in that direction
 ***** TODO Rule 3: A shot is blocked by dirt and deep space
