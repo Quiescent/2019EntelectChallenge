@@ -483,6 +483,13 @@ spec = do
       let thisCoord = toCoord 10 20
           thatCoord = toCoord 20 30
       in (M.size $ playersWorms $ takeNoWorms thisCoord thatCoord) `shouldBe` 0
+  describe "nonDiagonalDelta" $ do
+    prop "creates numbers greater than or equal to -3" $ \ x ->
+      nonDiagonalDelta x >= (-3)
+    prop "creates numbers less than or equal to 3" $ \ x ->
+      nonDiagonalDelta x <= 3
+    prop "never creates the number 0" $ \ x ->
+      nonDiagonalDelta x /= 0
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
@@ -552,10 +559,12 @@ generateShotScenario generateCoord displace switchShot generateThisPlayer genera
       state                   = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
   in (state, shot)
 
+nonDiagonalDelta :: Int -> Int
 nonDiagonalDelta x =
   let y = (x `mod` 7) - 3
   in if y == 0 then -1 else y
 
+diagonalDelta :: Int -> Int
 diagonalDelta x =
   let y = (x `mod` 5) - 2
   in if y == 0 then -1 else y
