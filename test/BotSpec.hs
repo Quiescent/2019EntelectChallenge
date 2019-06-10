@@ -497,6 +497,21 @@ spec = do
       diagonalDelta x <= 2
     prop "never creates the number 0" $ \ x ->
       diagonalDelta x /= 0
+  describe "inBoundsWithNonDiagonalPadding" $ do
+    prop "creates numbers greater than or equal to 3" $ \ x ->
+      inBoundsWithNonDiagonalPadding x >= 3
+    prop "creates numbers less than or equal to `mapDim' - 3" $ \ x ->
+      inBoundsWithNonDiagonalPadding x <= (mapDim - 3)
+  describe "inBoundsWithDiagonalPadding" $ do
+    prop "creates numbers greater than or equal to 2" $ \ x ->
+      inBoundsWithNonDiagonalPadding x >= 2
+    prop "creates numbers less than or equal to `mapDim' - 2" $ \ x ->
+      inBoundsWithNonDiagonalPadding x <= (mapDim - 2)
+  describe "inBoundsWithNoPadding" $ do
+    prop "creates numbers greater than or equal to 0" $ \ x ->
+      inBoundsWithNoPadding x >= 0
+    prop "creates numbers less than the map dimension" $ \ x ->
+      inBoundsWithNoPadding x < mapDim
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
@@ -578,7 +593,7 @@ diagonalDelta x =
 
 inBoundsWithNonDiagonalPadding x = 3 + (x `mod` (mapDim - 6))
 
-inBoundsWithDiagonalPadding x = 3 + (x `mod` (mapDim - 4))
+inBoundsWithDiagonalPadding x = 2 + (x `mod` (mapDim - 4))
 
 inBoundsWithNoPadding x = x `mod` mapDim
 
