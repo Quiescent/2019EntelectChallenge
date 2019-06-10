@@ -274,7 +274,10 @@ from the command line to invoke the bot program.
        - CLOSING NOTE [2019-06-10 Mon 13:58]
        - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 13:58]
        :END:
-****** TODO Implement shots being blocked by dirt or space scenarios
+****** IN_PROGRESS Implement shots being blocked by dirt or space scenarios
+       :LOGBOOK:
+       - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 16:06]
+       :END:
 ****** TODO Implement worms being just out of range scenarios
 ****** TODO Implement simultaneous shots scenarios
 ***** TODO Rule 1: A shot hits the first target in range
