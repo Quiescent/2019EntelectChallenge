@@ -490,6 +490,13 @@ spec = do
       nonDiagonalDelta x <= 3
     prop "never creates the number 0" $ \ x ->
       nonDiagonalDelta x /= 0
+  describe "diagonalDelta" $ do
+    prop "creates numbers greater than or equal to -2" $ \ x ->
+      diagonalDelta x >= (-2)
+    prop "creates numbers less than or equal to 2" $ \ x ->
+      diagonalDelta x <= 2
+    prop "never creates the number 0" $ \ x ->
+      diagonalDelta x /= 0
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
