@@ -423,6 +423,16 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+  describe "mapThoseWorms" $ do
+    it "should produce the same state given the identity function" $
+      mapThoseWorms id aState `shouldBe` aState
+    it "should produce the given state with no worms for that playere when mapping the function always []" $
+      mapThoseWorms (always M.empty) aState `shouldBe` aState { opponent = Player 300 M.empty }
+  describe "mapTheseworms" $ do
+    it "should produce the same state given the identity function" $
+      mapTheseWorms id aState `shouldBe` aState
+    it "should produce the given state with no worms for this playere when mapping the function always []" $
+      mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 M.empty }
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
