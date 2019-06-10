@@ -519,10 +519,10 @@ takeNoWorms _ _ =
   Player 300 $ wormsToMap $ V.fromList []
 
 addDelta :: Int -> Int -> Int
-addDelta x delta = x + delta
+addDelta = (+)
 
 subtractDelta :: Int -> Int -> Int
-subtractDelta x delta = x - delta
+subtractDelta = (-)
 
 ignoreDelta :: Int -> Int -> Int
 ignoreDelta x _ = x
