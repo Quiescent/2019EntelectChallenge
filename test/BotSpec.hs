@@ -434,10 +434,15 @@ spec = do
     it "should produce the given state with no worms for this playere when mapping the function always []" $
       mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 M.empty }
   describe "generateShotSwitch" $ do
-    prop "should produce a function which produces the first given a negative number and the second given a positive number" $
+    prop "produces a function which produces the first given a negative number and the second given a positive number" $
       let switchFunction = generateShotSwitch shootEast shootNorth
       in \ x ->
         switchFunction x `shouldBe` if x > 0 then shootEast else shootNorth
+  describe "takeBothWorms" $ do
+    prop "creates a map of size two (distinct coordinates) given two (distinct) coordinates" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20) -- Ensure distinct coordinates
+      in (M.size $ playersWorms $ takeBothWorms thisCoord thatCoord) `shouldBe` 2
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
@@ -451,9 +456,15 @@ generateShotSwitch :: Move -> Move -> ShotSwitch
 generateShotSwitch a b x =
   if x > 0 then a else b
 
+playersWorms :: Player -> Worms
+playersWorms (Player _ worms') = worms'
+
+generateInBoundsCoordinate :: Int -> Int -> Coord
+generateInBoundsCoordinate = generateCoordGenerator inBoundsWithNoPadding inBoundsWithNoPadding
+
 takeBothWorms :: GeneratePlayer
 takeBothWorms thisCoord thatCoord =
-  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord, Worm 1 10 thatCoord]
+  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
 
 takeThisWorm :: GeneratePlayer
 takeThisWorm thisCoord _ =
