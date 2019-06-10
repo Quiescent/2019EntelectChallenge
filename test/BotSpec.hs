@@ -8,6 +8,7 @@ import Import
 import qualified RIO.Vector.Boxed as V
 import qualified RIO.HashMap as M
 import RIO.List
+import RIO.List.Partial
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -459,6 +460,29 @@ spec = do
     prop "creates coordinates which are less than the map dimension in the y-axis" $ \ (i, j) ->
       let (_, y) = fromCoord $ generateInBoundsCoordinate i j
       in y < mapDim `shouldBe` True
+  describe "takeThisWorm" $ do
+    prop "creates a player with 1 worm" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (M.size $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` 1
+    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (wormPosition $ head $ M.elems $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` thisCoord
+  describe "takeThatWorm" $ do
+    prop "creates a player with 1 worm" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (M.size $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` 1
+    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (wormPosition $ head $ M.elems $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` thatCoord
+  describe "takeNoWorms" $ do
+    it "should create a player with no worms given two distinct coordinates" $
+      let thisCoord = toCoord 10 20
+          thatCoord = toCoord 20 30
+      in (M.size $ playersWorms $ takeNoWorms thisCoord thatCoord) `shouldBe` 0
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
