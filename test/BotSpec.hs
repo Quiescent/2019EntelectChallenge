@@ -340,19 +340,16 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms)) }
     prop "should hit this players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
-      let thisX      = inBoundsWithDiagonalPadding i
-          thisY      = inBoundsWithDiagonalPadding j
-          thisCoord  = toCoord thisX thisY
-          delta      = diagonalDelta k
-          thatCoord  = toCoord (thisX + delta) (thisY + delta)
-          theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
-          thoseWorms = wormsToMap $ V.fromList $ []
-          thisPlayer = Player 300 theseWorms
-          thatPlayer = Player 300 thoseWorms
-          state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
-          shot       = if delta > 0 then shootSouthEast else shootNorthWest
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithDiagonalPadding
+                                                  inBoundsWithDiagonalPadding)
+                          (generateCoordDisplacer diagonalDelta addDelta addDelta)
+                          (generateShotSwitch shootSouthEast shootNorthWest)
+                          takeBothWorms
+                          takeNoWorms
+                          (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { myPlayer = (Player 300 (modifyWormWithId 3 (withHealthOf 0) theseWorms)) }
+         mapTheseWorms (modifyWormWithId 3 (withHealthOf 0)) state
     prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
