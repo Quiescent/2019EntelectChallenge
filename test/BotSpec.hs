@@ -368,25 +368,22 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state { opponent = (Player 300 (modifyWormWithId 1 (withHealthOf 0) thoseWorms )) }
     prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
-      let thatX      = inBoundsWithDiagonalPadding i
-          thatY      = inBoundsWithNoPadding j
-          thatCoord  = toCoord thatX thatY
-          delta      = nonDiagonalDelta k
-          thisCoord  = toCoord (thatX + delta) thatY
-          theseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thisCoord]
-          thoseWorms = wormsToMap $ V.fromList $ [Worm 1 10 thatCoord]
-          thisPlayer = Player 300 theseWorms
-          thatPlayer = Player 300 thoseWorms
-          state      = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
-          shot       = if delta > 0 then shootEast else shootWest
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNoPadding)
+                          (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
+                          (generateShotSwitch     shootEast shootWest)
+                          takeThatWorm
+                          takeThisWorm
+                          (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { myPlayer = (Player 300 (modifyWormWithId 1 (withHealthOf 0) theseWorms)) }
+         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
     prop "should hit that players first horizontal target in range when it's friendly" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
-                          (generateShotSwitch shootEast shootWest)
+                          (generateShotSwitch     shootEast shootWest)
                           takeNoWorms
                           takeBothWorms
                           (i, j, k)
@@ -397,6 +394,10 @@ mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
   state { opponent = mapWorms opponent' f }
 
+mapTheseWorms :: (Worms -> Worms) -> State -> State
+mapTheseWorms f state@(State { myPlayer = myPlayer' }) =
+  state { myPlayer = mapWorms myPlayer' f }
+
 generateShotSwitch :: Move -> Move -> ShotSwitch
 generateShotSwitch a b x =
   if x > 0 then a else b
@@ -404,6 +405,14 @@ generateShotSwitch a b x =
 takeBothWorms :: GeneratePlayer
 takeBothWorms thisCoord thatCoord =
   Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord, Worm 1 10 thatCoord]
+
+takeThisWorm :: GeneratePlayer
+takeThisWorm thisCoord _ =
+  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord]
+
+takeThatWorm :: GeneratePlayer
+takeThatWorm _ thatCoord =
+  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thatCoord]
 
 takeNoWorms :: GeneratePlayer
 takeNoWorms _ _ =
@@ -426,7 +435,7 @@ generateCoordDisplacer :: (Int -> Int) -> (Int -> Int -> Int) -> (Int -> Int -> 
 generateCoordDisplacer fDelta fX fY coord' k =
   let (x', y') = fromCoord coord'
       delta    = fDelta k
-  in (toCoord (fX delta x') (fY delta y'), delta)
+  in (toCoord (fX x' delta) (fY y' delta), delta)
 
 type GenerateCoordinate     = Int -> Int -> Coord
 type DisplaceFromCoordinate = Coord -> Int -> (Coord, Int)
