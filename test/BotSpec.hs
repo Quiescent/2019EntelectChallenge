@@ -433,6 +433,11 @@ spec = do
       mapTheseWorms id aState `shouldBe` aState
     it "should produce the given state with no worms for this playere when mapping the function always []" $
       mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 M.empty }
+  describe "generateShotSwitch" $ do
+    prop "should produce a function which produces the first given a negative number and the second given a positive number" $
+      let switchFunction = generateShotSwitch shootEast shootNorth
+      in \ x ->
+        switchFunction x `shouldBe` if x > 0 then shootEast else shootNorth
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
