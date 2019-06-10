@@ -447,19 +447,19 @@ spec = do
   describe "generateInBoundsCoordinate" $ do
     prop "creates coordinates which are positive or zero on the x-axis" $ \ (i, j) ->
       let (x, _) = fromCoord $ generateInBoundsCoordinate i j
-      in x >= 0 `shouldBe` True
+      in x >= 0
   describe "generateInBoundsCoordinate" $ do
     prop "creates coordinates which are less than the map dimension in the x-axis" $ \ (i, j) ->
       let (x, _) = fromCoord $ generateInBoundsCoordinate i j
-      in x < mapDim `shouldBe` True
+      in x < mapDim
   describe "generateInBoundsCoordinate" $ do
     prop "creates coordinates which are positive or zero on the y-axis" $ \ (i, j) ->
       let (_, y) = fromCoord $ generateInBoundsCoordinate i j
-      in y >= 0 `shouldBe` True
+      in y >= 0
   describe "generateInBoundsCoordinate" $ do
     prop "creates coordinates which are less than the map dimension in the y-axis" $ \ (i, j) ->
       let (_, y) = fromCoord $ generateInBoundsCoordinate i j
-      in y < mapDim `shouldBe` True
+      in y < mapDim
   describe "takeThisWorm" $ do
     prop "creates a player with 1 worm" $ \ (i, j) ->
       let thisCoord = generateInBoundsCoordinate i j
