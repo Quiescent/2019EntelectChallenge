@@ -106,6 +106,94 @@ spec = do
     it "should remove health from the worm" $
       (harmWormWithRocket $ Worm 1 10 $ toCoord 15 31) `shouldBe`
       (Worm 1 0 $ toCoord 15 31)
+  describe "mapThoseWorms" $ do
+    it "should produce the same state given the identity function" $
+      mapThoseWorms id aState `shouldBe` aState
+    it "should produce the given state with no worms for that playere when mapping the function always []" $
+      mapThoseWorms (always M.empty) aState `shouldBe` aState { opponent = Player 300 M.empty }
+  describe "mapTheseworms" $ do
+    it "should produce the same state given the identity function" $
+      mapTheseWorms id aState `shouldBe` aState
+    it "should produce the given state with no worms for this playere when mapping the function always []" $
+      mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 M.empty }
+  describe "generateShotSwitch" $ do
+    prop "produces a function which produces the first given a negative number and the second given a positive number" $
+      let switchFunction = generateShotSwitch shootEast shootNorth
+      in \ x ->
+        switchFunction x `shouldBe` if x > 0 then shootEast else shootNorth
+  describe "takeBothWorms" $ do
+    prop "creates a map of size two (distinct coordinates) given two (distinct) coordinates" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20) -- Ensure distinct coordinates
+      in (M.size $ playersWorms $ takeBothWorms thisCoord thatCoord) `shouldBe` 2
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are positive or zero on the x-axis" $ \ (i, j) ->
+      let (x, _) = fromCoord $ generateInBoundsCoordinate i j
+      in x >= 0
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are less than the map dimension in the x-axis" $ \ (i, j) ->
+      let (x, _) = fromCoord $ generateInBoundsCoordinate i j
+      in x < mapDim
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are positive or zero on the y-axis" $ \ (i, j) ->
+      let (_, y) = fromCoord $ generateInBoundsCoordinate i j
+      in y >= 0
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are less than the map dimension in the y-axis" $ \ (i, j) ->
+      let (_, y) = fromCoord $ generateInBoundsCoordinate i j
+      in y < mapDim
+  describe "takeThisWorm" $ do
+    prop "creates a player with 1 worm" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (M.size $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` 1
+    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (wormPosition $ head $ M.elems $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` thisCoord
+  describe "takeThatWorm" $ do
+    prop "creates a player with 1 worm" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (M.size $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` 1
+    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
+      let thisCoord = generateInBoundsCoordinate i j
+          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
+      in (wormPosition $ head $ M.elems $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` thatCoord
+  describe "takeNoWorms" $ do
+    it "should create a player with no worms given two distinct coordinates" $
+      let thisCoord = toCoord 10 20
+          thatCoord = toCoord 20 30
+      in (M.size $ playersWorms $ takeNoWorms thisCoord thatCoord) `shouldBe` 0
+  describe "nonDiagonalDelta" $ do
+    prop "creates numbers greater than or equal to -3" $ \ x ->
+      nonDiagonalDelta x >= (-3)
+    prop "creates numbers less than or equal to 3" $ \ x ->
+      nonDiagonalDelta x <= 3
+    prop "never creates the number 0" $ \ x ->
+      nonDiagonalDelta x /= 0
+  describe "diagonalDelta" $ do
+    prop "creates numbers greater than or equal to -2" $ \ x ->
+      diagonalDelta x >= (-2)
+    prop "creates numbers less than or equal to 2" $ \ x ->
+      diagonalDelta x <= 2
+    prop "never creates the number 0" $ \ x ->
+      diagonalDelta x /= 0
+  describe "inBoundsWithNonDiagonalPadding" $ do
+    prop "creates numbers greater than or equal to 3" $ \ x ->
+      inBoundsWithNonDiagonalPadding x >= 3
+    prop "creates numbers less than or equal to `mapDim' - 3" $ \ x ->
+      inBoundsWithNonDiagonalPadding x <= (mapDim - 3)
+  describe "inBoundsWithDiagonalPadding" $ do
+    prop "creates numbers greater than or equal to 2" $ \ x ->
+      inBoundsWithNonDiagonalPadding x >= 2
+    prop "creates numbers less than or equal to `mapDim' - 2" $ \ x ->
+      inBoundsWithNonDiagonalPadding x <= (mapDim - 2)
+  describe "inBoundsWithNoPadding" $ do
+    prop "creates numbers greater than or equal to 0" $ \ x ->
+      inBoundsWithNoPadding x >= 0
+    prop "creates numbers less than the map dimension" $ \ x ->
+      inBoundsWithNoPadding x < mapDim
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -424,94 +512,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
-  describe "mapThoseWorms" $ do
-    it "should produce the same state given the identity function" $
-      mapThoseWorms id aState `shouldBe` aState
-    it "should produce the given state with no worms for that playere when mapping the function always []" $
-      mapThoseWorms (always M.empty) aState `shouldBe` aState { opponent = Player 300 M.empty }
-  describe "mapTheseworms" $ do
-    it "should produce the same state given the identity function" $
-      mapTheseWorms id aState `shouldBe` aState
-    it "should produce the given state with no worms for this playere when mapping the function always []" $
-      mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 M.empty }
-  describe "generateShotSwitch" $ do
-    prop "produces a function which produces the first given a negative number and the second given a positive number" $
-      let switchFunction = generateShotSwitch shootEast shootNorth
-      in \ x ->
-        switchFunction x `shouldBe` if x > 0 then shootEast else shootNorth
-  describe "takeBothWorms" $ do
-    prop "creates a map of size two (distinct coordinates) given two (distinct) coordinates" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20) -- Ensure distinct coordinates
-      in (M.size $ playersWorms $ takeBothWorms thisCoord thatCoord) `shouldBe` 2
-  describe "generateInBoundsCoordinate" $ do
-    prop "creates coordinates which are positive or zero on the x-axis" $ \ (i, j) ->
-      let (x, _) = fromCoord $ generateInBoundsCoordinate i j
-      in x >= 0
-  describe "generateInBoundsCoordinate" $ do
-    prop "creates coordinates which are less than the map dimension in the x-axis" $ \ (i, j) ->
-      let (x, _) = fromCoord $ generateInBoundsCoordinate i j
-      in x < mapDim
-  describe "generateInBoundsCoordinate" $ do
-    prop "creates coordinates which are positive or zero on the y-axis" $ \ (i, j) ->
-      let (_, y) = fromCoord $ generateInBoundsCoordinate i j
-      in y >= 0
-  describe "generateInBoundsCoordinate" $ do
-    prop "creates coordinates which are less than the map dimension in the y-axis" $ \ (i, j) ->
-      let (_, y) = fromCoord $ generateInBoundsCoordinate i j
-      in y < mapDim
-  describe "takeThisWorm" $ do
-    prop "creates a player with 1 worm" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (M.size $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` 1
-    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (wormPosition $ head $ M.elems $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` thisCoord
-  describe "takeThatWorm" $ do
-    prop "creates a player with 1 worm" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (M.size $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` 1
-    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (wormPosition $ head $ M.elems $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` thatCoord
-  describe "takeNoWorms" $ do
-    it "should create a player with no worms given two distinct coordinates" $
-      let thisCoord = toCoord 10 20
-          thatCoord = toCoord 20 30
-      in (M.size $ playersWorms $ takeNoWorms thisCoord thatCoord) `shouldBe` 0
-  describe "nonDiagonalDelta" $ do
-    prop "creates numbers greater than or equal to -3" $ \ x ->
-      nonDiagonalDelta x >= (-3)
-    prop "creates numbers less than or equal to 3" $ \ x ->
-      nonDiagonalDelta x <= 3
-    prop "never creates the number 0" $ \ x ->
-      nonDiagonalDelta x /= 0
-  describe "diagonalDelta" $ do
-    prop "creates numbers greater than or equal to -2" $ \ x ->
-      diagonalDelta x >= (-2)
-    prop "creates numbers less than or equal to 2" $ \ x ->
-      diagonalDelta x <= 2
-    prop "never creates the number 0" $ \ x ->
-      diagonalDelta x /= 0
-  describe "inBoundsWithNonDiagonalPadding" $ do
-    prop "creates numbers greater than or equal to 3" $ \ x ->
-      inBoundsWithNonDiagonalPadding x >= 3
-    prop "creates numbers less than or equal to `mapDim' - 3" $ \ x ->
-      inBoundsWithNonDiagonalPadding x <= (mapDim - 3)
-  describe "inBoundsWithDiagonalPadding" $ do
-    prop "creates numbers greater than or equal to 2" $ \ x ->
-      inBoundsWithNonDiagonalPadding x >= 2
-    prop "creates numbers less than or equal to `mapDim' - 2" $ \ x ->
-      inBoundsWithNonDiagonalPadding x <= (mapDim - 2)
-  describe "inBoundsWithNoPadding" $ do
-    prop "creates numbers greater than or equal to 0" $ \ x ->
-      inBoundsWithNoPadding x >= 0
-    prop "creates numbers less than the map dimension" $ \ x ->
-      inBoundsWithNoPadding x < mapDim
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
