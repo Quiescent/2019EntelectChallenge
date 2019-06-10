@@ -443,6 +443,22 @@ spec = do
       let thisCoord = generateInBoundsCoordinate i j
           thatCoord = generateInBoundsCoordinate (i + 20) (j + 20) -- Ensure distinct coordinates
       in (M.size $ playersWorms $ takeBothWorms thisCoord thatCoord) `shouldBe` 2
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are positive or zero on the x-axis" $ \ (i, j) ->
+      let (x, _) = fromCoord $ generateInBoundsCoordinate i j
+      in x >= 0 `shouldBe` True
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are less than the map dimension in the x-axis" $ \ (i, j) ->
+      let (x, _) = fromCoord $ generateInBoundsCoordinate i j
+      in x < mapDim `shouldBe` True
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are positive or zero on the y-axis" $ \ (i, j) ->
+      let (_, y) = fromCoord $ generateInBoundsCoordinate i j
+      in y >= 0 `shouldBe` True
+  describe "generateInBoundsCoordinate" $ do
+    prop "creates coordinates which are less than the map dimension in the y-axis" $ \ (i, j) ->
+      let (_, y) = fromCoord $ generateInBoundsCoordinate i j
+      in y < mapDim `shouldBe` True
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
