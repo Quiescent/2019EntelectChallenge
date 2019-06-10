@@ -259,6 +259,7 @@ from the command line to invoke the bot program.
         into dirt is what is considered digging.
       :END:
 **** TODO Implement Shoot
+***** TODO Implement a Scenario Generator and Test It
 ***** TODO Rule 1: A shot hits the first target in range
 ***** TODO Rule 2: A shot hits nothing if nothing is in range in that direction
 ***** TODO Rule 3: A shot is blocked by dirt and deep space
