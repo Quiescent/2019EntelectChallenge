@@ -368,6 +368,61 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          mapThoseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+    prop "should hit that players first vertical target in range when it's my worm" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNoPadding
+                                                  inBoundsWithNonDiagonalPadding)
+                          (generateCoordDisplacer nonDiagonalDelta ignoreDelta addDelta)
+                          (generateShotSwitch     shootSouth shootNorth)
+                          takeThatWorm
+                          takeThisWorm
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe`
+         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+    prop "should hit that players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNoPadding
+                                                  inBoundsWithNonDiagonalPadding)
+                          (generateCoordDisplacer nonDiagonalDelta ignoreDelta addDelta)
+                          (generateShotSwitch     shootSouth shootNorth)
+                          takeNoWorms
+                          takeBothWorms
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe`
+         mapThoseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+    prop "should hit that players first NW-SE diagonal target in range when it's my worm" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithDiagonalPadding
+                                                  inBoundsWithDiagonalPadding)
+                          (generateCoordDisplacer diagonalDelta addDelta addDelta)
+                          (generateShotSwitch     shootSouthEast shootNorthWest)
+                          takeThatWorm
+                          takeThisWorm
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe`
+         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+    prop "should hit that players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithDiagonalPadding
+                                                  inBoundsWithDiagonalPadding)
+                          (generateCoordDisplacer diagonalDelta addDelta addDelta)
+                          (generateShotSwitch     shootSouthEast shootNorthWest)
+                          takeNoWorms
+                          takeBothWorms
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe`
+         mapThoseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+    prop "should hit that players first NE-SW diagonal target in range when it's my worm" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithDiagonalPadding
+                                                  inBoundsWithDiagonalPadding)
+                          (generateCoordDisplacer diagonalDelta addDelta subtractDelta)
+                          (generateShotSwitch     shootNorthEast shootSouthWest)
+                          takeThatWorm
+                          takeThisWorm
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe`
+         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
