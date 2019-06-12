@@ -296,7 +296,45 @@ from the command line to invoke the bot program.
 ** TODO Implement search function
 
 * Questions About the Engine
-** TODO Do two worms always get to move?  (Or do you miss turns when your other worms die)
+** DONE Do two worms always get to move?  (Or do you miss turns when your other worms die)
+   CLOSED: [2019-06-12 Wed 14:10]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-06-12 Wed 14:10] \\
+     Yes.  Worms of an opponent with fewer worms get a chance more
+     often.
+   :END:
+
+* Potentially Useful, Discarded, Code
+In this section I document the code which I wrote and then didn't end
+up needing for some or other reason.  Such as having written the code
+and then realising that I was doing the wrong thing.
+
+** Worms Predicate
+I wrote this worms predicate code for verification on end states, but
+then I realised that the kind of stuff that I needed to verify could
+be done simply by comparing the previous state to the next state.
+
+#+BEGIN_SRC haskell
+  noWormShouldBeHarmed :: Int -> State -> Bool
+  noWormShouldBeHarmed originalHealth state =
+    allTheseWorms (notHarmed originalHealth) state &&
+    allThoseWorms (notHarmed originalHealth) state
+
+  notHarmed :: Int -> Worm -> Bool
+  notHarmed originalHealth (Worm _ health' _) =
+    health' == originalHealth
+
+  allTheseWorms :: (Worm -> Bool) -> State -> Bool
+  allTheseWorms f =
+    allWorms f . playersWorms . myPlayer
+
+  allThoseWorms :: (Worm -> Bool) -> State -> Bool
+  allThoseWorms f =
+    allWorms f . playersWorms . opponent
+
+  allWorms :: (Worm -> Bool) -> Worms -> Bool
+  allWorms f = M.foldl' ( \ acc worm -> acc && f worm) True
+#+END_SRC
 * License
 Copyright Edward John Steere (c) 2019
 
