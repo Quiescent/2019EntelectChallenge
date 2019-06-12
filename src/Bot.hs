@@ -13,14 +13,12 @@ import qualified RIO.Vector.Boxed as V
 import qualified RIO.HashMap as M
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
+import RIO.List
 import Data.Bits
 import Data.Maybe
 import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), FromJSON, parseJSON)
-
--- DEBUG
-import RIO.List
 
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
@@ -553,19 +551,20 @@ makeShootMoves :: Move -> Move -> State -> State
 makeShootMoves this that state =
   let thisShootMove              = if isAShootMove this then Just this else Nothing
       thatShootMove              = if isAShootMove that then Just that else Nothing
+      gameMap'                   = gameMap state
       -- ASSUME: that a worm won't be on an invalid square
       thisWormsPosition          = thisWormsCoord state
       thatWormsPosition          = thatWormsCoord state
       thisShotsDir               = thisShootMove >>= directionOfShot
       thatShotsDir               = thatShootMove >>= directionOfShot
-      thatWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thatPlayersWorms state))
-      thisWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition)) (thisPlayersWorms state))
+      thatWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition gameMap')) (thatPlayersWorms state))
+      thisWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition gameMap')) (thisPlayersWorms state))
       thatWormWasHitFromThisShot = isJust thatWormHitFromThisShot
       thisWormWasHitFromThatShot = isJust thisWormHitFromThatShot
       thatTargetFromThis         = fromJust thatWormHitFromThisShot
       thisTargetFromThat         = fromJust thisWormHitFromThatShot
-      thisWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition)) (thisPlayersWorms state))
-      thatWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition)) (thatPlayersWorms state))
+      thisWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition gameMap')) (thisPlayersWorms state))
+      thatWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition gameMap')) (thatPlayersWorms state))
       thisWormWasHitFromThisShot = isJust thisWormHitFromThisShot
       thatWormWasHitFromThatShot = isJust thatWormHitFromThatShot
       thisTargetFromThis         = fromJust thisWormHitFromThisShot
@@ -601,9 +600,35 @@ harmWormWithRocket (Worm id' health' position') =
 rocketDamage :: Int
 rocketDamage = 10
 
-hitsWorm :: Coord -> Direction -> Worms -> Maybe Worm
-hitsWorm origin direction worms' =
-  find (\ (Worm _ _ position') -> elem position' $ possibleHitCoordinates origin direction) worms'
+data Hit = HitWorm Worm
+         | HitObstacle
+         | HitNothing
+
+hitsWorm :: Coord -> GameMap -> Direction -> Worms -> Maybe Worm
+hitsWorm origin gameMap' direction worms' =
+  case (foldl' (firstWormHit gameMap' worms') HitNothing $
+        possibleHitCoordinates origin direction) of
+    HitWorm worm -> Just worm
+    _            -> Nothing
+
+firstWormHit :: GameMap -> Worms -> Hit -> Coord -> Hit
+firstWormHit _        _      hit@(HitWorm _) _      = hit
+firstWormHit _        _      HitObstacle     _      = HitObstacle
+firstWormHit gameMap' worms' HitNothing      coord' =
+  if abstacleAt coord' gameMap'
+  then HitObstacle
+  else isAPositionOfAWorm coord' worms'
+
+isAPositionOfAWorm :: Coord -> Worms -> Hit
+isAPositionOfAWorm coord' worms' =
+  case find (\ (Worm _ _ position') -> coord' == position') worms' of
+    Just worm -> HitWorm worm
+    Nothing   -> HitNothing
+
+abstacleAt :: Coord -> GameMap -> Bool
+abstacleAt coord' =
+   any (\ square -> square == DIRT || square == DEEP_SPACE) .
+   lookupCoord coord'
 
 possibleHitCoordinates :: Coord -> Direction -> [Coord]
 possibleHitCoordinates coord W  = iterateHorizontally coord (-)
