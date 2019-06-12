@@ -513,9 +513,6 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
     prop "should not hit this players first horizontal target in range when there's dirt or space in the way" $ \ (i, j, k, l) ->
-      -- TODO Refactor the shot scenario generator so that it can
-      -- modify it's given state and add blocks to the map to simulate
-      -- being blocked by stuff.
       let (state, shot) = generateShotScenarioWithMapModifications
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
@@ -525,7 +522,8 @@ spec = do
                           takeThatWorm
                           (putDirtOrSpaceBetweenWorms l)
                           (i, j, k)
-      in True `shouldBe` False
+      in state `shouldBe`
+         makeMove True (fromMoves shot doNothing) state
 
 putDirtOrSpaceBetweenWorms :: Int -> ModifyMap
 putDirtOrSpaceBetweenWorms x =
