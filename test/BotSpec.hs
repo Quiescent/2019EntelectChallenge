@@ -570,16 +570,31 @@ type GenerateCoordinate     = Int -> Int -> Coord
 type DisplaceFromCoordinate = Coord -> Int -> (Coord, Int)
 type ShotSwitch             = Int -> Move
 type GeneratePlayer         = Coord -> Coord -> Player
+type ModifyMap               = Coord -> Coord -> GameMap -> GameMap
 
-generateShotScenario :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> (Int, Int, Int) -> (State, Move)
-generateShotScenario generateCoord displace switchShot generateThisPlayer generateThatPlayer (i, j, k) =
+generateShotScenarioWithMapModifications :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> ModifyMap -> (Int, Int, Int) -> (State, Move)
+generateShotScenarioWithMapModifications generateCoord displace switchShot generateThisPlayer generateThatPlayer modifyMap (i, j, k) =
   let originatingCoord        = generateCoord i j
       (displacedCoord, delta) = displace      originatingCoord k
       shot                    = switchShot    delta
       thisPlayer              = generateThisPlayer originatingCoord displacedCoord
       thatPlayer              = generateThatPlayer originatingCoord displacedCoord
-      state                   = State 1 10 10 10 10 thisPlayer thatPlayer aGameMapWithOnlyAir
+      modifiedMap             = modifyMap originatingCoord displacedCoord aGameMapWithOnlyAir
+      state                   = State 1 10 10 10 10 thisPlayer thatPlayer modifiedMap
   in (state, shot)
+
+generateShotScenario :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> (Int, Int, Int) -> (State, Move)
+generateShotScenario generateCoord displace switchShot generateThisPlayer generateThatPlayer (i, j, k) =
+  generateShotScenarioWithMapModifications generateCoord
+                                           displace
+                                           switchShot
+                                           generateThisPlayer
+                                           generateThatPlayer
+                                           identityMapModification
+                                           (i, j, k)
+
+identityMapModification :: ModifyMap
+identityMapModification _ _ = id
 
 nonDiagonalDelta :: Int -> Int
 nonDiagonalDelta x =
