@@ -522,8 +522,8 @@ spec = do
                           takeThatWorm
                           (putDirtOrSpaceBetweenWorms l)
                           (i, j, k)
-      in state `shouldBe`
-         makeMove True (fromMoves shot doNothing) state
+      in makeMove True (fromMoves shot doNothing) state `shouldBe`
+         state
 
 putDirtOrSpaceBetweenWorms :: Int -> ModifyMap
 putDirtOrSpaceBetweenWorms x =
@@ -532,10 +532,24 @@ putDirtOrSpaceBetweenWorms x =
   else spaceBetween
 
 dirtBetween :: ModifyMap
-dirtBetween = undefined
+dirtBetween thisCoord thatCoord =
+  addDirtAt (coordBetween thisCoord thatCoord)
+
+coordBetween :: Coord -> Coord -> Coord
+coordBetween xy ij =
+  let (x', y') = fromCoord xy
+      (i,  j)  = fromCoord ij
+  in toCoord ((x' + i) `div` 2) ((y' + j) `div` 2)
+
+addDirtAt :: Coord -> GameMap -> GameMap
+addDirtAt = (flip mapSquareAt) (always DIRT)
 
 spaceBetween :: ModifyMap
-spaceBetween = undefined
+spaceBetween thisCoord thatCoord=
+  addSpaceAt (coordBetween thisCoord thatCoord)
+
+addSpaceAt :: Coord -> GameMap -> GameMap
+addSpaceAt = (flip mapSquareAt) (always DEEP_SPACE)
 
 mapThoseWorms :: (Worms -> Worms) -> State -> State
 mapThoseWorms f state@(State { opponent = opponent' }) =
@@ -594,7 +608,7 @@ type GenerateCoordinate     = Int -> Int -> Coord
 type DisplaceFromCoordinate = Coord -> Int -> (Coord, Int)
 type ShotSwitch             = Int -> Move
 type GeneratePlayer         = Coord -> Coord -> Player
-type ModifyMap               = Coord -> Coord -> GameMap -> GameMap
+type ModifyMap              = Coord -> Coord -> GameMap -> GameMap
 
 generateShotScenarioWithMapModifications :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> ModifyMap -> (Int, Int, Int) -> (State, Move)
 generateShotScenarioWithMapModifications generateCoord displace switchShot generateThisPlayer generateThatPlayer modifyMap (i, j, k) =
