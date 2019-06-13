@@ -603,6 +603,7 @@ rocketDamage = 10
 data Hit = HitWorm Worm
          | HitObstacle
          | HitNothing
+  deriving (Eq, Show)
 
 hitsWorm :: Coord -> GameMap -> Direction -> Worms -> Maybe Worm
 hitsWorm origin gameMap' direction worms' =
@@ -615,7 +616,7 @@ firstWormHit :: GameMap -> Worms -> Hit -> Coord -> Hit
 firstWormHit _        _      hit@(HitWorm _) _      = hit
 firstWormHit _        _      HitObstacle     _      = HitObstacle
 firstWormHit gameMap' worms' HitNothing      coord' =
-  if abstacleAt coord' gameMap'
+  if obstacleAt coord' gameMap'
   then HitObstacle
   else isAPositionOfAWorm coord' worms'
 
@@ -625,8 +626,8 @@ isAPositionOfAWorm coord' worms' =
     Just worm -> HitWorm worm
     Nothing   -> HitNothing
 
-abstacleAt :: Coord -> GameMap -> Bool
-abstacleAt coord' =
+obstacleAt :: Coord -> GameMap -> Bool
+obstacleAt coord' =
    any (\ square -> square == DIRT || square == DEEP_SPACE) .
    lookupCoord coord'
 

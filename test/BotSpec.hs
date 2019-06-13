@@ -179,6 +179,14 @@ spec = do
       diagonalDelta x <= 2
     prop "never creates the number 0" $ \ x ->
       diagonalDelta x /= 0
+  describe "nonDiagonalDeltaOfAtLeastTwo" $ do
+    prop "creates the numbers -2, -3, 2 and 3" $ \ x ->
+      elem (nonDiagonalDeltaOfAtLeastTwo x) [-2, -3, 2, 3]
+  describe "divergeFromZero" $ do
+    prop "creates numbers of at most a difference of deltaMagnitude from the original number" $ \ x ->
+      abs (divergeFromZero 2 x - x) `shouldBe` 2
+    prop "doesn't change the sign of the given number" $ \ x ->
+      (divergeFromZero 2 x) * x >= 0
   describe "inBoundsWithNonDiagonalPadding" $ do
     prop "creates numbers greater than or equal to 3" $ \ x ->
       inBoundsWithNonDiagonalPadding x >= 3
@@ -194,6 +202,20 @@ spec = do
       inBoundsWithNoPadding x >= 0
     prop "creates numbers less than the map dimension" $ \ x ->
       inBoundsWithNoPadding x < mapDim
+  describe "isAPositionOfAWorm" $ do
+    it "should produce HitNothing when the position is not held by any of the given worms" $
+      isAPositionOfAWorm (toCoord 0 0) someWorms `shouldBe` HitNothing
+    it "should produce HitWorm of the worm hit when a coord shares it's position with a worm" $
+      isAPositionOfAWorm (toCoord 1 31) someWorms `shouldBe` (HitWorm thisWorm2)
+  describe "obstacleAt" $ do
+    it "should produce HitObstacle when targetting DEEP_SPACE" $
+      obstacleAt (toCoord 0 0) aGameMap `shouldBe` True
+    it "should produce HitObstacle when targetting DIRT" $
+      obstacleAt (toCoord 20 20) aGameMap `shouldBe` True
+    it "should produce HitNothing when targetting AIR" $
+      obstacleAt (toCoord 1 1) aGameMap `shouldBe` False
+    it "should produce HitNothing when targetting a MEDIPACK" $
+      obstacleAt (toCoord 31 31) aGameMapWithAMedipack `shouldBe` False
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -516,7 +538,7 @@ spec = do
       let (state, shot) = generateShotScenarioWithMapModifications
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
-                          (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
+                          (generateCoordDisplacer nonDiagonalDeltaOfAtLeastTwo addDelta ignoreDelta)
                           (generateShotSwitch     shootEast shootWest)
                           takeThisWorm
                           takeThatWorm
@@ -638,6 +660,17 @@ nonDiagonalDelta :: Int -> Int
 nonDiagonalDelta x =
   let y = (x `mod` 7) - 3
   in if y == 0 then -1 else y
+
+nonDiagonalDeltaOfAtLeastTwo :: Int -> Int
+nonDiagonalDeltaOfAtLeastTwo x =
+  divergeFromZero 1 $ let y = (x `mod` 5) - 2
+                      in if y == 0 then -1 else y
+
+divergeFromZero :: Int -> Int -> Int
+divergeFromZero deltaMagnitude x =
+  x + if x < 0
+      then -deltaMagnitude
+      else deltaMagnitude
 
 diagonalDelta :: Int -> Int
 diagonalDelta x =
