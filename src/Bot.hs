@@ -342,6 +342,9 @@ thatPlayersWorms = (\ (Player _ worms') -> worms') . opponent
 wormPosition :: Worm -> Coord
 wormPosition (Worm _ _ position') = position'
 
+wormsHealth :: Worm -> Int
+wormsHealth (Worm _ health' _) = health'
+
 makeMoveMoves :: Bool -> Move -> Move -> State -> State
 makeMoveMoves swapping this that state =
   let thisMoveMove          = if isAMoveMove this && (not $ targetOfThisMoveIsDirt this state) then Just this else Nothing
@@ -569,15 +572,49 @@ makeShootMoves this that state =
       thatWormWasHitFromThatShot = isJust thatWormHitFromThatShot
       thisTargetFromThis         = fromJust thisWormHitFromThisShot
       thatTargetFromThat         = fromJust thatWormHitFromThatShot
-      harmThisWormWithThisShot   = if thisWormWasHitFromThisShot then harmThisWormByWormWithRocket thisTargetFromThis else id
-      harmThatWormWithThisShot   = if thatWormWasHitFromThisShot then harmThatWormByWormWithRocket thatTargetFromThis else id
-      harmThisWormWithThatShot   = if thisWormWasHitFromThatShot then harmThisWormByWormWithRocket thisTargetFromThat else id
-      harmThatWormWithThatShot   = if thatWormWasHitFromThatShot then harmThatWormByWormWithRocket thatTargetFromThat else id
-      harmWorms                  = harmThisWormWithThatShot .
-                                   harmThisWormWithThisShot .
-                                   harmThatWormWithThisShot .
-                                   harmThatWormWithThatShot
+      harmFirstTargetOfThisShot  = harmFirstTarget thisWormsPosition
+                                                   thisWormWasHitFromThisShot
+                                                   thatWormWasHitFromThisShot
+                                                   thisTargetFromThis
+                                                   thatTargetFromThis
+                                                   (harmThisWormByWormWithRocket thisTargetFromThis)
+                                                   (harmThatWormByWormWithRocket thatTargetFromThis)
+      harmFirstTargetOfThatShot  = harmFirstTarget thatWormsPosition
+                                                   thisWormWasHitFromThatShot
+                                                   thatWormWasHitFromThatShot
+                                                   thisTargetFromThat
+                                                   thatTargetFromThat
+                                                   (harmThisWormByWormWithRocket thisTargetFromThat)
+                                                   (harmThatWormByWormWithRocket thatTargetFromThat)
+      harmWorms                  = harmFirstTargetOfThisShot .
+                                   harmFirstTargetOfThatShot
   in harmWorms state
+
+harmFirstTarget :: Coord -> Bool -> Bool -> Worm -> Worm -> (State -> State) -> (State -> State) -> State -> State
+harmFirstTarget origin firstHit secondHit firstWorm secondWorm hitFirst hitSecond =
+  let firstPosition  = wormPosition firstWorm
+      secondPosition = wormPosition secondWorm
+  in if firstHit
+     then if secondHit
+          then if closer origin firstPosition secondPosition
+               then hitFirst
+               else hitSecond
+          else hitFirst
+     else if secondHit
+          then hitSecond
+          else id
+
+closer :: Coord -> Coord -> Coord -> Bool
+closer origin first' second' =
+  if manhattanDistance origin first' < manhattanDistance origin second'
+  then True
+  else False
+
+manhattanDistance :: Coord -> Coord -> Int
+manhattanDistance origin destination =
+  let (x', y') = fromCoord origin
+      (i', j') = fromCoord destination
+  in abs (x' - i') + abs (y' - j')
 
 mapThatWormByWorm :: Worm -> (Worm -> Worm) -> State -> State
 mapThatWormByWorm (Worm id' _ _) f state@(State { opponent = opponent' }) =
@@ -677,6 +714,7 @@ data Direction = N
                | SW
                | W
                | NW
+  deriving (Show)
 
 directionOfShot :: Move -> Maybe Direction
 directionOfShot (Move 0) = Just N

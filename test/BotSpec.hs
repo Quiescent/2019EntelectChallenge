@@ -546,32 +546,39 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state
-    prop "should not hit this players first horizontal target in range when there's a friendly worm in the way" $ \ (i, j, k, l) ->
-      let (state, shot) = generateShotScenarioWithMapModifications
+    prop "should not hit this players first horizontal target in range when there's a friendly worm in the way" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDeltaOfAtLeastTwo addDelta ignoreDelta)
                           (generateShotSwitch     shootEast shootWest)
                           takeThisWormAndPutAnotherInbetween
                           takeThatWorm
-                          (putDirtOrSpaceBetweenWorms l)
                           (i, j, k)
-      in noneOfThoseWormsShouldBeHarmed 10 $ makeMove True (fromMoves shot doNothing) state
+      in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
+        (oneWormHarmed 10 . thisPlayersWorms) .&&. (noWormHarmed 10 . thatPlayersWorms)
 
-noneOfThoseWormsShouldBeHarmed :: Int -> State -> Bool
-noneOfThoseWormsShouldBeHarmed originalHealth state =
-  allThoseWorms (notHarmed originalHealth) state
+(.&&.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
+(.&&.) p1 p2 x =
+  p1 x && p2 x
+
+oneWormHarmed :: Int -> Worms -> Bool
+oneWormHarmed originalHealth =
+  (== 1) . countWorms ((/= originalHealth) . wormsHealth)
+
+noWormHarmed :: Int -> Worms -> Bool
+noWormHarmed originalHealth =
+  allWorms (notHarmed originalHealth)
 
 notHarmed :: Int -> Worm -> Bool
-notHarmed originalHealth (Worm _ health' _) =
-  health' == originalHealth
-
-allThoseWorms :: (Worm -> Bool) -> State -> Bool
-allThoseWorms f =
-  allWorms f . playersWorms . opponent
+notHarmed originalHealth =
+  (== originalHealth) . wormsHealth
 
 allWorms :: (Worm -> Bool) -> Worms -> Bool
 allWorms f = M.foldl' ( \ acc worm -> acc && f worm) True
+
+countWorms :: (Worm -> Bool) -> Worms -> Int
+countWorms f = M.foldl' ( \ acc worm -> acc + if f worm then 1 else 0) 0
 
 putDirtOrSpaceBetweenWorms :: Int -> ModifyMap
 putDirtOrSpaceBetweenWorms x =
@@ -624,7 +631,7 @@ takeBothWorms thisCoord thatCoord =
 takeThisWormAndPutAnotherInbetween :: GeneratePlayer
 takeThisWormAndPutAnotherInbetween thisCoord thatCoord =
   Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord,
-                                        Worm 1 10 $ coordBetween thisCoord thatCoord]
+                                        Worm 2 10 $ coordBetween thisCoord thatCoord]
 
 takeThisWorm :: GeneratePlayer
 takeThisWorm thisCoord _ =
