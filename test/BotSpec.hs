@@ -226,6 +226,20 @@ spec = do
     context "when both predicates produce true" $
       it "should produce true" $
       (((\ _ -> True) .&&. (\ _ -> True)) (10::Int)) `shouldBe` True
+  describe "one worm harmed" $ do
+    context "given a collection of no worms" $
+      it "should produce false" $
+      oneWormHarmed 10 (M.empty) `shouldBe` False
+    context "given a collection of one unharmed worm" $
+      it "should produce false" $
+      oneWormHarmed 10 someWorms `shouldBe` False
+    context "given a collection with two harmed worms" $
+      it "should produce false" $
+      oneWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) $ modifyWormWithId 2 (withHealthOf 0) someWorms) `shouldBe`
+      False
+    context "given a collection with one worm harmed" $
+      it "should produce true" $
+      oneWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) someWorms)
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
