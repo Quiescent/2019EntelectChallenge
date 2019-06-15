@@ -546,6 +546,32 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state
+    prop "should not hit this players first horizontal target in range when there's a friendly worm in the way" $ \ (i, j, k, l) ->
+      let (state, shot) = generateShotScenarioWithMapModifications
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNoPadding)
+                          (generateCoordDisplacer nonDiagonalDeltaOfAtLeastTwo addDelta ignoreDelta)
+                          (generateShotSwitch     shootEast shootWest)
+                          takeThisWormAndPutAnotherInbetween
+                          takeThatWorm
+                          (putDirtOrSpaceBetweenWorms l)
+                          (i, j, k)
+      in noneOfThoseWormsShouldBeHarmed 10 $ makeMove True (fromMoves shot doNothing) state
+
+noneOfThoseWormsShouldBeHarmed :: Int -> State -> Bool
+noneOfThoseWormsShouldBeHarmed originalHealth state =
+  allThoseWorms (notHarmed originalHealth) state
+
+notHarmed :: Int -> Worm -> Bool
+notHarmed originalHealth (Worm _ health' _) =
+  health' == originalHealth
+
+allThoseWorms :: (Worm -> Bool) -> State -> Bool
+allThoseWorms f =
+  allWorms f . playersWorms . opponent
+
+allWorms :: (Worm -> Bool) -> Worms -> Bool
+allWorms f = M.foldl' ( \ acc worm -> acc && f worm) True
 
 putDirtOrSpaceBetweenWorms :: Int -> ModifyMap
 putDirtOrSpaceBetweenWorms x =
@@ -594,6 +620,11 @@ generateInBoundsCoordinate = generateCoordGenerator inBoundsWithNoPadding inBoun
 takeBothWorms :: GeneratePlayer
 takeBothWorms thisCoord thatCoord =
   Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
+
+takeThisWormAndPutAnotherInbetween :: GeneratePlayer
+takeThisWormAndPutAnotherInbetween thisCoord thatCoord =
+  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord,
+                                        Worm 1 10 $ coordBetween thisCoord thatCoord]
 
 takeThisWorm :: GeneratePlayer
 takeThisWorm thisCoord _ =
