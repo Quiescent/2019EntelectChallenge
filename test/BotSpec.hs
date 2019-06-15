@@ -232,7 +232,7 @@ spec = do
       oneWormHarmed 10 (M.empty) `shouldBe` False
     context "given a collection of one unharmed worm" $
       it "should produce false" $
-      oneWormHarmed 10 someWorms `shouldBe` False
+      oneWormHarmed 10 (wormsToMap $ V.singleton aWorm) `shouldBe` False
     context "given a collection with two harmed worms" $
       it "should produce false" $
       oneWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) $ modifyWormWithId 2 (withHealthOf 0) someWorms) `shouldBe`
@@ -240,6 +240,37 @@ spec = do
     context "given a collection with one worm harmed" $
       it "should produce true" $
       oneWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) someWorms)
+  describe "noWormHarmed" $ do
+    context "given an empty collection" $
+      it "should produce true" $
+      noWormHarmed 10 (M.empty)
+    context "given a collection of one unharmed worm" $
+      it "should produce true" $
+      noWormHarmed 10 (wormsToMap $ V.singleton aWorm)
+    context "given a collection of more than one unharmed worms" $
+      it "should produce true" $
+      noWormHarmed 10 someWorms
+    context "given a collection with a harmed worm" $
+      it "should produce false" $
+      noWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) someWorms) `shouldBe` False
+  describe "closer" $ do
+    context "given three identical coordinates" $
+      it "should produce false" $
+      closer (toCoord 0 0) (toCoord 0 0) (toCoord 0 0) `shouldBe` False
+    context "given a coordinate and then two identical coordinates" $
+      it "should produce false" $
+      closer (toCoord 0 0) (toCoord 3 4) (toCoord 3 4) `shouldBe` False
+    context "given a coordinate a second displaced from it by at most 10 and a third displaced by twice as much more" $
+      prop "produces true" $ \ (i, j, k) ->
+      let d'     = k `mod` 10
+          d      = if d' == 0 then -1 else d'
+          pad    = (abs d)
+          x'     = pad + (i `mod` (mapDim - (2 * pad)))
+          y'     = pad + (j `mod` (mapDim - (2 * pad)))
+          origin = toCoord x' y'
+          coord1 = toCoord (x' + d) (y' + d)
+          coord2 = toCoord (x' + (2 * d)) (y' + (2 * d))
+      in closer origin coord1 coord2
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
