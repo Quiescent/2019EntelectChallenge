@@ -216,6 +216,16 @@ spec = do
       obstacleAt (toCoord 1 1) aGameMap `shouldBe` False
     it "should produce HitNothing when targetting a MEDIPACK" $
       obstacleAt (toCoord 31 31) aGameMapWithAMedipack `shouldBe` False
+  describe ".&&." $ do
+    context "when the first predicate produces false" $
+      it "should produce false" $
+      (((\ _ -> False) .&&. (\ _ -> True)) (10::Int)) `shouldBe` False
+    context "when the second predicate produces false" $
+      it "should produce false" $
+      (((\ _ -> True) .&&. (\ _ -> False)) (10::Int)) `shouldBe` False
+    context "when both predicates produce true" $
+      it "should produce true" $
+      (((\ _ -> True) .&&. (\ _ -> True)) (10::Int)) `shouldBe` True
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
