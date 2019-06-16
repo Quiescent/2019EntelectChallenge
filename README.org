@@ -288,6 +288,22 @@ from the command line to invoke the bot program.
        :END:
 In this case the first worm should always be hit even if it's
 friendly.
+****** IN_PROGRESS Change the way that worms are represented
+       :LOGBOOK:
+       - Note taken on [2019-06-16 Sun 12:21] \\
+         The new representation is one which associates facts with ids.  The
+         games always happen between two teams of three worms so I can get away
+         with an alist in which I removed the first element which satisfies the
+         given id.  All alists will be of the form (Id, a) where a is one of
+         position or health.  The Id will be a bit packed number, with the
+         first two bits corresponding to my players three worms and the second
+         two bits to the opponents three worms.
+       - Note taken on [2019-06-16 Sun 12:18] \\
+         It's become obvious that the current representation is difficult to
+         work with and prone to creating bugs which are difficult to
+         appreciate.
+       - State "IN_PROGRESS" from "TODO"       [2019-06-16 Sun 12:18]
+       :END:
 ****** TODO Implement worms being just out of range scenarios
 ****** TODO Implement simultaneous shots scenarios
 ***** TODO Rule 1: A shot hits the first target in range
