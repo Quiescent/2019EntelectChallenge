@@ -52,6 +52,12 @@ spec = do
     context "given an empty collection of worm health facts" $
       it "produces Nothing" $
       findWormHealth (WormId 1) aState `shouldBe` Nothing
+    context "given an alist of worm health which doesn't contain the id" $
+      it "produces Nothing" $
+      findWormHealth (WormId 2) aStateWithTwoWormHealths `shouldBe` Nothing
+    context "given an alist of worm health which does contain the id" $
+      it "produces Just that cell" $
+      findWormHealth (WormId 1) aStateWithTwoWormHealths `shouldBe` (Just $ WormHealth 5)
   describe "packThisWorm" $ do
     context "given a number from 1 to 3" $
       prop "is no different to the WormId constructor" $ \ x ->
@@ -679,6 +685,11 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
         (oneWormHarmed 10 . thisPlayersWorms) .&&. (noWormHarmed 10 . thatPlayersWorms)
+
+aStateWithTwoWormHealths =
+  aState { wormHealths = AList [
+             (WormId 1, WormHealth 5),
+             (WormId 3, WormHealth 10)] }
 
 emptyWormHealth = AList []
 
