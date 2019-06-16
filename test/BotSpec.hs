@@ -37,8 +37,14 @@ isOpponentWorm (WormId 8)  = True
 isOpponentWorm (WormId 12) = True
 isOpponentWorm _           = False
 
+withId :: WormId -> (WormId, a) -> Bool
+withId id' = (==id') . fst
+
+aListFind :: ((WormId, a) -> Bool) -> AList a -> Maybe (WormId, a)
+aListFind p (AList xs) = find p xs
+
 findWormHealth :: WormId -> State -> Maybe WormHealth
-findWormHealth = undefined
+findWormHealth id' = fmap snd . aListFind (withId id') . wormHealths
 
 spec :: Spec
 spec = do
