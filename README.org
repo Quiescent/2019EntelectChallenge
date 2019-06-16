@@ -329,7 +329,13 @@ friendly.
      Yes.  Worms of an opponent with fewer worms get a chance more
      often.
    :END:
-
+** IN_PROGRESS What id do the remaining worms get when a worm dies
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-06-16 Sun 12:46]
+   :END:
+The engine provides one worm id, but the collections might be of
+imbalanced sizes despite the fact that two worms must go at the same
+time.
 * Potentially Useful, Discarded, Code
 In this section I document the code which I wrote and then didn't end
 up needing for some or other reason.  Such as having written the code
