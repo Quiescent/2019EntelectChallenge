@@ -6,9 +6,7 @@ import Bot
 import Import
 
 import qualified RIO.Vector.Boxed as V
-import qualified RIO.HashMap as M
 import RIO.List
-import RIO.List.Partial
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -25,26 +23,11 @@ packThatWorm 2 = WormId 8
 packThatWorm 3 = WormId 12
 packThatWorm x  = error $ "packThatWorm with invalid worm id: " ++ show x
 
-isMyWorm :: WormId -> Bool
-isMyWorm (WormId 1) = True
-isMyWorm (WormId 2) = True
-isMyWorm (WormId 3) = True
-isMyWorm _          = False
-
-isOpponentWorm :: WormId -> Bool
-isOpponentWorm (WormId 4)  = True
-isOpponentWorm (WormId 8)  = True
-isOpponentWorm (WormId 12) = True
-isOpponentWorm _           = False
-
-withId :: WormId -> (WormId, a) -> Bool
-withId id' = (==id') . fst
-
-aListFind :: ((WormId, a) -> Bool) -> AList a -> Maybe (WormId, a)
-aListFind p (AList xs) = find p xs
+withId :: WormId -> AListEntry a -> Bool
+withId id' = (== id') . idSlot
 
 findWormHealth :: WormId -> State -> Maybe WormHealth
-findWormHealth id' = fmap snd . aListFind (withId id') . wormHealths
+findWormHealth id' = fmap dataSlot . aListFind (withId id') . wormHealths
 
 spec :: Spec
 spec = do
@@ -115,80 +98,52 @@ spec = do
       let x' = inBoundsWithNoPadding (abs i)
           y' = inBoundsWithNoPadding (abs j)
       in fromCoord (toCoord x' y') `shouldBe` (x', y')
-  describe "thisCurrentWorm" $ do
-    it "shouldn't be found when the index is negative" $
-      thisCurrentWorm (withMyCurrentWormIdOf (-1) aState) `shouldBe` Nothing
-    it "shouldn't be found when the index is greater than the original number of worms" $
-      thisCurrentWorm (withMyCurrentWormIdOf 6 aState) `shouldBe` Nothing
-    it "shouldn't be found when searching for a worm in a gap in the sequence" $
-      thisCurrentWorm (withMyCurrentWormIdOf 4 aState) `shouldBe` Nothing
-    it "should find a worm when it's in the sequence" $
-      thisCurrentWorm (withMyCurrentWormIdOf 3 aState) `shouldBe` (Just $ withIdOf 3 thisWorm3)
-  describe "thatCurrentWorm" $ do
-    it "shouldn't be found when the index is negative" $
-      thatCurrentWorm (withOpponentCurrentWormIdOf (-1) aState) `shouldBe` Nothing
-    it "shouldn't be found when the index is greater than the original number of worms" $
-      thatCurrentWorm (withOpponentCurrentWormIdOf 6 aState) `shouldBe` Nothing
-    it "shouldn't be found when searching for a worm in a gap in the sequence" $
-      thatCurrentWorm (withOpponentCurrentWormIdOf 2 aState) `shouldBe` Nothing
-    it "should find a worm when it's in the sequence" $
-      thatCurrentWorm (withOpponentCurrentWormIdOf 3 aState) `shouldBe` (Just $ withIdOf 3 thatWorm3)
   describe "thisPlayersWorms" $ do
-    it "should produce this players worms" $
-      thisPlayersWorms aState == someWorms
+    it "should produce facts for this players worms" $
+      thisPlayersWorms (wormHealths aState) == AList thisPlayersHealths
   describe "thatPlayersWorms" $ do
     it "should produce that players worms" $
-      thatPlayersWorms aState == someOtherWorms
+      thatPlayersWorms (wormHealths aState) == AList thatPlayersHealths
   describe "penaliseForInvalidCommand" $ do
     it "should reduce the given players score by 4" $
       penaliseForInvalidCommand aPlayer `shouldBe`
-      Player 296 1 someWorms
+      Player 296 (WormId 1)
   describe "penaliseThatPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the opponent by 4" $
       penaliseThatPlayerForAnInvalidCommand aState `shouldBe`
-      aState { opponent = Player 296 1 someOtherWorms }
+      aState { opponent = Player 296 (WormId 1) }
   describe "penaliseThisPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the player by 4" $
       penaliseThisPlayerForAnInvalidCommand aState `shouldBe`
-      aState { myPlayer = Player 296 1 someWorms }
+      aState { myPlayer = Player 296 (WormId 1) }
   describe "awardPointsForMovingToAir" $ do
     it "should increment the points of a player by 5" $
       awardPointsForMovingToAir aPlayer `shouldBe`
-      Player 305 1 someWorms
+      Player 305 (WormId 1)
   describe "awardPointsToThatPlayerForMovingToAir" $ do
     it "should increment the points of opponent by 5" $
       awardPointsToThatPlayerForMovingToAir aState `shouldBe`
-      aState { opponent = Player 305 1 someOtherWorms }
+      aState { opponent = Player 305 (WormId 1) }
   describe "awardPointsToThisPlayerForMovingToAir" $ do
     it "should increment the points of my player by 5" $
       awardPointsToThisPlayerForMovingToAir aState `shouldBe`
-      aState { myPlayer = Player 305 1 someWorms }
+      aState { myPlayer = Player 305 (WormId 1) }
   describe "awardPointsForDigging" $ do
     it "should increment the points of a player by 7" $
       awardPointsForDigging aPlayer `shouldBe`
-      Player 307 1 someWorms
+      Player 307 (WormId 1)
   describe "awardPointsToThisPlayerForDigging" $ do
     it "should increment this players points by 7" $
       awardPointsToThisPlayerForDigging aState `shouldBe`
-      aState { myPlayer = Player 307 1 someWorms }
+      aState { myPlayer = Player 307 (WormId 1) }
   describe "awardPointsToThatPlayerForDigging" $ do
     it "should increment that players points by 7" $
       awardPointsToThatPlayerForDigging aState `shouldBe`
-      aState { opponent = Player 307 1 someOtherWorms }
+      aState { opponent = Player 307 (WormId 1) }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
-      (harmWormWithRocket $ Worm 1 10 $ toCoord 15 31) `shouldBe`
-      (Worm 1 0 $ toCoord 15 31)
-  describe "mapThoseWorms" $ do
-    it "should produce the same state given the identity function" $
-      mapThoseWorms id aState `shouldBe` aState
-    it "should produce the given state with no worms for that playere when mapping the function always []" $
-      mapThoseWorms (always M.empty) aState `shouldBe` aState { opponent = Player 300 1 M.empty }
-  describe "mapTheseworms" $ do
-    it "should produce the same state given the identity function" $
-      mapTheseWorms id aState `shouldBe` aState
-    it "should produce the given state with no worms for this playere when mapping the function always []" $
-      mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 1 M.empty }
+      (harmWormWithRocket (toCoord 15 31) aState) `shouldBe`
+      aState { wormHealths = (mapWormById (WormId 1) (mapDataSlot (mapHealth (+ (-10)))) (wormHealths aState)) }
   describe "generateShotSwitch" $ do
     prop "produces a function which produces the first given a negative number and the second given a positive number" $
       let switchFunction = generateShotSwitch shootEast shootNorth
@@ -198,7 +153,9 @@ spec = do
     prop "creates a map of size two (distinct coordinates) given two (distinct) coordinates" $ \ (i, j) ->
       let thisCoord = generateInBoundsCoordinate i j
           thatCoord = generateInBoundsCoordinate (i + 20) (j + 20) -- Ensure distinct coordinates
-      in (M.size $ playersWorms $ takeBothWorms thisCoord thatCoord) `shouldBe` 2
+      in (countWorms (isOpponentWorm . idSlot) $
+          wormHealths $
+          takeBothWorms (WormId 4) (WormId 8) thisCoord thatCoord aStateWithoutWorms) `shouldBe` 2
   describe "generateInBoundsCoordinate" $ do
     prop "creates coordinates which are positive or zero on the x-axis" $ \ (i, j) ->
       let (x, _) = fromCoord $ generateInBoundsCoordinate i j
@@ -215,29 +172,6 @@ spec = do
     prop "creates coordinates which are less than the map dimension in the y-axis" $ \ (i, j) ->
       let (_, y) = fromCoord $ generateInBoundsCoordinate i j
       in y < mapDim
-  describe "takeThisWorm" $ do
-    prop "creates a player with 1 worm" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (M.size $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` 1
-    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (wormPosition $ head $ M.elems $ playersWorms $ takeThisWorm thisCoord thatCoord) `shouldBe` thisCoord
-  describe "takeThatWorm" $ do
-    prop "creates a player with 1 worm" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (M.size $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` 1
-    prop "always creates the worm from the first coordinate" $ \ (i, j) ->
-      let thisCoord = generateInBoundsCoordinate i j
-          thatCoord = generateInBoundsCoordinate (i + 20) (j + 20)
-      in (wormPosition $ head $ M.elems $ playersWorms $ takeThatWorm thisCoord thatCoord) `shouldBe` thatCoord
-  describe "takeNoWorms" $ do
-    it "should create a player with no worms given two distinct coordinates" $
-      let thisCoord = toCoord 10 20
-          thatCoord = toCoord 20 30
-      in (M.size $ playersWorms $ takeNoWorms thisCoord thatCoord) `shouldBe` 0
   describe "nonDiagonalDelta" $ do
     prop "creates numbers greater than or equal to -3" $ \ x ->
       nonDiagonalDelta x >= (-3)
@@ -277,9 +211,10 @@ spec = do
       inBoundsWithNoPadding x < mapDim
   describe "isAPositionOfAWorm" $ do
     it "should produce HitNothing when the position is not held by any of the given worms" $
-      isAPositionOfAWorm (toCoord 0 0) someWorms `shouldBe` HitNothing
+      isAPositionOfAWorm (toCoord 0 0) someWormPositions `shouldBe` HitNothing
     it "should produce HitWorm of the worm hit when a coord shares it's position with a worm" $
-      isAPositionOfAWorm (toCoord 1 31) someWorms `shouldBe` (HitWorm thisWorm2)
+      isAPositionOfAWorm (toCoord 1 31) someWormPositions `shouldBe`
+      HitWorm (toCoord 1 31)
   describe "obstacleAt" $ do
     it "should produce HitObstacle when targetting DEEP_SPACE" $
       obstacleAt (toCoord 0 0) aGameMap `shouldBe` True
@@ -292,40 +227,41 @@ spec = do
   describe ".&&." $ do
     context "when the first predicate produces false" $
       it "should produce false" $
-      (((\ _ -> False) .&&. (\ _ -> True)) (10::Int)) `shouldBe` False
+      (((always False) .&&. (always True)) (10::Int)) `shouldBe` False
     context "when the second predicate produces false" $
       it "should produce false" $
-      (((\ _ -> True) .&&. (\ _ -> False)) (10::Int)) `shouldBe` False
+      (((always True) .&&. (always False)) (10::Int)) `shouldBe` False
     context "when both predicates produce true" $
       it "should produce true" $
-      (((\ _ -> True) .&&. (\ _ -> True)) (10::Int)) `shouldBe` True
+      (((always True) .&&. (always True)) (10::Int)) `shouldBe` True
   describe "one worm harmed" $ do
     context "given a collection of no worms" $
       it "should produce false" $
-      oneWormHarmed 10 (M.empty) `shouldBe` False
+      oneWormHarmed 10 emptyWormHealths `shouldBe` False
     context "given a collection of one unharmed worm" $
       it "should produce false" $
-      oneWormHarmed 10 (wormsToMap $ V.singleton aWorm) `shouldBe` False
+      oneWormHarmed 10 (AList [AListEntry (WormId 1) (WormHealth 10)]) `shouldBe` False
     context "given a collection with two harmed worms" $
       it "should produce false" $
-      oneWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) $ modifyWormWithId 2 (withHealthOf 0) someWorms) `shouldBe`
+      oneWormHarmed 10 (AList [AListEntry (WormId 1) (WormHealth 0), AListEntry (WormId 2) (WormHealth 0)]) `shouldBe`
       False
     context "given a collection with one worm harmed" $
       it "should produce true" $
-      oneWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) someWorms)
+      oneWormHarmed 10 (AList [AListEntry (WormId 1) (WormHealth 0), AListEntry (WormId 2) (WormHealth 10)])
   describe "noWormHarmed" $ do
     context "given an empty collection" $
       it "should produce true" $
-      noWormHarmed 10 (M.empty)
+      noWormHarmed 10 emptyWormHealths
     context "given a collection of one unharmed worm" $
       it "should produce true" $
-      noWormHarmed 10 (wormsToMap $ V.singleton aWorm)
+      noWormHarmed 10 (AList [AListEntry (WormId 1) (WormHealth 10)])
     context "given a collection of more than one unharmed worms" $
       it "should produce true" $
-      noWormHarmed 10 someWorms
+      noWormHarmed 10 (AList [AListEntry (WormId 1) (WormHealth 10), AListEntry (WormId 2) (WormHealth 10)])
     context "given a collection with a harmed worm" $
       it "should produce false" $
-      noWormHarmed 10 (modifyWormWithId 1 (withHealthOf 0) someWorms) `shouldBe` False
+      noWormHarmed 10 (AList [AListEntry (WormId 1) (WormHealth 0), AListEntry (WormId 2) (WormHealth 10)]) `shouldBe`
+      False
   describe "closer" $ do
     context "given three identical coordinates" $
       it "should produce false" $
@@ -360,20 +296,21 @@ spec = do
       (awardPointsToThatPlayerForDigging $ removeDirtFromMapAt (toCoord 16 2) aState)
     it "moving my worm into air should move the worm to that spot" $
       makeMove True (fromMoves moveEast doNothing) aState `shouldBe`
-      (awardPointsToThisPlayerForMovingToAir $ aState { myPlayer = withWorms someWormsWithCurrentMovedEast aPlayer })
+      (awardPointsToThisPlayerForMovingToAir $ moveThisWorm (toCoord 16 31) aState)
     it "moving opponents worm into air should move the worm to that spot" $
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
-      (awardPointsToThatPlayerForMovingToAir $ aState { opponent = withWorms someOtherWormsWithCurrentMovedEast anOpponent })
+      (awardPointsToThatPlayerForMovingToAir $ moveThatWorm (toCoord 17 1) aState)
     it "moving to the same square should swap the worms if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
-       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedBySwapping,
-                                      opponent = opponentWithCollisionResolvedBySwapping })
+       moveThisWorm (toCoord 17 31) $ moveThatWorm (toCoord 15 31) $
+       harmWorm knockBackDamageAmount (toCoord 17 31) $ harmWorm knockBackDamageAmount (toCoord 15 31)
+       aStateWithImpendingCollision)
     it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
-       aStateWithImpendingCollision { myPlayer = aPlayerWithCollisionResolvedByNotMoving,
-                                      opponent = opponentWithCollisionResolvedByNotMoving })
+       harmWorm knockBackDamageAmount (toCoord 17 31) $ harmWorm knockBackDamageAmount (toCoord 15 31)
+       aStateWithImpendingCollision)
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
       penaliseThisPlayerForAnInvalidCommand aStateWithMyWormsNextToEachOther
@@ -513,207 +450,195 @@ spec = do
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
-                          (generateShotSwitch shootEast shootWest)
-                          takeThisWorm
-                          takeThatWorm
+                          (generateShotSwitch     shootEast shootWest)
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         mapThoseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 4) $ wormHealths state }
     prop "should hit this players first horizontal target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
-                          (generateShotSwitch shootEast shootWest)
-                          takeBothWorms
-                          takeNoWorms
+                          (generateShotSwitch     shootEast shootWest)
+                          (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         mapTheseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 2) $ wormHealths state }
     prop "should hit this players first vertical target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
                                                   inBoundsWithNonDiagonalPadding)
                           (generateCoordDisplacer nonDiagonalDelta ignoreDelta addDelta)
-                          (generateShotSwitch shootSouth shootNorth)
-                          takeThisWorm
-                          takeThatWorm
+                          (generateShotSwitch     shootSouth shootNorth)
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         mapThoseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 4) $ wormHealths state }
     prop "should hit this players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
                                                   inBoundsWithNonDiagonalPadding)
                           (generateCoordDisplacer nonDiagonalDelta ignoreDelta addDelta)
-                          (generateShotSwitch shootSouth shootNorth)
-                          takeBothWorms
-                          takeNoWorms
+                          (generateShotSwitch     shootSouth shootNorth)
+                          (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         mapTheseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 2) $ wormHealths state }
     prop "should hit this players first NW-SE diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta addDelta)
-                          (generateShotSwitch shootSouthEast shootNorthWest)
-                          takeThisWorm
-                          takeThatWorm
+                          (generateShotSwitch     shootSouthEast shootNorthWest)
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         mapThoseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 4) $ wormHealths state }
     prop "should hit this players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta addDelta)
-                          (generateShotSwitch shootSouthEast shootNorthWest)
-                          takeBothWorms
-                          takeNoWorms
+                          (generateShotSwitch     shootSouthEast shootNorthWest)
+                          (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         mapTheseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 2) $ wormHealths state }
     prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta subtractDelta)
                           (generateShotSwitch     shootNorthEast shootSouthWest)
-                          takeThisWorm
-                          takeThatWorm
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         mapThoseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 4) $ wormHealths state }
     prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
                           (generateShotSwitch     shootEast shootWest)
-                          takeThatWorm
-                          takeThisWorm
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 1) $ wormHealths state }
     prop "should hit that players first horizontal target in range when it's friendly" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
                           (generateShotSwitch     shootEast shootWest)
-                          takeNoWorms
-                          takeBothWorms
+                          (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         mapThoseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 8) $ wormHealths state }
     prop "should hit that players first vertical target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
                                                   inBoundsWithNonDiagonalPadding)
                           (generateCoordDisplacer nonDiagonalDelta ignoreDelta addDelta)
                           (generateShotSwitch     shootSouth shootNorth)
-                          takeThatWorm
-                          takeThisWorm
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 1) $ wormHealths state }
     prop "should hit that players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
                                                   inBoundsWithNonDiagonalPadding)
                           (generateCoordDisplacer nonDiagonalDelta ignoreDelta addDelta)
                           (generateShotSwitch     shootSouth shootNorth)
-                          takeNoWorms
-                          takeBothWorms
+                          (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         mapThoseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 8) $ wormHealths state }
     prop "should hit that players first NW-SE diagonal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta addDelta)
                           (generateShotSwitch     shootSouthEast shootNorthWest)
-                          takeThatWorm
-                          takeThisWorm
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 1) $ wormHealths state }
     prop "should hit that players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta addDelta)
                           (generateShotSwitch     shootSouthEast shootNorthWest)
-                          takeNoWorms
-                          takeBothWorms
+                          (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         mapThoseWorms (modifyWormWithId 3 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 8) $ wormHealths state }
     prop "should hit that players first NE-SW diagonal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta subtractDelta)
                           (generateShotSwitch     shootNorthEast shootSouthWest)
-                          takeThatWorm
-                          takeThisWorm
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         mapTheseWorms (modifyWormWithId 1 (withHealthOf 0)) state
+         state { wormHealths = setWormHealthById (WormHealth 0) (WormId 1) $ wormHealths state }
     prop "should not hit this players first horizontal target in range when there's dirt or space in the way" $ \ (i, j, k, l) ->
       let (state, shot) = generateShotScenarioWithMapModifications
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDeltaOfAtLeastTwo addDelta ignoreDelta)
                           (generateShotSwitch     shootEast shootWest)
-                          takeThisWorm
-                          takeThatWorm
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (putDirtOrSpaceBetweenWorms l)
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          state
     prop "should not hit this players first horizontal target in range when there's a friendly worm in the way" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
-                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
-                                                  inBoundsWithNoPadding)
-                          (generateCoordDisplacer nonDiagonalDeltaOfAtLeastTwo addDelta ignoreDelta)
-                          (generateShotSwitch     shootEast shootWest)
-                          takeThisWormAndPutAnotherInbetween
-                          takeThatWorm
+                          (generateCoordGenerator              inBoundsWithNonDiagonalPadding
+                                                               inBoundsWithNoPadding)
+                          (generateCoordDisplacer              nonDiagonalDeltaOfAtLeastTwo addDelta ignoreDelta)
+                          (generateShotSwitch                  shootEast shootWest)
+                          (takeBothWormsAndPutAnotherInbetween (WormId 2) (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
-        (oneWormHarmed 10 . thisPlayersWorms) .&&. (noWormHarmed 10 . thatPlayersWorms)
+        (oneWormHarmed 10 . myHealths) .&&. (noWormHarmed 10 . opponentsHealths)
+
+setWormHealthById :: WormHealth -> WormId -> WormHealths -> WormHealths
+setWormHealthById health' wormId' = mapWormById wormId' (mapDataSlot (always health'))
+
+myHealths = aListFilter (isMyWorm . idSlot) . wormHealths
+opponentsHealths = aListFilter (isOpponentWorm . idSlot) . wormHealths
 
 aStateWithTwoWormHealths =
   aState { wormHealths = AList [
-             (WormId 1, WormHealth 5),
-             (WormId 3, WormHealth 10)] }
+             AListEntry (WormId 1) (WormHealth 5),
+             AListEntry (WormId 3) (WormHealth 10)] }
 
-emptyWormHealth = AList []
+emptyWormHealths = AList []
+
+emptyWormPositions = AList []
 
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (.&&.) p1 p2 x =
   p1 x && p2 x
 
-oneWormHarmed :: Int -> Worms -> Bool
+deconstructHealth :: WormHealth -> Int
+deconstructHealth (WormHealth x) = x
+
+oneWormHarmed :: Int -> WormHealths -> Bool
 oneWormHarmed originalHealth =
-  (== 1) . countWorms ((/= originalHealth) . wormsHealth)
+  (== 1) . countWorms ((/= originalHealth) . deconstructHealth . dataSlot)
 
-noWormHarmed :: Int -> Worms -> Bool
+noWormHarmed :: Int -> WormHealths -> Bool
 noWormHarmed originalHealth =
-  allWorms (notHarmed originalHealth)
+  allWormFacts ((== originalHealth) . deconstructHealth . dataSlot)
 
-notHarmed :: Int -> Worm -> Bool
-notHarmed originalHealth =
-  (== originalHealth) . wormsHealth
-
-allWorms :: (Worm -> Bool) -> Worms -> Bool
-allWorms f = M.foldl' ( \ acc worm -> acc && f worm) True
-
-countWorms :: (Worm -> Bool) -> Worms -> Int
-countWorms f = M.foldl' ( \ acc worm -> acc + if f worm then 1 else 0) 0
+countWorms :: (AListEntry a -> Bool) -> AList a -> Int
+countWorms f = aListFoldl' ( \ acc worm -> acc + if f worm then 1 else 0) 0
 
 putDirtOrSpaceBetweenWorms :: Int -> ModifyMap
 putDirtOrSpaceBetweenWorms x =
@@ -741,44 +666,50 @@ spaceBetween thisCoord thatCoord=
 addSpaceAt :: Coord -> GameMap -> GameMap
 addSpaceAt = (flip mapSquareAt) (always DEEP_SPACE)
 
-mapThoseWorms :: (Worms -> Worms) -> State -> State
-mapThoseWorms f state@(State { opponent = opponent' }) =
-  state { opponent = mapWorms opponent' f }
-
-mapTheseWorms :: (Worms -> Worms) -> State -> State
-mapTheseWorms f state@(State { myPlayer = myPlayer' }) =
-  state { myPlayer = mapWorms myPlayer' f }
-
 generateShotSwitch :: Move -> Move -> ShotSwitch
 generateShotSwitch a b x =
   if x > 0 then a else b
 
-playersWorms :: Player -> Worms
-playersWorms (Player _ _ worms') = worms'
-
 generateInBoundsCoordinate :: Int -> Int -> Coord
 generateInBoundsCoordinate = generateCoordGenerator inBoundsWithNoPadding inBoundsWithNoPadding
 
-takeBothWorms :: GeneratePlayer
-takeBothWorms thisCoord thatCoord =
-  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
+startingHealth = WormHealth 10
 
-takeThisWormAndPutAnotherInbetween :: GeneratePlayer
-takeThisWormAndPutAnotherInbetween thisCoord thatCoord =
-  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord,
-                                          Worm 2 10 $ coordBetween thisCoord thatCoord]
+aListConcat :: AList a -> AList a -> AList a
+aListConcat (AList xs) (AList ys) = AList $ xs ++ ys
 
-takeThisWorm :: GeneratePlayer
-takeThisWorm thisCoord _ =
-  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord]
+takeBothWorms :: WormId -> WormId -> AddToWormFacts
+takeBothWorms thisWormId thatWormId thisCoord thatCoord state =
+  state { wormHealths   =
+            aListConcat (
+              AList [
+                  AListEntry thisWormId startingHealth,
+                  AListEntry thatWormId startingHealth])
+              (wormHealths   state),
+          wormPositions =
+            aListConcat (
+              AList [
+                  AListEntry thisWormId thisCoord,
+                  AListEntry thatWormId thatCoord])
+              (wormPositions state) }
 
-takeThatWorm :: GeneratePlayer
-takeThatWorm _ thatCoord =
-  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thatCoord]
-
-takeNoWorms :: GeneratePlayer
-takeNoWorms _ _ =
-  Player 300 1 $ wormsToMap $ V.fromList []
+-- TODO: test
+takeBothWormsAndPutAnotherInbetween :: WormId -> WormId -> WormId -> AddToWormFacts
+takeBothWormsAndPutAnotherInbetween inbetweenId thisWormId thatWormId thisCoord thatCoord state =
+  state { wormHealths   =
+            aListConcat (
+              AList [
+                  AListEntry thisWormId startingHealth,
+                  AListEntry inbetweenId startingHealth,
+                  AListEntry thatWormId startingHealth])
+              (wormHealths   state),
+          wormPositions =
+            aListConcat (
+              AList [
+                  AListEntry thisWormId thisCoord,
+                  AListEntry inbetweenId (coordBetween thisCoord thatCoord),
+                  AListEntry thatWormId thatCoord])
+              (wormPositions state) }
 
 addDelta :: Int -> Int -> Int
 addDelta = (+)
@@ -802,27 +733,25 @@ generateCoordDisplacer fDelta fX fY coord' k =
 type GenerateCoordinate     = Int -> Int -> Coord
 type DisplaceFromCoordinate = Coord -> Int -> (Coord, Int)
 type ShotSwitch             = Int -> Move
-type GeneratePlayer         = Coord -> Coord -> Player
+type AddToWormFacts         = Coord -> Coord -> ModifyState
 type ModifyMap              = Coord -> Coord -> GameMap -> GameMap
 
-generateShotScenarioWithMapModifications :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> ModifyMap -> (Int, Int, Int) -> (State, Move)
-generateShotScenarioWithMapModifications generateCoord displace switchShot generateThisPlayer generateThatPlayer modifyMap (i, j, k) =
+generateShotScenarioWithMapModifications :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> AddToWormFacts -> ModifyMap -> (Int, Int, Int) -> (State, Move)
+generateShotScenarioWithMapModifications generateCoord displace switchShot addFacts modifyMap (i, j, k) =
   let originatingCoord        = generateCoord i j
       (displacedCoord, delta) = displace      originatingCoord k
       shot                    = switchShot    delta
-      thisPlayer              = generateThisPlayer originatingCoord displacedCoord
-      thatPlayer              = generateThatPlayer originatingCoord displacedCoord
       modifiedMap             = modifyMap originatingCoord displacedCoord aGameMapWithOnlyAir
-      state                   = State 10 10 10 10 (AList []) thisPlayer thatPlayer modifiedMap
-  in (state, shot)
+      state                   = State 10 10 10 10 emptyWormHealths emptyWormPositions (Player 300 (WormId 1)) (Player 300 (WormId 4)) modifiedMap
+      state'                  = addFacts originatingCoord displacedCoord state
+  in (state', shot)
 
-generateShotScenario :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> (Int, Int, Int) -> (State, Move)
-generateShotScenario generateCoord displace switchShot generateThisPlayer generateThatPlayer (i, j, k) =
+generateShotScenario :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> AddToWormFacts -> (Int, Int, Int) -> (State, Move)
+generateShotScenario generateCoord displace switchShot addFacts (i, j, k) =
   generateShotScenarioWithMapModifications generateCoord
                                            displace
                                            switchShot
-                                           generateThisPlayer
-                                           generateThatPlayer
+                                           addFacts
                                            identityMapModification
                                            (i, j, k)
 
@@ -884,10 +813,32 @@ moveEast = Move 10
 
 moveWest = Move 14
 
-aState = State 10 10 10 10 emptyWormHealth aPlayer anOpponent aGameMap
+aStateWithoutWorms = State 10 10 10 10 emptyWormHealths emptyWormPositions aPlayer anOpponent aGameMap
+
+aState = State 10 10 10 10 someWormHealths someWormPositions aPlayer anOpponent aGameMap
+
+thisPlayersHealths = [
+  AListEntry (WormId 1)  (WormHealth 10),
+  AListEntry (WormId 2)  (WormHealth 10),
+  AListEntry (WormId 3)  (WormHealth 10)]
+
+thatPlayersHealths = [
+  AListEntry (WormId 4)  (WormHealth 10),
+  AListEntry (WormId 8)  (WormHealth 10),
+  AListEntry (WormId 12) (WormHealth 10)]
+
+someWormHealths = AList $ thisPlayersHealths ++ thatPlayersHealths
+
+someWormPositions = AList [
+  AListEntry (WormId 1)  (toCoord 15 31),
+  AListEntry (WormId 2)  (toCoord 1 31),
+  AListEntry (WormId 3)  (toCoord 1 30),
+  AListEntry (WormId 4)  (toCoord 16 1),
+  AListEntry (WormId 8)  (toCoord 19 1),
+  AListEntry (WormId 12) (toCoord 20 1)]
 
 aStateWithOpponentBeneathDirt =
-  mapThatWorm aState (withCoordOf (toCoord 14 31))
+  moveThatWorm (toCoord 14 31) aState
 
 aStateWithDirtMissingAboveOpponentWorm =
   mapGameMap aStateWithOpponentBeneathDirt (removeDirtAt (toCoord 14 30))
@@ -896,268 +847,190 @@ aStateWithDirtMissingAboveMyWorm =
   mapGameMap aState (removeDirtAt (toCoord 15 30))
 
 aStateWithOpponentWormMovedLeftFromTheRightEdge =
-  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 31 15))
+  moveThatWorm (toCoord 31 15) aStateWithOpponentWormOnTheRightEdge
 
 aStateWithOpponentWormOnTheRightEdgeMovedDown =
-  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 32 16))
+  moveThatWorm (toCoord 32 16) aStateWithOpponentWormOnTheRightEdge
 
 aStateWithOpponentWormOnTheRightEdgeMovedUp =
-  mapThatWorm aStateWithOpponentWormOnTheRightEdge (withCoordOf (toCoord 32 14))
+  moveThatWorm (toCoord 32 14) aStateWithOpponentWormOnTheRightEdge
 
 aStateWithOpponentWormOnTheRightEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 32 15))
+  moveThatWorm (toCoord 32 15) aStateWithOnlyAirOnMap
 
 aStateWithOpponentWormUpFromTheBottomEdge =
-  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 4 31))
+  moveThatWorm (toCoord 4 31) aStateWithOpponentWormOnTheBottomEdge
 
 aStateWithOpponentWormOnTheBottomEdgeMovedLeft =
-  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 3 32))
+  moveThatWorm (toCoord 3 32) aStateWithOpponentWormOnTheBottomEdge
 
 aStateWithOpponentWormOnTheBottomEdgeMovedRight =
-  mapThatWorm aStateWithOpponentWormOnTheBottomEdge (withCoordOf (toCoord 5 32))
+  moveThatWorm (toCoord 5 32) aStateWithOpponentWormOnTheBottomEdge
 
 aStateWithOpponentWormOnTheBottomEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 4 32))
+  moveThatWorm (toCoord 4 32) aStateWithOnlyAirOnMap
 
 aStateWithOpponentWormDownwardOnLeftEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 16))
+  moveThatWorm (toCoord 0 16) aStateWithOnlyAirOnMap
 
 aStateWithOpponentWormUpwardOnLeftEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 14))
+  moveThatWorm (toCoord 0 14) aStateWithOnlyAirOnMap
 
 aStateWithOpponentWormRightFromLeftEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 1 15))
+  moveThatWorm (toCoord 1 15) aStateWithOnlyAirOnMap
 
 aStateWithOpponentWormOnLeftEdge =
-  mapThatWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 15))
+  moveThatWorm (toCoord 0 15) aStateWithOnlyAirOnMap
 
 aStateWithOpponentWormOnTop = aStateWithOnlyAirOnMap {
-  opponent = opponentWithAWormAtTop }
+  wormPositions = wormPositionsWithOpponentAtTop }
 
 aStateWithOpponentWormOnTopMovedRight =
-  mapThatWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 16 0))
+  moveThatWorm (toCoord 16 0) aStateWithOpponentWormOnTop
 
 aStateWithOpponentWormOnTopMovedLeft =
-  mapThatWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 14 0))
+  moveThatWorm (toCoord 14 0) aStateWithOpponentWormOnTop
 
 aStateWithOpponentWormOnTopMovedDown =
-  mapThatWorm aStateWithOpponentWormOnTop (withCoordOf (toCoord 15 1))
+  moveThatWorm (toCoord 15 1) aStateWithOpponentWormOnTop
 
 aStateWithOnlyAirOnMap = aState {
   gameMap = aGameMapWithOnlyAir }
 
 aStateWithMyWormDownwardOnLeftEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 16))
+  moveThisWorm (toCoord 0 16) aStateWithOnlyAirOnMap
 
 aStateWithMyWormRightFromLeftEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 1 15))
+  moveThisWorm (toCoord 1 15) aStateWithOnlyAirOnMap
 
 aStateWithMyWormUpwardsOnLeftEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 14))
+  moveThisWorm (toCoord 0 14) aStateWithOnlyAirOnMap
 
 aStateWithMyWormOnLeftEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 0 15))
+  moveThisWorm (toCoord 0 15) aStateWithOnlyAirOnMap
 
 aStateWithMyWormOnTop = aStateWithOnlyAirOnMap {
-  myPlayer = aPlayerWithAWormAtTop }
+  wormPositions = wormPositionsWithMyWormAtTop }
 
 aStateWithMyWormOnTopMovedRight =
-  mapThisWorm aStateWithMyWormOnTop (withCoordOf (toCoord 16 0))
+  moveThisWorm (toCoord 16 0) aStateWithMyWormOnTop
 
 aStateWithMyWormOnTopMovedLeft =
-  mapThisWorm aStateWithMyWormOnTop (withCoordOf (toCoord 14 0))
+  moveThisWorm (toCoord 14 0) aStateWithMyWormOnTop
 
 aStateWithMyWormOnTopMovedDown =
-  mapThisWorm aStateWithMyWormOnTop (withCoordOf (toCoord 15 1))
+  moveThisWorm (toCoord 15 1) aStateWithMyWormOnTop
 
 aStateWithMyWormOnTheBottomEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 4 32))
+  moveThisWorm (toCoord 4 32) aStateWithOnlyAirOnMap
 
 aStateWithMyWormOnTheBottomEdgeMovedRight =
-  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 5 32))
+  moveThisWorm (toCoord 5 32) aStateWithMyWormOnTheBottomEdge
 
 aStateWithMyWormOnTheBottomEdgeMovedLeft =
-  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 3 32))
+  moveThisWorm (toCoord 3 32) aStateWithMyWormOnTheBottomEdge
 
 aStateWithMyWormUpFromTheBottomEdge =
-  mapThisWorm aStateWithMyWormOnTheBottomEdge (withCoordOf (toCoord 4 31))
+  moveThisWorm (toCoord 4 31) aStateWithMyWormOnTheBottomEdge
 
 aStateWithMyWormOnTheRightEdge =
-  mapThisWorm aStateWithOnlyAirOnMap (withCoordOf (toCoord 32 15))
+  moveThisWorm (toCoord 32 15) aStateWithOnlyAirOnMap
 
 aStateWithMyWormOnTheRightEdgeMovedUp =
-  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 32 14))
+  moveThisWorm (toCoord 32 14) aStateWithMyWormOnTheRightEdge
 
 aStateWithMyWormOnTheRightEdgeMovedDown =
-  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 32 16))
+  moveThisWorm (toCoord 32 16) aStateWithMyWormOnTheRightEdge
 
 aStateWithMyWormMovedLeftFromTheRightEdge =
-  mapThisWorm aStateWithMyWormOnTheRightEdge (withCoordOf (toCoord 31 15))
+  moveThisWorm (toCoord 31 15) aStateWithMyWormOnTheRightEdge
 
 aStateWhereWeSwappedOverTheMedipack =
   knockBackDamage $
-  (flip mapThisWorm) (withCoordOf (toCoord 31 30)) $
-  (flip mapThatWorm) (withCoordOf (toCoord 30 31)) $
+  moveThisWorm (toCoord 31 30) $
+  moveThatWorm (toCoord 30 31)
   aState { gameMap = aGameMapWithAMedipack }
 
 aStateWhereNoSwapHappened =
   aStateWithBothWormsNextToTheMedipack
 
 aStateWithBothWormsNextToTheMedipack = aState {
-  opponent = opponentWithAWormNextToTheMedipack,
-  gameMap  = aGameMapWithAMedipack,
-  myPlayer = aPlayerWithAWormNextToTheMedipack }
+  wormPositions = aListConcat wormPositionsWithOpponentNextToMedipack wormPositionsWithMyWormNextToMedipack,
+  gameMap       = aGameMapWithAMedipack }
 
 aStateWithOpponentsWormNextToTheMedipack = aState {
-  opponent = opponentWithAWormNextToTheMedipack,
-  gameMap = aGameMapWithAMedipack }
+  wormPositions = wormPositionsWithOpponentNextToMedipack,
+  gameMap       = aGameMapWithAMedipack }
 
-aStateWithOpponentsWormOnTheMedipack = aState { opponent = opponentWithAWormOnTheMedipack }
+aStateWithOpponentsWormOnTheMedipack = aState {
+  wormPositions = wormPositionsWithOpponentOnTheMedipack,
+  wormHealths   = wormHealthsWithOpponentHavingReceivedTheMedipack }
 
 aStateWithMyWormNextToTheMedipack = aState {
-  myPlayer = aPlayerWithAWormNextToTheMedipack,
-  gameMap = aGameMapWithAMedipack }
+  wormPositions = wormPositionsWithMyWormNextToMedipack,
+  gameMap       = aGameMapWithAMedipack }
 
-aStateWithMyWormOnTheMedipack = aState { myPlayer = aPlayerWithAWormOnTheMedipack }
+aStateWithMyWormOnTheMedipack = aState {
+  wormPositions = wormPositionsWithMyWormOnTheMedipack,
+  wormHealths   = wormHealthsWithMyWormHavingReceivedTheMedipack }
 
-aStateWithEnemyWormsNextToEachother = aState { opponent = opponentWithHisWormsNextToEachother }
+aStateWithEnemyWormsNextToEachother = aState { wormPositions = wormPositionsWithHisNextToHis }
 
-aStateWithMyWormNextToAnEnemy = aState { opponent = opponentWithHisWormNextToMine }
+aStateWithMyWormNextToAnEnemy = aState { wormPositions = wormPositionsWithHisNextToMine }
 
-aStateWithMyWormsNextToEachOther = aState { myPlayer = aPlayerWithWormsNextToEachother }
+aStateWithMyWormsNextToEachOther = aState { wormPositions = wormPositionsWithMyWormsNextToEachother }
 
-aStateWithImpendingCollision = aState { opponent = anOpponentWithImpendingCollision }
+aStateWithImpendingCollision = aState {
+  wormPositions = wormPositionsWithImpendingCollision,
+  wormHealths   = wormHealthsForOneAndFive }
 
-anOpponent = withWorms someOtherWorms aPlayer
+anOpponent = Player 300 (WormId 8)
 
-anOpponentWithImpendingCollision = withWorms someOtherWormsWithImpendingCollision anOpponent
+wormPositionsWithImpendingCollision = AList [
+  AListEntry (WormId 1) (toCoord 15 31),
+  AListEntry (WormId 4) (toCoord 17 31)]
 
-opponentWithCollisionResolvedByNotMoving =
-  withWorms someOtherWormsWithCollisionResolvedInHisFavour anOpponent
+wormHealthsForOneAndFive = AList [
+  AListEntry (WormId 1) startingHealth,
+  AListEntry (WormId 4) startingHealth ]
 
-opponentWithCollisionResolvedBySwapping =
-  withWorms someOtherWormsWithCollisionResolvedBySwapping anOpponent
+wormPositionsWithHisNextToMine = AList [
+  AListEntry (WormId 1) (toCoord 15 31),
+  AListEntry (WormId 4) (toCoord 16 31)]
 
-opponentWithHisWormNextToMine =
-  withWorms someOtherWormsWithAWormNextToMine anOpponent
+wormPositionsWithHisNextToHis = AList [
+  AListEntry (WormId 4) (toCoord 15 31),
+  AListEntry (WormId 8) (toCoord 16 31)]
 
-opponentWithHisWormsNextToEachother =
-  withWorms someOtherWormsWithTwoNextToEachother anOpponent
+wormPositionsWithOpponentNextToMedipack = AList [
+  AListEntry (WormId 4) (toCoord 30 31)]
 
-opponentWithAWormNextToTheMedipack =
-  withWorms someOtherWormsWithOneNextToTheMedipack anOpponent
+wormPositionsWithOpponentOnTheMedipack = AList [
+  AListEntry (WormId 4) (toCoord 31 31)]
 
-opponentWithAWormOnTheMedipack =
-  withWorms someOtherWormsWithOneOnTheMedipack anOpponent
+wormHealthsWithOpponentHavingReceivedTheMedipack = AList [
+  AListEntry (WormId 4) (WormHealth 20)]
 
-opponentWithAWormAtTop =
-  withWorms someOtherWormsWithOneAtTop anOpponent
+wormPositionsWithOpponentAtTop = AList [
+  AListEntry (WormId 4) (toCoord 15 0)]
 
-withWorms worms' (Player health' wormId' _) = Player health' wormId' worms'
+wormPositionsWithMyWormsNextToEachother = AList [
+  AListEntry (WormId 1) (toCoord 15 31),
+  AListEntry (WormId 2) (toCoord 16 31)]
 
-aPlayerWithCollisionResolvedBySwapping =
-  withWorms someWormsWithCollisionResolvedBySwapping aPlayer
+wormPositionsWithMyWormNextToMedipack = AList [
+  AListEntry (WormId 1) (toCoord 31 30)]
 
-aPlayerWithCollisionResolvedByNotMoving =
-  withWorms someWormsWithCollisionResolvedByNotMoving aPlayer
+wormPositionsWithMyWormOnTheMedipack = AList [
+  AListEntry (WormId 1) (toCoord 31 31)]
 
-aPlayerWithWormsNextToEachother =
-  withWorms someWormsWithWormsNextToEachother aPlayer
+wormHealthsWithMyWormHavingReceivedTheMedipack = AList [
+  AListEntry (WormId 1) (WormHealth 20)]
 
-aPlayerWithAWormNextToTheMedipack =
-  withWorms someWormsWithOneNextToTheMedipack aPlayer
+wormPositionsWithMyWormAtTop = AList [
+  AListEntry (WormId 1) (toCoord 15 0)]
 
-aPlayerWithAWormOnTheMedipack =
-  withWorms someWormsWithOneOnTheMedipack aPlayer
-
-aPlayerWithAWormAtTop =
-  withWorms someWormsWithOneAtTop aPlayer
-
-aPlayer = Player 300 1 someWorms
-
-thisWorm1 = aWorm
-thisWorm2 = withCoordOf (toCoord 1 31) $ withIdOf 2 aWorm
-thisWorm3 = withCoordOf (toCoord 1 30) $ withIdOf 3 aWorm
-thisWorm5 = withCoordOf (toCoord 1 16) $ withIdOf 5 aWorm
-
-someWorms = wormsToMap $ V.fromList [thisWorm1, thisWorm2, thisWorm3, thisWorm5]
-
-someWormsWithCurrentMovedEast =
-  modifyWormWithId 1 (withCoordOf (toCoord 16 31)) someWorms
-
-someWormsWithCollisionResolvedBySwapping =
-  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someWorms
-
-someWormsWithCollisionResolvedByNotMoving =
-  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 15 31)) someWorms
-
-someWormsWithWormsNextToEachother =
-  modifyWormWithId 2 (withCoordOf (toCoord 16 31)) someWorms
-
-someWormsWithOneNextToTheMedipack =
-  modifyWormWithId 1 (withCoordOf (toCoord 30 31)) someWorms
-
-someWormsWithOneOnTheMedipack =
-  modifyWormWithId 1 (withHealthOf 20 . withCoordOf (toCoord 31 31)) someWorms
-
-someWormsWithOneAtTop =
-  modifyWormWithId 1 (withCoordOf (toCoord 15 0)) someWorms
-
-thatWorm1 = withCoordOf (toCoord 16 1) aWorm
-thatWorm3 = withCoordOf (toCoord 19 1) $ withIdOf 3 aWorm
-thatWorm4 = withCoordOf (toCoord 20 1) $ withIdOf 4 aWorm
-thatWorm5 = withCoordOf (toCoord 1 20) $ withIdOf 5 aWorm
-
-someOtherWorms = wormsToMap $ V.fromList [
-  thatWorm1,
-  thatWorm3,
-  thatWorm4,
-  thatWorm5]
-
-someOtherWormsWithCurrentMovedEast =
-  modifyWormWithId 1 (withCoordOf (toCoord 17 1)) someOtherWorms
-
-someOtherWormsWithImpendingCollision =
-  modifyWormWithId 1 (withCoordOf (toCoord 17 31)) someOtherWorms
-
-someOtherWormsWithCollisionResolvedInHisFavour =
-  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 17 31)) someOtherWorms
-
-someOtherWormsWithCollisionResolvedBySwapping =
-  modifyWormWithId 1 (withHealthOf 9 . withCoordOf (toCoord 15 31)) someOtherWorms
-
-someOtherWormsWithAWormNextToMine =
-  modifyWormWithId 1 (withCoordOf (toCoord 16 31)) someOtherWorms
-
-someOtherWormsWithTwoNextToEachother =
-  modifyWormWithId 1 (withCoordOf (toCoord 20 1)) someOtherWorms
-
-someOtherWormsWithOneNextToTheMedipack =
-  modifyWormWithId 1 (withCoordOf (toCoord 31 30)) someOtherWorms
-
-someOtherWormsWithOneOnTheMedipack =
-  modifyWormWithId 1 (withHealthOf 20 . withCoordOf (toCoord 31 31)) someOtherWorms
-
-someOtherWormsWithOneAtTop =
-  modifyWormWithId 1 (withCoordOf (toCoord 15 0)) someOtherWorms
-
-modifyWormWithId = flip M.adjust
-
-aWorm = Worm 1 10 $ toCoord 15 31
-
-withMyCurrentWormIdOf id' =
-  mapThisPlayer (withCurrentWormId id')
-
-withOpponentCurrentWormIdOf id' =
-  mapThatPlayer (withCurrentWormId id')
-
-withCurrentWormId id' (Player score' _ worms') = Player score' id' worms'
-
-withIdOf id' (Worm _ health' position') = Worm id' health' position'
-
-withHealthOf health' (Worm id' _ position') = Worm id' health' position'
-
-withCoordOf position' (Worm id' health' _) = Worm id' health' position'
+aPlayer = Player 300 (WormId 1)
 
 -- Medipack is at 31 31
 aGameMapWithAMedipack = vectorGameMapToHashGameMap $ V.fromList $
