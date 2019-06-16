@@ -274,10 +274,20 @@ from the command line to invoke the bot program.
        - CLOSING NOTE [2019-06-10 Mon 13:58]
        - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 13:58]
        :END:
-****** IN_PROGRESS Implement shots being blocked by dirt or space scenarios
+****** DONE Implement shots being blocked by dirt or space scenarios
+       CLOSED: [2019-06-16 Sun 12:15]
        :LOGBOOK:
+       - CLOSING NOTE [2019-06-16 Sun 12:15]
        - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 16:06]
        :END:
+****** DONE Implement worms blocking other worms
+       CLOSED: [2019-06-16 Sun 12:17]
+       :LOGBOOK:
+       - CLOSING NOTE [2019-06-16 Sun 12:17]
+       - State "IN_PROGRESS" from "TODO"       [2019-06-16 Sun 12:16]
+       :END:
+In this case the first worm should always be hit even if it's
+friendly.
 ****** TODO Implement worms being just out of range scenarios
 ****** TODO Implement simultaneous shots scenarios
 ***** TODO Rule 1: A shot hits the first target in range
