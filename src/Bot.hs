@@ -43,16 +43,27 @@ data State = State { weaponRange   :: Int,
                      weaponDamage  :: Int,
                      digRange      :: Int,
                      moveRange     :: Int,
+                     wormHealths   :: AList WormHealth,
                      myPlayer      :: Player,
                      opponent      :: Player,
                      gameMap       :: GameMap }
              deriving (Generic, Eq)
+
+data AList a = AList [(WormId, a)]
+  deriving (Eq, Show)
+
+data WormHealth = WormHealth Int
+  deriving (Eq, Show)
+
+data WormId = WormId Int
+  deriving (Eq, Show)
 
 instance Show State where
   show (State weaponRange'
               weaponDamage'
               digRange'
               moveRange'
+              wormsHealth'
               myPlayer'
               opponent'
               gameMap') =
@@ -61,6 +72,7 @@ instance Show State where
     "  weaponDamage'  = " ++ show weaponDamage'  ++ "\n" ++
     "  digRange'      = " ++ show digRange'      ++ "\n" ++
     "  moveRange'     = " ++ show moveRange'     ++ "\n" ++
+    "  wormsHealth'   = " ++ show wormsHealth'   ++ "\n" ++
     "  myPlayer'      = " ++ show myPlayer'      ++ "\n" ++
     "  opponent'      = " ++ show opponent'      ++ "\n" ++
     "  gameMap':\n" ++
@@ -96,6 +108,7 @@ toState myPlayer' opponents' gameMap' =
             weaponDamage'
             moveRange'
             digRange'
+            (AList [])
             (toPlayer myPlayer')
             (opponentToPlayer opponent')
             (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')

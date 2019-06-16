@@ -13,9 +13,6 @@ import RIO.List.Partial
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
-data WormId = WormId Int
-  deriving (Eq, Show)
-
 packThisWorm :: Int -> WormId
 packThisWorm 1 = WormId 1
 packThisWorm 2 = WormId 2
@@ -40,8 +37,15 @@ isOpponentWorm (WormId 8)  = True
 isOpponentWorm (WormId 12) = True
 isOpponentWorm _           = False
 
+findWormHealth :: WormId -> State -> Maybe WormHealth
+findWormHealth = undefined
+
 spec :: Spec
 spec = do
+  describe "findWormHealth" $ do
+    context "given an empty collection of worm health facts" $
+      it "produces Nothing" $
+      findWormHealth (WormId 1) aState `shouldBe` Nothing
   describe "packThisWorm" $ do
     context "given a number from 1 to 3" $
       prop "is no different to the WormId constructor" $ \ x ->
@@ -670,6 +674,8 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
         (oneWormHarmed 10 . thisPlayersWorms) .&&. (noWormHarmed 10 . thatPlayersWorms)
 
+emptyWormHealth = AList []
+
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (.&&.) p1 p2 x =
   p1 x && p2 x
@@ -790,7 +796,7 @@ generateShotScenarioWithMapModifications generateCoord displace switchShot gener
       thisPlayer              = generateThisPlayer originatingCoord displacedCoord
       thatPlayer              = generateThatPlayer originatingCoord displacedCoord
       modifiedMap             = modifyMap originatingCoord displacedCoord aGameMapWithOnlyAir
-      state                   = State 10 10 10 10 thisPlayer thatPlayer modifiedMap
+      state                   = State 10 10 10 10 (AList []) thisPlayer thatPlayer modifiedMap
   in (state, shot)
 
 generateShotScenario :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> (Int, Int, Int) -> (State, Move)
@@ -861,7 +867,7 @@ moveEast = Move 10
 
 moveWest = Move 14
 
-aState = State 10 10 10 10 aPlayer anOpponent aGameMap
+aState = State 10 10 10 10 emptyWormHealth aPlayer anOpponent aGameMap
 
 aStateWithOpponentBeneathDirt =
   mapThatWorm aState (withCoordOf (toCoord 14 31))
