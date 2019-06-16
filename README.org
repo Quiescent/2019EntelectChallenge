@@ -367,6 +367,21 @@ be done simply by comparing the previous state to the next state.
   allWorms :: (Worm -> Bool) -> Worms -> Bool
   allWorms f = M.foldl' ( \ acc worm -> acc && f worm) True
 #+END_SRC
+
+** Checking whether an Id is of a given value
+It might be useful to verify the contents of an id to a valid given
+id.
+
+#+BEGIN_SRC haskell
+  isWormOfId :: Int -> Id -> Bool
+  isWormOfId 1  (Id 1)  = True
+  isWormOfId 2  (Id 2)  = True
+  isWormOfId 3  (Id 3)  = True
+  isWormOfId 4  (Id 4)  = True
+  isWormOfId 8  (Id 8)  = True
+  isWormOfId 12 (Id 12) = True
+  isWormOfId _  _       = False
+#+END_SRC
 * License
 Copyright Edward John Steere (c) 2019
 
