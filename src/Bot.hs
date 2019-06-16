@@ -39,8 +39,7 @@ splitGameMap (GameMap xs) =
     iter []  = []
     iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
 
-data State = State { currentWormId :: Int,
-                     weaponRange   :: Int,
+data State = State { weaponRange   :: Int,
                      weaponDamage  :: Int,
                      digRange      :: Int,
                      moveRange     :: Int,
@@ -50,8 +49,7 @@ data State = State { currentWormId :: Int,
              deriving (Generic, Eq)
 
 instance Show State where
-  show (State currentWormId'
-              weaponRange'
+  show (State weaponRange'
               weaponDamage'
               digRange'
               moveRange'
@@ -59,7 +57,6 @@ instance Show State where
               opponent'
               gameMap') =
     "State {\n" ++
-    "  currentWormId' = " ++ show currentWormId' ++ "\n" ++
     "  weaponRange'   = " ++ show weaponRange'   ++ "\n" ++
     "  weaponDamage'  = " ++ show weaponDamage'  ++ "\n" ++
     "  digRange'      = " ++ show digRange'      ++ "\n" ++
@@ -72,19 +69,18 @@ instance Show State where
 
 instance FromJSON State where
   parseJSON = withObject "State" $ \ v ->
-    toState <$> v .: "currentWormId"
-            <*> v .: "myPlayer"
+    toState <$> v .: "myPlayer"
             <*> v .: "opponents"
             <*> v .: "map"
 
-data Player = Player Int Worms
+data Player = Player Int Int Worms
   deriving (Show, Generic, Eq)
 
 type Worms = M.HashMap Int Worm
 
 -- TODO: If there is no opponent then I'll bail out here :/
-toState :: Int -> ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
-toState currentWormId' myPlayer' opponents' gameMap' =
+toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
+toState myPlayer' opponents' gameMap' =
   let state = do
         opponent'        <- opponents'       V.!? 0
         exampleWorm      <- (worms myPlayer') V.!? 0
@@ -96,8 +92,7 @@ toState currentWormId' myPlayer' opponents' gameMap' =
         return (opponent', weaponRange', weaponDamage', moveRange', digRange')
   in case state of
     Just (opponent', weaponRange', weaponDamage', moveRange', digRange') ->
-      State currentWormId'
-            weaponRange'
+      State weaponRange'
             weaponDamage'
             moveRange'
             digRange'
@@ -109,9 +104,11 @@ toState currentWormId' myPlayer' opponents' gameMap' =
 vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToHashGameMap = GameMap . M.fromList . V.toList . V.zip (V.fromList [0..])
 
+-- NOTE: This will produce an invalid current worm if not read from
+-- the original state.
 opponentToPlayer :: Opponent -> Player
 opponentToPlayer (Opponent score' worms') =
-  Player score' $
+  Player score' 1 $
   wormsToMap $
   fmap fromOpponentWorm worms'
 
@@ -121,9 +118,11 @@ wormsToMap = V.foldl' (\ acc worm@(Worm id' _ _) -> M.insert id' worm acc) M.emp
 fromOpponentWorm :: OpponentWorm -> Worm
 fromOpponentWorm (OpponentWorm id' health' position' _ _) = Worm id' health' position'
 
+-- NOTE: This will produce an invalid current worm if not read from
+-- the original state.
 toPlayer :: ScratchPlayer -> Player
 toPlayer (ScratchPlayer score' _ worms') =
-  Player score' $
+  Player score' 1 $
   wormsToMap $
   fmap fromScratchWorm worms'
 
@@ -323,21 +322,27 @@ makeMove swapping moves =
      makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
 
+thisPlayersCurrentWormId :: State -> Int
+thisPlayersCurrentWormId = currentWormId . myPlayer
+
 thisCurrentWorm :: State -> Maybe Worm
 thisCurrentWorm state =
-  let currentWormId' = currentWormId state
+  let currentWormId' = thisPlayersCurrentWormId state
   in M.lookup currentWormId' $ thisPlayersWorms state
 
 thisPlayersWorms :: State -> Worms
-thisPlayersWorms = (\ (Player _ worms') -> worms') . myPlayer
+thisPlayersWorms = (\ (Player _ _ worms') -> worms') . myPlayer
+
+thatPlayersCurrentWormId :: State -> Int
+thatPlayersCurrentWormId = currentWormId . opponent
 
 thatCurrentWorm :: State -> Maybe Worm
 thatCurrentWorm state =
-  let currentWormId' = currentWormId state
+  let currentWormId' = thatPlayersCurrentWormId state
   in M.lookup currentWormId' $ thatPlayersWorms state
 
 thatPlayersWorms :: State -> Worms
-thatPlayersWorms = (\ (Player _ worms') -> worms') . opponent
+thatPlayersWorms = (\ (Player _ _ worms') -> worms') . opponent
 
 wormPosition :: Worm -> Coord
 wormPosition (Worm _ _ position') = position'
@@ -424,8 +429,8 @@ giveMedipackToThisWorm :: State -> State
 giveMedipackToThisWorm = (flip mapThisWorm) increaseHealth
 
 containsAnyWorm :: State -> Coord -> Bool
-containsAnyWorm State { opponent = (Player _ opponentWorms),
-                        myPlayer = (Player _ myWorms)} coord' =
+containsAnyWorm State { opponent = (Player _ _ opponentWorms),
+                        myPlayer = (Player _ _ myWorms)} coord' =
   (M.foldl' matchesCoord False $ M.map coordOf opponentWorms) ||
   (M.foldl' matchesCoord False $ M.map coordOf myWorms)
   where
@@ -460,23 +465,26 @@ moveWorm position' (Worm id' health' _) = Worm id' health' position'
 mapWorm :: (State -> (Worm -> Worm) -> State) -> (Worm -> Worm) -> State -> State
 mapWorm mapWorm' f = (flip mapWorm') f
 
+currentWormId :: Player -> Int
+currentWormId (Player _ wormId _) = wormId
+
 mapThisWorm :: State -> (Worm -> Worm) -> State
-mapThisWorm state@(State { currentWormId = currentWormId', myPlayer = myPlayer' }) f =
-  state { myPlayer = mapWorms myPlayer' (mapCurrentWorm currentWormId' f) }
+mapThisWorm state@(State { myPlayer = myPlayer' }) f =
+  state { myPlayer = mapWorms myPlayer' (mapCurrentWorm (currentWormId myPlayer') f) }
 
 mapCurrentWorm :: Int -> (Worm -> Worm) -> Worms -> Worms
 mapCurrentWorm i f = M.adjust f i
 
 mapWorms :: Player -> (Worms -> Worms) -> Player
-mapWorms (Player health' worms') f =
-  Player health' $ f worms'
+mapWorms (Player health' currentWorm worms') f =
+  Player health' currentWorm $ f worms'
 
 moveThatWorm :: Coord -> State -> State
 moveThatWorm newCoord' = mapWorm mapThatWorm (moveWorm newCoord')
 
 mapThatWorm :: State -> (Worm -> Worm) -> State
-mapThatWorm state@(State { currentWormId = currentWormId', opponent = opponent' }) f =
-  state { opponent = mapWorms opponent' (mapCurrentWorm currentWormId' f) }
+mapThatWorm state@(State { opponent = opponent' }) f =
+  state { opponent = mapWorms opponent' (mapCurrentWorm (currentWormId opponent') f) }
 
 targetOfThisMove :: Move -> State -> Maybe Coord
 targetOfThisMove dir state =
@@ -501,8 +509,8 @@ mapThatPlayer f state@(State { opponent = opponent' }) =
   state { opponent = f opponent' }
 
 modifyScore :: Int -> Player -> Player
-modifyScore delta (Player score' worms') =
-  Player (score' + delta) worms'
+modifyScore delta (Player score' currentWorm worms') =
+  Player (score' + delta) currentWorm worms'
 
 penaliseForInvalidCommand :: Player -> Player
 penaliseForInvalidCommand = modifyScore (-4)

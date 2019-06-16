@@ -44,22 +44,22 @@ spec = do
       in fromCoord (toCoord x' y') `shouldBe` (x', y')
   describe "thisCurrentWorm" $ do
     it "shouldn't be found when the index is negative" $
-      thisCurrentWorm (aState { currentWormId = -1 }) `shouldBe` Nothing
+      thisCurrentWorm (withMyCurrentWormIdOf (-1) aState) `shouldBe` Nothing
     it "shouldn't be found when the index is greater than the original number of worms" $
-      thisCurrentWorm (aState { currentWormId = 6 }) `shouldBe` Nothing
+      thisCurrentWorm (withMyCurrentWormIdOf 6 aState) `shouldBe` Nothing
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
-      thisCurrentWorm (aState { currentWormId = 4 }) `shouldBe` Nothing
+      thisCurrentWorm (withMyCurrentWormIdOf 4 aState) `shouldBe` Nothing
     it "should find a worm when it's in the sequence" $
-      thisCurrentWorm (aState { currentWormId = 3 }) `shouldBe` (Just $ withIdOf 3 thisWorm3)
+      thisCurrentWorm (withMyCurrentWormIdOf 3 aState) `shouldBe` (Just $ withIdOf 3 thisWorm3)
   describe "thatCurrentWorm" $ do
     it "shouldn't be found when the index is negative" $
-      thatCurrentWorm (aState { currentWormId = -1 }) `shouldBe` Nothing
+      thatCurrentWorm (withOpponentCurrentWormIdOf (-1) aState) `shouldBe` Nothing
     it "shouldn't be found when the index is greater than the original number of worms" $
-      thatCurrentWorm (aState { currentWormId = 6 }) `shouldBe` Nothing
+      thatCurrentWorm (withOpponentCurrentWormIdOf 6 aState) `shouldBe` Nothing
     it "shouldn't be found when searching for a worm in a gap in the sequence" $
-      thatCurrentWorm (aState { currentWormId = 2 }) `shouldBe` Nothing
+      thatCurrentWorm (withOpponentCurrentWormIdOf 2 aState) `shouldBe` Nothing
     it "should find a worm when it's in the sequence" $
-      thatCurrentWorm (aState { currentWormId = 3 }) `shouldBe` (Just $ withIdOf 3 thatWorm3)
+      thatCurrentWorm (withOpponentCurrentWormIdOf 3 aState) `shouldBe` (Just $ withIdOf 3 thatWorm3)
   describe "thisPlayersWorms" $ do
     it "should produce this players worms" $
       thisPlayersWorms aState == someWorms
@@ -69,39 +69,39 @@ spec = do
   describe "penaliseForInvalidCommand" $ do
     it "should reduce the given players score by 4" $
       penaliseForInvalidCommand aPlayer `shouldBe`
-      Player 296 someWorms
+      Player 296 1 someWorms
   describe "penaliseThatPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the opponent by 4" $
       penaliseThatPlayerForAnInvalidCommand aState `shouldBe`
-      aState { opponent = Player 296 someOtherWorms }
+      aState { opponent = Player 296 1 someOtherWorms }
   describe "penaliseThisPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the player by 4" $
       penaliseThisPlayerForAnInvalidCommand aState `shouldBe`
-      aState { myPlayer = Player 296 someWorms }
+      aState { myPlayer = Player 296 1 someWorms }
   describe "awardPointsForMovingToAir" $ do
     it "should increment the points of a player by 5" $
       awardPointsForMovingToAir aPlayer `shouldBe`
-      Player 305 someWorms
+      Player 305 1 someWorms
   describe "awardPointsToThatPlayerForMovingToAir" $ do
     it "should increment the points of opponent by 5" $
       awardPointsToThatPlayerForMovingToAir aState `shouldBe`
-      aState { opponent = Player 305 someOtherWorms }
+      aState { opponent = Player 305 1 someOtherWorms }
   describe "awardPointsToThisPlayerForMovingToAir" $ do
     it "should increment the points of my player by 5" $
       awardPointsToThisPlayerForMovingToAir aState `shouldBe`
-      aState { myPlayer = Player 305 someWorms }
+      aState { myPlayer = Player 305 1 someWorms }
   describe "awardPointsForDigging" $ do
     it "should increment the points of a player by 7" $
       awardPointsForDigging aPlayer `shouldBe`
-      Player 307 someWorms
+      Player 307 1 someWorms
   describe "awardPointsToThisPlayerForDigging" $ do
     it "should increment this players points by 7" $
       awardPointsToThisPlayerForDigging aState `shouldBe`
-      aState { myPlayer = Player 307 someWorms }
+      aState { myPlayer = Player 307 1 someWorms }
   describe "awardPointsToThatPlayerForDigging" $ do
     it "should increment that players points by 7" $
       awardPointsToThatPlayerForDigging aState `shouldBe`
-      aState { opponent = Player 307 someOtherWorms }
+      aState { opponent = Player 307 1 someOtherWorms }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
       (harmWormWithRocket $ Worm 1 10 $ toCoord 15 31) `shouldBe`
@@ -110,12 +110,12 @@ spec = do
     it "should produce the same state given the identity function" $
       mapThoseWorms id aState `shouldBe` aState
     it "should produce the given state with no worms for that playere when mapping the function always []" $
-      mapThoseWorms (always M.empty) aState `shouldBe` aState { opponent = Player 300 M.empty }
+      mapThoseWorms (always M.empty) aState `shouldBe` aState { opponent = Player 300 1 M.empty }
   describe "mapTheseworms" $ do
     it "should produce the same state given the identity function" $
       mapTheseWorms id aState `shouldBe` aState
     it "should produce the given state with no worms for this playere when mapping the function always []" $
-      mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 M.empty }
+      mapTheseWorms (always M.empty) aState `shouldBe` aState { myPlayer = Player 300 1 M.empty }
   describe "generateShotSwitch" $ do
     prop "produces a function which produces the first given a negative number and the second given a positive number" $
       let switchFunction = generateShotSwitch shootEast shootNorth
@@ -674,31 +674,31 @@ generateShotSwitch a b x =
   if x > 0 then a else b
 
 playersWorms :: Player -> Worms
-playersWorms (Player _ worms') = worms'
+playersWorms (Player _ _ worms') = worms'
 
 generateInBoundsCoordinate :: Int -> Int -> Coord
 generateInBoundsCoordinate = generateCoordGenerator inBoundsWithNoPadding inBoundsWithNoPadding
 
 takeBothWorms :: GeneratePlayer
 takeBothWorms thisCoord thatCoord =
-  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
+  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord, Worm 3 10 thatCoord]
 
 takeThisWormAndPutAnotherInbetween :: GeneratePlayer
 takeThisWormAndPutAnotherInbetween thisCoord thatCoord =
-  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord,
-                                        Worm 2 10 $ coordBetween thisCoord thatCoord]
+  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord,
+                                          Worm 2 10 $ coordBetween thisCoord thatCoord]
 
 takeThisWorm :: GeneratePlayer
 takeThisWorm thisCoord _ =
-  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord]
+  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thisCoord]
 
 takeThatWorm :: GeneratePlayer
 takeThatWorm _ thatCoord =
-  Player 300 $ wormsToMap $ V.fromList [Worm 1 10 thatCoord]
+  Player 300 1 $ wormsToMap $ V.fromList [Worm 1 10 thatCoord]
 
 takeNoWorms :: GeneratePlayer
 takeNoWorms _ _ =
-  Player 300 $ wormsToMap $ V.fromList []
+  Player 300 1 $ wormsToMap $ V.fromList []
 
 addDelta :: Int -> Int -> Int
 addDelta = (+)
@@ -733,7 +733,7 @@ generateShotScenarioWithMapModifications generateCoord displace switchShot gener
       thisPlayer              = generateThisPlayer originatingCoord displacedCoord
       thatPlayer              = generateThatPlayer originatingCoord displacedCoord
       modifiedMap             = modifyMap originatingCoord displacedCoord aGameMapWithOnlyAir
-      state                   = State 1 10 10 10 10 thisPlayer thatPlayer modifiedMap
+      state                   = State 10 10 10 10 thisPlayer thatPlayer modifiedMap
   in (state, shot)
 
 generateShotScenario :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> GeneratePlayer -> GeneratePlayer -> (Int, Int, Int) -> (State, Move)
@@ -804,7 +804,7 @@ moveEast = Move 10
 
 moveWest = Move 14
 
-aState = State 1 10 10 10 10 aPlayer anOpponent aGameMap
+aState = State 10 10 10 10 aPlayer anOpponent aGameMap
 
 aStateWithOpponentBeneathDirt =
   mapThatWorm aState (withCoordOf (toCoord 14 31))
@@ -973,7 +973,7 @@ opponentWithAWormOnTheMedipack =
 opponentWithAWormAtTop =
   withWorms someOtherWormsWithOneAtTop anOpponent
 
-withWorms worms' (Player health' _) = Player health' worms'
+withWorms worms' (Player health' wormId' _) = Player health' wormId' worms'
 
 aPlayerWithCollisionResolvedBySwapping =
   withWorms someWormsWithCollisionResolvedBySwapping aPlayer
@@ -993,7 +993,7 @@ aPlayerWithAWormOnTheMedipack =
 aPlayerWithAWormAtTop =
   withWorms someWormsWithOneAtTop aPlayer
 
-aPlayer = Player 300 someWorms
+aPlayer = Player 300 1 someWorms
 
 thisWorm1 = aWorm
 thisWorm2 = withCoordOf (toCoord 1 31) $ withIdOf 2 aWorm
@@ -1064,6 +1064,14 @@ someOtherWormsWithOneAtTop =
 modifyWormWithId = flip M.adjust
 
 aWorm = Worm 1 10 $ toCoord 15 31
+
+withMyCurrentWormIdOf id' =
+  mapThisPlayer (withCurrentWormId id')
+
+withOpponentCurrentWormIdOf id' =
+  mapThatPlayer (withCurrentWormId id')
+
+withCurrentWormId id' (Player score' _ worms') = Player score' id' worms'
 
 withIdOf id' (Worm _ health' position') = Worm id' health' position'
 
