@@ -34,7 +34,7 @@ spec = do
   describe "findWormHealth" $ do
     context "given an empty collection of worm health facts" $
       it "produces Nothing" $
-      findWormHealth (WormId 1) aState `shouldBe` Nothing
+      findWormHealth (WormId 1) aStateWithNoFacts `shouldBe` Nothing
     context "given an alist of worm health which doesn't contain the id" $
       it "produces Nothing" $
       findWormHealth (WormId 2) aStateWithTwoWormHealths `shouldBe` Nothing
@@ -111,7 +111,7 @@ spec = do
   describe "penaliseThatPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the opponent by 4" $
       penaliseThatPlayerForAnInvalidCommand aState `shouldBe`
-      aState { opponent = Player 296 (WormId 1) }
+      aState { opponent = Player 296 (WormId 4) }
   describe "penaliseThisPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the player by 4" $
       penaliseThisPlayerForAnInvalidCommand aState `shouldBe`
@@ -123,7 +123,7 @@ spec = do
   describe "awardPointsToThatPlayerForMovingToAir" $ do
     it "should increment the points of opponent by 5" $
       awardPointsToThatPlayerForMovingToAir aState `shouldBe`
-      aState { opponent = Player 305 (WormId 1) }
+      aState { opponent = Player 305 (WormId 4) }
   describe "awardPointsToThisPlayerForMovingToAir" $ do
     it "should increment the points of my player by 5" $
       awardPointsToThisPlayerForMovingToAir aState `shouldBe`
@@ -139,7 +139,7 @@ spec = do
   describe "awardPointsToThatPlayerForDigging" $ do
     it "should increment that players points by 7" $
       awardPointsToThatPlayerForDigging aState `shouldBe`
-      aState { opponent = Player 307 (WormId 1) }
+      aState { opponent = Player 307 (WormId 4) }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
       (harmWormWithRocket (toCoord 15 31) aState) `shouldBe`
@@ -321,7 +321,7 @@ spec = do
       makeMove True (fromMoves doNothing moveWest) aStateWithMyWormNextToAnEnemy `shouldBe`
       penaliseThatPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy
     it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
-      makeMove True (fromMoves doNothing moveWest) aStateWithEnemyWormsNextToEachother `shouldBe`
+      makeMove True (fromMoves doNothing moveEast) aStateWithEnemyWormsNextToEachother `shouldBe`
       penaliseThatPlayerForAnInvalidCommand aStateWithEnemyWormsNextToEachother
     it "moving my worm onto the medipack increases my worms health by 10 and changes that square to AIR" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
@@ -520,7 +520,7 @@ spec = do
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
-                          (generateShotSwitch     shootEast shootWest)
+                          (generateShotSwitch     shootWest shootEast)
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
@@ -540,7 +540,7 @@ spec = do
                           (generateCoordGenerator inBoundsWithNoPadding
                                                   inBoundsWithNonDiagonalPadding)
                           (generateCoordDisplacer nonDiagonalDelta ignoreDelta addDelta)
-                          (generateShotSwitch     shootSouth shootNorth)
+                          (generateShotSwitch     shootNorth shootSouth)
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
@@ -560,7 +560,7 @@ spec = do
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta addDelta)
-                          (generateShotSwitch     shootSouthEast shootNorthWest)
+                          (generateShotSwitch     shootNorthWest shootSouthEast)
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
@@ -570,8 +570,8 @@ spec = do
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta addDelta)
-                          (generateShotSwitch     shootSouthEast shootNorthWest)
-                          (takeBothWorms          (WormId 4) (WormId 8))
+                          (generateShotSwitch     shootNorthWest shootSouthEast)
+                          (takeBothWorms          (WormId 8) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          state { wormHealths = setWormHealthById (WormHealth 0) (WormId 8) $ wormHealths state }
@@ -580,7 +580,7 @@ spec = do
                           (generateCoordGenerator inBoundsWithDiagonalPadding
                                                   inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDelta addDelta subtractDelta)
-                          (generateShotSwitch     shootNorthEast shootSouthWest)
+                          (generateShotSwitch     shootSouthWest shootNorthEast)
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
@@ -617,6 +617,10 @@ aStateWithTwoWormHealths =
   aState { wormHealths = AList [
              AListEntry (WormId 1) (WormHealth 5),
              AListEntry (WormId 3) (WormHealth 10)] }
+
+aStateWithNoFacts =
+  aState { wormHealths   = emptyWormHealths,
+           wormPositions = emptyWormPositions }
 
 emptyWormHealths = AList []
 
@@ -955,7 +959,7 @@ aStateWhereNoSwapHappened =
   aStateWithBothWormsNextToTheMedipack
 
 aStateWithBothWormsNextToTheMedipack = aState {
-  wormPositions = aListConcat wormPositionsWithOpponentNextToMedipack wormPositionsWithMyWormNextToMedipack,
+  wormPositions = aListConcat wormPositionsWithMyWormNextToMedipack wormPositionsWithOpponentNextToMedipack,
   gameMap       = aGameMapWithAMedipack }
 
 aStateWithOpponentsWormNextToTheMedipack = aState {
@@ -984,7 +988,7 @@ aStateWithImpendingCollision = aState {
   wormPositions = wormPositionsWithImpendingCollision,
   wormHealths   = wormHealthsForOneAndFive }
 
-anOpponent = Player 300 (WormId 8)
+anOpponent = Player 300 (WormId 4)
 
 wormPositionsWithImpendingCollision = AList [
   AListEntry (WormId 1) (toCoord 15 31),
@@ -1003,13 +1007,22 @@ wormPositionsWithHisNextToHis = AList [
   AListEntry (WormId 8) (toCoord 16 31)]
 
 wormPositionsWithOpponentNextToMedipack = AList [
-  AListEntry (WormId 4) (toCoord 30 31)]
+  AListEntry (WormId 4) (toCoord 31 30),
+  AListEntry (WormId 8)  (toCoord 19 1),
+  AListEntry (WormId 12) (toCoord 20 1)]
 
 wormPositionsWithOpponentOnTheMedipack = AList [
-  AListEntry (WormId 4) (toCoord 31 31)]
+  AListEntry (WormId 4) (toCoord 31 31),
+  AListEntry (WormId 8)  (toCoord 19 1),
+  AListEntry (WormId 12) (toCoord 20 1)]
 
 wormHealthsWithOpponentHavingReceivedTheMedipack = AList [
-  AListEntry (WormId 4) (WormHealth 20)]
+  AListEntry (WormId 1)  (WormHealth 10),
+  AListEntry (WormId 2)  (WormHealth 10),
+  AListEntry (WormId 3)  (WormHealth 10),
+  AListEntry (WormId 4)  (WormHealth 20),
+  AListEntry (WormId 8)  (WormHealth 10),
+  AListEntry (WormId 12) (WormHealth 10)]
 
 wormPositionsWithOpponentAtTop = AList [
   AListEntry (WormId 4) (toCoord 15 0)]
@@ -1019,13 +1032,22 @@ wormPositionsWithMyWormsNextToEachother = AList [
   AListEntry (WormId 2) (toCoord 16 31)]
 
 wormPositionsWithMyWormNextToMedipack = AList [
-  AListEntry (WormId 1) (toCoord 31 30)]
+  AListEntry (WormId 1) (toCoord 30 31),
+  AListEntry (WormId 2)  (toCoord 1 31),
+  AListEntry (WormId 3)  (toCoord 1 30)]
 
 wormPositionsWithMyWormOnTheMedipack = AList [
-  AListEntry (WormId 1) (toCoord 31 31)]
+  AListEntry (WormId 1) (toCoord 31 31),
+  AListEntry (WormId 2)  (toCoord 1 31),
+  AListEntry (WormId 3)  (toCoord 1 30)]
 
 wormHealthsWithMyWormHavingReceivedTheMedipack = AList [
-  AListEntry (WormId 1) (WormHealth 20)]
+  AListEntry (WormId 1)  (WormHealth 20),
+  AListEntry (WormId 2)  (WormHealth 10),
+  AListEntry (WormId 3)  (WormHealth 10),
+  AListEntry (WormId 4)  (WormHealth 10),
+  AListEntry (WormId 8)  (WormHealth 10),
+  AListEntry (WormId 12) (WormHealth 10)]
 
 wormPositionsWithMyWormAtTop = AList [
   AListEntry (WormId 1) (toCoord 15 0)]

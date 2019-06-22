@@ -357,9 +357,11 @@ makeMoveMoves swapping this that state =
       -- ASSUME: that a worm won't be on an invalid square
       thisWormsPosition     = thisWormsCoord state
       thatWormsPosition     = thatWormsCoord state
-      thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thisTarget) == Just False
+      thisWormId            = thisPlayersCurrentWormId state
+      thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWormExcept state thisWormId) thisTarget) == Just False
       thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
-      thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thatTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWorm state) thatTarget) == Just False
+      thatWormId            = thatPlayersCurrentWormId state
+      thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thatTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWormExcept state thatWormId) thatTarget) == Just False
       thatTargetIsAMedipack = (thatTarget >>= mapAtCoord state) == Just MEDIPACK
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget       = fromJust thisTarget
@@ -429,18 +431,21 @@ giveMedipackToThisWorm state =
   let thisWormId = thisPlayersCurrentWormId state
   in withWormHealths (mapWormById thisWormId (mapDataSlot increaseHealth)) state
 
+-- TODO test
 allWormFacts :: (AListEntry a -> Bool) -> AList a -> Bool
 allWormFacts f = aListFoldl' ( \ acc worm -> acc && f worm) True
 
+-- TODO test
 anyWormFacts :: (AListEntry a -> Bool) -> AList a -> Bool
-anyWormFacts f = aListFoldl' ( \ acc worm -> acc || f worm) True
+anyWormFacts f = aListFoldl' ( \ acc worm -> acc || f worm) False
 
+-- TODO test
 aListFoldl' :: (b -> AListEntry a -> b) -> b -> AList a -> b
 aListFoldl' f x (AList ys) = foldl' f x ys
 
-containsAnyWorm :: State -> Coord -> Bool
-containsAnyWorm State { wormPositions = wormPositions' } coord' =
-  anyWormFacts ((== coord'). dataSlot) wormPositions'
+containsAnyWormExcept :: State -> WormId -> Coord -> Bool
+containsAnyWormExcept State { wormPositions = wormPositions' } wormId' coord' =
+  anyWormFacts (\ (AListEntry wormId'' coord'') -> coord' == coord'' && wormId' /= wormId'') wormPositions'
 
 isAMoveMove :: Move -> Bool
 isAMoveMove (Move x)
@@ -498,7 +503,7 @@ moveThatWorm newCoord' state =
 targetOfThisMove :: Move -> State -> Maybe Coord
 targetOfThisMove dir state =
   let thisWormId = thisPlayersCurrentWormId state
-      position'   = fmap dataSlot $ aListFind ((== thisWormId) . idSlot) $ wormPositions state
+      position'  = fmap dataSlot $ aListFind ((== thisWormId) . idSlot) $ wormPositions state
   in position' >>= targetOfMove dir
 
 targetOfThatMove :: Move -> State -> Maybe Coord
