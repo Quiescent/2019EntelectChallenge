@@ -55,10 +55,20 @@ type WormHealths = AList WormHealth
 type WormPositions = AList Coord
 
 data AList a = AList [AListEntry a]
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance (Show a) => Show (AList a) where
+  show (AList xs) =
+    "[\n" ++
+    (foldr (++) "" $ map (\ x -> "    " ++ show x ++ ",\n") xs) ++
+    "]"
 
 data AListEntry a = AListEntry WormId a
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance (Show a) => Show (AListEntry a) where
+  show (AListEntry (WormId wormId') value) =
+    show wormId' ++ " -> " ++ show value
 
 data WormHealth = WormHealth Int
   deriving (Eq, Show)
