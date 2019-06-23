@@ -288,8 +288,14 @@ from the command line to invoke the bot program.
        :END:
 In this case the first worm should always be hit even if it's
 friendly.
-****** IN_PROGRESS Change the way that worms are represented
+****** DONE Change the way that worms are represented
+       CLOSED: [2019-06-23 Sun 11:35]
        :LOGBOOK:
+       - CLOSING NOTE [2019-06-23 Sun 11:35] \\
+         Worms are now represented as ALists of facts where the association is
+         between the worm id and it's fact (health or position right now).  The
+         representation allows for looking up a worms fact by id or finding the
+         worm for which a fact is true.
        - Note taken on [2019-06-16 Sun 12:21] \\
          The new representation is one which associates facts with ids.  The
          games always happen between two teams of three worms so I can get away
