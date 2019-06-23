@@ -310,7 +310,10 @@ friendly.
          appreciate.
        - State "IN_PROGRESS" from "TODO"       [2019-06-16 Sun 12:18]
        :END:
-****** TODO Implement worms being just out of range scenarios
+****** IN_PROGRESS Implement worms being just out of range scenarios
+       :LOGBOOK:
+       - State "IN_PROGRESS" from "TODO"       [2019-06-23 Sun 11:36]
+       :END:
 ****** TODO Implement simultaneous shots scenarios
 ***** TODO Rule 1: A shot hits the first target in range
 ***** TODO Rule 2: A shot hits nothing if nothing is in range in that direction
