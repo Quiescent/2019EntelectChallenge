@@ -642,6 +642,23 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe` state
+    context "when both worms shoot at eachother simultaneously and they're both in range of eachother" $
+      prop "both worms should be harmed" $ \ (i, j, k) ->
+        let (state, shot) = generateShotScenario
+                            (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                    inBoundsWithNoPadding)
+                            (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
+                            (generateShotSwitch     shootEast shootWest)
+                            (takeBothWorms          (WormId 1) (WormId 4))
+                            (i, j, k)
+        in makeMove True (fromMoves shot (oppositeShot shot)) state `shouldBe`
+           state { wormHealths =
+                     setWormHealthById (WormHealth 0) (WormId 4) $
+                     setWormHealthById (WormHealth 0) (WormId 1) $
+                     wormHealths state }
+
+oppositeShot :: Move -> Move
+oppositeShot (Move x) = Move ((x + 4) `mod` 8)
 
 setWormHealthById :: WormHealth -> WormId -> WormHealths -> WormHealths
 setWormHealthById health' wormId' = mapWormById wormId' (mapDataSlot (always health'))
