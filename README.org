@@ -310,8 +310,10 @@ friendly.
          appreciate.
        - State "IN_PROGRESS" from "TODO"       [2019-06-16 Sun 12:18]
        :END:
-****** IN_PROGRESS Implement worms being just out of range scenarios
+****** DONE Implement worms being just out of range scenarios
+       CLOSED: [2019-06-25 Tue 06:03]
        :LOGBOOK:
+       - CLOSING NOTE [2019-06-25 Tue 06:03]
        - State "IN_PROGRESS" from "TODO"       [2019-06-23 Sun 11:36]
        :END:
 ****** TODO Implement simultaneous shots scenarios
