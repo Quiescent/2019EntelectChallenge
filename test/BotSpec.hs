@@ -606,6 +606,25 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
         (oneWormHarmed 10 . myHealths) .&&. (noWormHarmed 10 . opponentsHealths)
+    prop "should not hit this players first horizontal target when it's not in range" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNoPadding)
+                          (generateCoordDisplacer nonDiagonalDeltaOutOfRange addDelta ignoreDelta)
+                          (generateShotSwitch     shootEast shootWest)
+                          (takeBothWorms          (WormId 4) (WormId 8))
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe` state
+    prop "should not hit this players first vertical target when it's not in range" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNoPadding)
+                          (generateCoordDisplacer nonDiagonalDeltaOutOfRange ignoreDelta addDelta)
+                          (generateShotSwitch     shootEast shootWest)
+                          (takeBothWorms          (WormId 4) (WormId 8))
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe` state
+
 
 setWormHealthById :: WormHealth -> WormId -> WormHealths -> WormHealths
 setWormHealthById health' wormId' = mapWormById wormId' (mapDataSlot (always health'))
@@ -761,6 +780,13 @@ generateShotScenario generateCoord displace switchShot addFacts (i, j, k) =
 
 identityMapModification :: ModifyMap
 identityMapModification _ _ = id
+
+-- TODO test
+nonDiagonalDeltaOutOfRange :: Int -> Int
+nonDiagonalDeltaOutOfRange x =
+  if abs x <= 3
+  then (4 * if x < 0 then -1 else 1)
+  else x
 
 nonDiagonalDelta :: Int -> Int
 nonDiagonalDelta x =
