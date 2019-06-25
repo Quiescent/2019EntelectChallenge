@@ -325,10 +325,25 @@ friendly.
          Indicate that work on the simultaneous shots scenario is complete.
        - State "IN_PROGRESS" from "TODO"       [2019-06-24 Mon 09:55]
        :END:
-***** TODO Rule 1: A shot hits the first target in range
-***** TODO Rule 2: A shot hits nothing if nothing is in range in that direction
-***** TODO Rule 3: A shot is blocked by dirt and deep space
-***** TODO Rule 4: Worms reduced to zero health are removed from the map
+***** DONE Rule 1: A shot hits the first target in range
+      CLOSED: [2019-06-25 Tue 18:10]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-06-25 Tue 18:10]
+      :END:
+***** DONE Rule 2: A shot hits nothing if nothing is in range in that direction
+      CLOSED: [2019-06-25 Tue 18:10]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-06-25 Tue 18:10]
+      :END:
+***** DONE Rule 3: A shot is blocked by dirt and deep space
+      CLOSED: [2019-06-25 Tue 18:10]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-06-25 Tue 18:10]
+      :END:
+***** IN_PROGRESS Rule 4: Worms reduced to zero health are removed from the map
+      :LOGBOOK:
+      - State "IN_PROGRESS" from "TODO"       [2019-06-25 Tue 18:10]
+      :END:
 ***** TODO Rule 5: A shot causes x points of damage (Where x is defined in the state file)
 ***** TODO Rule 6: A shots range is d euclidean units (where d is defined in the state file)
 **** TODO Implement Score Changes for Shoot
