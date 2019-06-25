@@ -612,7 +612,7 @@ spec = do
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDeltaOutOfRange addDelta ignoreDelta)
                           (generateShotSwitch     shootEast shootWest)
-                          (takeBothWorms          (WormId 4) (WormId 8))
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe` state
     prop "should not hit this players first vertical target when it's not in range" $ \ (i, j, k) ->
@@ -621,10 +621,27 @@ spec = do
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDeltaOutOfRange ignoreDelta addDelta)
                           (generateShotSwitch     shootEast shootWest)
-                          (takeBothWorms          (WormId 4) (WormId 8))
+                          (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe` state
-
+    prop "should not hit this players first NE-SW target when it's not in range" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNoPadding)
+                          (generateCoordDisplacer diagonalDeltaOutOfRange addDelta subtractDelta)
+                          (generateShotSwitch     shootSouthWest shootNorthEast)
+                          (takeBothWorms          (WormId 1) (WormId 4))
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe` state
+    prop "should not hit this players first NW-SE target when it's not in range" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNoPadding)
+                          (generateCoordDisplacer diagonalDeltaOutOfRange subtractDelta addDelta)
+                          (generateShotSwitch     shootNorthWest shootSouthEast)
+                          (takeBothWorms          (WormId 1) (WormId 4))
+                          (i, j, k)
+      in makeMove True (fromMoves doNothing shot) state `shouldBe` state
 
 setWormHealthById :: WormHealth -> WormId -> WormHealths -> WormHealths
 setWormHealthById health' wormId' = mapWormById wormId' (mapDataSlot (always health'))
@@ -786,6 +803,13 @@ nonDiagonalDeltaOutOfRange :: Int -> Int
 nonDiagonalDeltaOutOfRange x =
   if abs x <= 3
   then (4 * if x < 0 then -1 else 1)
+  else x
+
+-- TODO test
+diagonalDeltaOutOfRange :: Int -> Int
+diagonalDeltaOutOfRange x =
+  if abs x <= 2
+  then (3 * if x < 0 then -1 else 1)
   else x
 
 nonDiagonalDelta :: Int -> Int
