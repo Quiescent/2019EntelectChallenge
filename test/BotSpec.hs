@@ -454,7 +454,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 4) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 4) $ wormPositions state }
     prop "should hit this players first horizontal target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
@@ -464,7 +465,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 2) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 2) $ wormPositions state }
     prop "should hit this players first vertical target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
@@ -474,7 +476,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 4) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 4) $ wormPositions state }
     prop "should hit this players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
@@ -484,7 +487,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 2) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 2) $ wormPositions state }
     prop "should hit this players first NW-SE diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -494,7 +498,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 4) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 4) $ wormPositions state }
     prop "should hit this players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -504,7 +509,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 2) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 2) $ wormPositions state }
     prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -514,7 +520,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 4) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 4) $ wormPositions state }
     prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
@@ -524,7 +531,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 1) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 1) $ wormPositions state }
     prop "should hit that players first horizontal target in range when it's friendly" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
@@ -534,7 +542,8 @@ spec = do
                           (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 8) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 8) $ wormPositions state }
     prop "should hit that players first vertical target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
@@ -544,7 +553,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 1) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 1) $ wormPositions state }
     prop "should hit that players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
@@ -554,7 +564,8 @@ spec = do
                           (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 8) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 8) $ wormPositions state }
     prop "should hit that players first NW-SE diagonal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -564,7 +575,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 1) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 1) $ wormPositions state }
     prop "should hit that players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -574,7 +586,8 @@ spec = do
                           (takeBothWorms          (WormId 8) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 8) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 8) $ wormPositions state }
     prop "should hit that players first NE-SW diagonal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -584,7 +597,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 1) $ wormHealths state }
+         state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
+                 wormPositions = removeWormById (WormId 1) $ wormPositions state }
     prop "should not hit this players first horizontal target in range when there's dirt or space in the way" $ \ (i, j, k, l) ->
       let (state, shot) = generateShotScenarioWithMapModifications
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
@@ -655,7 +669,11 @@ spec = do
            state { wormHealths =
                      removeWormById (WormId 4) $
                      removeWormById (WormId 1) $
-                     wormHealths state }
+                     wormHealths state,
+                   wormPositions =
+                     removeWormById (WormId 4) $
+                     removeWormById (WormId 1) $
+                     wormPositions state }
 
 removeWormById :: WormId -> AList a -> AList a
 removeWormById wormId' = aListFilter ((== wormId') . idSlot)
