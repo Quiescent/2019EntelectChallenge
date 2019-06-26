@@ -588,87 +588,43 @@ isOpponentWorm (WormId 8)  = True
 isOpponentWorm (WormId 12) = True
 isOpponentWorm _           = False
 
-thatPlayersWorms :: AList a -> AList a
-thatPlayersWorms = aListFilter (isOpponentWorm . idSlot)
-
-thisPlayersWorms :: AList a -> AList a
-thisPlayersWorms = aListFilter (isMyWorm . idSlot)
-
 makeShootMoves :: Move -> Move -> ModifyState
 makeShootMoves this that state =
-  let thisShootMove              = if isAShootMove this then Just this else Nothing
-      thatShootMove              = if isAShootMove that then Just that else Nothing
-      gameMap'                   = gameMap state
-      -- ASSUME: that a worm won't be on an invalid square
-      thisWormsPosition          = thisWormsCoord state
-      thatWormsPosition          = thatWormsCoord state
-      thisShotsDir               = thisShootMove >>= directionOfShot
-      thatShotsDir               = thatShootMove >>= directionOfShot
-      thatWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition gameMap')) (thatPlayersWorms $ wormPositions state))
-      thisWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition gameMap')) (thisPlayersWorms $ wormPositions state))
-      thatWormWasHitFromThisShot = isJust thatWormHitFromThisShot
-      thisWormWasHitFromThatShot = isJust thisWormHitFromThatShot
-      thatTargetFromThis         = fromJust thatWormHitFromThisShot
-      thisTargetFromThat         = fromJust thisWormHitFromThatShot
-      thisWormHitFromThisShot    = thisShotsDir >>= ((flip (hitsWorm thisWormsPosition gameMap')) (thisPlayersWorms $ wormPositions state))
-      thatWormHitFromThatShot    = thatShotsDir >>= ((flip (hitsWorm thatWormsPosition gameMap')) (thatPlayersWorms $ wormPositions state))
-      thisWormWasHitFromThisShot = isJust thisWormHitFromThisShot
-      thatWormWasHitFromThatShot = isJust thatWormHitFromThatShot
-      thisTargetFromThis         = fromJust thisWormHitFromThisShot
-      thatTargetFromThat         = fromJust thatWormHitFromThatShot
-      harmFirstTargetOfThisShot  = harmFirstTarget thisWormsPosition
-                                                   thisWormWasHitFromThisShot
-                                                   thatWormWasHitFromThisShot
-                                                   thisTargetFromThis
-                                                   thatTargetFromThis
-                                                   (harmWormWithRocket thisTargetFromThis)
-                                                   (harmWormWithRocket thatTargetFromThis)
-      harmFirstTargetOfThatShot  = harmFirstTarget thatWormsPosition
-                                                   thisWormWasHitFromThatShot
-                                                   thatWormWasHitFromThatShot
-                                                   thisTargetFromThat
-                                                   thatTargetFromThat
-                                                   (harmWormWithRocket thisTargetFromThat)
-                                                   (harmWormWithRocket thatTargetFromThat)
-      harmWorms                  = harmFirstTargetOfThisShot .
-                                   harmFirstTargetOfThatShot
-  in harmWorms state
+  (harmWormForMove thisWormsCoord this) $ (harmWormForMove thatWormsCoord that) state
+  where
+    harmWormForMove wormsCoord move =
+      let shootMove      = if isAShootMove move then Just move else Nothing
+          gameMap'       = gameMap state
+          -- ASSUME: that a worm won't be on an invalid square
+          wormsPosition  = wormsCoord state
+          shotsDir       = shootMove >>= directionOfShot
+          coord          = shotsDir >>= ((flip (hitsWorm wormsPosition gameMap')) (wormPositions state))
+          isHit          = isJust coord
+          coord'         = fromJust coord
+      in if isHit
+         then harmWormWithRocket state coord'
+         else id
 
-harmWormWithRocket :: Coord -> ModifyState
-harmWormWithRocket = harmWorm rocketDamage
+harmWormWithRocket :: State -> Coord -> ModifyState
+harmWormWithRocket originalState = harmWorm originalState rocketDamage
 
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
 harmWormById damage' wormId' = mapWormById wormId' (mapDataSlot (mapWormHealth (+ (-damage'))))
 
+-- TODO Test
+removeWormById :: WormId -> AList a -> AList a
+removeWormById wormId' = aListFilter ((/= wormId') . idSlot)
+
 -- Assume: that the given coord maps to a worm
-harmWorm :: Int -> Coord -> ModifyState
-harmWorm damage' coord state =
-  let wormId' = fromJust $ fmap idSlot $ aListFind ((== coord) . dataSlot) $ wormPositions state
-  in withWormHealths (harmWormById damage' wormId') state
-
-harmFirstTarget :: Coord -> Bool -> Bool -> Coord -> Coord -> (ModifyState) -> (ModifyState) -> ModifyState
-harmFirstTarget origin firstHit secondHit firstPosition secondPosition hitFirst hitSecond =
-  if firstHit
-  then if secondHit
-       then if closer origin firstPosition secondPosition
-            then hitFirst
-            else hitSecond
-       else hitFirst
-  else if secondHit
-       then hitSecond
-       else id
-
-closer :: Coord -> Coord -> Coord -> Bool
-closer origin first' second' =
-  if manhattanDistance origin first' < manhattanDistance origin second'
-  then True
-  else False
-
-manhattanDistance :: Coord -> Coord -> Int
-manhattanDistance origin destination =
-  let (x', y') = fromCoord origin
-      (i', j') = fromCoord destination
-  in abs (x' - i') + abs (y' - j')
+harmWorm :: State -> Int -> Coord -> ModifyState
+harmWorm originalState damage' coord =
+  let wormId'     = fromJust $ fmap idSlot $ aListFind ((== coord) . dataSlot) $ wormPositions originalState
+      wormHealth' = fromJust $ fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormHealths originalState
+      cleanUp     = withWormHealths (removeWormById wormId') .
+                    withWormPositions (removeWormById wormId')
+      harm        = withWormHealths (harmWormById damage' wormId')
+      go          = if wormHealth' == WormHealth damage' then cleanUp else harm
+  in go
 
 type ModifyState = State -> State
 

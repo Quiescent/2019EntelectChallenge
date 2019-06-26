@@ -98,12 +98,6 @@ spec = do
       let x' = inBoundsWithNoPadding (abs i)
           y' = inBoundsWithNoPadding (abs j)
       in fromCoord (toCoord x' y') `shouldBe` (x', y')
-  describe "thisPlayersWorms" $ do
-    it "should produce facts for this players worms" $
-      thisPlayersWorms (wormHealths aState) == AList thisPlayersHealths
-  describe "thatPlayersWorms" $ do
-    it "should produce that players worms" $
-      thatPlayersWorms (wormHealths aState) == AList thatPlayersHealths
   describe "penaliseForInvalidCommand" $ do
     it "should reduce the given players score by 4" $
       penaliseForInvalidCommand aPlayer `shouldBe`
@@ -142,8 +136,9 @@ spec = do
       aState { opponent = Player 307 (WormId 4) }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
-      (harmWormWithRocket (toCoord 15 31) aState) `shouldBe`
-      aState { wormHealths = (mapWormById (WormId 1) (mapDataSlot (mapHealth (+ (-10)))) (wormHealths aState)) }
+      (harmWormWithRocket aState (toCoord 15 31) aState) `shouldBe`
+       aState { wormHealths = removeWormById (WormId 1) $ wormHealths aState,
+                wormPositions = removeWormById (WormId 1) $ wormPositions aState }
   describe "generateShotSwitch" $ do
     prop "produces a function which produces the first given a negative number and the second given a positive number" $
       let switchFunction = generateShotSwitch shootEast shootNorth
@@ -262,24 +257,6 @@ spec = do
       it "should produce false" $
       noWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 10), AListEntry (WormId 2) (WormHealth 20)]) `shouldBe`
       False
-  describe "closer" $ do
-    context "given three identical coordinates" $
-      it "should produce false" $
-      closer (toCoord 0 0) (toCoord 0 0) (toCoord 0 0) `shouldBe` False
-    context "given a coordinate and then two identical coordinates" $
-      it "should produce false" $
-      closer (toCoord 0 0) (toCoord 3 4) (toCoord 3 4) `shouldBe` False
-    context "given a coordinate a second displaced from it by at most 10 and a third displaced by twice as much more" $
-      prop "produces true" $ \ (i, j, k) ->
-      let d'     = k `mod` 10
-          d      = if d' == 0 then -1 else d'
-          pad    = (abs d)
-          x'     = pad + (i `mod` (mapDim - (2 * pad)))
-          y'     = pad + (j `mod` (mapDim - (2 * pad)))
-          origin = toCoord x' y'
-          coord1 = toCoord (x' + d) (y' + d)
-          coord2 = toCoord (x' + (2 * d)) (y' + (2 * d))
-      in closer origin coord1 coord2
   describe "makeMove" $ do
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
@@ -304,12 +281,15 @@ spec = do
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
        moveThisWorm (toCoord 17 31) $ moveThatWorm (toCoord 15 31) $
-       harmWorm knockBackDamageAmount (toCoord 17 31) $ harmWorm knockBackDamageAmount (toCoord 15 31)
+       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 17 31) $
+       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 15 31)
        aStateWithImpendingCollision)
     it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
-       harmWorm knockBackDamageAmount (toCoord 17 31) $ harmWorm knockBackDamageAmount (toCoord 15 31)
+      (awardPointsToThatPlayerForMovingToAir $
+       awardPointsToThisPlayerForMovingToAir $
+       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 17 31) $
+       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 15 31)
        aStateWithImpendingCollision)
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
@@ -619,7 +599,7 @@ spec = do
                           (takeBothWormsAndPutAnotherInbetween (WormId 2) (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
-        (oneWormHarmed 10 . myHealths) .&&. (noWormHarmed 10 . opponentsHealths)
+         (containsWormOfId (WormId 1) .&&. containsWormOfId (WormId 4))
     prop "should not hit this players first horizontal target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
@@ -675,14 +655,8 @@ spec = do
                      removeWormById (WormId 1) $
                      wormPositions state }
 
-removeWormById :: WormId -> AList a -> AList a
-removeWormById wormId' = aListFilter ((== wormId') . idSlot)
-
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)
-
-myHealths = aListFilter (isMyWorm . idSlot) . wormHealths
-opponentsHealths = aListFilter (isOpponentWorm . idSlot) . wormHealths
 
 aStateWithTwoWormHealths =
   aState { wormHealths = AList [
@@ -711,6 +685,11 @@ oneWormHarmed originalHealth =
 noWormHarmed :: Int -> WormHealths -> Bool
 noWormHarmed originalHealth =
   allWormFacts ((== originalHealth) . deconstructHealth . dataSlot)
+
+containsWormOfId :: WormId -> State -> Bool
+containsWormOfId wormId' state =
+  (isJust $ aListFind ((== wormId') . idSlot) $ wormHealths state) &&
+  (isJust $ aListFind ((== wormId') . idSlot) $ wormHealths state)
 
 countWorms :: (AListEntry a -> Bool) -> AList a -> Int
 countWorms f = aListFoldl' ( \ acc worm -> acc + if f worm then 1 else 0) 0
