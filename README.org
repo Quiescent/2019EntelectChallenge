@@ -340,8 +340,10 @@ friendly.
       :LOGBOOK:
       - CLOSING NOTE [2019-06-25 Tue 18:10]
       :END:
-***** IN_PROGRESS Rule 4: Worms reduced to zero health are removed from the map
+***** DONE Rule 4: Worms reduced to zero health are removed from the map
+      CLOSED: [2019-06-27 Thu 12:38]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-27 Thu 12:38]
       - State "IN_PROGRESS" from "TODO"       [2019-06-25 Tue 18:10]
       :END:
 ***** TODO Rule 5: A shot causes x points of damage (Where x is defined in the state file)
