@@ -361,7 +361,10 @@ friendly.
       - CLOSING NOTE [2019-06-27 Thu 12:38]
       :END:
 **** TODO Implement Score Changes for Shoot
-***** TODO Rule 1: A shot which hits one of your worms penalises your score by 20
+***** IN_PROGRESS Rule 1: A shot which hits one of your worms penalises your score by 20
+      :LOGBOOK:
+      - State "IN_PROGRESS" from "TODO"       [2019-06-27 Thu 12:40]
+      :END:
 ***** TODO Rule 2: A shot which hits an enemy worm increases your score by 20
 ***** TODO Rule 3: A shot which knocks an enemy worm unconscious gives you 40
 ***** TODO Rule 4: A shot which hits nothing increases your score by 4
