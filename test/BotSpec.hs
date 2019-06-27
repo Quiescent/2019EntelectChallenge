@@ -583,8 +583,10 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
-                 wormPositions = removeWormById (WormId 1) $ wormPositions state }
+         (awardPointsToThisPlayerForKillingAnEnemy $
+          awardPointsToThatPlayerForKillingAnEnemy $
+          state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
+                  wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should not hit this players first horizontal target in range when there's dirt or space in the way" $ \ (i, j, k, l) ->
       let (state, shot) = generateShotScenarioWithMapModifications
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
@@ -662,6 +664,17 @@ spec = do
                      removeWormById (WormId 4) $
                      removeWormById (WormId 1) $
                      wormPositions state }
+
+awardPointsToThisPlayerForKillingAnEnemy :: ModifyState
+awardPointsToThisPlayerForKillingAnEnemy =
+  mapThisPlayer awardPointsForKillingAnEnemy
+
+awardPointsToThatPlayerForKillingAnEnemy :: ModifyState
+awardPointsToThatPlayerForKillingAnEnemy =
+  mapThatPlayer awardPointsForKillingAnEnemy
+
+awardPointsForKillingAnEnemy :: Player -> Player
+awardPointsForKillingAnEnemy = modifyScore 20
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
