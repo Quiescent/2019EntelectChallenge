@@ -136,7 +136,7 @@ spec = do
       aState { opponent = Player 307 (WormId 4) }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
-      (harmWormWithRocket aState (toCoord 15 31) aState) `shouldBe`
+      (harmWormWithRocket (WormId (-1)) aState id (toCoord 15 31) aState) `shouldBe`
        aState { wormHealths = removeWormById (WormId 1) $ wormHealths aState,
                 wormPositions = removeWormById (WormId 1) $ wormPositions aState }
   describe "generateShotSwitch" $ do
@@ -281,15 +281,15 @@ spec = do
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
        moveThisWorm (toCoord 17 31) $ moveThatWorm (toCoord 15 31) $
-       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 17 31) $
-       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 15 31)
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id (toCoord 17 31) $
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id (toCoord 15 31)
        aStateWithImpendingCollision)
     it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $
        awardPointsToThisPlayerForMovingToAir $
-       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 17 31) $
-       harmWorm aStateWithImpendingCollision knockBackDamageAmount (toCoord 15 31)
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id (toCoord 17 31) $
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id (toCoord 15 31)
        aStateWithImpendingCollision)
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
@@ -665,15 +665,6 @@ spec = do
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
-
-penaliseThisPlayerForHittingHisFriendlyWorm :: ModifyState
-penaliseThisPlayerForHittingHisFriendlyWorm = mapThisPlayer penaliseForHittingFriendlyWorm
-
-penaliseThatPlayerForHittingHisFriendlyWorm :: ModifyState
-penaliseThatPlayerForHittingHisFriendlyWorm = mapThatPlayer penaliseForHittingFriendlyWorm
-
-penaliseForHittingFriendlyWorm :: Player -> Player
-penaliseForHittingFriendlyWorm = modifyScore (-20)
 
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)

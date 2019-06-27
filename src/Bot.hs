@@ -590,9 +590,10 @@ isOpponentWorm _           = False
 
 makeShootMoves :: Move -> Move -> ModifyState
 makeShootMoves this that state =
-  (harmWormForMove thisWormsCoord this) $ (harmWormForMove thatWormsCoord that) state
+  (harmWormForMove thisWormsCoord (thisPlayersCurrentWormId state) this penaliseThisPlayerForHittingHisFriendlyWorm) $
+  (harmWormForMove thatWormsCoord (thatPlayersCurrentWormId state) that penaliseThatPlayerForHittingHisFriendlyWorm) state
   where
-    harmWormForMove wormsCoord move =
+    harmWormForMove wormsCoord wormId' move penalise =
       let shootMove      = if isAShootMove move then Just move else Nothing
           gameMap'       = gameMap state
           -- ASSUME: that a worm won't be on an invalid square
@@ -602,11 +603,12 @@ makeShootMoves this that state =
           isHit          = isJust coord
           coord'         = fromJust coord
       in if isHit
-         then harmWormWithRocket state coord'
+         then harmWormWithRocket wormId' state penalise coord'
          else id
 
-harmWormWithRocket :: State -> Coord -> ModifyState
-harmWormWithRocket originalState = harmWorm originalState rocketDamage
+harmWormWithRocket :: WormId -> State -> ModifyState -> Coord -> ModifyState
+harmWormWithRocket wormId' originalState penalisePlayer =
+  harmWorm wormId' originalState rocketDamage penalisePlayer
 
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
 harmWormById damage' wormId' = mapWormById wormId' (mapDataSlot (mapWormHealth (+ (-damage'))))
@@ -616,15 +618,30 @@ removeWormById :: WormId -> AList a -> AList a
 removeWormById wormId' = aListFilter ((/= wormId') . idSlot)
 
 -- Assume: that the given coord maps to a worm
-harmWorm :: State -> Int -> Coord -> ModifyState
-harmWorm originalState damage' coord =
+harmWorm :: WormId -> State -> Int -> ModifyState -> Coord -> ModifyState
+harmWorm shootingWormId' originalState damage' penalisePlayer coord =
   let wormId'     = fromJust $ fmap idSlot $ aListFind ((== coord) . dataSlot) $ wormPositions originalState
+      samePlayer  = wormsBelongToSamePlayer wormId' shootingWormId'
+      penalise    = if samePlayer then penalisePlayer else id
       wormHealth' = fromJust $ fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormHealths originalState
       cleanUp     = withWormHealths (removeWormById wormId') .
                     withWormPositions (removeWormById wormId')
       harm        = withWormHealths (harmWormById damage' wormId')
-      go          = if wormHealth' == WormHealth damage' then cleanUp else harm
+      go          = penalise . if wormHealth' == WormHealth damage' then cleanUp else harm
   in go
+
+penaliseThisPlayerForHittingHisFriendlyWorm :: ModifyState
+penaliseThisPlayerForHittingHisFriendlyWorm = mapThisPlayer penaliseForHittingFriendlyWorm
+
+penaliseThatPlayerForHittingHisFriendlyWorm :: ModifyState
+penaliseThatPlayerForHittingHisFriendlyWorm = mapThatPlayer penaliseForHittingFriendlyWorm
+
+penaliseForHittingFriendlyWorm :: Player -> Player
+penaliseForHittingFriendlyWorm = modifyScore (-20)
+
+wormsBelongToSamePlayer :: WormId -> WormId -> Bool
+wormsBelongToSamePlayer thisWormId thatWormId =
+  isMyWorm thisWormId == isMyWorm thatWormId
 
 type ModifyState = State -> State
 
