@@ -445,8 +445,9 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
-                 wormPositions = removeWormById (WormId 2) $ wormPositions state }
+         (penaliseThisPlayerForHittingHisFriendlyWorm $
+          state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
+                  wormPositions = removeWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first vertical target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
@@ -467,8 +468,9 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
-                 wormPositions = removeWormById (WormId 2) $ wormPositions state }
+         (penaliseThisPlayerForHittingHisFriendlyWorm $
+          state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
+                  wormPositions = removeWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first NW-SE diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -489,8 +491,9 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
-                 wormPositions = removeWormById (WormId 2) $ wormPositions state }
+         (penaliseThisPlayerForHittingHisFriendlyWorm $
+          state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
+                  wormPositions = removeWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -522,8 +525,9 @@ spec = do
                           (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
-                 wormPositions = removeWormById (WormId 8) $ wormPositions state }
+         (penaliseThatPlayerForHittingHisFriendlyWorm $
+          state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
+                  wormPositions = removeWormById (WormId 8) $ wormPositions state })
     prop "should hit that players first vertical target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNoPadding
@@ -544,8 +548,9 @@ spec = do
                           (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
-                 wormPositions = removeWormById (WormId 8) $ wormPositions state }
+         (penaliseThatPlayerForHittingHisFriendlyWorm $
+          state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
+                  wormPositions = removeWormById (WormId 8) $ wormPositions state })
     prop "should hit that players first NW-SE diagonal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -566,8 +571,9 @@ spec = do
                           (takeBothWorms          (WormId 8) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
-                 wormPositions = removeWormById (WormId 8) $ wormPositions state }
+         (penaliseThatPlayerForHittingHisFriendlyWorm $
+          state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
+                  wormPositions = removeWormById (WormId 8) $ wormPositions state })
     prop "should hit that players first NE-SW diagonal target in range when it's my worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithDiagonalPadding
@@ -599,7 +605,9 @@ spec = do
                           (takeBothWormsAndPutAnotherInbetween (WormId 2) (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
-         (containsWormOfId (WormId 1) .&&. containsWormOfId (WormId 4))
+         ((hasScore (280) . myPlayer) .&&.
+          containsWormOfId (WormId 1) .&&.
+          containsWormOfId (WormId 4))
     prop "should not hit this players first horizontal target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
@@ -654,6 +662,18 @@ spec = do
                      removeWormById (WormId 4) $
                      removeWormById (WormId 1) $
                      wormPositions state }
+
+hasScore :: Int -> Player -> Bool
+hasScore score' (Player score'' _) = score' == score''
+
+penaliseThisPlayerForHittingHisFriendlyWorm :: ModifyState
+penaliseThisPlayerForHittingHisFriendlyWorm = mapThisPlayer penaliseForHittingFriendlyWorm
+
+penaliseThatPlayerForHittingHisFriendlyWorm :: ModifyState
+penaliseThatPlayerForHittingHisFriendlyWorm = mapThatPlayer penaliseForHittingFriendlyWorm
+
+penaliseForHittingFriendlyWorm :: Player -> Player
+penaliseForHittingFriendlyWorm = modifyScore (-20)
 
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)
