@@ -392,7 +392,10 @@ friendly.
       - CLOSING NOTE [2019-06-28 Fri 12:23]
       - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 08:35]
       :END:
-*** TODO Create Test Harness
+*** IN_PROGRESS Create Test Harness
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 12:24]
+    :END:
 ** TODO Model search tree type
 ** TODO Implement search function
 
