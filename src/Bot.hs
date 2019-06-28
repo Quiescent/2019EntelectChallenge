@@ -595,26 +595,39 @@ makeShootMoves this that state =
                    this
                    penaliseThisPlayerForHittingHisFriendlyWorm
                    awardPointsToThisPlayerForHittingAnEnemy
-                   awardPointsToThisPlayerForKillingAnEnemy) $
+                   awardPointsToThisPlayerForKillingAnEnemy
+                   awardPointsToThisPlayerForMissing) $
   (harmWormForMove thatWormsCoord
                    (thatPlayersCurrentWormId state)
                    that
                    penaliseThatPlayerForHittingHisFriendlyWorm
                    awardPointsToThatPlayerForHittingAnEnemy
-                   awardPointsToThatPlayerForKillingAnEnemy) state
+                   awardPointsToThatPlayerForKillingAnEnemy
+                   awardPointsToThatPlayerForMissing) state
   where
-    harmWormForMove wormsCoord wormId' move penalise awardPlayer awardPlayerForKill =
-      let shootMove      = if isAShootMove move then Just move else Nothing
-          gameMap'       = gameMap state
+    harmWormForMove wormsCoord wormId' move penalise awardPlayer awardPlayerForKill awardPointsForMiss =
+      let isShootMove     = isAShootMove move
+          shootMove       = if isShootMove then Just move else Nothing
+          gameMap'        = gameMap state
           -- ASSUME: that a worm won't be on an invalid square
-          wormsPosition  = wormsCoord state
-          shotsDir       = shootMove >>= directionOfShot
-          coord          = shotsDir >>= ((flip (hitsWorm wormsPosition gameMap')) (wormPositions state))
-          isHit          = isJust coord
-          coord'         = fromJust coord
+          wormsPosition   = wormsCoord state
+          shotsDir        = shootMove >>= directionOfShot
+          coord           = shotsDir >>= ((flip (hitsWorm wormsPosition gameMap')) (wormPositions state))
+          isHit           = isJust coord
+          coord'          = fromJust coord
+          awardMissPoints = if isShootMove then awardPointsForMiss else id
       in if isHit
          then harmWormWithRocket wormId' state penalise awardPlayer awardPlayerForKill coord'
-         else id
+         else awardMissPoints
+
+awardPointsForMissing :: Player -> Player
+awardPointsForMissing = modifyScore 4
+
+awardPointsToThisPlayerForMissing :: ModifyState
+awardPointsToThisPlayerForMissing = mapThisPlayer awardPointsForMissing
+
+awardPointsToThatPlayerForMissing :: ModifyState
+awardPointsToThatPlayerForMissing = mapThatPlayer awardPointsForMissing
 
 awardPointsForHittingAnEnemy :: Player -> Player
 awardPointsForHittingAnEnemy = modifyScore 20

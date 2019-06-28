@@ -616,7 +616,7 @@ spec = do
          ((hasScore (280) . myPlayer) .&&.
           containsWormOfId (WormId 1) .&&.
           containsWormOfId (WormId 4))
-    prop "should not hit this players first horizontal target when it's not in range" $ \ (i, j, k) ->
+    prop "should not hit that players first horizontal target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
@@ -625,8 +625,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (awardPointsToThisPlayerForMissing state)
-    prop "should not hit this players first vertical target when it's not in range" $ \ (i, j, k) ->
+         (awardPointsToThatPlayerForMissing state)
+    prop "should not hit that players first vertical target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
@@ -635,8 +635,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (awardPointsToThisPlayerForMissing state)
-    prop "should not hit this players first NE-SW target when it's not in range" $ \ (i, j, k) ->
+         (awardPointsToThatPlayerForMissing state)
+    prop "should not hit that players first NE-SW target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
@@ -645,8 +645,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (awardPointsToThisPlayerForMissing state)
-    prop "should not hit this players first NW-SE target when it's not in range" $ \ (i, j, k) ->
+         (awardPointsToThatPlayerForMissing state)
+    prop "should not hit that players first NW-SE target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
@@ -655,7 +655,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (awardPointsToThisPlayerForMissing state)
+         (awardPointsToThatPlayerForMissing state)
     context "when both worms shoot at eachother simultaneously and they're both in range of eachother" $
       prop "both worms should be harmed" $ \ (i, j, k) ->
         let (state, shot) = generateShotScenario
@@ -698,15 +698,6 @@ spec = do
        in makeMove True (fromMoves doNothing shot) state `shouldBe`
           (awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
-
-awardPointsForMissing :: Player -> Player
-awardPointsForMissing = modifyScore 4
-
-awardPointsToThisPlayerForMissing :: ModifyState
-awardPointsToThisPlayerForMissing = mapThisPlayer awardPointsForMissing
-
-awardPointsToThatPlayerForMissing :: ModifyState
-awardPointsToThatPlayerForMissing = mapThatPlayer awardPointsForMissing
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
