@@ -695,15 +695,6 @@ spec = do
           (awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
 
-awardPointsForHittingAnEnemy :: Player -> Player
-awardPointsForHittingAnEnemy = modifyScore 20
-
-awardPointsToThisPlayerForHittingAnEnemy :: ModifyState
-awardPointsToThisPlayerForHittingAnEnemy = mapThisPlayer awardPointsForHittingAnEnemy
-
-awardPointsToThatPlayerForHittingAnEnemy :: ModifyState
-awardPointsToThatPlayerForHittingAnEnemy = mapThatPlayer awardPointsForHittingAnEnemy
-
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
 
