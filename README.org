@@ -378,8 +378,10 @@ friendly.
       :LOGBOOK:
       - CLOSING NOTE [2019-06-28 Fri 05:59]
       :END:
-***** IN_PROGRESS Rule 4: A shot which hits nothing increases your score by 4
+***** DONE Rule 4: A shot which hits nothing increases your score by 4
+      CLOSED: [2019-06-28 Fri 12:23]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-28 Fri 12:23]
       - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 08:35]
       :END:
 *** TODO Create Test Harness
