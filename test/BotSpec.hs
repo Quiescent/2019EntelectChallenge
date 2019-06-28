@@ -672,6 +672,37 @@ spec = do
                       removeWormById (WormId 4) $
                       removeWormById (WormId 1) $
                       wormPositions state })
+    prop "should hit this players first horizontal target in range when it's an opponent worm without killing it" $ \ (i, j, k) ->
+       let (state, shot) = generateShotScenario
+                           (generateCoordGenerator  inBoundsWithNonDiagonalPadding
+                                                    inBoundsWithNoPadding)
+                           (generateCoordDisplacer  nonDiagonalDelta addDelta ignoreDelta)
+                           (generateShotSwitch      shootEast shootWest)
+                           (takeBothWormsWithHealth (WormHealth 100) (WormId 1) (WormId 4))
+                           (i, j, k)
+       in makeMove True (fromMoves shot doNothing) state `shouldBe`
+          (awardPointsToThisPlayerForHittingAnEnemy $
+           state { wormHealths = harmWormById rocketDamage (WormId 4) $ wormHealths state })
+    prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
+       let (state, shot) = generateShotScenario
+                           (generateCoordGenerator  inBoundsWithNonDiagonalPadding
+                                                    inBoundsWithNoPadding)
+                           (generateCoordDisplacer  nonDiagonalDelta addDelta ignoreDelta)
+                           (generateShotSwitch      shootWest shootEast)
+                           (takeBothWormsWithHealth (WormHealth 100) (WormId 1) (WormId 4))
+                           (i, j, k)
+       in makeMove True (fromMoves doNothing shot) state `shouldBe`
+          (awardPointsToThatPlayerForHittingAnEnemy $
+           state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
+
+awardPointsForHittingAnEnemy :: Player -> Player
+awardPointsForHittingAnEnemy = modifyScore 20
+
+awardPointsToThisPlayerForHittingAnEnemy :: ModifyState
+awardPointsToThisPlayerForHittingAnEnemy = mapThisPlayer awardPointsForHittingAnEnemy
+
+awardPointsToThatPlayerForHittingAnEnemy :: ModifyState
+awardPointsToThatPlayerForHittingAnEnemy = mapThatPlayer awardPointsForHittingAnEnemy
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
@@ -752,6 +783,22 @@ startingHealth = WormHealth 10
 
 aListConcat :: AList a -> AList a -> AList a
 aListConcat (AList xs) (AList ys) = AList $ xs ++ ys
+
+takeBothWormsWithHealth :: WormHealth ->  WormId -> WormId -> AddToWormFacts
+takeBothWormsWithHealth startingHealth' thisWormId thatWormId thisCoord thatCoord state =
+  state { wormHealths   =
+            aListConcat (
+              AList [
+                  AListEntry thisWormId startingHealth',
+                  AListEntry thatWormId startingHealth'])
+              (wormHealths   state),
+          wormPositions =
+            aListConcat (
+              AList [
+                  AListEntry thisWormId thisCoord,
+                  AListEntry thatWormId thatCoord])
+              (wormPositions state) }
+
 
 takeBothWorms :: WormId -> WormId -> AddToWormFacts
 takeBothWorms thisWormId thatWormId thisCoord thatCoord state =
