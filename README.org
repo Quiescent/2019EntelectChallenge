@@ -83,8 +83,10 @@ from the command line to invoke the bot program.
     - CLOSING NOTE [2019-05-01 Wed 14:21]
     - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 14:01]
     :END:
-*** IN_PROGRESS Implement =makeMove=
+*** DONE Implement =makeMove=
+    CLOSED: [2019-06-28 Fri 12:24]
     :LOGBOOK:
+    - CLOSING NOTE [2019-06-28 Fri 12:24]
     - State "IN_PROGRESS" from "TODO"       [2019-05-01 Wed 14:21]
     :END:
 **** DONE Make opponent mirror player
@@ -260,8 +262,10 @@ from the command line to invoke the bot program.
         It's not possible to dig into space with this engine, because moving
         into dirt is what is considered digging.
       :END:
-**** IN_PROGRESS Implement Shoot
+**** DONE Implement Shoot
+     CLOSED: [2019-06-28 Fri 12:24]
      :LOGBOOK:
+     - CLOSING NOTE [2019-06-28 Fri 12:24]
      - State "IN_PROGRESS" from "TODO"       [2019-06-10 Mon 13:58]
      :END:
 ***** DONE Implement a Scenario Generator and Test It
@@ -360,7 +364,11 @@ friendly.
         Hard coded
       - CLOSING NOTE [2019-06-27 Thu 12:38]
       :END:
-**** TODO Implement Score Changes for Shoot
+**** DONE Implement Score Changes for Shoot
+     CLOSED: [2019-06-28 Fri 12:24]
+     :LOGBOOK:
+     - CLOSING NOTE [2019-06-28 Fri 12:24]
+     :END:
 ***** DONE Rule 1: A shot which hits one of your worms penalises your score by 20
       CLOSED: [2019-06-27 Thu 13:01]
       :LOGBOOK:
