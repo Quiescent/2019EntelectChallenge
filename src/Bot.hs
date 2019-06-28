@@ -630,11 +630,11 @@ removeWormById wormId' = aListFilter ((/= wormId') . idSlot)
 
 -- Assume: that the given coord maps to a worm
 harmWorm :: WormId -> State -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
-harmWorm shootingWormId' originalState damage' penalisePlayer awardPlayer awardPlayerForKill coord =
+harmWorm shootingWormId' originalState damage' penalisePlayer _ awardPlayerForKill coord =
   let wormId'       = fromJust $ fmap idSlot $ aListFind ((== coord) . dataSlot) $ wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormDied      = wormHealth' == WormHealth damage'
-      awardPoints   = if wormDied then awardPlayerForKill else awardPlayer
+      awardPoints   = if wormDied then awardPlayerForKill else id
       dishOutPoints = if samePlayer then penalisePlayer else awardPoints
       wormHealth'   = fromJust $ fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormHealths originalState
       cleanUp       = withWormHealths (removeWormById wormId') .
