@@ -367,8 +367,10 @@ friendly.
       - CLOSING NOTE [2019-06-27 Thu 13:01]
       - State "IN_PROGRESS" from "TODO"       [2019-06-27 Thu 12:40]
       :END:
-***** IN_PROGRESS Rule 2: A shot which hits an enemy worm increases your score by 20
+***** DONE Rule 2: A shot which hits an enemy worm increases your score by 20
+      CLOSED: [2019-06-28 Fri 06:13]
       :LOGBOOK:
+      - CLOSING NOTE [2019-06-28 Fri 06:13]
       - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 06:00]
       :END:
 ***** DONE Rule 3: A shot which knocks an enemy worm unconscious gives you 40
