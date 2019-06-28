@@ -368,7 +368,11 @@ friendly.
       - State "IN_PROGRESS" from "TODO"       [2019-06-27 Thu 12:40]
       :END:
 ***** TODO Rule 2: A shot which hits an enemy worm increases your score by 20
-***** TODO Rule 3: A shot which knocks an enemy worm unconscious gives you 40
+***** DONE Rule 3: A shot which knocks an enemy worm unconscious gives you 40
+      CLOSED: [2019-06-28 Fri 05:59]
+      :LOGBOOK:
+      - CLOSING NOTE [2019-06-28 Fri 05:59]
+      :END:
 ***** TODO Rule 4: A shot which hits nothing increases your score by 4
 *** TODO Create Test Harness
 ** TODO Model search tree type
