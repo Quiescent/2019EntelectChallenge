@@ -113,7 +113,7 @@ data Player = Player Int WormId
 toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
 toState myPlayer' opponents' gameMap' =
   let state = do
-        opponent'        <- opponents'       V.!? 0
+        opponent'        <- opponents'        V.!? 0
         exampleWorm      <- (worms myPlayer') V.!? 0
         let weapon'       = weapon        exampleWorm
         let weaponRange'  = range         weapon'
@@ -135,7 +135,7 @@ toState myPlayer' opponents' gameMap' =
     Nothing -> error "There was no opponent to play against..."
 
 vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
-vectorGameMapToHashGameMap = GameMap . M.fromList . V.toList . V.zip (V.fromList [0..])
+vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
 
 -- NOTE: This will produce an invalid current worm if not read from
 -- the original state.
