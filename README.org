@@ -419,6 +419,7 @@ friendly.
 The engine provides one worm id, but the collections might be of
 imbalanced sizes despite the fact that two worms must go at the same
 time.
+** TODO What the heck is the powerup attribute in the game config
 * Potentially Useful, Discarded, Code
 In this section I document the code which I wrote and then didn't end
 up needing for some or other reason.  Such as having written the code
