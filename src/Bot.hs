@@ -113,26 +113,57 @@ data Player = Player Int WormId
 toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
 toState myPlayer' opponents' gameMap' =
   let state = do
-        opponent'        <- opponents'        V.!? 0
-        exampleWorm      <- (worms myPlayer') V.!? 0
-        let weapon'       = weapon        exampleWorm
-        let weaponRange'  = range         weapon'
-        let weaponDamage' = damage        weapon'
-        let moveRange'    = movementRange exampleWorm
-        let digRange'     = diggingRange  exampleWorm
-        return (opponent', weaponRange', weaponDamage', moveRange', digRange')
+        opponent'                    <- opponents'        V.!? 0
+        exampleWorm                  <- (worms myPlayer') V.!? 0
+        let (healths',  positions')   = factsFromMyWorms myPlayer'
+        let (healths'', positions'')  = factsFromOpponentsWorms opponent'
+        let wormHealths'              = aListConcat healths' healths''
+        let wormPositions'            = aListConcat positions' positions''
+        let weapon'                   = weapon        exampleWorm
+        let weaponRange'              = range         weapon'
+        let weaponDamage'             = damage        weapon'
+        let moveRange'                = movementRange exampleWorm
+        let digRange'                 = diggingRange  exampleWorm
+        return (opponent', weaponRange', weaponDamage', moveRange', digRange', wormHealths', wormPositions')
   in case state of
-    Just (opponent', weaponRange', weaponDamage', moveRange', digRange') ->
+    Just (opponent', weaponRange', weaponDamage', moveRange', digRange', wormHealths', wormPositions') ->
       State weaponRange'
             weaponDamage'
             moveRange'
             digRange'
-            (AList [])
-            (AList [])
+            wormHealths'
+            wormPositions'
             (toPlayer myPlayer')
             (opponentToPlayer opponent')
             (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
+
+aListConcat :: AList a -> AList a -> AList a
+aListConcat (AList xs) (AList ys) = AList $ xs ++ ys
+
+factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions)
+factsFromMyWorms (ScratchPlayer _ _ worms') =
+  let healths   = V.map (\ (ScratchWorm { wormId = wormId',
+                                          wormHealth = wormHealth' }) -> AListEntry (WormId wormId')
+                                                                                    (WormHealth wormHealth'))
+                  worms'
+      positions = V.map (\ (ScratchWorm { wormId = wormId',
+                                          position = position' }) -> AListEntry (WormId wormId')
+                                                                                position')
+                  worms'
+  in (AList $ V.toList healths, AList $ V.toList positions)
+
+factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions)
+factsFromOpponentsWorms (Opponent _ worms') =
+  let healths   = V.map (\ (OpponentWorm { opWormId = wormId',
+                                           opWormHealth = wormHealth' }) -> AListEntry (WormId wormId')
+                                                                                       (WormHealth wormHealth'))
+                  worms'
+      positions = V.map (\ (OpponentWorm { opWormId = wormId',
+                                           opPosition = position' }) -> AListEntry (WormId wormId')
+                                                                                   position')
+                  worms'
+  in (AList $ V.toList healths, AList $ V.toList positions)
 
 vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList

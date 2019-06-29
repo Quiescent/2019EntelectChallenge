@@ -776,9 +776,6 @@ generateInBoundsCoordinate = generateCoordGenerator inBoundsWithNoPadding inBoun
 
 startingHealth = WormHealth 10
 
-aListConcat :: AList a -> AList a -> AList a
-aListConcat (AList xs) (AList ys) = AList $ xs ++ ys
-
 takeBothWormsWithHealth :: WormHealth ->  WormId -> WormId -> AddToWormFacts
 takeBothWormsWithHealth startingHealth' thisWormId thatWormId thisCoord thatCoord state =
   state { wormHealths   =
