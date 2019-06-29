@@ -74,13 +74,21 @@ loadStateForRound path = do
   then fmap decode $ B.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/JsonMap.json")
   else return Nothing
 
-loadThisPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
-loadThisPlayersCommand coord path = do
-  playerPaths     <- listDirectory path
-  let aPlayersPath = headMaybe playerPaths
+loadCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
+loadCommandFromSubfolder choosePath coord directoryPath = do
+  playerPaths     <- listDirectory directoryPath
+  let aPlayersPath = choosePath playerPaths
   if isJust aPlayersPath
-  then liftIO $ fmap (readMove coord) $ IO.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
+  then liftIO $
+       fmap (readMove coord) $
+       IO.readFile (directoryPath ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
   else return Nothing
+
+loadThisPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
+loadThisPlayersCommand = loadCommandFromSubfolder headMaybe
+
+loadThatPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
+loadThatPlayersCommand = loadCommandFromSubfolder (tailMaybe >=> headMaybe)
 
 doNothingMove :: Maybe Move
 doNothingMove = Just (Move (-1))
@@ -151,14 +159,6 @@ moveFrom from to' =
     (NegOne, Zero)   -> Move 6
     (NegOne, NegOne) -> Move 7
     (Zero,   Zero)   -> Move (-1)
-
-loadThatPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
-loadThatPlayersCommand state path = do
-  playerPaths     <- listDirectory path
-  let aPlayersPath = tailMaybe playerPaths >>= headMaybe
-  if isJust aPlayersPath
-  then liftIO $ fmap (readMove state) $ IO.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
-  else return Nothing
 
 tickState :: Move -> Move -> State -> State
 tickState thisMove thatMove state =
