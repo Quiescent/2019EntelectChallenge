@@ -7,7 +7,13 @@ import Import
 import Bot
 
 import RIO.List.Partial
+import RIO.List
 import RIO.Directory
+import Data.Maybe
+import qualified RIO.ByteString.Lazy as B
+import qualified System.IO as IO
+import Data.Aeson (decode)
+import Prelude (read)
 
 import qualified Data.List as L
 
@@ -18,33 +24,144 @@ main = do
   hSetBuffering stdout NoBuffering
   let app = App {}
   args   <- getArgs
-  when (length args == 1) $ do
-    let logDirectory = head args
-    runRIO app $ runTest logDirectory
+  guard (length args == 1)
+  let logDirectory = head args
+  runRIO app $ runTest logDirectory
 
 runTest :: FilePath -> RIO App ()
 runTest matchLogDirectory = do
-  roundsDirectories <- fmap (filter (L.isPrefixOf "Round")) $ listDirectory matchLogDirectory
-  -- TODO sort the rounds here...
-  simulateAndCheckRounds roundsDirectories
-  
-simulateAndCheckRounds :: [FilePath] -> RIO App ()
+  roundsDirectories <- fmap (map ((++) (matchLogDirectory ++ "/")) . L.sort . filter (L.isPrefixOf "Round")) $
+                       listDirectory matchLogDirectory
+  result            <- simulateAndCheckRounds roundsDirectories
+  case result of
+     Success           -> liftIO $ IO.putStrLn ("Successfully simulated: " ++ matchLogDirectory)
+     (Failure message) -> liftIO $ IO.putStrLn message
+
+data Result = Success
+            | Failure String
+
+simulateAndCheckRounds :: [FilePath] -> RIO App Result
+simulateAndCheckRounds []                      = return $ Failure "There are no rounds in the given directory."
 simulateAndCheckRounds (directory:directories) = do
   initialState <- loadStateForRound directory
-  iter initialState directories
+  if not $ isJust initialState
+  then return (Failure $ "Couldn't load initial state from: " ++ show directory)
+  else iter (fromJust initialState) directories
   where
-    iter :: State -> [FilePath] -> RIO App ()
-    iter _ _ = undefined
+    iter :: State -> [FilePath] -> RIO App Result
+    iter _            []           = return Success
+    iter currentState (path:paths) = do
+      let thisWormsCoord'    = thisWormsCoord currentState
+      let thatWormsCoord'    = thatWormsCoord currentState
+      thisMove              <- loadThisPlayersCommand thisWormsCoord' path
+      thatMove              <- loadThatPlayersCommand thatWormsCoord' path
+      let movesAreValid      = isJust thisMove && isJust thatMove
+      if not movesAreValid
+      then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
+      else do
+        nextState             <- loadStateForRound path
+        let simulatedNextState = tickState (fromJust thisMove) (fromJust thatMove) currentState
+        if any (simulatedNextState /=) nextState
+        then liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path) >>
+             return (Failure ("Failed for: " ++ path ++ "\n" ++ "Expected:\n" ++ show nextState ++ "\nBut got:\n" ++ show simulatedNextState))
+        else iter simulatedNextState paths
 
-loadStateForRound :: FilePath -> RIO App State
-loadStateForRound _ = undefined
+loadStateForRound :: FilePath -> RIO App (Maybe State)
+loadStateForRound path = do
+  playerPaths     <- listDirectory path
+  let aPlayersPath = headMaybe playerPaths
+  if isJust aPlayersPath
+  then fmap decode $ B.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/JsonMap.json")
+  else return Nothing
 
-loadThisPlayersCommand :: FilePath -> RIO App Move
-loadThisPlayersCommand _ = undefined
+loadThisPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
+loadThisPlayersCommand coord path = do
+  playerPaths     <- listDirectory path
+  let aPlayersPath = headMaybe playerPaths
+  if isJust aPlayersPath
+  then liftIO $ fmap (readMove coord) $ IO.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
+  else return Nothing
 
-loadThatPlayersCommand :: FilePath -> RIO App Move
-loadThatPlayersCommand _ = undefined
+doNothingMove :: Maybe Move
+doNothingMove = Just (Move (-1))
 
-tickState :: Move -> Move -> State -> RIO App State
-tickState _ _ _ = undefined
+readMove :: Coord -> String -> Maybe Move
+readMove coord moveString =
+  msum [
+    matchCoordCommand     coord "move"  moveString,
+    matchDirectionCommand       "shoot" moveString,
+    doNothingMove]
+
+matchDirectionCommand :: String -> String -> Maybe Move
+matchDirectionCommand matcher original =
+  let tokens = words original
+  in do
+    firstToken <- headMaybe tokens
+    guard (firstToken == matcher)
+    direction <- tailMaybe tokens >>= headMaybe
+    return $ case direction of
+                 "N"  -> Move 0
+                 "NE" -> Move 1
+                 "E"  -> Move 2
+                 "SE" -> Move 3
+                 "S"  -> Move 4
+                 "SW" -> Move 5
+                 "W"  -> Move 6
+                 "NW" -> Move 7
+
+toInt :: String -> Int
+toInt x' = read x'
+
+matchCoordCommand :: Coord -> String -> String -> Maybe Move
+matchCoordCommand origCoord matcher original =
+  let tokens = words original
+  in do
+    firstToken   <- headMaybe tokens
+    guard (firstToken == matcher)
+    coords       <- tailMaybe tokens
+    xValue       <- fmap toInt $ headMaybe coords
+    yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
+    let destCoord = toCoord xValue yValue
+    return $ moveFrom origCoord destCoord
+
+data Ternary = NegOne
+             | Zero
+             | One
+
+compareToTernary :: Int -> Int -> Ternary
+compareToTernary x' y' =
+  if x' - y' < 0
+  then NegOne
+  else if x' - y' > 0
+       then One
+       else Zero
+
+moveFrom :: Coord -> Coord -> Move
+moveFrom from to' =
+  let (x',  y')  = fromCoord from
+      (x'', y'') = fromCoord to'
+  in case (compareToTernary x' x'', compareToTernary y' y'') of
+    -- Start from N and move anti clockwise
+    (Zero,   NegOne) -> Move 0
+    (One,    NegOne) -> Move 1
+    (One,    Zero)   -> Move 2
+    (One,    One)    -> Move 3
+    (Zero,   One)    -> Move 4
+    (NegOne, One)    -> Move 5
+    (NegOne, Zero)   -> Move 6
+    (NegOne, NegOne) -> Move 7
+    (Zero,   Zero)   -> Move (-1)
+
+loadThatPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
+loadThatPlayersCommand state path = do
+  playerPaths     <- listDirectory path
+  let aPlayersPath = tailMaybe playerPaths >>= headMaybe
+  if isJust aPlayersPath
+  then liftIO $ fmap (readMove state) $ IO.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
+  else return Nothing
+
+tickState :: Move -> Move -> State -> State
+tickState thisMove thatMove state =
+  -- TODO do we swap?! /shrug
+  makeMove True (fromMoves thisMove thatMove) state
 
