@@ -11,7 +11,8 @@ import RIO.List
 import RIO.Directory
 import Data.Maybe
 import qualified RIO.ByteString.Lazy as B
-import qualified System.IO as IO
+import qualified System.IO           as IO
+import qualified System.Process      as Process
 import Data.Aeson (decode)
 import Prelude (read)
 
@@ -62,9 +63,18 @@ simulateAndCheckRounds (directory:directories) = do
         nextState             <- loadStateForRound path
         let simulatedNextState = tickState (fromJust thisMove) (fromJust thatMove) currentState
         if any (simulatedNextState /=) nextState
-        then liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path) >>
-             return (Failure ("Failed for: " ++ path ++ "\n" ++ "Expected:\n" ++ show nextState ++ "\nBut got:\n" ++ show simulatedNextState))
+        then do
+               _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
+               stateDiff <- diff (show nextState) (show simulatedNextState)
+               return (Failure ("Failed for: " ++ path ++ "\nDiff:\n" ++ stateDiff ++ "\nExpected:\n" ++ show nextState ++ "\nBut got:\n" ++ show simulatedNextState))
         else iter simulatedNextState paths
+
+diff :: String -> String -> RIO App String
+diff this that = do
+  liftIO $ IO.writeFile "diff_1" this
+  liftIO $ IO.writeFile "diff_2" that
+  liftIO $ Process.callCommand "diff diff_1 diff_2 || echo '' > diff_output"
+  liftIO $ IO.readFile "diff_output"
 
 loadStateForRound :: FilePath -> RIO App (Maybe State)
 loadStateForRound path = do
