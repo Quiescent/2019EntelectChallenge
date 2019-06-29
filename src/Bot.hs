@@ -141,7 +141,7 @@ vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
 -- the original state.
 opponentToPlayer :: Opponent -> Player
 opponentToPlayer (Opponent score' _) =
-  Player score' (WormId 8)
+  Player score' (WormId 4)
 
 -- NOTE: This will produce an invalid current worm if not read from
 -- the original state.
