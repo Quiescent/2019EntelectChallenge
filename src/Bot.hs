@@ -156,11 +156,11 @@ factsFromMyWorms (ScratchPlayer _ _ worms') =
 factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions)
 factsFromOpponentsWorms (Opponent _ worms') =
   let healths   = V.map (\ (OpponentWorm { opWormId = wormId',
-                                           opWormHealth = wormHealth' }) -> AListEntry (WormId wormId')
+                                           opWormHealth = wormHealth' }) -> AListEntry (WormId (shift wormId' 2))
                                                                                        (WormHealth wormHealth'))
                   worms'
       positions = V.map (\ (OpponentWorm { opWormId = wormId',
-                                           opPosition = position' }) -> AListEntry (WormId wormId')
+                                           opPosition = position' }) -> AListEntry (WormId (shift wormId' 2))
                                                                                    position')
                   worms'
   in (AList $ V.toList healths, AList $ V.toList positions)
@@ -366,6 +366,7 @@ toMoves (CombinedMove moves) =
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove swapping moves =
   let (myMove, opponentsMove) = toMoves moves
+  -- I try to make a move into the space which I just cleared /facepalm
   in makeShootMoves          myMove opponentsMove .
      makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
@@ -559,7 +560,7 @@ modifyScore delta (Player score' currentWorm) =
   Player (score' + delta) currentWorm
 
 penaliseForInvalidCommand :: Player -> Player
-penaliseForInvalidCommand = modifyScore (-1)
+penaliseForInvalidCommand = modifyScore (-4)
 
 penaliseThisPlayerForAnInvalidCommand :: ModifyState
 penaliseThisPlayerForAnInvalidCommand = mapThisPlayer penaliseForInvalidCommand

@@ -20,6 +20,9 @@ import qualified Data.List as L
 
 import System.Environment
 
+-- DEBUG
+import Debug.Trace
+
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
@@ -43,31 +46,33 @@ data Result = Success
 
 simulateAndCheckRounds :: [FilePath] -> RIO App Result
 simulateAndCheckRounds []                      = return $ Failure "There are no rounds in the given directory."
-simulateAndCheckRounds (directory:directories) = do
+simulateAndCheckRounds dirs@(directory:_) = do
   initialState <- loadStateForRound directory
   if not $ isJust initialState
   then return (Failure $ "Couldn't load initial state from: " ++ show directory)
-  else iter (fromJust initialState) directories
+  else iter (fromJust initialState) dirs
   where
     iter :: State -> [FilePath] -> RIO App Result
-    iter _            []           = return Success
-    iter currentState (path:paths) = do
+    iter currentState (path:nextPath:paths) = do
       let thisWormsCoord'    = thisWormsCoord currentState
       let thatWormsCoord'    = thatWormsCoord currentState
       thisMove              <- loadThisPlayersCommand thisWormsCoord' path
       thatMove              <- loadThatPlayersCommand thatWormsCoord' path
+      liftIO $ (IO.putStrLn $ "thisMove: " ++ show thisMove)
+      liftIO $ (IO.putStrLn $ "thatMove: " ++ show thatMove)
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
       else do
-        nextState             <- loadStateForRound path
+        nextState             <- loadStateForRound nextPath
         let simulatedNextState = tickState (fromJust thisMove) (fromJust thatMove) currentState
         if any (simulatedNextState /=) nextState
         then do
                _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
                stateDiff <- diff (show nextState) (show simulatedNextState)
                return (Failure ("Failed for: " ++ path ++ "\nDiff:\n" ++ stateDiff ++ "\nExpected:\n" ++ show nextState ++ "\nBut got:\n" ++ show simulatedNextState))
-        else iter simulatedNextState paths
+        else iter simulatedNextState (nextPath:paths)
+    iter _            _                     = return Success
 
 diff :: String -> String -> RIO App String
 diff this that = do
@@ -84,6 +89,10 @@ loadStateForRound path = do
   then fmap decode $ B.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/JsonMap.json")
   else return Nothing
 
+probe :: Show a => String -> a -> a
+probe message x =
+  Debug.Trace.trace (message ++ ": " ++ show x) x
+
 loadCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
 loadCommandFromSubfolder choosePath coord directoryPath = do
   playerPaths     <- listDirectory directoryPath
@@ -91,6 +100,7 @@ loadCommandFromSubfolder choosePath coord directoryPath = do
   if isJust aPlayersPath
   then liftIO $
        fmap (readMove coord) $
+       fmap (probe "The move as a string") $
        IO.readFile (directoryPath ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
   else return Nothing
 
@@ -111,36 +121,34 @@ readMove coord moveString =
     doNothingMove]
 
 matchDirectionCommand :: String -> String -> Maybe Move
-matchDirectionCommand matcher original =
-  let tokens = words original
-  in do
-    firstToken <- headMaybe tokens
-    guard (firstToken == matcher)
-    direction <- tailMaybe tokens >>= headMaybe
-    return $ case direction of
-                 "N"  -> Move 0
-                 "NE" -> Move 1
-                 "E"  -> Move 2
-                 "SE" -> Move 3
-                 "S"  -> Move 4
-                 "SW" -> Move 5
-                 "W"  -> Move 6
-                 "NW" -> Move 7
+matchDirectionCommand matcher original = do
+  tokens     <- tailMaybe $ words original
+  firstToken <- headMaybe tokens
+  guard (firstToken == matcher)
+  direction <- tailMaybe tokens >>= headMaybe
+  return $ case direction of
+               "N"  -> Move 0
+               "NE" -> Move 1
+               "E"  -> Move 2
+               "SE" -> Move 3
+               "S"  -> Move 4
+               "SW" -> Move 5
+               "W"  -> Move 6
+               "NW" -> Move 7
 
 toInt :: String -> Int
 toInt x' = read x'
 
 matchCoordCommand :: Coord -> String -> String -> Maybe Move
-matchCoordCommand origCoord matcher original =
-  let tokens = words original
-  in do
-    firstToken   <- headMaybe tokens
-    guard (firstToken == matcher)
-    coords       <- tailMaybe tokens
-    xValue       <- fmap toInt $ headMaybe coords
-    yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
-    let destCoord = toCoord xValue yValue
-    return $ moveFrom origCoord destCoord
+matchCoordCommand origCoord matcher original = do
+  tokens       <- tailMaybe $ words original
+  firstToken   <- headMaybe tokens
+  guard (firstToken == matcher)
+  coords       <- tailMaybe tokens
+  xValue       <- fmap toInt $ headMaybe coords
+  yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
+  let destCoord = toCoord xValue yValue
+  return $ moveFrom origCoord destCoord
 
 data Ternary = NegOne
              | Zero
@@ -158,16 +166,16 @@ moveFrom :: Coord -> Coord -> Move
 moveFrom from to' =
   let (x',  y')  = fromCoord from
       (x'', y'') = fromCoord to'
-  in case (compareToTernary x' x'', compareToTernary y' y'') of
+  in case (compareToTernary x'' x', compareToTernary y'' y') of
     -- Start from N and move anti clockwise
-    (Zero,   NegOne) -> Move 0
-    (One,    NegOne) -> Move 1
-    (One,    Zero)   -> Move 2
-    (One,    One)    -> Move 3
-    (Zero,   One)    -> Move 4
-    (NegOne, One)    -> Move 5
-    (NegOne, Zero)   -> Move 6
-    (NegOne, NegOne) -> Move 7
+    (Zero,   NegOne) -> Move 8
+    (One,    NegOne) -> Move 9
+    (One,    Zero)   -> Move 10
+    (One,    One)    -> Move 11
+    (Zero,   One)    -> Move 12
+    (NegOne, One)    -> Move 13
+    (NegOne, Zero)   -> Move 14
+    (NegOne, NegOne) -> Move 15
     (Zero,   Zero)   -> Move (-1)
 
 tickState :: Move -> Move -> State -> State
