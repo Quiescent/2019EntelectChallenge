@@ -488,7 +488,7 @@ mapAtCoord State { gameMap = gameMap' } (Coord target) = (\(GameMap xs) -> M.loo
 
 -- TODO: get actual amount of damage
 knockBackDamageAmount :: Int
-knockBackDamageAmount = 1
+knockBackDamageAmount = 20
 
 mapDataSlot :: (a -> b) -> AListEntry a -> AListEntry b
 mapDataSlot f (AListEntry id' x) = AListEntry id' $ f x
@@ -559,7 +559,7 @@ modifyScore delta (Player score' currentWorm) =
   Player (score' + delta) currentWorm
 
 penaliseForInvalidCommand :: Player -> Player
-penaliseForInvalidCommand = modifyScore (-4)
+penaliseForInvalidCommand = modifyScore (-1)
 
 penaliseThisPlayerForAnInvalidCommand :: ModifyState
 penaliseThisPlayerForAnInvalidCommand = mapThisPlayer penaliseForInvalidCommand
@@ -652,7 +652,7 @@ makeShootMoves this that state =
          else awardMissPoints
 
 awardPointsForMissing :: Player -> Player
-awardPointsForMissing = modifyScore 4
+awardPointsForMissing = modifyScore 2
 
 awardPointsToThisPlayerForMissing :: ModifyState
 awardPointsToThisPlayerForMissing = mapThisPlayer awardPointsForMissing
@@ -661,7 +661,7 @@ awardPointsToThatPlayerForMissing :: ModifyState
 awardPointsToThatPlayerForMissing = mapThatPlayer awardPointsForMissing
 
 awardPointsForHittingAnEnemy :: Player -> Player
-awardPointsForHittingAnEnemy = modifyScore 20
+awardPointsForHittingAnEnemy = modifyScore 2
 
 awardPointsToThisPlayerForHittingAnEnemy :: ModifyState
 awardPointsToThisPlayerForHittingAnEnemy = mapThisPlayer awardPointsForHittingAnEnemy
@@ -713,7 +713,7 @@ penaliseThatPlayerForHittingHisFriendlyWorm :: ModifyState
 penaliseThatPlayerForHittingHisFriendlyWorm = mapThatPlayer penaliseForHittingFriendlyWorm
 
 penaliseForHittingFriendlyWorm :: Player -> Player
-penaliseForHittingFriendlyWorm = modifyScore (-20)
+penaliseForHittingFriendlyWorm = modifyScore (-4)
 
 wormsBelongToSamePlayer :: WormId -> WormId -> Bool
 wormsBelongToSamePlayer thisWormId thatWormId =
