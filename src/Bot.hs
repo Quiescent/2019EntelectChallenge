@@ -372,9 +372,21 @@ toMoves (CombinedMove moves) =
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove swapping moves =
   let (myMove, opponentsMove) = toMoves moves
-  in makeShootMoves          myMove opponentsMove .
+  in advanceWormSelections .
+     makeShootMoves          myMove opponentsMove .
      makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
+
+advanceWormSelections :: ModifyState
+advanceWormSelections =
+  advanceThisWormSelection .
+  advanceThatWormSelection
+
+advanceThisWormSelection :: ModifyState
+advanceThisWormSelection = undefined
+
+advanceThatWormSelection :: ModifyState
+advanceThatWormSelection = undefined
 
 currentWormId :: Player -> WormId
 currentWormId (Player _ wormId') = wormId'
