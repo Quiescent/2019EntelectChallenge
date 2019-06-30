@@ -400,8 +400,11 @@ friendly.
       bot program fails to simulate the same as theirs.
     - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 12:24]
     :END:
-*** IN_PROGRESS Implement a failing test for both worms digging out the same block
+*** DONE Implement a failing test for both worms digging out the same block
+    CLOSED: [2019-06-30 Sun 13:44]
     :LOGBOOK:
+    - CLOSING NOTE [2019-06-30 Sun 13:44] \\
+      Was not a problem.
     - Note taken on [2019-06-30 Sun 13:35] \\
       The original note from the source code:
 
