@@ -420,6 +420,15 @@ friendly.
 *** TODO Investigate why my worm moves to a block which was just dug out
 *** TODO BUG: when knock back would kill a worm their health is instead going negative
     :LOGBOOK:
+    - Note taken on [2019-06-30 Sun 13:38] \\
+      This works as a test case:
+
+      #+BEGIN_SRC scala
+        it "should reward both players and remove dirt when both worms dig the same dirt block" $
+          makeMove True (fromMoves digSouthWest digSouth) aStateWithBothWormsNearTheSameDirtBlock `shouldBe`
+          (awardPointsToThatPlayerForDigging $
+           awardPointsToThisPlayerForDigging $
+      #+END_SRC
     - Note taken on [2019-06-30 Sun 13:36] \\
       The solution to this problem is probably to have one function which
       harms worms so that it can encapsulate the idea of a worm dying.
