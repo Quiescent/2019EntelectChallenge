@@ -400,8 +400,9 @@ friendly.
       bot program fails to simulate the same as theirs.
     - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 12:24]
     :END:
-*** TODO Implement a failing test for both worms digging out the same block
+*** IN_PROGRESS Implement a failing test for both worms digging out the same block
     :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-06-30 Sun 13:29]
     - Note taken on [2019-06-30 Sun 13:27] \\
       My suspicion is that only one will receive points.
     :END:
