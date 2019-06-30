@@ -579,22 +579,18 @@ awardPointsToThatPlayerForMovingToAir = mapThatPlayer awardPointsForMovingToAir
 
 makeDigMoves :: Move -> Move -> ModifyState
 makeDigMoves this that state =
-  let thisMoveMove          = if isAMoveMove this then Just this else Nothing
-      thatMoveMove          = if isAMoveMove that then Just that else Nothing
-      thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
-      thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
-      thisTargetIsValid     = (thisTarget >>= mapAtCoord state) == Just DIRT
-      thatTargetIsValid     = (thatTarget >>= mapAtCoord state) == Just DIRT
-      -- fromJust is valid because we test whether it's Just on the above two lines
-      validThisTarget       = fromJust thisTarget
-      validThatTarget       = fromJust thatTarget
-      digOutThisTarget      = if thisTargetIsValid then removeDirtFromMapAt validThisTarget else id
-      digOutThatTarget      = if thatTargetIsValid then removeDirtFromMapAt validThatTarget else id
-      awardPointsToThisMove = if thisTargetIsValid then awardPointsToThisPlayerForDigging else id
-      awardPointsToThatMove = if thatTargetIsValid then awardPointsToThatPlayerForDigging else id
-      awardPoints           = awardPointsToThatMove . awardPointsToThisMove
-      dig                   = awardPoints . digOutThatTarget . digOutThisTarget
-  in dig state
+  (makeDigMove this targetOfThisMove awardPointsToThisPlayerForDigging) $
+  (makeDigMove that targetOfThatMove awardPointsToThatPlayerForDigging) state
+  where
+    makeDigMove move targetOfMove' awardPointsForDigging' =
+      let moveMove      = if isAMoveMove move then Just move else Nothing
+          target        = moveMove >>= ((flip targetOfMove') state)
+          targetIsValid = (target >>= mapAtCoord state) == Just DIRT
+          -- fromJust is valid because we test whether it's Just on the above two lines
+          validTarget   = fromJust target
+          digOutTarget  = if targetIsValid then removeDirtFromMapAt validTarget else id
+          awardPoints   = if targetIsValid then awardPointsForDigging' else id
+      in awardPoints . digOutTarget
 
 awardPointsForDigging :: Player -> Player
 awardPointsForDigging = modifyScore 7
