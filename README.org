@@ -422,6 +422,10 @@ friendly.
     :END:
 *** IN_PROGRESS Investigate why my worm moves to a block which was just dug out
     :LOGBOOK:
+    - Note taken on [2019-06-30 Sun 13:57] \\
+      The problem is that I move... and then I dig.  So if a player moves
+      next to dirt such that if they kept moving then they would dig the
+      dirt out, then they get a dig after a move(!)
     - State "IN_PROGRESS" from "TODO"       [2019-06-30 Sun 13:44]
     :END:
 *** TODO BUG: when knock back would kill a worm their health is instead going negative
