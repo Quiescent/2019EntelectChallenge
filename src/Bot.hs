@@ -662,7 +662,7 @@ awardPointsToThatPlayerForMissing :: ModifyState
 awardPointsToThatPlayerForMissing = mapThatPlayer awardPointsForMissing
 
 awardPointsForHittingAnEnemy :: Player -> Player
-awardPointsForHittingAnEnemy = modifyScore 2
+awardPointsForHittingAnEnemy = modifyScore (2 * rocketDamage)
 
 awardPointsToThisPlayerForHittingAnEnemy :: ModifyState
 awardPointsToThisPlayerForHittingAnEnemy = mapThisPlayer awardPointsForHittingAnEnemy
@@ -714,7 +714,7 @@ penaliseThatPlayerForHittingHisFriendlyWorm :: ModifyState
 penaliseThatPlayerForHittingHisFriendlyWorm = mapThatPlayer penaliseForHittingFriendlyWorm
 
 penaliseForHittingFriendlyWorm :: Player -> Player
-penaliseForHittingFriendlyWorm = modifyScore (-4)
+penaliseForHittingFriendlyWorm = modifyScore (-2 * rocketDamage)
 
 wormsBelongToSamePlayer :: WormId -> WormId -> Bool
 wormsBelongToSamePlayer thisWormId thatWormId =
