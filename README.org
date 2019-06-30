@@ -420,8 +420,10 @@ friendly.
     - Note taken on [2019-06-30 Sun 13:27] \\
       My suspicion is that only one will receive points.
     :END:
-*** IN_PROGRESS Investigate why my worm moves to a block which was just dug out
+*** DONE Investigate why my worm moves to a block which was just dug out
+    CLOSED: [2019-06-30 Sun 14:31]
     :LOGBOOK:
+    - CLOSING NOTE [2019-06-30 Sun 14:31]
     - Note taken on [2019-06-30 Sun 13:57] \\
       The problem is that I move... and then I dig.  So if a player moves
       next to dirt such that if they kept moving then they would dig the
