@@ -392,8 +392,12 @@ friendly.
       - CLOSING NOTE [2019-06-28 Fri 12:23]
       - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 08:35]
       :END:
-*** IN_PROGRESS Create Test Harness
+*** DONE Create Test Harness
+    CLOSED: [2019-06-30 Sun 13:24]
     :LOGBOOK:
+    - CLOSING NOTE [2019-06-30 Sun 13:24] \\
+      I've implemented a test harness and now I need to figure out why my
+      bot program fails to simulate the same as theirs.
     - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 12:24]
     :END:
 ** TODO Model search tree type
