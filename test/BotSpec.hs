@@ -424,6 +424,10 @@ spec = do
     it "should remove dirt when opponent digs a dirt block" $
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
       awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm
+    it "moving next to dirt should not dig out that dirt when it would be in our way if we continued going that way" $
+      makeMove True (fromMoves doNothing moveEast) aStateWithOpponentNearDirtToTheEast `shouldBe`
+      (awardPointsToThatPlayerForMovingToAir $
+       moveThatWorm (toCoord 10 2) aStateWithOpponentNearDirtToTheEast)
     it "should reward both players and remove dirt when both worms dig the same dirt block" $
       makeMove True (fromMoves digSouthEast digSouth) aStateWithBothWormsNearTheSameDirtBlock `shouldBe`
       (awardPointsToThatPlayerForDigging $
@@ -978,6 +982,9 @@ someWormPositions = AList [
 
 aStateWithOpponentBeneathDirt =
   moveThatWorm (toCoord 14 31) aState
+
+aStateWithOpponentNearDirtToTheEast =
+  moveThatWorm (toCoord 9 2) aState
 
 aStateWithBothWormsNearTheSameDirtBlock =
   moveThisWorm (toCoord 10 1) $
