@@ -295,30 +295,26 @@ data Move = Move Int
 allMoves :: V.Vector Move
 allMoves = fmap Move $ V.fromList [0..17]
 
-formatMove :: Move -> Coord -> GameMap -> String
+formatMove :: Move -> Coord -> String
 -- Shoot
-formatMove (Move 0) _ _ = "shoot N"
-formatMove (Move 1) _ _ = "shoot NE"
-formatMove (Move 2) _ _ = "shoot E"
-formatMove (Move 3) _ _ = "shoot SE"
-formatMove (Move 4) _ _ = "shoot S"
-formatMove (Move 5) _ _ = "shoot SW"
-formatMove (Move 6) _ _ = "shoot W"
-formatMove (Move 7) _ _ = "shoot NW"
+formatMove (Move 0) _ = "shoot N"
+formatMove (Move 1) _ = "shoot NE"
+formatMove (Move 2) _ = "shoot E"
+formatMove (Move 3) _ = "shoot SE"
+formatMove (Move 4) _ = "shoot S"
+formatMove (Move 5) _ = "shoot SW"
+formatMove (Move 6) _ = "shoot W"
+formatMove (Move 7) _ = "shoot NW"
+formatMove dir@(Move x) xy
+  -- Move
+  | x < 16 = moveFromMaybe $ fmap (\ newCoord -> "move " ++ show newCoord) $ displaceCoordByMove xy dir
+  -- Dig
+  | x < 24 = moveFromMaybe $ fmap (\ newCoord -> "dig "  ++ show newCoord) $ displaceCoordByMove xy (Move (x - 8))
 -- Nothing
-formatMove (Move 16) _ _ = "nothing"
--- Move or Dig
-formatMove dir xy gameMap' = moveFromMaybe $ do
-  newCoord     <- displaceCoordByMove xy dir
-  targetSquare <- lookupCoord newCoord gameMap'
-  return $ case targetSquare of
-    AIR        -> "move " ++ show newCoord
-    DIRT       -> "dig "  ++ show newCoord
-    DEEP_SPACE -> "nothing"
-    MEDIPACK   -> "nothing"
-  where
-    moveFromMaybe (Just move) = move
-    moveFromMaybe Nothing     = "nothing"
+formatMove _ _ = "nothing"
+
+moveFromMaybe (Just move) = move
+moveFromMaybe Nothing     = "nothing"
 
 lookupCoord :: Coord -> GameMap -> Maybe Cell
 lookupCoord (Coord xy') (GameMap xs) =
@@ -355,13 +351,23 @@ isOOB (x', y')
 
 data CombinedMove = CombinedMove Int
 
+playersMoveBits :: Int
+playersMoveBits = 5
+
+playersMoveShift :: Int
+playersMoveShift = playersMoveBits + 1
+
+playerMoveMask :: Int
+playerMoveMask = (2 ^ playersMoveShift) - 1
+
 fromMoves :: Move -> Move -> CombinedMove
 fromMoves (Move myMove) (Move opponentsMove) =
-  CombinedMove $ myMove .|. (opponentsMove `shiftL` 5)
+  CombinedMove $ myMove .|. (opponentsMove `shiftL` playersMoveShift)
 
 toMoves :: CombinedMove -> (Move, Move)
 toMoves (CombinedMove moves) =
-  (Move $ moves .&. 31, Move $ (moves .&. (31 `shiftL` 5)) `shiftR` 5)
+  (Move $ moves .&. playerMoveMask,
+   Move $ (moves .&. (playerMoveMask `shiftL` playersMoveShift)) `shiftR` playersMoveShift)
 
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove swapping moves =
@@ -576,13 +582,23 @@ awardPointsToThisPlayerForMovingToAir = mapThisPlayer awardPointsForMovingToAir
 awardPointsToThatPlayerForMovingToAir :: ModifyState
 awardPointsToThatPlayerForMovingToAir = mapThatPlayer awardPointsForMovingToAir
 
+isADigMove :: Move -> Bool
+isADigMove (Move x)
+  | x >= 16 && x < 24 = True
+  | otherwise         = False
+
+-- Assumes that the move is a dig move
+shiftDigToMoveRange :: Move -> Move
+shiftDigToMoveRange (Move x) = Move $ x - 8
+
 makeDigMoves :: Move -> Move -> ModifyState
 makeDigMoves this that state =
   (makeDigMove this targetOfThisMove awardPointsToThisPlayerForDigging) $
   (makeDigMove that targetOfThatMove awardPointsToThatPlayerForDigging) state
   where
     makeDigMove move targetOfMove' awardPointsForDigging' =
-      let moveMove      = if isAMoveMove move then Just move else Nothing
+      -- Target of move works with moves and not digs
+      let moveMove      = if isADigMove move then Just (shiftDigToMoveRange move) else Nothing
           target        = moveMove >>= ((flip targetOfMove') state)
           targetIsValid = (target >>= mapAtCoord state) == Just DIRT
           -- fromJust is valid because we test whether it's Just on the above two lines

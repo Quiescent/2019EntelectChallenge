@@ -262,14 +262,14 @@ spec = do
     it "should not change anything when it receives two 'nothing's" $
       makeMove True (fromMoves doNothing doNothing) aState `shouldBe` aState
     it "moving my worm to dirt should dig out that dirt" $
-      makeMove True (fromMoves moveNorth doNothing) aState `shouldBe`
+      makeMove True (fromMoves digNorth doNothing) aState `shouldBe`
       (awardPointsToThisPlayerForDigging aStateWithDirtMissingAboveMyWorm)
     it "moving opponents worm to space should not move the worm" $
       makeMove True (fromMoves doNothing moveNorth) aState `shouldBe` penaliseThatPlayerForAnInvalidCommand aState
     it "moving my worm into space should not move the worm" $
       makeMove True (fromMoves moveSouth doNothing) aState `shouldBe` penaliseThisPlayerForAnInvalidCommand aState
     it "moving opponents worm into dirt should dig out the dirt" $
-      makeMove True (fromMoves doNothing moveSouth) aState `shouldBe`
+      makeMove True (fromMoves doNothing digSouth) aState `shouldBe`
       (awardPointsToThatPlayerForDigging $ removeDirtFromMapAt (toCoord 16 2) aState)
     it "moving my worm into air should move the worm to that spot" $
       makeMove True (fromMoves moveEast doNothing) aState `shouldBe`
@@ -938,17 +938,15 @@ shootNorth = Move 0
 
 shootSouth = Move 4
 
-doNothing = Move 16
+doNothing = Move 32
 
 moveNorth = Move 8
 
-digNorth = moveNorth
+digNorth = Move 16
 
-digSouth = moveSouth
+digSouth = Move 20
 
-digSouthEast = moveSouthEast
-
-moveSouthEast = Move 11
+digSouthEast = Move 19
 
 moveSouth = Move 12
 
