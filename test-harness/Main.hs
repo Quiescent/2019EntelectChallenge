@@ -84,7 +84,7 @@ diff this that = do
 loadStateForRound :: FilePath -> RIO App (Maybe State)
 loadStateForRound path = do
   playerPaths     <- listDirectory path
-  let aPlayersPath = headMaybe playerPaths
+  let aPlayersPath = headMaybe $ L.sort playerPaths
   if isJust aPlayersPath
   then fmap decode $ B.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/JsonMap.json")
   else return Nothing
@@ -105,10 +105,10 @@ loadCommandFromSubfolder choosePath coord directoryPath = do
   else return Nothing
 
 loadThisPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
-loadThisPlayersCommand = loadCommandFromSubfolder headMaybe
+loadThisPlayersCommand = loadCommandFromSubfolder (headMaybe . L.sort)
 
 loadThatPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
-loadThatPlayersCommand = loadCommandFromSubfolder (tailMaybe >=> headMaybe)
+loadThatPlayersCommand = loadCommandFromSubfolder ((tailMaybe >=> headMaybe) . L.sort)
 
 doNothingMove :: Maybe Move
 doNothingMove = Just (Move (-1))
