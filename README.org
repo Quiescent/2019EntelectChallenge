@@ -418,6 +418,12 @@ friendly.
       My suspicion is that only one will receive points.
     :END:
 *** TODO Investigate why my worm moves to a block which was just dug out
+*** TODO BUG: when knock back would kill a worm their health is instead going negative
+    :LOGBOOK:
+    - Note taken on [2019-06-30 Sun 13:36] \\
+      The solution to this problem is probably to have one function which
+      harms worms so that it can encapsulate the idea of a worm dying.
+    :END:
 ** TODO Model search tree type
 ** TODO Implement search function
 
