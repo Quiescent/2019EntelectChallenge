@@ -400,6 +400,12 @@ friendly.
       bot program fails to simulate the same as theirs.
     - State "IN_PROGRESS" from "TODO"       [2019-06-28 Fri 12:24]
     :END:
+*** TODO Implement a failing test for both worms digging out the same block
+    :LOGBOOK:
+    - Note taken on [2019-06-30 Sun 13:27] \\
+      My suspicion is that only one will receive points.
+    :END:
+*** TODO Investigate why my worm moves to a block which was just dug out
 ** TODO Model search tree type
 ** TODO Implement search function
 
