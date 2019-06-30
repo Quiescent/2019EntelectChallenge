@@ -424,6 +424,11 @@ spec = do
     it "should remove dirt when opponent digs a dirt block" $
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
       awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm
+    it "should reward both players and remove dirt when both worms dig the same dirt block" $
+      makeMove True (fromMoves digSouthEast digSouth) aStateWithBothWormsNearTheSameDirtBlock `shouldBe`
+      (awardPointsToThatPlayerForDigging $
+       awardPointsToThisPlayerForDigging $
+       mapGameMap aStateWithBothWormsNearTheSameDirtBlock (removeDirtAt (toCoord 11 2)))
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -935,6 +940,12 @@ moveNorth = Move 8
 
 digNorth = moveNorth
 
+digSouth = moveSouth
+
+digSouthEast = moveSouthEast
+
+moveSouthEast = Move 11
+
 moveSouth = Move 12
 
 moveEast = Move 10
@@ -967,6 +978,10 @@ someWormPositions = AList [
 
 aStateWithOpponentBeneathDirt =
   moveThatWorm (toCoord 14 31) aState
+
+aStateWithBothWormsNearTheSameDirtBlock =
+  moveThisWorm (toCoord 10 1) $
+  moveThatWorm (toCoord 11 1) aState
 
 aStateWithDirtMissingAboveOpponentWorm =
   mapGameMap aStateWithOpponentBeneathDirt (removeDirtAt (toCoord 14 30))
