@@ -14,6 +14,7 @@ import qualified RIO.HashMap as M
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import RIO.List
+import RIO.List.Partial
 import Data.Bits
 import Data.Maybe
 import System.IO
@@ -74,7 +75,7 @@ data WormHealth = WormHealth Int
   deriving (Eq, Show)
 
 data WormId = WormId Int
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 instance Show State where
   show (State weaponRange'
@@ -383,10 +384,33 @@ advanceWormSelections =
   advanceThatWormSelection
 
 advanceThisWormSelection :: ModifyState
-advanceThisWormSelection = undefined
+advanceThisWormSelection =
+  advanceWormSelectionByWorms isMyWorm thisPlayersCurrentWormId mapThisPlayer
 
 advanceThatWormSelection :: ModifyState
-advanceThatWormSelection = undefined
+advanceThatWormSelection =
+  advanceWormSelectionByWorms isOpponentWorm thatPlayersCurrentWormId mapThatPlayer
+
+withCurrentWormId :: WormId -> Player -> Player
+withCurrentWormId wormId' (Player score' _) = (Player score' wormId')
+
+-- Assume that there are worm ids to search through
+nextWormId :: WormId -> [WormId] -> WormId
+nextWormId wormId' wormIds =
+  iter wormIds
+  where
+    iter []     = head wormIds
+    iter (x:xs) = if x == wormId'
+                  then if xs == []
+                       then head wormIds
+                       else head xs
+                  else iter xs
+
+advanceWormSelectionByWorms :: (WormId -> Bool) -> (State -> WormId) -> ((Player -> Player) -> ModifyState) -> ModifyState
+advanceWormSelectionByWorms idPredicate playersWormId mapPlayer state@(State { wormHealths = wormHealths' }) =
+  let myWormIds      = sort $ filter idPredicate $ aListFoldl' (flip ((:) . idSlot)) [] wormHealths'
+      currentWormId' = playersWormId state
+  in mapPlayer (withCurrentWormId (nextWormId currentWormId' myWormIds)) state
 
 currentWormId :: Player -> WormId
 currentWormId (Player _ wormId') = wormId'

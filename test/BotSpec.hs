@@ -145,10 +145,10 @@ spec = do
       in \ x ->
         switchFunction x `shouldBe` if x > 0 then shootEast else shootNorth
   describe "takeBothWorms" $ do
-    prop "creates a map of size two (distinct coordinates) given two (distinct) coordinates" $ \ (i, j) ->
+    prop "creates a map of with worm 4 and 8 at distinct coordinates given two random distinct coordinates" $ \ (i, j) ->
       let thisCoord = generateInBoundsCoordinate i j
           thatCoord = generateInBoundsCoordinate (i + 20) (j + 20) -- Ensure distinct coordinates
-      in (countWorms (isOpponentWorm . idSlot) $
+      in (countWorms ((\ (WormId x) -> x == 4 || x == 8) . idSlot) $
           wormHealths $
           takeBothWorms (WormId 4) (WormId 8) thisCoord thatCoord aStateWithoutWorms) `shouldBe` 2
   describe "generateInBoundsCoordinate" $ do
@@ -835,17 +835,32 @@ takeBothWormsWithHealth startingHealth' thisWormId thatWormId thisCoord thatCoor
 takeBothWorms :: WormId -> WormId -> AddToWormFacts
 takeBothWorms thisWormId thatWormId thisCoord thatCoord state =
   state { wormHealths   =
-            aListConcat (
-              AList [
-                  AListEntry thisWormId startingHealth,
-                  AListEntry thatWormId startingHealth])
-              (wormHealths   state),
+            aListConcat someWormHealths (wormHealths state),
           wormPositions =
             aListConcat (
-              AList [
+              withAllOtherWormsOffMap $ AList [
                   AListEntry thisWormId thisCoord,
                   AListEntry thatWormId thatCoord])
               (wormPositions state) }
+
+allWormIds :: [WormId]
+allWormIds = [
+  (WormId 1),
+  (WormId 2),
+  (WormId 3),
+  (WormId 4),
+  (WormId 8),
+  (WormId 12)]
+
+withAllOtherWormsOffMap :: WormPositions -> WormPositions
+withAllOtherWormsOffMap positions =
+  let existingIds  = aListFoldl' (flip ((:) . idSlot)) [] positions
+      remainingIds = filter (not . (flip elem) existingIds) allWormIds
+  in aListConcat positions
+                 (AList $
+                  map (uncurry AListEntry) $
+                  -- Put the remaining worms all off the map
+                  zip remainingIds (repeat (toCoord mapDim mapDim)))
 
 -- TODO: test
 takeBothWormsAndPutAnotherInbetween :: WormId -> WormId -> WormId -> AddToWormFacts
@@ -1005,9 +1020,6 @@ selectNextWorms :: ModifyState
 selectNextWorms state@(State { myPlayer = myPlayer', opponent = opponent' }) =
   state { myPlayer = withCurrentWormId (WormId 2) myPlayer',
           opponent = withCurrentWormId (WormId 8) opponent' }
-
-withCurrentWormId :: WormId -> Player -> Player
-withCurrentWormId wormId' (Player score _) = (Player score wormId')
 
 someWormPositions = AList [
   AListEntry (WormId 1)  (toCoord 15 31),
