@@ -367,6 +367,13 @@ makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove swapping moves =
   let (myMove, opponentsMove) = toMoves moves
   -- I try to make a move into the space which I just cleared /facepalm
+  -- Actually, that's not the problem because:
+  --  a) I have a test which would fail if it were;
+  --  b) Moving is the first thing which happens;
+  --  c) This would only be a problem if both worms dig out the same
+  --     dirt square at the same time.  This migh
+  --     t result in one worm getting points and not the other.
+  --  I'm going to create a failing test to that effect.
   in makeShootMoves          myMove opponentsMove .
      makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
