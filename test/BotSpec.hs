@@ -858,7 +858,7 @@ withAllOtherWormsOffMap positions =
                  (AList $
                   map (uncurry AListEntry) $
                   -- Put the remaining worms all off the map
-                  zip remainingIds (repeat (toCoord mapDim mapDim)))
+                  zip remainingIds (repeat (toCoord (4 * mapDim) (4 * mapDim))))
 
 -- TODO: test
 takeBothWormsAndPutAnotherInbetween :: WormId -> WormId -> WormId -> AddToWormFacts
