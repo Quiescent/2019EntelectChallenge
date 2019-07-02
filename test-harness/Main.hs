@@ -110,8 +110,9 @@ loadThisPlayersCommand = loadCommandFromSubfolder (headMaybe . L.sort)
 loadThatPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
 loadThatPlayersCommand = loadCommandFromSubfolder ((tailMaybe >=> headMaybe) . L.sort)
 
+-- Must be a bit (or some bits) which are out of range for the bitmask
 doNothingMove :: Maybe Move
-doNothingMove = Just (Move (-1))
+doNothingMove = Just (Move (32))
 
 readMove :: Coord -> String -> Maybe Move
 readMove coord moveString =
