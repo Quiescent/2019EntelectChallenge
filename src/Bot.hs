@@ -278,10 +278,11 @@ instance FromJSON Cell where
     toCell <$> v .: "type"
 
 toCell :: String -> Cell
-toCell "AIR"        = AIR
-toCell "DIRT"       = DIRT
-toCell "DEEP_SPACE" = DEEP_SPACE
-toCell cellType     = error $ "Can't create a cell with type: " ++ cellType
+toCell "AIR"         = AIR
+toCell "DIRT"        = DIRT
+toCell "DEEP_SPACE"  = DEEP_SPACE
+toCell "HEALTH_PACK" = MEDIPACK
+toCell cellType      = error $ "Can't create a cell with type: " ++ cellType
 
 readGameState :: Int -> RIO App (Maybe State)
 readGameState r = do
