@@ -436,6 +436,7 @@ friendly.
     - CLOSING NOTE [2019-07-02 Tue 20:57]
     - State "IN_PROGRESS" from "TODO"       [2019-06-30 Sun 14:34]
     :END:
+*** TODO BUG: Medipacks aren't read onto the map correctly
 *** TODO BUG: when knock back would kill a worm their health is instead going negative
     :LOGBOOK:
     - Note taken on [2019-06-30 Sun 13:38] \\
