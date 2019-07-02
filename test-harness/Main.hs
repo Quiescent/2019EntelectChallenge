@@ -117,15 +117,16 @@ doNothingMove = Just (Move (32))
 readMove :: Coord -> String -> Maybe Move
 readMove coord moveString =
   msum [
-    matchCoordCommand     coord "move"  moveString,
-    matchDirectionCommand       "shoot" moveString,
+    matchMoveCommand      coord moveString,
+    matchDirectionCommand moveString,
+    matchDigCommand       coord moveString,
     doNothingMove]
 
-matchDirectionCommand :: String -> String -> Maybe Move
-matchDirectionCommand matcher original = do
+matchDirectionCommand :: String -> Maybe Move
+matchDirectionCommand original = do
   tokens     <- tailMaybe $ words original
   firstToken <- headMaybe tokens
-  guard (firstToken == matcher)
+  guard (firstToken == "shoot")
   direction <- tailMaybe tokens >>= headMaybe
   return $ case direction of
                "N"  -> Move 0
@@ -140,16 +141,27 @@ matchDirectionCommand matcher original = do
 toInt :: String -> Int
 toInt x' = read x'
 
-matchCoordCommand :: Coord -> String -> String -> Maybe Move
-matchCoordCommand origCoord matcher original = do
+matchMoveCommand :: Coord -> String -> Maybe Move
+matchMoveCommand origCoord original = do
   tokens       <- tailMaybe $ words original
   firstToken   <- headMaybe tokens
-  guard (firstToken == matcher)
+  guard (firstToken == "move")
   coords       <- tailMaybe tokens
   xValue       <- fmap toInt $ headMaybe coords
   yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
   let destCoord = toCoord xValue yValue
   return $ moveFrom origCoord destCoord
+
+matchDigCommand :: Coord -> String -> Maybe Move
+matchDigCommand origCoord original = do
+  tokens       <- tailMaybe $ words original
+  firstToken   <- headMaybe tokens
+  guard (firstToken == "dig")
+  coords       <- tailMaybe tokens
+  xValue       <- fmap toInt $ headMaybe coords
+  yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
+  let destCoord = toCoord xValue yValue
+  return $ digFrom origCoord destCoord
 
 data Ternary = NegOne
              | Zero
@@ -162,6 +174,22 @@ compareToTernary x' y' =
   else if x' - y' > 0
        then One
        else Zero
+
+digFrom :: Coord -> Coord -> Move
+digFrom from to' =
+  let (x',  y')  = fromCoord from
+      (x'', y'') = fromCoord to'
+  in case (compareToTernary x'' x', compareToTernary y'' y') of
+    -- Start from N and move anti clockwise
+    (Zero,   NegOne) -> Move 16
+    (One,    NegOne) -> Move 17
+    (One,    Zero)   -> Move 18
+    (One,    One)    -> Move 19
+    (Zero,   One)    -> Move 20
+    (NegOne, One)    -> Move 21
+    (NegOne, Zero)   -> Move 22
+    (NegOne, NegOne) -> Move 23
+    (Zero,   Zero)   -> Move 32
 
 moveFrom :: Coord -> Coord -> Move
 moveFrom from to' =
@@ -177,7 +205,7 @@ moveFrom from to' =
     (NegOne, One)    -> Move 13
     (NegOne, Zero)   -> Move 14
     (NegOne, NegOne) -> Move 15
-    (Zero,   Zero)   -> Move (-1)
+    (Zero,   Zero)   -> Move 32
 
 tickState :: Move -> Move -> State -> State
 tickState thisMove thatMove state =
