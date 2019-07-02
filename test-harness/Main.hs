@@ -65,13 +65,13 @@ simulateAndCheckRounds dirs@(directory:_) = do
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
       else do
         nextState             <- loadStateForRound nextPath
-        let simulatedNextState = onlyMakeMoves (fromJust thisMove) (fromJust thatMove) currentState
+        let simulatedNextState = tickState (fromJust thisMove) (fromJust thatMove) currentState
         if any (simulatedNextState /=) nextState
         then do
                _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
                stateDiff <- diff (show nextState) (show simulatedNextState)
                return (Failure ("Failed for: " ++ path ++ "\nDiff:\n" ++ stateDiff ++ "\nExpected:\n" ++ show nextState ++ "\nBut got:\n" ++ show simulatedNextState))
-        else iter (advanceWormSelections simulatedNextState) (nextPath:paths)
+        else iter simulatedNextState (nextPath:paths)
     iter _            _                     = return Success
 
 diff :: String -> String -> RIO App String
@@ -179,8 +179,8 @@ moveFrom from to' =
     (NegOne, NegOne) -> Move 15
     (Zero,   Zero)   -> Move (-1)
 
-onlyMakeMoves :: Move -> Move -> State -> State
-onlyMakeMoves thisMove thatMove state =
+tickState :: Move -> Move -> State -> State
+tickState thisMove thatMove state =
   -- TODO do we swap?! /shrug
-  tryMovesInOrder True (fromMoves thisMove thatMove) state
+  makeMove True (fromMoves thisMove thatMove) state
 
