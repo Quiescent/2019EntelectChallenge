@@ -155,7 +155,7 @@ factsFromMyWorms (ScratchPlayer _ _ worms') =
   in (AList $ V.toList healths, AList $ V.toList positions)
 
 factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions)
-factsFromOpponentsWorms (Opponent _ worms') =
+factsFromOpponentsWorms (Opponent _ _ worms') =
   let healths   = V.map (\ (OpponentWorm { opWormId = wormId',
                                            opWormHealth = wormHealth' }) -> AListEntry (WormId (shift wormId' 2))
                                                                                        (WormHealth wormHealth'))
@@ -169,32 +169,30 @@ factsFromOpponentsWorms (Opponent _ worms') =
 vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
 
--- NOTE: This will produce an invalid current worm if not read from
--- the original state.
 opponentToPlayer :: Opponent -> Player
-opponentToPlayer (Opponent score' _) =
-  Player score' (WormId 4)
+opponentToPlayer (Opponent score' currentWormId' _) =
+  Player score' (WormId (shift currentWormId' 2))
 
--- NOTE: This will produce an invalid current worm if not read from
--- the original state.
 toPlayer :: ScratchPlayer -> Player
-toPlayer (ScratchPlayer score' _ _) =
-  Player score' (WormId 1)
+toPlayer (ScratchPlayer score' currentWormId' _) =
+  Player score' (WormId currentWormId')
 
 data ScratchPlayer = ScratchPlayer { score  :: Int,
-                                     health :: Int,
+                                     currentWormId :: Int,
                                      worms  :: V.Vector ScratchWorm }
                    deriving (Show, Generic, Eq)
 
 instance FromJSON ScratchPlayer
 
 data Opponent = Opponent { opponentsScore :: Int,
+                           opponentCurrentWormId :: Int,
                            opponentsWorms :: V.Vector OpponentWorm }
               deriving (Show, Generic, Eq)
 
 instance FromJSON Opponent where
   parseJSON = withObject "Opponent" $ \ v ->
     Opponent <$> v .: "score"
+             <*> v .: "currentWormId"
              <*> v .: "worms"
 
 data ScratchWorm = ScratchWorm { wormId        :: Int,
@@ -415,14 +413,14 @@ advanceWormSelectionByWorms idPredicate playersWormId mapPlayer state@(State { w
       currentWormId' = playersWormId state
   in mapPlayer (withCurrentWormId (nextWormId currentWormId' myWormIds)) state
 
-currentWormId :: Player -> WormId
-currentWormId (Player _ wormId') = wormId'
+playerCurrentWormId :: Player -> WormId
+playerCurrentWormId (Player _ wormId') = wormId'
 
 thisPlayersCurrentWormId :: State -> WormId
-thisPlayersCurrentWormId = currentWormId . myPlayer
+thisPlayersCurrentWormId = playerCurrentWormId . myPlayer
 
 thatPlayersCurrentWormId :: State -> WormId
-thatPlayersCurrentWormId = currentWormId . opponent
+thatPlayersCurrentWormId = playerCurrentWormId . opponent
 
 makeMoveMoves :: Bool -> Move -> Move -> ModifyState
 makeMoveMoves swapping this that state =
