@@ -372,9 +372,12 @@ toMoves (CombinedMove moves) =
 
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove swapping moves =
+  advanceWormSelections . tryMovesInOrder swapping moves
+
+tryMovesInOrder :: Bool -> CombinedMove -> ModifyState
+tryMovesInOrder swapping moves =
   let (myMove, opponentsMove) = toMoves moves
-  in advanceWormSelections .
-     makeShootMoves          myMove opponentsMove .
+  in makeShootMoves          myMove opponentsMove .
      makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
 
