@@ -19,7 +19,7 @@ import Data.Bits
 import Data.Maybe
 import System.IO
 import System.Random
-import Data.Aeson (decode, withObject, (.:), FromJSON, parseJSON)
+import Data.Aeson (decode, withObject, (.:), (.:?), FromJSON, parseJSON)
 
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
@@ -261,6 +261,15 @@ data Weapon = Weapon { damage :: Int,
 
 instance FromJSON Weapon
 
+data Powerup = Powerup { powerupType :: String,
+                         value       :: Int }
+               deriving (Show, Generic, Eq)
+
+instance FromJSON Powerup where
+  parseJSON = withObject "Powerup" $ \ v ->
+    Powerup <$> v .: "type"
+            <*> v .: "value"
+
 data Cell = AIR
           | DIRT
           | DEEP_SPACE
@@ -275,14 +284,18 @@ instance Show Cell where
 
 instance FromJSON Cell where
   parseJSON = withObject "Cell" $ \ v ->
-    toCell <$> v .: "type"
+    toCell <$> v .:  "type"
+           <*> v .:? "powerup"
 
-toCell :: String -> Cell
-toCell "AIR"         = AIR
-toCell "DIRT"        = DIRT
-toCell "DEEP_SPACE"  = DEEP_SPACE
-toCell "HEALTH_PACK" = MEDIPACK
-toCell cellType      = error $ "Can't create a cell with type: " ++ cellType
+toCell :: String -> Maybe Powerup -> Cell
+toCell "DIRT"       _              = DIRT
+toCell "DEEP_SPACE" _              = DEEP_SPACE
+toCell "AIR"        Nothing        = AIR
+toCell "AIR"        (Just powerup) =
+  if (powerupType powerup == "HEALTH_PACK")
+  then MEDIPACK
+  else AIR
+toCell cellType     _       = error $ "Can't create a cell with type: " ++ cellType
 
 readGameState :: Int -> RIO App (Maybe State)
 readGameState r = do
