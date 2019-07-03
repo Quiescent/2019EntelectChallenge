@@ -451,7 +451,10 @@ friendly.
       players average worm health increases.
     - State "IN_PROGRESS" from "TODO"       [2019-07-03 Wed 07:40]
     :END:
-*** TODO BUG: When a worm is harmed his players average points don't decrease
+*** IN_PROGRESS BUG: When a worm is harmed his players average points don't decrease
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-03 Wed 08:35]
+    :END:
 *** TODO BUG: when knock back would kill a worm their health is instead going negative
     :LOGBOOK:
     - Note taken on [2019-06-30 Sun 13:38] \\
