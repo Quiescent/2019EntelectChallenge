@@ -478,10 +478,27 @@ targetOfThatMoveIsDirt :: Move -> State -> Bool
 targetOfThatMoveIsDirt move state =
   (targetOfThatMove move state >>= mapAtCoord state) == Just DIRT
 
+giveMedipackToThisWorm :: ModifyState
+giveMedipackToThisWorm state =
+  let thisWormId = thisPlayersCurrentWormId state
+  in awardPointsToThisPlayerForCollectingAMedipack $
+     withWormHealths (mapWormById thisWormId (mapDataSlot increaseHealth)) state
+
 giveMedipackToThatWorm :: ModifyState
 giveMedipackToThatWorm state =
   let thatWormId = thatPlayersCurrentWormId state
-  in withWormHealths (mapWormById thatWormId (mapDataSlot increaseHealth)) state
+  in awardPointsToThatPlayerForCollectingAMedipack $
+     withWormHealths (mapWormById thatWormId (mapDataSlot increaseHealth)) state
+
+awardPointsToThisPlayerForCollectingAMedipack :: ModifyState
+awardPointsToThisPlayerForCollectingAMedipack state =
+  let wormCount = length $ filter isMyWorm $ aListFoldl' (flip ((:) . idSlot)) [] $ wormHealths $ state
+  in mapThisPlayer (modifyScore (healthPackHealth `div` wormCount)) state
+
+awardPointsToThatPlayerForCollectingAMedipack :: ModifyState
+awardPointsToThatPlayerForCollectingAMedipack state =
+  let wormCount = length $ filter isOpponentWorm $ aListFoldl' (flip ((:) . idSlot)) [] $ wormHealths $ state
+  in mapThatPlayer (modifyScore (healthPackHealth `div` wormCount)) state
 
 increaseHealth :: WormHealth -> WormHealth
 increaseHealth = mapHealth (+ healthPackHealth)
@@ -510,11 +527,6 @@ removeDirtFromMapAt coord = (flip mapGameMap) (removeDirtAt coord)
 mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
 mapSquareAt (Coord coord) f (GameMap xs) =
   GameMap $ M.adjust f coord xs
-
-giveMedipackToThisWorm :: ModifyState
-giveMedipackToThisWorm state =
-  let thisWormId = thisPlayersCurrentWormId state
-  in withWormHealths (mapWormById thisWormId (mapDataSlot increaseHealth)) state
 
 -- TODO test
 allWormFacts :: (AListEntry a -> Bool) -> AList a -> Bool
