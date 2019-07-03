@@ -307,14 +307,10 @@ spec = do
       (selectNextWormsDefault $ penaliseThatPlayerForAnInvalidCommand aStateWithEnemyWormsNextToEachother)
     it "moving my worm onto the medipack increases my worms health by 10 and changes that square to AIR" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
-      (selectNextWormsDefault $
-       awardPointsToThisPlayerForMovingToAir $
-       awardPointsToThisPlayerForCollectingAPowerup aStateWithMyWormOnTheMedipack)
+      (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheMedipack)
     it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
-      (selectNextWormsDefault $
-       awardPointsToThatPlayerForMovingToAir $
-       awardPointsToThatPlayerForCollectingAPowerup aStateWithOpponentsWormOnTheMedipack)
+      (selectNextWormsDefault $ awardPointsToThatPlayerForMovingToAir aStateWithOpponentsWormOnTheMedipack)
     it "moving both worms onto the same medipack results in a swap when the bit is set" $
       makeMove True (fromMoves moveEast moveSouth) aStateWithBothWormsNextToTheMedipack `shouldBe`
       (selectNextWormsDefault $
