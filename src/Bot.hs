@@ -353,6 +353,7 @@ formatMove dir@(Move x) xy
 -- Nothing
 formatMove _ _ = "nothing"
 
+moveFromMaybe :: IsString p => Maybe p -> p
 moveFromMaybe (Just move) = move
 moveFromMaybe Nothing     = "nothing"
 
