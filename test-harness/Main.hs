@@ -20,9 +20,6 @@ import qualified Data.List as L
 
 import System.Environment
 
--- DEBUG
-import Debug.Trace
-
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
@@ -58,8 +55,6 @@ simulateAndCheckRounds dirs@(directory:_) = do
       let thatWormsCoord'    = thatWormsCoord currentState
       thisMove              <- loadThisPlayersCommand thisWormsCoord' path
       thatMove              <- loadThatPlayersCommand thatWormsCoord' path
-      liftIO $ (IO.putStrLn $ "thisMove: " ++ show thisMove)
-      liftIO $ (IO.putStrLn $ "thatMove: " ++ show thatMove)
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
@@ -89,10 +84,6 @@ loadStateForRound path = do
   then fmap decode $ B.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/JsonMap.json")
   else return Nothing
 
-probe :: Show a => String -> a -> a
-probe message x =
-  Debug.Trace.trace (message ++ ": " ++ show x) x
-
 loadCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
 loadCommandFromSubfolder choosePath coord directoryPath = do
   playerPaths     <- listDirectory directoryPath
@@ -100,7 +91,6 @@ loadCommandFromSubfolder choosePath coord directoryPath = do
   if isJust aPlayersPath
   then liftIO $
        fmap (readMove coord) $
-       fmap (probe "The move as a string") $
        IO.readFile (directoryPath ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
   else return Nothing
 
