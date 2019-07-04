@@ -481,7 +481,10 @@ friendly.
       The solution to this problem is probably to have one function which
       harms worms so that it can encapsulate the idea of a worm dying.
     :END:
-** TODO Model search tree type
+** IN_PROGRESS Model search tree type
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-07-04 Thu 20:37]
+   :END:
 ** TODO Implement search function
 
 * Questions About the Engine
