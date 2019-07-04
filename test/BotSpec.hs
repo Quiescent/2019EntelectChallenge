@@ -6,6 +6,7 @@ import Bot
 import Import
 
 import qualified RIO.Vector.Boxed as V
+import RIO.List.Partial
 import RIO.List
 
 import Test.Hspec
@@ -744,6 +745,45 @@ spec = do
           (selectNextWorms (WormId 1) (WormId 4) $
            awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
+
+data Wins = Wins Int
+
+data Losses = Losses Int
+
+data SubTree = SubTree Wins Losses CombinedMove SearchTree
+
+searchTree :: SubTree -> SearchTree
+searchTree (SubTree _ _ _ tree) = tree
+
+data SearchTree = SearchedLevel   [SubTree]
+                | UnSearchedLevel [SubTree]
+                | SearchFront
+
+search :: State -> SearchTree -> SearchTree
+search state (SearchedLevel   subTrees) = searchTree $ head subTrees
+search state (UnSearchedLevel subTrees) = searchTree $ head subTrees
+search state SearchFront                =
+  UnSearchedLevel $
+  map (\ move -> SubTree (Wins 0) (Losses 0) move SearchFront) $
+  movesFrom state
+
+
+movesFrom :: State -> [CombinedMove]
+movesFrom state = do
+  let thisCurrentWormId' = thisPlayersCurrentWormId state
+  myMove                <- map Move [0..23]
+  guard (isThisMoveValid state myMove)
+  let thatCurrentWormId' = thatPlayersCurrentWormId state
+  opponentsMove         <- map Move [0..23]
+  guard (isThatMoveValid state opponentsMove)
+  return $ fromMoves myMove opponentsMove
+
+-- TODO Implement
+isThisMoveValid :: State -> Move -> Bool
+isThisMoveValid _ _ = True
+
+isThatMoveValid :: State -> Move -> Bool
+isThatMoveValid _ _ = True
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
