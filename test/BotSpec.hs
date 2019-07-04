@@ -255,7 +255,7 @@ spec = do
       noWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 20), AListEntry (WormId 2) (WormHealth 20)])
     context "given a collection with a harmed worm" $
       it "should produce false" $
-      noWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 10), AListEntry (WormId 2) (WormHealth 20)]) `shouldBe`
+      noWormHarmed 20 (AList [AListEntry (WormId 1) startingHealth, AListEntry (WormId 2) (WormHealth 20)]) `shouldBe`
       False
   describe "makeMove" $ do
     -- TODO make this a property test...?
@@ -662,7 +662,7 @@ spec = do
                           (takeBothWormsAndPutAnotherInbetween (WormId 2) (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
-         ((hasScore (280) . myPlayer) .&&.
+         ((hasScore (284) . myPlayer) .&&.
           containsWormOfId (WormId 1) .&&.
           containsWormOfId (WormId 4))
     prop "should not hit that players first horizontal target when it's not in range" $ \ (i, j, k) ->
@@ -774,7 +774,7 @@ oppositeShot (Move x) = Move ((x + 4) `mod` 8)
 aStateWithTwoWormHealths =
   aState { wormHealths = AList [
              AListEntry (WormId 1) (WormHealth 5),
-             AListEntry (WormId 3) (WormHealth 10)] }
+             AListEntry (WormId 3) startingHealth] }
 
 aStateWithNoFacts =
   aState { wormHealths   = emptyWormHealths,
@@ -837,7 +837,7 @@ generateShotSwitch a b x =
 generateInBoundsCoordinate :: Int -> Int -> Coord
 generateInBoundsCoordinate = generateCoordGenerator inBoundsWithNoPadding inBoundsWithNoPadding
 
-startingHealth = WormHealth 10
+startingHealth = WormHealth 8
 
 takeBothWormsWithHealth :: WormHealth ->  WormId -> WormId -> AddToWormFacts
 takeBothWormsWithHealth startingHealth' thisWormId thatWormId thisCoord thatCoord state =
@@ -1028,13 +1028,13 @@ aStateWithoutWorms = State 10 10 10 10 emptyWormHealths emptyWormPositions aPlay
 aState = State 10 10 10 10 someWormHealths someWormPositions aPlayer anOpponent aGameMap
 
 thisPlayersHealths = [
-  AListEntry (WormId 1)  (WormHealth 10),
-  AListEntry (WormId 2)  (WormHealth 10),
+  AListEntry (WormId 1)  startingHealth,
+  AListEntry (WormId 2)  startingHealth,
   AListEntry (WormId 3)  (WormHealth 20)]
 
 thatPlayersHealths = [
-  AListEntry (WormId 4)  (WormHealth 10),
-  AListEntry (WormId 8)  (WormHealth 10),
+  AListEntry (WormId 4)  startingHealth,
+  AListEntry (WormId 8)  startingHealth,
   AListEntry (WormId 12) (WormHealth 20)]
 
 someWormHealths = AList $ thisPlayersHealths ++ thatPlayersHealths
@@ -1238,11 +1238,11 @@ wormPositionsWithOpponentOnTheMedipack = AList [
   AListEntry (WormId 12) (toCoord 20 1)]
 
 wormHealthsWithOpponentHavingReceivedTheMedipack = AList [
-  AListEntry (WormId 1)  (WormHealth 10),
-  AListEntry (WormId 2)  (WormHealth 10),
+  AListEntry (WormId 1)  startingHealth,
+  AListEntry (WormId 2)  startingHealth,
   AListEntry (WormId 3)  (WormHealth 20),
-  AListEntry (WormId 4)  (WormHealth 20),
-  AListEntry (WormId 8)  (WormHealth 10),
+  AListEntry (WormId 4)  (WormHealth 18),
+  AListEntry (WormId 8)  startingHealth,
   AListEntry (WormId 12) (WormHealth 20)]
 
 wormPositionsWithOpponentAtTop = AList [
@@ -1263,11 +1263,11 @@ wormPositionsWithMyWormOnTheMedipack = AList [
   AListEntry (WormId 3)  (toCoord 1 30)]
 
 wormHealthsWithMyWormHavingReceivedTheMedipack = AList [
-  AListEntry (WormId 1)  (WormHealth 20),
-  AListEntry (WormId 2)  (WormHealth 10),
+  AListEntry (WormId 1)  (WormHealth 18),
+  AListEntry (WormId 2)  startingHealth,
   AListEntry (WormId 3)  (WormHealth 20),
-  AListEntry (WormId 4)  (WormHealth 10),
-  AListEntry (WormId 8)  (WormHealth 10),
+  AListEntry (WormId 4)  startingHealth,
+  AListEntry (WormId 8)  startingHealth,
   AListEntry (WormId 12) (WormHealth 20)]
 
 wormPositionsWithMyWormAtTop = AList [

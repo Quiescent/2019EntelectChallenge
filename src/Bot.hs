@@ -888,7 +888,7 @@ mapWormHealth :: (Int -> Int) -> WormHealth -> WormHealth
 mapWormHealth f (WormHealth x) = WormHealth $ f x
 
 rocketDamage :: Int
-rocketDamage = 10
+rocketDamage = 8
 
 data Hit = HitWorm Coord
          | HitObstacle
