@@ -68,8 +68,8 @@ data AListEntry a = AListEntry WormId a
   deriving (Eq)
 
 instance (Show a) => Show (AListEntry a) where
-  show (AListEntry (WormId wormId') value) =
-    show wormId' ++ " -> " ++ show value
+  show (AListEntry (WormId wormId') value') =
+    show wormId' ++ " -> " ++ show value'
 
 data WormHealth = WormHealth Int
   deriving (Eq, Show)
@@ -566,11 +566,31 @@ knockBackDamage :: ModifyState
 knockBackDamage state =
   let thisWormId       = thisPlayersCurrentWormId state
       thatWormId       = thatPlayersCurrentWormId state
+      thisWormHealth'  = fromJust $
+                         fmap dataSlot $
+                         aListFind ((== thisWormId) . idSlot) $
+                         wormHealths state
+      thatWormHealth'  = fromJust $
+                         fmap dataSlot $
+                         aListFind ((== thatWormId) . idSlot) $
+                         wormHealths state
+      thisWormDied     = knockBackDamageAmount >= deconstructHealth thisWormHealth'
+      thatWormDied     = knockBackDamageAmount >= deconstructHealth thatWormHealth'
       knockBackDamage' = mapDataSlot (mapHealth (+ (-knockBackDamageAmount)))
-      harmThisWorm     = mapWormById thisWormId knockBackDamage'
-      harmThatWorm     = mapWormById thatWormId knockBackDamage'
-  in withWormHealths harmThisWorm $
-     withWormHealths harmThatWorm state
+      cleanUpThis      = withWormHealths (removeWormById thisWormId) .
+                         withWormPositions (removeWormById thisWormId)
+      cleanUpThat      = withWormHealths (removeWormById thatWormId) .
+                         withWormPositions (removeWormById thatWormId)
+      harmThisWorm     = if thisWormDied
+                         then cleanUpThis
+                         else withWormHealths $ mapWormById thisWormId knockBackDamage'
+      harmThatWorm     = if thatWormDied
+                         then cleanUpThat
+                         else withWormHealths $ mapWormById thatWormId knockBackDamage'
+  in reduceThatPlayersPointsForTakingKnockbackDamage thatWormDied $
+     reduceThisPlayersPointsForTakingKnockbackDamage thisWormDied $
+     harmThisWorm $
+     harmThatWorm state
 
 moveThisWorm :: Coord -> ModifyState
 moveThisWorm newCoord' state =
@@ -753,7 +773,7 @@ awardPointsToThatPlayerForMissing :: ModifyState
 awardPointsToThatPlayerForMissing = mapThatPlayer awardPointsForMissing
 
 awardPointsForHittingAnEnemy :: Player -> Player
-awardPointsForHittingAnEnemy = modifyScore (2 * rocketDamage)
+awardPointsForHittingAnEnemy = modifyScore 2 -- (2 * rocketDamage)
 
 awardPointsToThisPlayerForHittingAnEnemy :: ModifyState
 awardPointsToThisPlayerForHittingAnEnemy = mapThisPlayer awardPointsForHittingAnEnemy
@@ -783,16 +803,36 @@ reduceThatPlayersPointsForTakingRocketDamage died =
 reducePointsForTakingRocketDamage :: Bool -> (ModifyPlayer -> ModifyState) -> (WormId -> Bool) -> ModifyState
 reducePointsForTakingRocketDamage died = reducePointsForTakingDamage rocketDamage died
 
+reduceThisPlayersPointsForTakingKnockbackDamage :: Bool -> ModifyState
+reduceThisPlayersPointsForTakingKnockbackDamage died =
+  reducePointsForTakingKnockbackDamage died mapThisPlayer isMyWorm
+
+reduceThatPlayersPointsForTakingKnockbackDamage :: Bool -> ModifyState
+reduceThatPlayersPointsForTakingKnockbackDamage died =
+  reducePointsForTakingKnockbackDamage died mapThatPlayer isOpponentWorm
+
+reducePointsForTakingKnockbackDamage :: Bool -> (ModifyPlayer -> ModifyState) -> (WormId -> Bool) -> ModifyState
+reducePointsForTakingKnockbackDamage died = reducePointsForTakingDamage knockBackDamageAmount died
+
 -- Assume that damage is positive
 reducePointsForTakingDamage :: Int -> Bool -> (ModifyPlayer -> ModifyState) -> (WormId -> Bool) -> ModifyState
 reducePointsForTakingDamage damage' died mapPlayer idPredicate state =
-  let wormCount  = length $ filter idPredicate $ aListFoldl' (flip ((:) . idSlot)) [] $ wormHealths $ state
-      wormHealth' = sum $ map (deconstructHealth . dataSlot) $ filter (idPredicate . idSlot) $ aListFoldl' (flip (:)) [] $ wormHealths state
-      delta      =
+  let wormCount   = length $
+                    filter idPredicate $
+                    aListFoldl' (flip ((:) . idSlot)) [] $
+                    wormHealths $
+                    state
+      wormHealth' = sum $
+                    map (deconstructHealth . dataSlot) $
+                    filter (idPredicate . idSlot) $
+                    aListFoldl' (flip (:)) [] $
+                    wormHealths state
+      delta       =
         if died
         then (wormHealth' `div` wormCount) -
-             ((wormHealth' + rocketDamage) `div` (wormCount + 1))
-        else -(damage' `div` wormCount)
+             ((wormHealth' + damage') `div` (wormCount + 1))
+        else (wormHealth' `div` wormCount) -
+             ((wormHealth' + damage') `div` wormCount)
   in mapPlayer (modifyScore delta) state
 
 deconstructHealth :: WormHealth -> Int
@@ -838,15 +878,15 @@ harmWorm shootingWormId'
                       aListFind ((== coord) . dataSlot) $
                       wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
-      wormDied      = wormHealth' == WormHealth damage'
-      awardPoints   = if wormDied then awardPlayerForKill else awardPlayer
-      dishOutPoints = if samePlayer
-                      then penaliseFriendlyTarget wormDied . penalisePlayer
-                      else penaliseEnemyTarget wormDied . awardPoints
       wormHealth'   = fromJust $
                       fmap dataSlot $
                       aListFind ((== wormId') . idSlot) $
                       wormHealths originalState
+      wormDied      = (deconstructHealth wormHealth') <= damage'
+      awardPoints   = if wormDied then awardPlayerForKill else awardPlayer
+      dishOutPoints = if samePlayer
+                      then penaliseFriendlyTarget wormDied . penalisePlayer
+                      else penaliseEnemyTarget wormDied . awardPoints
       cleanUp       = withWormHealths (removeWormById wormId') .
                       withWormPositions (removeWormById wormId')
       harm          = withWormHealths (harmWormById damage' wormId')

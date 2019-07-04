@@ -281,14 +281,21 @@ spec = do
       (selectNextWormsDefault $ awardPointsToThatPlayerForMovingToAir $ moveThatWorm (toCoord 17 1) aState)
     it "moving to the same square should swap the worms if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
+      (selectNextWormsDefault $
+       reduceThatPlayersPointsForTakingKnockbackDamage True $
+       reduceThisPlayersPointsForTakingKnockbackDamage True $
+       awardPointsToThatPlayerForMovingToAir $
+       awardPointsToThisPlayerForMovingToAir $
        moveThisWorm (toCoord 17 31) $ moveThatWorm (toCoord 15 31) $
        harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 17 31) $
        harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 15 31)
        aStateWithImpendingCollision)
     it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      (awardPointsToThatPlayerForMovingToAir $
+      (selectNextWormsDefault $
+       reduceThatPlayersPointsForTakingKnockbackDamage True $
+       reduceThisPlayersPointsForTakingKnockbackDamage True $
+       awardPointsToThatPlayerForMovingToAir $
        awardPointsToThisPlayerForMovingToAir $
        harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 17 31) $
        harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 15 31)
@@ -1213,11 +1220,15 @@ anOpponent = Player 300 (WormId 4)
 
 wormPositionsWithImpendingCollision = AList [
   AListEntry (WormId 1) (toCoord 15 31),
-  AListEntry (WormId 4) (toCoord 17 31)]
+  AListEntry (WormId 2) (toCoord 0 0),
+  AListEntry (WormId 4) (toCoord 17 31),
+  AListEntry (WormId 8) (toCoord 1 1)]
 
 wormHealthsForOneAndFive = AList [
   AListEntry (WormId 1) startingHealth,
-  AListEntry (WormId 4) startingHealth ]
+  AListEntry (WormId 2) startingHealth,
+  AListEntry (WormId 4) startingHealth,
+  AListEntry (WormId 8) startingHealth ]
 
 wormPositionsWithHisNextToMine = AList [
   AListEntry (WormId 1) (toCoord 15 31),
