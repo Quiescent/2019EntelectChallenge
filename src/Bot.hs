@@ -7,7 +7,7 @@
 module Bot
   where
 
-import Import hiding (round)
+import Import
 
 import qualified RIO.Vector.Boxed as V
 import qualified RIO.HashMap as M
@@ -144,27 +144,43 @@ aListConcat (AList xs) (AList ys) = AList $ xs ++ ys
 
 factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions)
 factsFromMyWorms (ScratchPlayer _ _ worms') =
-  let healths   = V.map (\ (ScratchWorm { wormId = wormId',
+  let healths   = AList $
+                  V.toList $
+                  V.map (\ (ScratchWorm { wormId = wormId',
                                           wormHealth = wormHealth' }) -> AListEntry (WormId wormId')
                                                                                     (WormHealth wormHealth'))
                   worms'
-      positions = V.map (\ (ScratchWorm { wormId = wormId',
+      deadIds   = map idSlot $
+                  filter ((<= 0) . deconstructHealth . dataSlot) $
+                  aListFoldl' (flip (:)) [] healths
+      notDead   = \ (AListEntry wormId' _) -> not $ elem wormId' deadIds
+      positions = AList $
+                  V.toList $
+                  V.map (\ (ScratchWorm { wormId = wormId',
                                           position = position' }) -> AListEntry (WormId wormId')
                                                                                 position')
                   worms'
-  in (AList $ V.toList healths, AList $ V.toList positions)
+  in (aListFilter notDead healths, aListFilter notDead positions)
 
 factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions)
 factsFromOpponentsWorms (Opponent _ _ worms') =
-  let healths   = V.map (\ (OpponentWorm { opWormId = wormId',
+  let healths   = AList $
+                  V.toList $
+                  V.map (\ (OpponentWorm { opWormId = wormId',
                                            opWormHealth = wormHealth' }) -> AListEntry (WormId (shift wormId' 2))
                                                                                        (WormHealth wormHealth'))
                   worms'
-      positions = V.map (\ (OpponentWorm { opWormId = wormId',
+      deadIds   = map idSlot $
+                  filter ((<= 0) . deconstructHealth . dataSlot) $
+                  aListFoldl' (flip (:)) [] healths
+      notDead   = \ (AListEntry wormId' _) -> not $ elem wormId' deadIds
+      positions = AList $
+                  V.toList $
+                  V.map (\ (OpponentWorm { opWormId = wormId',
                                            opPosition = position' }) -> AListEntry (WormId (shift wormId' 2))
                                                                                    position')
                   worms'
-  in (AList $ V.toList healths, AList $ V.toList positions)
+  in (aListFilter notDead healths, aListFilter notDead positions)
 
 vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
@@ -490,15 +506,16 @@ giveMedipackToThatWorm state =
   in awardPointsToThatPlayerForCollectingAMedipack $
      withWormHealths (mapWormById thatWormId (mapDataSlot increaseHealth)) state
 
+wormCount :: Int
+wormCount = 3
+
 awardPointsToThisPlayerForCollectingAMedipack :: ModifyState
 awardPointsToThisPlayerForCollectingAMedipack state =
-  let wormCount = length $ filter isMyWorm $ aListFoldl' (flip ((:) . idSlot)) [] $ wormHealths $ state
-  in mapThisPlayer (modifyScore (healthPackHealth `div` wormCount)) state
+  mapThisPlayer (modifyScore (healthPackHealth `div` wormCount)) state
 
 awardPointsToThatPlayerForCollectingAMedipack :: ModifyState
 awardPointsToThatPlayerForCollectingAMedipack state =
-  let wormCount = length $ filter isOpponentWorm $ aListFoldl' (flip ((:) . idSlot)) [] $ wormHealths $ state
-  in mapThatPlayer (modifyScore (healthPackHealth `div` wormCount)) state
+  mapThatPlayer (modifyScore (healthPackHealth `div` wormCount)) state
 
 increaseHealth :: WormHealth -> WormHealth
 increaseHealth = mapHealth (+ healthPackHealth)
@@ -817,22 +834,17 @@ reducePointsForTakingKnockbackDamage died = reducePointsForTakingDamage knockBac
 -- Assume that damage is positive
 reducePointsForTakingDamage :: Int -> Bool -> (ModifyPlayer -> ModifyState) -> (WormId -> Bool) -> ModifyState
 reducePointsForTakingDamage damage' died mapPlayer idPredicate state =
-  let wormCount   = length $
-                    filter idPredicate $
-                    aListFoldl' (flip ((:) . idSlot)) [] $
-                    wormHealths $
-                    state
-      wormHealth' = sum $
+  let wormHealth' = sum $
                     map (deconstructHealth . dataSlot) $
                     filter (idPredicate . idSlot) $
                     aListFoldl' (flip (:)) [] $
                     wormHealths state
       delta       =
         if died
-        then (wormHealth' `div` wormCount) -
-             ((wormHealth' + damage') `div` (wormCount + 1))
-        else (wormHealth' `div` wormCount) -
-             ((wormHealth' + damage') `div` wormCount)
+        then round ((fromIntegral wormHealth' / fromIntegral wormCount) -
+                    (fromIntegral (wormHealth' + damage') / fromIntegral wormCount))
+        else round ((fromIntegral wormHealth' / fromIntegral wormCount) -
+                    (fromIntegral (wormHealth' + damage') / fromIntegral wormCount))
   in mapPlayer (modifyScore delta) state
 
 deconstructHealth :: WormHealth -> Int
@@ -1051,8 +1063,8 @@ readRound = liftIO readLn
 
 startBot :: StdGen -> Int -> RIO App ()
 startBot g roundNumber = do
-  round <- readRound
-  state <- readGameState round
+  round' <- readRound
+  state  <- readGameState round'
   liftIO $ putStrLn $ show state
   liftIO $ putStrLn $ "C;" ++ show roundNumber ++ ";nothing\n"
   startBot g (roundNumber + 1)

@@ -279,7 +279,7 @@ spec = do
     it "moving opponents worm into air should move the worm to that spot" $
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
       (selectNextWormsDefault $ awardPointsToThatPlayerForMovingToAir $ moveThatWorm (toCoord 17 1) aState)
-    it "moving to the same square should swap the worms if true and damage both worms" $
+    kit "moving to the same square should swap the worms if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (selectNextWormsDefault $
        reduceThatPlayersPointsForTakingKnockbackDamage True $
@@ -669,7 +669,7 @@ spec = do
                           (takeBothWormsAndPutAnotherInbetween (WormId 2) (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
-         ((hasScore (284) . myPlayer) .&&.
+         ((hasScore (281) . myPlayer) .&&.
           containsWormOfId (WormId 1) .&&.
           containsWormOfId (WormId 4))
     prop "should not hit that players first horizontal target when it's not in range" $ \ (i, j, k) ->
