@@ -418,7 +418,7 @@ nextWormId wormId' wormIds =
                        else head xs
                   else iter xs
 
-advanceWormSelectionByWorms :: (WormId -> Bool) -> (State -> WormId) -> ((Player -> Player) -> ModifyState) -> ModifyState
+advanceWormSelectionByWorms :: (WormId -> Bool) -> (State -> WormId) -> (ModifyPlayer -> ModifyState) -> ModifyState
 advanceWormSelectionByWorms idPredicate playersWormId mapPlayer state@(State { wormHealths = wormHealths' }) =
   let myWormIds      = sort $ filter idPredicate $ aListFoldl' (flip ((:) . idSlot)) [] wormHealths'
       currentWormId' = playersWormId state
@@ -612,11 +612,11 @@ targetOfThatMove dir state =
 targetOfMove :: Move -> Coord -> Maybe Coord
 targetOfMove = flip displaceCoordByMove
 
-mapThisPlayer :: (Player -> Player) -> ModifyState
+mapThisPlayer :: ModifyPlayer -> ModifyState
 mapThisPlayer f state@(State { myPlayer = player' }) =
   state { myPlayer = f player' }
 
-mapThatPlayer :: (Player -> Player) -> ModifyState
+mapThatPlayer :: ModifyPlayer -> ModifyState
 mapThatPlayer f state@(State { opponent = opponent' }) =
   state { opponent = f opponent' }
 
@@ -696,6 +696,8 @@ makeShootMoves this that state =
   (harmWormForMove thisWormsCoord
                    (thisPlayersCurrentWormId state)
                    this
+                   reduceThatPlayersPointsForTakingRocketDamage
+                   reduceThisPlayersPointsForTakingRocketDamage
                    penaliseThisPlayerForHittingHisFriendlyWorm
                    awardPointsToThisPlayerForHittingAnEnemy
                    awardPointsToThisPlayerForKillingAnEnemy
@@ -703,24 +705,42 @@ makeShootMoves this that state =
   (harmWormForMove thatWormsCoord
                    (thatPlayersCurrentWormId state)
                    that
+                   reduceThisPlayersPointsForTakingRocketDamage
+                   reduceThatPlayersPointsForTakingRocketDamage
                    penaliseThatPlayerForHittingHisFriendlyWorm
                    awardPointsToThatPlayerForHittingAnEnemy
                    awardPointsToThatPlayerForKillingAnEnemy
                    awardPointsToThatPlayerForMissing) state
   where
-    harmWormForMove wormsCoord wormId' move penalise awardPlayer awardPlayerForKill awardPointsForMiss =
+    harmWormForMove wormsCoord
+                    wormId'
+                    move
+                    penaliseEnemyTarget
+                    penaliseFriendlyTarget
+                    penalise
+                    awardPlayer
+                    awardPlayerForKill
+                    awardPointsForMiss =
       let isShootMove     = isAShootMove move
           shootMove       = if isShootMove then Just move else Nothing
           gameMap'        = gameMap state
           -- ASSUME: that a worm won't be on an invalid square
           wormsPosition   = wormsCoord state
           shotsDir        = shootMove >>= directionOfShot
-          coord           = shotsDir >>= ((flip (hitsWorm wormsPosition gameMap')) (wormPositions state))
+          coord           = shotsDir >>= ((flip (hitsWorm wormsPosition gameMap'))
+                                          (wormPositions state))
           isHit           = isJust coord
           coord'          = fromJust coord
           awardMissPoints = if isShootMove then awardPointsForMiss else id
       in if isHit
-         then harmWormWithRocket wormId' state penalise awardPlayer awardPlayerForKill coord'
+         then harmWormWithRocket wormId'
+                                 state
+                                 penaliseEnemyTarget
+                                 penaliseFriendlyTarget
+                                 penalise
+                                 awardPlayer
+                                 awardPlayerForKill
+                                 coord'
          else awardMissPoints
 
 awardPointsForMissing :: Player -> Player
@@ -752,9 +772,48 @@ awardPointsToThatPlayerForKillingAnEnemy =
 awardPointsForKillingAnEnemy :: Player -> Player
 awardPointsForKillingAnEnemy = modifyScore 40
 
-harmWormWithRocket :: WormId -> State -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
-harmWormWithRocket wormId' originalState penalisePlayer awardPlayer awardPlayerForKill =
-  harmWorm wormId' originalState rocketDamage penalisePlayer awardPlayer awardPlayerForKill
+reduceThisPlayersPointsForTakingRocketDamage :: Bool -> ModifyState
+reduceThisPlayersPointsForTakingRocketDamage died =
+  reducePointsForTakingRocketDamage died mapThisPlayer isMyWorm
+
+reduceThatPlayersPointsForTakingRocketDamage :: Bool -> ModifyState
+reduceThatPlayersPointsForTakingRocketDamage died =
+  reducePointsForTakingRocketDamage died mapThatPlayer isOpponentWorm
+
+reducePointsForTakingRocketDamage :: Bool -> (ModifyPlayer -> ModifyState) -> (WormId -> Bool) -> ModifyState
+reducePointsForTakingRocketDamage died = reducePointsForTakingDamage rocketDamage died
+
+-- Assume that damage is positive
+reducePointsForTakingDamage :: Int -> Bool -> (ModifyPlayer -> ModifyState) -> (WormId -> Bool) -> ModifyState
+reducePointsForTakingDamage damage' died mapPlayer idPredicate state =
+  let wormCount  = length $ filter idPredicate $ aListFoldl' (flip ((:) . idSlot)) [] $ wormHealths $ state
+      wormHealth' = sum $ map (deconstructHealth . dataSlot) $ filter (idPredicate . idSlot) $ aListFoldl' (flip (:)) [] $ wormHealths state
+      delta      =
+        if died
+        then (wormHealth' `div` wormCount) -
+             ((wormHealth' + rocketDamage) `div` (wormCount + 1))
+        else -(damage' `div` wormCount)
+  in mapPlayer (modifyScore delta) state
+
+deconstructHealth :: WormHealth -> Int
+deconstructHealth (WormHealth x) = x
+
+harmWormWithRocket :: WormId -> State -> (Bool -> ModifyState) -> (Bool -> ModifyState) -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+harmWormWithRocket wormId'
+                   originalState
+                   penaliseEnemyTarget
+                   penaliseFriendlyTarget
+                   penalisePlayer
+                   awardPlayer
+                   awardPlayerForKill =
+  harmWorm wormId'
+           originalState
+           rocketDamage
+           penaliseEnemyTarget
+           penaliseFriendlyTarget
+           penalisePlayer
+           awardPlayer
+           awardPlayerForKill
 
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
 harmWormById damage' wormId' = mapWormById wormId' (mapDataSlot (mapWormHealth (+ (-damage'))))
@@ -764,14 +823,30 @@ removeWormById :: WormId -> AList a -> AList a
 removeWormById wormId' = aListFilter ((/= wormId') . idSlot)
 
 -- Assume: that the given coord maps to a worm
-harmWorm :: WormId -> State -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
-harmWorm shootingWormId' originalState damage' penalisePlayer awardPlayer awardPlayerForKill coord =
-  let wormId'       = fromJust $ fmap idSlot $ aListFind ((== coord) . dataSlot) $ wormPositions originalState
+harmWorm :: WormId -> State -> Int -> (Bool -> ModifyState) -> (Bool -> ModifyState) -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+harmWorm shootingWormId'
+         originalState
+         damage'
+         penaliseEnemyTarget
+         penaliseFriendlyTarget
+         penalisePlayer
+         awardPlayer
+         awardPlayerForKill
+         coord =
+  let wormId'       = fromJust $
+                      fmap idSlot $
+                      aListFind ((== coord) . dataSlot) $
+                      wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormDied      = wormHealth' == WormHealth damage'
       awardPoints   = if wormDied then awardPlayerForKill else awardPlayer
-      dishOutPoints = if samePlayer then penalisePlayer else awardPoints
-      wormHealth'   = fromJust $ fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormHealths originalState
+      dishOutPoints = if samePlayer
+                      then penaliseFriendlyTarget wormDied . penalisePlayer
+                      else penaliseEnemyTarget wormDied . awardPoints
+      wormHealth'   = fromJust $
+                      fmap dataSlot $
+                      aListFind ((== wormId') . idSlot) $
+                      wormHealths originalState
       cleanUp       = withWormHealths (removeWormById wormId') .
                       withWormPositions (removeWormById wormId')
       harm          = withWormHealths (harmWormById damage' wormId')
@@ -792,6 +867,10 @@ wormsBelongToSamePlayer thisWormId thatWormId =
   isMyWorm thisWormId == isMyWorm thatWormId
 
 type ModifyState = State -> State
+
+type ModifyPlayer = Player -> Player
+
+type GetPlayer = State -> Player
 
 type ModifyFacts a = AList a -> AList a
 

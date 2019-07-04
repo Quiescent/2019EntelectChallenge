@@ -136,7 +136,7 @@ spec = do
       aState { opponent = Player 307 (WormId 4) }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
-      (harmWormWithRocket (WormId (-1)) aState id id id (toCoord 15 31) aState) `shouldBe`
+      (harmWormWithRocket (WormId (-1)) aState ignoreFirst ignoreFirst id id id (toCoord 15 31) aState) `shouldBe`
        aState { wormHealths = removeWormById (WormId 1) $ wormHealths aState,
                 wormPositions = removeWormById (WormId 1) $ wormPositions aState }
   describe "generateShotSwitch" $ do
@@ -283,15 +283,15 @@ spec = do
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $ awardPointsToThisPlayerForMovingToAir $
        moveThisWorm (toCoord 17 31) $ moveThatWorm (toCoord 15 31) $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 17 31) $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 15 31)
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 17 31) $
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 15 31)
        aStateWithImpendingCollision)
     it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (awardPointsToThatPlayerForMovingToAir $
        awardPointsToThisPlayerForMovingToAir $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 17 31) $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 15 31)
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 17 31) $
+       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount ignoreFirst ignoreFirst id id id (toCoord 15 31)
        aStateWithImpendingCollision)
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`
@@ -456,6 +456,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          reduceThatPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit this players first horizontal target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -468,6 +469,7 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWorms (WormId 3) (WormId 8) $
+          reduceThisPlayersPointsForTakingRocketDamage True $
           penaliseThisPlayerForHittingHisFriendlyWorm $
           state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
                   wormPositions = removeWormById (WormId 2) $ wormPositions state })
@@ -482,6 +484,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          reduceThatPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit this players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -495,6 +498,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWorms (WormId 3) (WormId 8) $
           penaliseThisPlayerForHittingHisFriendlyWorm $
+          reduceThisPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
                   wormPositions = removeWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first NW-SE diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
@@ -508,6 +512,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          reduceThatPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit this players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -521,6 +526,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWorms (WormId 3) (WormId 8) $
           penaliseThisPlayerForHittingHisFriendlyWorm $
+          reduceThisPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 2) $ wormHealths state,
                   wormPositions = removeWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
@@ -534,6 +540,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          reduceThatPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
@@ -547,6 +554,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          reduceThisPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should hit that players first horizontal target in range when it's friendly" $ \ (i, j, k) ->
@@ -560,6 +568,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
+          reduceThatPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
                   wormPositions = removeWormById (WormId 8) $ wormPositions state })
     prop "should hit that players first vertical target in range when it's my worm" $ \ (i, j, k) ->
@@ -573,6 +582,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          reduceThisPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should hit that players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -586,6 +596,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
+          reduceThatPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
                   wormPositions = removeWormById (WormId 8) $ wormPositions state })
     prop "should hit that players first NW-SE diagonal target in range when it's my worm" $ \ (i, j, k) ->
@@ -599,6 +610,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          reduceThisPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should hit that players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -612,6 +624,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
+          reduceThatPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
                   wormPositions = removeWormById (WormId 8) $ wormPositions state })
     prop "should hit that players first NE-SW diagonal target in range when it's my worm" $ \ (i, j, k) ->
@@ -625,6 +638,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          reduceThisPlayersPointsForTakingRocketDamage True $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should not hit this players first horizontal target in range when there's dirt or space in the way" $ \ (i, j, k, l) ->
@@ -707,6 +721,8 @@ spec = do
         in makeMove True (fromMoves shot (oppositeShot shot)) state `shouldBe`
            (selectNextWormsDefault $
             awardPointsToThatPlayerForKillingAnEnemy $
+            reduceThatPlayersPointsForTakingRocketDamage True $
+            reduceThisPlayersPointsForTakingRocketDamage True $
             awardPointsToThisPlayerForKillingAnEnemy $
             state { wormHealths =
                       removeWormById (WormId 4) $
@@ -727,8 +743,9 @@ spec = do
        in makeMove True (fromMoves shot doNothing) state `shouldBe`
           (selectNextWorms (WormId 1) (WormId 4) $
            awardPointsToThisPlayerForHittingAnEnemy $
+           reduceThatPlayersPointsForTakingRocketDamage False $
            state { wormHealths = harmWormById rocketDamage (WormId 4) $ wormHealths state })
-    prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
+    prop "should hit that players first horizontal target in range when it's my worm without killing it" $ \ (i, j, k) ->
        let (state, shot) = generateShotScenario
                            (generateCoordGenerator  inBoundsWithNonDiagonalPadding
                                                     inBoundsWithNoPadding)
@@ -738,8 +755,12 @@ spec = do
                            (i, j, k)
        in makeMove True (fromMoves doNothing shot) state `shouldBe`
           (selectNextWorms (WormId 1) (WormId 4) $
+           reduceThisPlayersPointsForTakingRocketDamage False $
            awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
+
+ignoreFirst :: a -> b -> b
+ignoreFirst _ x = x
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
@@ -763,9 +784,6 @@ emptyWormPositions = AList []
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (.&&.) p1 p2 x =
   p1 x && p2 x
-
-deconstructHealth :: WormHealth -> Int
-deconstructHealth (WormHealth x) = x
 
 oneWormHarmed :: Int -> WormHealths -> Bool
 oneWormHarmed originalHealth =
@@ -1009,12 +1027,12 @@ aState = State 10 10 10 10 someWormHealths someWormPositions aPlayer anOpponent 
 thisPlayersHealths = [
   AListEntry (WormId 1)  (WormHealth 10),
   AListEntry (WormId 2)  (WormHealth 10),
-  AListEntry (WormId 3)  (WormHealth 10)]
+  AListEntry (WormId 3)  (WormHealth 20)]
 
 thatPlayersHealths = [
   AListEntry (WormId 4)  (WormHealth 10),
   AListEntry (WormId 8)  (WormHealth 10),
-  AListEntry (WormId 12) (WormHealth 10)]
+  AListEntry (WormId 12) (WormHealth 20)]
 
 someWormHealths = AList $ thisPlayersHealths ++ thatPlayersHealths
 
@@ -1219,10 +1237,10 @@ wormPositionsWithOpponentOnTheMedipack = AList [
 wormHealthsWithOpponentHavingReceivedTheMedipack = AList [
   AListEntry (WormId 1)  (WormHealth 10),
   AListEntry (WormId 2)  (WormHealth 10),
-  AListEntry (WormId 3)  (WormHealth 10),
+  AListEntry (WormId 3)  (WormHealth 20),
   AListEntry (WormId 4)  (WormHealth 20),
   AListEntry (WormId 8)  (WormHealth 10),
-  AListEntry (WormId 12) (WormHealth 10)]
+  AListEntry (WormId 12) (WormHealth 20)]
 
 wormPositionsWithOpponentAtTop = AList [
   AListEntry (WormId 4) (toCoord 15 0)]
@@ -1244,10 +1262,10 @@ wormPositionsWithMyWormOnTheMedipack = AList [
 wormHealthsWithMyWormHavingReceivedTheMedipack = AList [
   AListEntry (WormId 1)  (WormHealth 20),
   AListEntry (WormId 2)  (WormHealth 10),
-  AListEntry (WormId 3)  (WormHealth 10),
+  AListEntry (WormId 3)  (WormHealth 20),
   AListEntry (WormId 4)  (WormHealth 10),
   AListEntry (WormId 8)  (WormHealth 10),
-  AListEntry (WormId 12) (WormHealth 10)]
+  AListEntry (WormId 12) (WormHealth 20)]
 
 wormPositionsWithMyWormAtTop = AList [
   AListEntry (WormId 1) (toCoord 15 0)]
