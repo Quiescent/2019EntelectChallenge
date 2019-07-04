@@ -134,10 +134,21 @@ toState myPlayer' opponents' gameMap' =
             digRange'
             wormHealths'
             wormPositions'
-            (toPlayer myPlayer')
-            (opponentToPlayer opponent')
+            (removeHealthPoints isMyWorm       wormHealths' $ toPlayer myPlayer')
+            (removeHealthPoints isOpponentWorm wormHealths' $ opponentToPlayer opponent')
             (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
+
+wormCount :: Int
+wormCount = 3
+
+removeHealthPoints :: (WormId -> Bool) -> WormHealths -> Player -> Player
+removeHealthPoints idPredicate wormHealths' (Player score' wormId') =
+  let totalHealth = sum $
+                    map (deconstructHealth . dataSlot) $
+                    filter (idPredicate . idSlot) $
+                    aListFoldl' (flip (:)) [] wormHealths'
+  in Player (score' - (totalHealth `div` wormCount)) wormId'
 
 aListConcat :: AList a -> AList a -> AList a
 aListConcat (AList xs) (AList ys) = AList $ xs ++ ys
@@ -497,25 +508,12 @@ targetOfThatMoveIsDirt move state =
 giveMedipackToThisWorm :: ModifyState
 giveMedipackToThisWorm state =
   let thisWormId = thisPlayersCurrentWormId state
-  in awardPointsToThisPlayerForCollectingAMedipack $
-     withWormHealths (mapWormById thisWormId (mapDataSlot increaseHealth)) state
+  in withWormHealths (mapWormById thisWormId (mapDataSlot increaseHealth)) state
 
 giveMedipackToThatWorm :: ModifyState
 giveMedipackToThatWorm state =
   let thatWormId = thatPlayersCurrentWormId state
-  in awardPointsToThatPlayerForCollectingAMedipack $
-     withWormHealths (mapWormById thatWormId (mapDataSlot increaseHealth)) state
-
-wormCount :: Int
-wormCount = 3
-
-awardPointsToThisPlayerForCollectingAMedipack :: ModifyState
-awardPointsToThisPlayerForCollectingAMedipack state =
-  mapThisPlayer (modifyScore (healthPackHealth `div` wormCount)) state
-
-awardPointsToThatPlayerForCollectingAMedipack :: ModifyState
-awardPointsToThatPlayerForCollectingAMedipack state =
-  mapThatPlayer (modifyScore (healthPackHealth `div` wormCount)) state
+  in withWormHealths (mapWormById thatWormId (mapDataSlot increaseHealth)) state
 
 increaseHealth :: WormHealth -> WormHealth
 increaseHealth = mapHealth (+ healthPackHealth)
