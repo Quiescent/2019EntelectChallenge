@@ -670,7 +670,7 @@ spec = do
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
                                                   inBoundsWithNoPadding)
                           (generateCoordDisplacer nonDiagonalDeltaOutOfRange addDelta ignoreDelta)
-                          (generateShotSwitch     shootEast shootWest)
+                          (generateShotSwitch     shootWest shootEast)
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
@@ -678,10 +678,10 @@ spec = do
           awardPointsToThatPlayerForMissing state)
     prop "should not hit that players first vertical target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
-                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
-                                                  inBoundsWithNoPadding)
+                          (generateCoordGenerator inBoundsWithNoPadding
+                                                  inBoundsWithNonDiagonalPadding)
                           (generateCoordDisplacer nonDiagonalDeltaOutOfRange ignoreDelta addDelta)
-                          (generateShotSwitch     shootEast shootWest)
+                          (generateShotSwitch     shootNorth shootSouth)
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
@@ -689,8 +689,8 @@ spec = do
           awardPointsToThatPlayerForMissing state)
     prop "should not hit that players first NE-SW target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
-                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
-                                                  inBoundsWithNoPadding)
+                          (generateCoordGenerator inBoundsWithDiagonalPadding
+                                                  inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDeltaOutOfRange addDelta subtractDelta)
                           (generateShotSwitch     shootSouthWest shootNorthEast)
                           (takeBothWorms          (WormId 1) (WormId 4))
@@ -698,12 +698,15 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
+    -- TODO this test is broken and that's worrying.  To reproduce
+    -- this problem set the generated delta for out of range to one
+    -- less than it is.  The above test fails but this doesn't.
     prop "should not hit that players first NW-SE target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
-                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
-                                                  inBoundsWithNoPadding)
+                          (generateCoordGenerator inBoundsWithDiagonalPadding
+                                                  inBoundsWithDiagonalPadding)
                           (generateCoordDisplacer diagonalDeltaOutOfRange subtractDelta addDelta)
-                          (generateShotSwitch     shootNorthWest shootSouthEast)
+                          (generateShotSwitch     shootSouthEast shootNorthWest)
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
@@ -950,15 +953,15 @@ identityMapModification _ _ = id
 -- TODO test
 nonDiagonalDeltaOutOfRange :: Int -> Int
 nonDiagonalDeltaOutOfRange x =
-  if abs x <= 3
-  then (4 * if x < 0 then -1 else 1)
+  if abs x <= horizontalRocketRange
+  then ((horizontalRocketRange + 1) * if x < 0 then -1 else 1)
   else x
 
 -- TODO test
 diagonalDeltaOutOfRange :: Int -> Int
 diagonalDeltaOutOfRange x =
-  if abs x <= 2
-  then (3 * if x < 0 then -1 else 1)
+  if abs x <= diagonalRocketRange
+  then ((diagonalRocketRange + 1) * if x < 0 then -1 else 1)
   else x
 
 nonDiagonalDelta :: Int -> Int

@@ -939,14 +939,20 @@ type Operator = Int -> Int -> Int
 idOperator :: Operator
 idOperator x _ = x
 
+diagonalRocketRange :: Int
+diagonalRocketRange = 3
+
 iterateDiagonally :: Coord -> Operator -> Operator -> [Coord]
-iterateDiagonally coord fX fY = iterateCoordinate coord 2 fX fY
+iterateDiagonally coord fX fY = iterateCoordinate coord diagonalRocketRange fX fY
+
+horizontalRocketRange :: Int
+horizontalRocketRange = 4
 
 iterateVertically :: Coord -> Operator -> [Coord]
-iterateVertically coord fY = iterateCoordinate coord 3 idOperator fY
+iterateVertically coord fY = iterateCoordinate coord horizontalRocketRange idOperator fY
 
 iterateHorizontally :: Coord -> Operator -> [Coord]
-iterateHorizontally coord fX = iterateCoordinate coord 3 fX idOperator
+iterateHorizontally coord fX = iterateCoordinate coord horizontalRocketRange fX idOperator
 
 iterateCoordinate :: Coord -> Int -> Operator -> Operator -> [Coord]
 iterateCoordinate coord depth fX fY =
