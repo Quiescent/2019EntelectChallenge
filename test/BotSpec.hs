@@ -747,34 +747,75 @@ spec = do
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
 
 data Wins = Wins Int
+  deriving (Eq)
 
 data Losses = Losses Int
+  deriving (Eq)
 
 data SubTree = SubTree Wins Losses CombinedMove SearchTree
 
 searchTree :: SubTree -> SearchTree
 searchTree (SubTree _ _ _ tree) = tree
 
-data SearchTree = SearchedLevel   [SubTree]
-                | UnSearchedLevel [SubTree]
+subTreeMove :: SubTree -> CombinedMove
+subTreeMove (SubTree _ _ move _) = move
+
+wins :: SubTree -> Wins
+wins (SubTree wins _ _ _) = wins
+
+losses :: SubTree -> Losses
+losses (SubTree _ losses _ _) = losses
+
+type SubTrees = [SubTree]
+
+data SearchTree = SearchedLevel   SubTrees
+                | UnSearchedLevel SubTrees
                 | SearchFront
 
-search :: State -> SearchTree -> SearchTree
-search state (SearchedLevel   subTrees) = searchTree $ head subTrees
-search state (UnSearchedLevel subTrees) = searchTree $ head subTrees
-search state SearchFront                =
-  UnSearchedLevel $
-  map (\ move -> SubTree (Wins 0) (Losses 0) move SearchFront) $
-  movesFrom state
+data SearchResult = Win  Moves
+                  | Loss Moves
 
+search :: State -> SearchTree -> Moves -> SearchResult
+search state (SearchedLevel   subTrees) moves = searchSearchedLevel state subTrees moves
+search state (UnSearchedLevel subTrees) moves =
+  case nextUnSearched subTrees of
+    Just chosenSubTree -> search state
+                                 (searchTree chosenSubTree)
+                                 ((subTreeMove chosenSubTree):moves)
+    Nothing            -> searchSearchedLevel state subTrees moves
+search state SearchFront                moves = playRandomly state moves
+
+type Moves = [CombinedMove]
+
+searchSearchedLevel :: State -> SubTrees -> Moves -> SearchResult
+searchSearchedLevel state subTrees moves =
+  let bestMove = chooseBestMove subTrees
+  in search state (searchTree bestMove) ((subTreeMove bestMove):moves)
+
+isUnSearched :: SubTree -> Bool
+isUnSearched subTree =
+  (wins   subTree == Wins   0) &&
+  (losses subTree == Losses 0)
+
+nextUnSearched :: [SubTree] -> Maybe SubTree
+nextUnSearched subTrees =
+  find isUnSearched subTrees
+
+playRandomly :: State -> [CombinedMove] -> SearchResult
+playRandomly state moves = Loss (reverse moves)
+
+  -- UnSearchedLevel $
+  -- map (\ move -> SubTree (Wins 0) (Losses 0) move SearchFront) $
+  -- movesFrom state
+
+chooseBestMove :: [SubTree] -> SubTree
+chooseBestMove subTrees = head subTrees
 
 movesFrom :: State -> [CombinedMove]
 movesFrom state = do
-  let thisCurrentWormId' = thisPlayersCurrentWormId state
-  myMove                <- map Move [0..23]
+  myMove        <- map Move [0..23]
   guard (isThisMoveValid state myMove)
-  let thatCurrentWormId' = thatPlayersCurrentWormId state
-  opponentsMove         <- map Move [0..23]
+  opponentsMove <- map Move [0..23]
   guard (isThatMoveValid state opponentsMove)
   return $ fromMoves myMove opponentsMove
 
@@ -782,6 +823,7 @@ movesFrom state = do
 isThisMoveValid :: State -> Move -> Bool
 isThisMoveValid _ _ = True
 
+-- TODO Implement
 isThatMoveValid :: State -> Move -> Bool
 isThatMoveValid _ _ = True
 
