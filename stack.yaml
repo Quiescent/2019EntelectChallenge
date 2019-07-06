@@ -65,3 +65,9 @@ packages:
 # compiler-check: newer-minor
 # nix:
 #   enable: true
+
+ghc-options:
+  # All packages
+  "$locals": -Wall
+#  "$targets": -Werror
+  "$everything": -O2 -funbox-strict-fields
