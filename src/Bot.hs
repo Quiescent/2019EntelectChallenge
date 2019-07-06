@@ -1224,7 +1224,7 @@ searchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchR
 searchSearchedLevel g
                     round'
                     state
-                    (SearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) transitions)
+                    (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
                     moves =
   let myBestMove        = successRecordMove $ chooseBestMove myMoves
       opponentsBestMove = successRecordMove $ chooseBestMove opponentsMoves
