@@ -20,6 +20,7 @@ import Data.Maybe
 import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), (.:?), FromJSON, parseJSON)
+import System.Clock
 
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
@@ -391,6 +392,7 @@ isOOB (x', y')
   | otherwise                                        = Nothing
 
 data CombinedMove = CombinedMove Int
+  deriving (Eq, Show)
 
 playersMoveBits :: Int
 playersMoveBits = 5
@@ -1005,10 +1007,234 @@ isAShootMove (Move x)
 readRound :: RIO App Int
 readRound = liftIO readLn
 
+maxSearchTime :: TimeSpec
+maxSearchTime = 100000
+
+runForHalfSecond :: State -> IO Move
+runForHalfSecond state = do
+  startingTime <- getTime clock
+  searchTree   <- go startingTime SearchFront
+  return $
+    fst $
+    toMoves $
+    subTreeMove $
+    chooseBestMove $
+    (\ (SearchedLevel trees) -> trees) searchTree
+  where
+    clock = Realtime
+    go startingTime searchTree = do
+      liftIO $ putStrLn $ show searchTree
+      gen     <- getStdGen
+      timeNow <- getTime clock
+      if (timeNow - startingTime) < maxSearchTime then do
+        let result  = search gen 0 state searchTree []
+        let newTree = updateTree state result searchTree
+        go startingTime newTree
+      else return searchTree
+
 startBot :: StdGen -> Int -> RIO App ()
 startBot g roundNumber = do
   round' <- readRound
   state  <- readGameState round'
-  liftIO $ putStrLn $ show state
-  liftIO $ putStrLn $ "C;" ++ show roundNumber ++ ";nothing\n"
+  move   <- liftIO $ runForHalfSecond (fromJust state)
+  liftIO $
+    putStrLn $
+    "C;" ++ show roundNumber ++ ";" ++ formatMove move (thisWormsCoord (fromJust state)) ++ "\n"
   startBot g (roundNumber + 1)
+
+data Wins = Wins Int
+  deriving (Eq)
+
+data Losses = Losses Int
+  deriving (Eq)
+
+data SubTree = SubTree Wins Losses CombinedMove SearchTree
+
+instance Show SubTree where
+  show (SubTree (Wins wins') (Losses losses') move subTree) =
+    (show move) ++ ": " ++ (show wins') ++ "/" ++ (show losses')
+
+searchTree :: SubTree -> SearchTree
+searchTree (SubTree _ _ _ tree) = tree
+
+subTreeMove :: SubTree -> CombinedMove
+subTreeMove (SubTree _ _ move _) = move
+
+wins :: SubTree -> Wins
+wins (SubTree wins' _ _ _) = wins'
+
+losses :: SubTree -> Losses
+losses (SubTree _ losses _ _) = losses
+
+type SubTrees = [SubTree]
+
+data SearchTree = SearchedLevel   SubTrees
+                | UnSearchedLevel SubTrees
+                | SearchFront
+
+instance Show SearchTree where
+  show (SearchedLevel subTrees) =
+    "Searched: " ++ "\n" ++
+    (concat $ map ( \ x -> show x ++ "\n\t") subTrees)
+  show (UnSearchedLevel subTrees) =
+    "UnSearched: " ++ "\n" ++
+    (concat $ map ( \ x -> show x ++ "\n\t") subTrees)
+  show SearchFront =
+    "SearchFront"
+
+data SearchResult = Win  Moves
+                  | Loss Moves
+
+updateTree :: State -> SearchResult -> SearchTree -> SearchTree
+updateTree state result SearchFront =
+  UnSearchedLevel $
+  map (\ move -> SubTree (Wins 0) (Losses 0) move SearchFront) $
+  movesFrom state
+updateTree _ result (UnSearchedLevel subTrees) =
+  case result of
+    (Win  (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
+    (Loss (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
+  where
+    updateCount :: (Int -> Int) -> (Int -> Int) -> SubTrees -> CombinedMove -> SubTrees
+    updateCount changeMe changeHim (subTree@(SubTree (Wins wins') (Losses losses') subTreeMove' subTrees'):rest) move'
+      | subTreeMove' == move' = (SubTree (Wins   $ changeMe  wins')
+                                         (Losses $ changeHim losses')
+                                         subTreeMove'
+                                         subTrees'):rest
+      | otherwise             = updateCount changeMe changeHim rest move'
+updateTree _ result (SearchedLevel   subTrees) =
+  case result of
+    (Win  (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
+    (Loss (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
+  where
+    updateCount :: (Int -> Int) -> (Int -> Int) -> SubTrees -> CombinedMove -> SubTrees
+    updateCount changeMe changeHim (subTree@(SubTree (Wins wins') (Losses losses') subTreeMove' subTrees'):rest) move'
+      | subTreeMove' == move' = (SubTree (Wins   $ changeMe  wins')
+                                         (Losses $ changeHim losses')
+                                         subTreeMove'
+                                         subTrees'):rest
+      | otherwise             = updateCount changeMe changeHim rest move'
+
+-- updateTree :: State -> SearchResult -> SearchTree -> SearchTree
+-- updateTree state result tree =
+--   case result of
+--     (Win  moves) -> undefined
+--     (Loss moves) -> undefined
+--   where
+--     go state' (SearchedLevel   subTrees) (move':moves) =
+--       SearchedLevel (updatCount (makeMove False move' state') subTrees move' moves) 
+--     go state' (UnSearchedLevel subTrees) (move':moves) = undefined
+--       (if (isJust $ nextUnSearched subTrees)
+--        then UnSearchedLevel
+--        else SearchedLevel) (updatCount (makeMove False move' state') subTrees move' moves)
+--     go _      SearchFront                _             =
+--       UnSearchedLevel $
+--       map (\ move -> SubTree (Wins 0) (Losses 0) move SearchFront) $
+--       movesFrom state
+--     updatCount :: State -> SubTrees -> CombinedMove -> Moves -> SubTrees
+--     updatCount state'
+--                (tree@(SubTree (Wins wins') (Losses losses') subTreeMove' subTrees'))
+--                move'
+--       | 
+
+search :: StdGen -> Int -> State -> SearchTree -> Moves -> SearchResult
+search g round' state (SearchedLevel   subTrees) moves = searchSearchedLevel g round' state subTrees moves
+search g round' state (UnSearchedLevel subTrees) moves =
+  case nextUnSearched subTrees of
+    Just chosenSubTree -> search g
+                                 (round' + 1)
+                                 state
+                                 (searchTree chosenSubTree)
+                                 ((subTreeMove chosenSubTree):moves)
+    Nothing            -> searchSearchedLevel g round' state subTrees moves
+search g round' state SearchFront                moves = playRandomly g round' state moves
+
+type Moves = [CombinedMove]
+
+searchSearchedLevel :: StdGen -> Int -> State -> SubTrees -> Moves -> SearchResult
+searchSearchedLevel g round' state subTrees moves =
+  let bestMove = chooseBestMove subTrees
+  in search g (round' + 1) state (searchTree bestMove) ((subTreeMove bestMove):moves)
+
+isUnSearched :: SubTree -> Bool
+isUnSearched subTree =
+  (wins   subTree == Wins   0) &&
+  (losses subTree == Losses 0)
+
+nextUnSearched :: [SubTree] -> Maybe SubTree
+nextUnSearched subTrees =
+  find isUnSearched subTrees
+
+data GameOver = IWon
+              | OpponentWon
+              | NoResult
+
+playRandomly :: StdGen -> Int -> State -> [CombinedMove] -> SearchResult
+playRandomly g round' state moves =
+  case gameOver state round' of
+    IWon        -> Win  (reverse moves)
+    OpponentWon -> Loss (reverse moves)
+    NoResult    ->
+      let (x, g') = next g
+          moves'  = movesFrom state
+          index   = x `mod` (length moves')
+          move    = moves' !! index
+          state'  = makeMove False move state
+      in playRandomly g' (round' + 1) state' moves
+
+maxRound :: Int
+maxRound = 400
+
+playerScore :: Player -> Int
+playerScore (Player score' _) = score'
+
+-- TODO simplified score calculation to save time here...
+gameOver :: State -> Int -> GameOver
+gameOver state round' =
+  if round' == maxRound
+  then let
+    myScore       = playerScore $ myPlayer state
+    opponentScore = playerScore $ opponent state
+    in if myScore > opponentScore
+       then OpponentWon
+       else IWon
+  else let
+    myWormCount       = length $
+                        filter (isMyWorm . idSlot) $
+                        aListFoldl' (flip (:)) [] $
+                        wormHealths state
+    opponentWormCount = length $
+                        filter (isOpponentWorm . idSlot) $
+                        aListFoldl' (flip (:)) [] $
+                        wormHealths state
+    in if myWormCount == 0
+       then OpponentWon
+       else if opponentWormCount == 0
+            then IWon
+            else NoResult
+
+chooseBestMove :: [SubTree] -> SubTree
+chooseBestMove subTrees =
+  let totalGames = foldl'
+                   ( \ acc (SubTree (Wins wins') (Losses losses') _ _) -> acc + wins' + losses')
+                   0
+                   subTrees
+      winLoss (SubTree (Wins wins')  (Losses losses')  _ _) =
+        ((fromIntegral wins') / (fromIntegral losses')) / (fromIntegral totalGames)
+  in maximumBy ( \ oneTree otherTree -> compare (winLoss oneTree) (winLoss otherTree)) subTrees
+
+movesFrom :: State -> [CombinedMove]
+movesFrom state = do
+  myMove        <- map Move [0..23]
+  guard (isThisMoveValid state myMove)
+  opponentsMove <- map Move [0..23]
+  guard (isThatMoveValid state opponentsMove)
+  return $ fromMoves myMove opponentsMove
+
+-- TODO Implement
+isThisMoveValid :: State -> Move -> Bool
+isThisMoveValid _ _ = True
+
+-- TODO Implement
+isThatMoveValid :: State -> Move -> Bool
+isThatMoveValid _ _ = True
