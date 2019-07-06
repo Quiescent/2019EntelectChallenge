@@ -688,10 +688,10 @@ shiftDigToMoveRange (Move x) = Move $ x - 8
 
 makeDigMoves :: Move -> Move -> ModifyState
 makeDigMoves this that state =
-  (makeDigMove this targetOfThisMove awardPointsToThisPlayerForDigging) $
-  (makeDigMove that targetOfThatMove awardPointsToThatPlayerForDigging) state
+  (makeDigMove this targetOfThisMove awardPointsToThisPlayerForDigging penaliseThisPlayerForAnInvalidCommand) $
+  (makeDigMove that targetOfThatMove awardPointsToThatPlayerForDigging penaliseThatPlayerForAnInvalidCommand) state
   where
-    makeDigMove move targetOfMove' awardPointsForDigging' =
+    makeDigMove move targetOfMove' awardPointsForDigging' penalise =
       -- Target of move works with moves and not digs
       let moveMove      = if isADigMove move then Just (shiftDigToMoveRange move) else Nothing
           target        = moveMove >>= ((flip targetOfMove') state)
@@ -699,7 +699,7 @@ makeDigMoves this that state =
           -- fromJust is valid because we test whether it's Just on the above two lines
           validTarget   = fromJust target
           digOutTarget  = if targetIsValid then removeDirtFromMapAt validTarget else id
-          awardPoints   = if targetIsValid then awardPointsForDigging' else id
+          awardPoints   = if targetIsValid then awardPointsForDigging' else penalise
       in awardPoints . digOutTarget
 
 awardPointsForDigging :: Player -> Player
@@ -1008,28 +1008,29 @@ readRound :: RIO App Int
 readRound = liftIO readLn
 
 maxSearchTime :: TimeSpec
-maxSearchTime = 100000
+maxSearchTime = 10000000
+
+myMovesFromTree :: SearchTree -> SuccessRecords
+myMovesFromTree (SearchedLevel   (MyMoves myMoves) _ _) = myMoves
+myMovesFromTree (UnSearchedLevel (MyMoves myMoves) _ _) = myMoves
+myMovesFromTree SearchFront                             =
+  error $ "myMovesFromTree of SearchFront"
 
 runForHalfSecond :: State -> IO Move
 runForHalfSecond state = do
   startingTime <- getTime clock
-  searchTree   <- go startingTime SearchFront
-  return $
-    fst $
-    toMoves $
-    subTreeMove $
-    chooseBestMove $
-    (\ (SearchedLevel trees) -> trees) searchTree
+  gen          <- getStdGen
+  searchTree   <- go gen startingTime SearchFront
+  return $ successRecordMove $ chooseBestMove $ myMovesFromTree searchTree
   where
     clock = Realtime
-    go startingTime searchTree = do
-      liftIO $ putStrLn $ show searchTree
-      gen     <- getStdGen
+    go gen startingTime searchTree = do
+      -- liftIO $ putStrLn $ show searchTree
       timeNow <- getTime clock
       if (timeNow - startingTime) < maxSearchTime then do
-        let result  = search gen 0 state searchTree []
-        let newTree = updateTree state result searchTree
-        go startingTime newTree
+        let (result, gen')  = search gen 0 state searchTree []
+        let newTree         = updateTree state result searchTree
+        go gen' startingTime newTree
       else return searchTree
 
 startBot :: StdGen -> Int -> RIO App ()
@@ -1045,75 +1046,122 @@ startBot g roundNumber = do
 data Wins = Wins Int
   deriving (Eq)
 
-data Losses = Losses Int
+data Played = Played Int
   deriving (Eq)
 
-data SubTree = SubTree Wins Losses CombinedMove SearchTree
+data SuccessRecord = SuccessRecord Wins Played Move
 
-instance Show SubTree where
-  show (SubTree (Wins wins') (Losses losses') move subTree) =
-    (show move) ++ ": " ++ (show wins') ++ "/" ++ (show losses')
+instance Show SuccessRecord where
+  show (SuccessRecord (Wins wins') (Played played') move') =
+    show move' ++ ": " ++ show wins' ++ "/" ++ show played'
 
-searchTree :: SubTree -> SearchTree
-searchTree (SubTree _ _ _ tree) = tree
+type SuccessRecords = [SuccessRecord]
 
-subTreeMove :: SubTree -> CombinedMove
-subTreeMove (SubTree _ _ move _) = move
+successRecordMove :: SuccessRecord -> Move
+successRecordMove (SuccessRecord _ _ move) = move
 
-wins :: SubTree -> Wins
-wins (SubTree wins' _ _ _) = wins'
+wins :: SuccessRecord -> Wins
+wins (SuccessRecord wins' _ _) = wins'
 
-losses :: SubTree -> Losses
-losses (SubTree _ losses _ _) = losses
+played :: SuccessRecord -> Played
+played (SuccessRecord _ played _) = played
 
-type SubTrees = [SubTree]
+data MyMoves = MyMoves SuccessRecords
 
-data SearchTree = SearchedLevel   SubTrees
-                | UnSearchedLevel SubTrees
+data OpponentsMoves = OpponentsMoves SuccessRecords
+
+data StateTransition = StateTransition CombinedMove SearchTree
+
+hasMove :: CombinedMove -> StateTransition -> Bool
+hasMove move' (StateTransition move'' _) = move' == move''
+
+subTree :: StateTransition -> SearchTree
+subTree (StateTransition _ tree) = tree
+
+type StateTransitions = [StateTransition]
+
+data SearchTree = SearchedLevel   MyMoves OpponentsMoves StateTransitions
+                | UnSearchedLevel MyMoves OpponentsMoves StateTransitions
                 | SearchFront
 
+join' :: Show a => String -> [a] -> String
+join' joinString strings =
+  let withExtra = concat $ map ( \ x -> show x ++ "\n\t") strings
+  in take ((length withExtra) - (length joinString)) withExtra
+
 instance Show SearchTree where
-  show (SearchedLevel subTrees) =
+  show (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
     "Searched: " ++ "\n" ++
-    (concat $ map ( \ x -> show x ++ "\n\t") subTrees)
-  show (UnSearchedLevel subTrees) =
+    "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
+    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves)
+  show (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
     "UnSearched: " ++ "\n" ++
-    (concat $ map ( \ x -> show x ++ "\n\t") subTrees)
+    "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
+    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves)
   show SearchFront =
     "SearchFront"
 
 data SearchResult = Win  Moves
                   | Loss Moves
+                  deriving (Show)
 
+inc :: Int -> Int
+inc = (+1)
+
+dec :: Int -> Int
+dec x = x - 1
+
+incInc :: SuccessRecord -> SuccessRecord
+incInc (SuccessRecord (Wins wins') (Played played') playerMove') =
+  SuccessRecord (Wins $ inc wins') (Played $ inc played') playerMove'
+
+decInc :: SuccessRecord -> SuccessRecord
+decInc (SuccessRecord (Wins wins') (Played played') playerMove') =
+  SuccessRecord (Wins $ dec wins') (Played $ inc played') playerMove'
+
+-- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
-updateTree state result SearchFront =
-  UnSearchedLevel $
-  map (\ move -> SubTree (Wins 0) (Losses 0) move SearchFront) $
-  movesFrom state
-updateTree _ result (UnSearchedLevel subTrees) =
+updateTree state _ SearchFront =
+  UnSearchedLevel
+  (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom        state)
+  (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom state)
+  [] -- this will cause errors elsewhere soon, but is good because the
+     -- transitions should be built lazily.
+updateTree _ result (UnSearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
-    (Loss (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
-  where
-    updateCount :: (Int -> Int) -> (Int -> Int) -> SubTrees -> CombinedMove -> SubTrees
-    updateCount changeMe changeHim (subTree@(SubTree (Wins wins') (Losses losses') subTreeMove' subTrees'):rest) move'
-      | subTreeMove' == move' = (SubTree (Wins   $ changeMe  wins')
-                                         (Losses $ changeHim losses')
-                                         subTreeMove'
-                                         subTrees'):rest
-      | otherwise             = updateCount changeMe changeHim rest move'
-updateTree _ result (SearchedLevel   subTrees) =
+    (Win  (move':_)) -> (transitionLevelType mine opponents)
+                        (MyMoves        $ updateCount incInc myMoves        $ fst $ toMoves move')
+                        (OpponentsMoves $ updateCount decInc opponentsMoves $ snd $ toMoves move')
+                        stateTransitions
+    (Loss (move':_)) -> UnSearchedLevel
+                        (MyMoves        $ updateCount decInc myMoves        $ fst $ toMoves move')
+                        (OpponentsMoves $ updateCount incInc opponentsMoves $ snd $ toMoves move')
+                        stateTransitions
+updateTree _ result (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
-    (Loss (move':_)) -> SearchedLevel $ updateCount (+1) ( \ x -> x - 1) subTrees move'
+    (Win  (move':_)) -> SearchedLevel
+                        (MyMoves        $ updateCount incInc myMoves        $ fst $ toMoves move')
+                        (OpponentsMoves $ updateCount decInc opponentsMoves $ snd $ toMoves move')
+                        stateTransitions
+    (Loss (move':_)) -> SearchedLevel
+                        (MyMoves        $ updateCount decInc myMoves        $ fst $ toMoves move')
+                        (OpponentsMoves $ updateCount incInc opponentsMoves $ snd $ toMoves move')
+                        stateTransitions
+
+transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> StateTransitions -> SearchTree)
+transitionLevelType (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
+  if all hasBeenPlayed myMoves && all hasBeenPlayed opponentsMoves
+  then SearchedLevel
+  else UnSearchedLevel
   where
-    updateCount :: (Int -> Int) -> (Int -> Int) -> SubTrees -> CombinedMove -> SubTrees
-    updateCount changeMe changeHim (subTree@(SubTree (Wins wins') (Losses losses') subTreeMove' subTrees'):rest) move'
-      | subTreeMove' == move' = (SubTree (Wins   $ changeMe  wins')
-                                         (Losses $ changeHim losses')
-                                         subTreeMove'
-                                         subTrees'):rest
-      | otherwise             = updateCount changeMe changeHim rest move'
+    hasBeenPlayed (SuccessRecord (Wins wins')  (Played played') _) =
+      wins' /= 0 || played' /= 0
+
+updateCount :: (SuccessRecord -> SuccessRecord) -> SuccessRecords -> Move -> SuccessRecords
+updateCount changeCount (record:rest) move'
+  | successRecordMove record == move' = (changeCount record):rest
+  | otherwise                         = record:(updateCount changeCount rest move')
+
 
 -- updateTree :: State -> SearchResult -> SearchTree -> SearchTree
 -- updateTree state result tree =
@@ -1129,61 +1177,90 @@ updateTree _ result (SearchedLevel   subTrees) =
 --        else SearchedLevel) (updatCount (makeMove False move' state') subTrees move' moves)
 --     go _      SearchFront                _             =
 --       UnSearchedLevel $
---       map (\ move -> SubTree (Wins 0) (Losses 0) move SearchFront) $
+--       map (\ move -> SuccessRecord (Wins 0) (Played 0) move SearchFront) $
 --       movesFrom state
---     updatCount :: State -> SubTrees -> CombinedMove -> Moves -> SubTrees
+--     updatCount :: State -> SuccessRecords -> CombinedMove -> Moves -> SuccessRecords
 --     updatCount state'
---                (tree@(SubTree (Wins wins') (Losses losses') subTreeMove' subTrees'))
+--                (tree@(SuccessRecord (Wins wins') (Played played') subTreeMove' subTrees'))
 --                move'
 --       | 
 
-search :: StdGen -> Int -> State -> SearchTree -> Moves -> SearchResult
-search g round' state (SearchedLevel   subTrees) moves = searchSearchedLevel g round' state subTrees moves
-search g round' state (UnSearchedLevel subTrees) moves =
-  case nextUnSearched subTrees of
-    Just chosenSubTree -> search g
-                                 (round' + 1)
-                                 state
-                                 (searchTree chosenSubTree)
-                                 ((subTreeMove chosenSubTree):moves)
-    Nothing            -> searchSearchedLevel g round' state subTrees moves
+search :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 search g round' state SearchFront                moves = playRandomly g round' state moves
+search g round' state tree@(SearchedLevel _ _ _) moves =
+  searchSearchedLevel g round' state tree moves
+search g
+       round'
+       state
+       (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions)
+       moves =
+  let (myRecord,        g')  = pickOneAtRandom g  myMoves
+      (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
+      myMove                 = successRecordMove myRecord
+      opponentsMove          = successRecordMove opponentsRecord
+      combinedMove           = fromMoves myMove opponentsMove
+      subTree'               = findSubTree combinedMove stateTransitions
+  in search g''
+            (round' + 1)
+            (makeMove False combinedMove state)
+            subTree'
+            (combinedMove:moves)
+
+findSubTree :: CombinedMove -> StateTransitions -> SearchTree
+findSubTree combinedMove stateTransitions =
+  case (find (hasMove combinedMove) stateTransitions) of
+        Just transition -> subTree transition
+        Nothing         -> SearchFront
+
+pickOneAtRandom :: StdGen -> [a] -> (a, StdGen)
+pickOneAtRandom g xs =
+  let (i, g') = next g
+      index   = i `mod` (length xs)
+  in (xs !! index, g')
 
 type Moves = [CombinedMove]
 
-searchSearchedLevel :: StdGen -> Int -> State -> SubTrees -> Moves -> SearchResult
-searchSearchedLevel g round' state subTrees moves =
-  let bestMove = chooseBestMove subTrees
-  in search g (round' + 1) state (searchTree bestMove) ((subTreeMove bestMove):moves)
+searchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
+searchSearchedLevel g
+                    round'
+                    state
+                    (SearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) transitions)
+                    moves =
+  let myBestMove        = successRecordMove $ chooseBestMove myMoves
+      opponentsBestMove = successRecordMove $ chooseBestMove opponentsMoves
+      combinedMove      = fromMoves myBestMove opponentsBestMove
+  in search g
+            (round' + 1)
+            (makeMove True combinedMove state)
+            (findSubTree combinedMove transitions)
+            (combinedMove:moves)
 
-isUnSearched :: SubTree -> Bool
-isUnSearched subTree =
-  (wins   subTree == Wins   0) &&
-  (losses subTree == Losses 0)
+isUnSearched :: SuccessRecord -> Bool
+isUnSearched successRecord =
+  (wins   successRecord == Wins   0) &&
+  (played successRecord == Played 0)
 
-nextUnSearched :: [SubTree] -> Maybe SubTree
-nextUnSearched subTrees =
-  find isUnSearched subTrees
+nextUnSearched :: [SuccessRecord] -> Maybe SuccessRecord
+nextUnSearched successRecords =
+  find isUnSearched successRecords
 
 data GameOver = IWon
               | OpponentWon
               | NoResult
 
-playRandomly :: StdGen -> Int -> State -> [CombinedMove] -> SearchResult
+playRandomly :: StdGen -> Int -> State -> [CombinedMove] -> (SearchResult, StdGen)
 playRandomly g round' state moves =
   case gameOver state round' of
-    IWon        -> Win  (reverse moves)
-    OpponentWon -> Loss (reverse moves)
+    IWon        -> (Win  (reverse moves), g)
+    OpponentWon -> (Loss (reverse moves), g)
     NoResult    ->
-      let (x, g') = next g
-          moves'  = movesFrom state
-          index   = x `mod` (length moves')
-          move    = moves' !! index
-          state'  = makeMove False move state
+      let moves'     = movesFrom state
+          (move, g') = pickOneAtRandom g moves'
+          state'     = makeMove False move state
       in playRandomly g' (round' + 1) state' moves
 
 maxRound :: Int
-maxRound = 400
+maxRound = 5
 
 playerScore :: Player -> Int
 playerScore (Player score' _) = score'
@@ -1191,7 +1268,7 @@ playerScore (Player score' _) = score'
 -- TODO simplified score calculation to save time here...
 gameOver :: State -> Int -> GameOver
 gameOver state round' =
-  if round' == maxRound
+  if round' >= maxRound
   then let
     myScore       = playerScore $ myPlayer state
     opponentScore = playerScore $ opponent state
@@ -1213,23 +1290,43 @@ gameOver state round' =
             then IWon
             else NoResult
 
-chooseBestMove :: [SubTree] -> SubTree
-chooseBestMove subTrees =
+chooseBestMove :: [SuccessRecord] -> SuccessRecord
+chooseBestMove successRecords =
   let totalGames = foldl'
-                   ( \ acc (SubTree (Wins wins') (Losses losses') _ _) -> acc + wins' + losses')
+                   ( \ acc (SuccessRecord (Wins wins') (Played played') _) -> acc + wins' + played')
                    0
-                   subTrees
-      winLoss (SubTree (Wins wins')  (Losses losses')  _ _) =
-        ((fromIntegral wins') / (fromIntegral losses')) / (fromIntegral totalGames)
-  in maximumBy ( \ oneTree otherTree -> compare (winLoss oneTree) (winLoss otherTree)) subTrees
+                   successRecords
+      computeConfidence (SuccessRecord (Wins wins')  (Played played') _) =
+        confidence totalGames wins' played'
+  in maximumBy ( \ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
+
+confidence :: Int -> Int -> Int -> Float
+confidence totalCount wins' played' =
+  (w_i / n_i) +
+  c * sqrt ((log count_i) / n_i)
+  where
+    count_i = fromIntegral totalCount
+    n_i     = fromIntegral played'
+    w_i     = fromIntegral wins'
+    c       = sqrt 2
 
 movesFrom :: State -> [CombinedMove]
 movesFrom state = do
+  myMove        <- myMovesFrom        state
+  opponentsMove <- opponentsMovesFrom state
+  return $ fromMoves myMove opponentsMove
+
+myMovesFrom :: State -> [Move]
+myMovesFrom state = do
   myMove        <- map Move [0..23]
   guard (isThisMoveValid state myMove)
+  return myMove
+
+opponentsMovesFrom :: State -> [Move]
+opponentsMovesFrom state = do
   opponentsMove <- map Move [0..23]
   guard (isThatMoveValid state opponentsMove)
-  return $ fromMoves myMove opponentsMove
+  return $ opponentsMove
 
 -- TODO Implement
 isThisMoveValid :: State -> Move -> Bool
