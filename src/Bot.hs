@@ -1266,7 +1266,7 @@ playRandomly g round' state moves =
       in playRandomly g' (round' + 1) state' moves
 
 maxRound :: Int
-maxRound = 5
+maxRound = 7
 
 playerScore :: Player -> Int
 playerScore (Player score' _) = score'
