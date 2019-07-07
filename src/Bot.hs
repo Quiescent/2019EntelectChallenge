@@ -1340,7 +1340,9 @@ isThisMoveValid state move =
   then isValidDigMove targetOfThisMove state move
   else if isAMoveMove move
        then isValidMoveMove targetOfThisMove state move
-       else True
+       else if isAShootMove move
+            then elem move $ theseHits state
+            else True
 
 isThatMoveValid :: State -> Move -> Bool
 isThatMoveValid state move =
@@ -1348,7 +1350,9 @@ isThatMoveValid state move =
   then isValidDigMove targetOfThatMove state move
   else if isAMoveMove move
        then isValidMoveMove targetOfThatMove state move
-       else True
+       else if isAShootMove move
+            then elem move $ thoseHits state
+            else True
 
 targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
 targetOfMoveMove targetOfMove' state move =
@@ -1368,3 +1372,65 @@ targetOfDigMove targetOfMove' state move =
 isValidDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 isValidDigMove targetOfMove' state move =
   (targetOfDigMove targetOfMove' state move >>= mapAtCoord state) == Just DIRT
+
+theseHits :: State -> [Move]
+theseHits state =
+  map (directionFrom thisWormsPosition . dataSlot) $
+  aListFoldl' (flip (:)) [] $
+  aListFilter (hits') $
+  wormPositions state
+  where
+    -- Assume that this worm can't be on an invalid square
+    thisWormsPosition = thisWormsCoord state
+    hits' :: AListEntry Coord -> Bool
+    hits' (AListEntry wormId' opPosition') =
+      isOpponentWorm wormId' &&
+      aligns  thisWormsPosition opPosition' &&
+      inRange thisWormsPosition opPosition' (weaponRange state)
+
+thoseHits :: State -> [Move]
+thoseHits state =
+  map (directionFrom thatWormsPosition . dataSlot) $
+  aListFoldl' (flip (:)) [] $
+  aListFilter (hits') $
+  wormPositions state
+  where
+    -- Assume that that worm can't be on an invalid square
+    thatWormsPosition = thatWormsCoord state
+    hits' :: AListEntry Coord -> Bool
+    hits' (AListEntry wormId' opPosition') =
+      isMyWorm wormId' &&
+      aligns  thatWormsPosition opPosition' &&
+      inRange thatWormsPosition opPosition' (weaponRange state)
+
+directionFrom :: Coord -> Coord -> Move
+directionFrom xy' xy'' =
+  let (x', y')   = fromCoord xy'
+      (x'', y'') = fromCoord xy''
+  in case (y' == y'', x' == x'', x' > x'', y' > y'') of
+       (True,  False, True,  False) -> Move 14
+       (True,  False, False, False) -> Move 10
+       (False, True,  False, True)  -> Move 8
+       (False, True,  False, False) -> Move 12
+       (False, False, True,  True)  -> Move 15
+       (False, False, False, True)  -> Move 9
+       (False, False, True,  False) -> Move 13
+       (False, False, False, False) -> Move 11
+       -- TODO
+       _                            -> error "Implement!"
+
+aligns :: Coord -> Coord -> Bool
+aligns xy' xy'' =
+  let (x', y')   = fromCoord xy'
+      (x'', y'') = fromCoord xy''
+  in x' == x'' ||
+     y' == y'' ||
+     (abs (x' - x'')) == (abs (y' -y''))
+
+inRange :: Coord -> Coord -> Int -> Bool
+inRange xy' xy'' range' =
+  let (x', y')   = fromCoord xy'
+      (x'', y'') = fromCoord xy''
+      dx         = (fromIntegral (x' - x''))
+      dy         = (fromIntegral (y' - y''))
+  in sqrt (((dx::Double) ** 2) + (dy ** 2)) < (fromIntegral range')
