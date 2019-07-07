@@ -34,6 +34,10 @@ ghc-options:
 
 library:
   source-dirs: src
+  ghc-options:
+    - -O2
+    - -threaded
+    - -funbox-strict-fields
 
 executables:
   2019EntelectChallenge-exe:

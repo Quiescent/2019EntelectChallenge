@@ -1010,7 +1010,7 @@ readRound :: RIO App Int
 readRound = liftIO readLn
 
 maxSearchTime :: TimeSpec
-maxSearchTime = 10000000
+maxSearchTime = 1000000
 
 myMovesFromTree :: SearchTree -> SuccessRecords
 myMovesFromTree (SearchedLevel   (MyMoves myMoves) _ _) = myMoves
