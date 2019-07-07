@@ -463,6 +463,7 @@ thisPlayersCurrentWormId = playerCurrentWormId . myPlayer
 thatPlayersCurrentWormId :: State -> WormId
 thatPlayersCurrentWormId = playerCurrentWormId . opponent
 
+-- TODO refactor with is valid and friends
 makeMoveMoves :: Bool -> Move -> Move -> ModifyState
 makeMoveMoves swapping this that state =
   let thisMoveMove          = if isAMoveMove this && (not $ targetOfThisMoveIsDirt this state) then Just this else Nothing
