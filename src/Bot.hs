@@ -1339,7 +1339,7 @@ isThisMoveValid state move =
   if isADigMove move
   then isValidDigMove targetOfThisMove state move
   else if isAMoveMove move
-       then isValidMoveMove targetOfThisMove state move
+       then isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
        else if isAShootMove move
             then elem move $ theseHits state
             else True
@@ -1349,7 +1349,7 @@ isThatMoveValid state move =
   if isADigMove move
   then isValidDigMove targetOfThatMove state move
   else if isAMoveMove move
-       then isValidMoveMove targetOfThatMove state move
+       then isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
        else if isAShootMove move
             then elem move $ thoseHits state
             else True
@@ -1359,10 +1359,13 @@ targetOfMoveMove targetOfMove' state move =
   let moveMove = if isAMoveMove move then Just move else Nothing
   in moveMove >>= ((flip targetOfMove') state)
 
-isValidMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
-isValidMoveMove targetOfMove' state move =
-  let target = (targetOfMoveMove targetOfMove' state move >>= mapAtCoord state)
-  in target == Just AIR || target == Just MEDIPACK
+isValidMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> State -> Move -> Bool
+isValidMoveMove targetOfMove' currentWormId' state move =
+  let targetCoord = targetOfMoveMove targetOfMove' state move
+      target      = (targetCoord >>= mapAtCoord state)
+      wormId'     = currentWormId' state
+  in (target == Just AIR || target == Just MEDIPACK) &&
+     (fmap (containsAnyWormExcept state wormId') targetCoord) == Just False
 
 targetOfDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
 targetOfDigMove targetOfMove' state move =
