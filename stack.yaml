@@ -69,5 +69,5 @@ packages:
 ghc-options:
   # All packages
   "$locals": -Wall
-#  "$targets": -Werror
+  "$targets": -Werror
   "$everything": -O2 -funbox-strict-fields

@@ -1064,7 +1064,7 @@ wins :: SuccessRecord -> Wins
 wins (SuccessRecord wins' _ _) = wins'
 
 played :: SuccessRecord -> Played
-played (SuccessRecord _ played _) = played
+played (SuccessRecord _ played' _) = played'
 
 data MyMoves = MyMoves SuccessRecords
 
@@ -1127,7 +1127,7 @@ updateTree state _ SearchFront =
   (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom state)
   [] -- this will cause errors elsewhere soon, but is good because the
      -- transitions should be built lazily.
-updateTree _ result (UnSearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) stateTransitions) =
+updateTree _ result level@(UnSearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
     (Win  (move':_)) -> (transitionLevelType mine opponents)
                         (MyMoves        $ updateCount incInc myMoves        $ fst $ toMoves move')
@@ -1137,7 +1137,8 @@ updateTree _ result (UnSearchedLevel mine@(MyMoves myMoves) opponents@(Opponents
                         (MyMoves        $ updateCount decInc myMoves        $ fst $ toMoves move')
                         (OpponentsMoves $ updateCount incInc opponentsMoves $ snd $ toMoves move')
                         stateTransitions
-updateTree _ result (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
+    _                -> level
+updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
     (Win  (move':_)) -> SearchedLevel
                         (MyMoves        $ updateCount incInc myMoves        $ fst $ toMoves move')
@@ -1147,6 +1148,7 @@ updateTree _ result (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMo
                         (MyMoves        $ updateCount decInc myMoves        $ fst $ toMoves move')
                         (OpponentsMoves $ updateCount incInc opponentsMoves $ snd $ toMoves move')
                         stateTransitions
+    _                -> level
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> StateTransitions -> SearchTree)
 transitionLevelType (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
@@ -1158,10 +1160,10 @@ transitionLevelType (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
       wins' /= 0 || played' /= 0
 
 updateCount :: (SuccessRecord -> SuccessRecord) -> SuccessRecords -> Move -> SuccessRecords
+updateCount _           []            _ = []
 updateCount changeCount (record:rest) move'
   | successRecordMove record == move' = (changeCount record):rest
   | otherwise                         = record:(updateCount changeCount rest move')
-
 
 -- updateTree :: State -> SearchResult -> SearchTree -> SearchTree
 -- updateTree state result tree =
@@ -1221,6 +1223,8 @@ pickOneAtRandom g xs =
 type Moves = [CombinedMove]
 
 searchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
+searchSearchedLevel _ _ _ SearchFront                   _ = error "searchSearchedLevel: SearchFront"
+searchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _) _ = error $ "searchSearchedLevel: " ++ show level
 searchSearchedLevel g
                     round'
                     state

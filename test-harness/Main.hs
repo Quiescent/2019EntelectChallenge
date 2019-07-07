@@ -127,6 +127,7 @@ matchDirectionCommand original = do
                "SW" -> Move 5
                "W"  -> Move 6
                "NW" -> Move 7
+               _    -> error $ "matchDirectionCommand: " ++ show direction
 
 toInt :: String -> Int
 toInt x' = read x'

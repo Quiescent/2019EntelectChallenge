@@ -6,13 +6,10 @@ import Bot
 import Import
 
 import qualified RIO.Vector.Boxed as V
-import RIO.List.Partial
 import RIO.List
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
-
-import System.Random
 
 packThisWorm :: Int -> WormId
 packThisWorm 1 = WormId 1
