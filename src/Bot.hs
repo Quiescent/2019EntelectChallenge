@@ -693,13 +693,15 @@ makeDigMoves this that state =
   where
     makeDigMove move targetOfMove' awardPointsForDigging' penalise =
       -- Target of move works with moves and not digs
-      let moveMove      = if isADigMove move then Just (shiftDigToMoveRange move) else Nothing
-          target        = moveMove >>= ((flip targetOfMove') state)
-          targetIsValid = (target >>= mapAtCoord state) == Just DIRT
+      let isADigMove'    = isADigMove move
+          moveMove       = if isADigMove' then Just (shiftDigToMoveRange move) else Nothing
+          target         = moveMove >>= ((flip targetOfMove') state)
+          targetIsValid  = (target >>= mapAtCoord state) == Just DIRT
           -- fromJust is valid because we test whether it's Just on the above two lines
-          validTarget   = fromJust target
-          digOutTarget  = if targetIsValid then removeDirtFromMapAt validTarget else id
-          awardPoints   = if targetIsValid then awardPointsForDigging' else penalise
+          validTarget    = fromJust target
+          digOutTarget   = if targetIsValid then removeDirtFromMapAt validTarget else id
+          penaliseBadDig = if isADigMove' && (not targetIsValid) then penalise else id
+          awardPoints    = if targetIsValid then awardPointsForDigging' else penaliseBadDig
       in awardPoints . digOutTarget
 
 awardPointsForDigging :: Player -> Player
