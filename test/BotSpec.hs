@@ -434,6 +434,12 @@ spec = do
     it "should remove dirt when opponent digs a dirt block" $
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
       (selectNextWormsDefault $ awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm)
+    it "should penalise my player when I dig air" $
+      makeMove True (fromMoves digEast doNothing) aState `shouldBe`
+      (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aState)
+    it "should penalise my opponent when he digs air" $
+      makeMove True (fromMoves doNothing digEast) aState `shouldBe`
+      (selectNextWormsDefault $ penaliseThatPlayerForAnInvalidCommand aState)
     it "moving next to dirt should not dig out that dirt when it would be in our way if we continued going that way" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentNearDirtToTheEast `shouldBe`
       (selectNextWormsDefault $
@@ -996,6 +1002,8 @@ digNorth = Move 16
 digSouth = Move 20
 
 digSouthEast = Move 19
+
+digEast = Move 18
 
 moveSouth = Move 12
 
