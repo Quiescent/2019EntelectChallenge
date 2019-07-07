@@ -695,9 +695,8 @@ makeDigMoves this that state =
     makeDigMove move targetOfMove' awardPointsForDigging' penalise =
       -- Target of move works with moves and not digs
       let isADigMove'    = isADigMove move
-          moveMove       = if isADigMove' then Just (shiftDigToMoveRange move) else Nothing
-          target         = moveMove >>= ((flip targetOfMove') state)
-          targetIsValid  = (target >>= mapAtCoord state) == Just DIRT
+          target         = targetOfDigMove targetOfMove' state move
+          targetIsValid  = isValidDigMove  targetOfMove' state move
           -- fromJust is valid because we test whether it's Just on the above two lines
           validTarget    = fromJust target
           digOutTarget   = if targetIsValid then removeDirtFromMapAt validTarget else id
@@ -1335,10 +1334,37 @@ opponentsMovesFrom state = do
   guard (isThatMoveValid state opponentsMove)
   return $ opponentsMove
 
--- TODO Implement
 isThisMoveValid :: State -> Move -> Bool
-isThisMoveValid _ _ = True
+isThisMoveValid state move =
+  if isADigMove move
+  then isValidDigMove targetOfThisMove state move
+  else if isAMoveMove move
+       then isValidMoveMove targetOfThisMove state move
+       else True
 
--- TODO Implement
 isThatMoveValid :: State -> Move -> Bool
-isThatMoveValid _ _ = True
+isThatMoveValid state move =
+  if isADigMove move
+  then isValidDigMove targetOfThatMove state move
+  else if isAMoveMove move
+       then isValidMoveMove targetOfThatMove state move
+       else True
+
+targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
+targetOfMoveMove targetOfMove' state move =
+  let moveMove = if isAMoveMove move then Just move else Nothing
+  in moveMove >>= ((flip targetOfMove') state)
+
+isValidMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
+isValidMoveMove targetOfMove' state move =
+  let target = (targetOfMoveMove targetOfMove' state move >>= mapAtCoord state)
+  in target == Just AIR || target == Just MEDIPACK
+
+targetOfDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
+targetOfDigMove targetOfMove' state move =
+  let digMove = if isADigMove move then Just (shiftDigToMoveRange move) else Nothing
+  in digMove >>= ((flip targetOfMove') state)
+
+isValidDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
+isValidDigMove targetOfMove' state move =
+  (targetOfDigMove targetOfMove' state move >>= mapAtCoord state) == Just DIRT
