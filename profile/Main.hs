@@ -31,4 +31,4 @@ runSearchForEachRound (directory:directories) = do
   state <- loadStateForRound directory
   if not $ isJust state
   then return (Failure $ "Couldn't load state from: " ++ show directory)
-  else liftIO (runForHalfSecond (fromJust state)) >> runSearchForEachRound directories
+  else liftIO (runForHalfSecond (fromJust state)) >>= ( \ move -> move `seq` runSearchForEachRound directories)
