@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 echo "======================================================================"
 echo "===Please note that this should be run from the root of the repo!!===="
