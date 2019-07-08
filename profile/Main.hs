@@ -3,7 +3,10 @@ module Main
 
 import Import
 import Simulate
+import Bot
+
 import System.Environment
+import Data.Maybe
 import qualified System.IO as IO
 
 main :: IO ()
@@ -23,4 +26,9 @@ runDataSet matchLogsDirectory = do
     (Failure message) -> liftIO $ IO.putStrLn message
 
 runSearchForEachRound :: [FilePath] -> RIO App Result
-runSearchForEachRound = undefined
+runSearchForEachRound []     = return $ Success
+runSearchForEachRound (directory:directories) = do
+  state <- loadStateForRound directory
+  if not $ isJust state
+  then return (Failure $ "Couldn't load state from: " ++ show directory)
+  else liftIO (runForHalfSecond (fromJust state)) >> runSearchForEachRound directories
