@@ -11,3 +11,6 @@ echo "======================================================================"
 echo "==========================Start of Profiling=========================="
 echo "======================================================================"
 ./bin/Profile-exe "../2019-Worms/game-runner/match-logs/2019.07.02.12.47.48/" +RTS -p
+
+# TODO: Store these results in a new directory for this commit or tag
+# and machine automatically
