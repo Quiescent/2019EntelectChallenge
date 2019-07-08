@@ -5,6 +5,7 @@ module Main (main) where
 import Import
 
 import Bot
+import Simulate
 
 import RIO.List.Partial
 import RIO.List
@@ -31,15 +32,10 @@ main = do
 
 runTest :: FilePath -> RIO App ()
 runTest matchLogDirectory = do
-  roundsDirectories <- fmap (map ((++) (matchLogDirectory ++ "/")) . L.sort . filter (L.isPrefixOf "Round")) $
-                       listDirectory matchLogDirectory
-  result            <- simulateAndCheckRounds roundsDirectories
+  result <- withRoundsDirectories matchLogDirectory simulateAndCheckRounds
   case result of
      Success           -> liftIO $ IO.putStrLn ("Successfully simulated: " ++ matchLogDirectory)
      (Failure message) -> liftIO $ IO.putStrLn message
-
-data Result = Success
-            | Failure String
 
 simulateAndCheckRounds :: [FilePath] -> RIO App Result
 simulateAndCheckRounds []                      = return $ Failure "There are no rounds in the given directory."
