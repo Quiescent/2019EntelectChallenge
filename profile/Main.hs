@@ -2,7 +2,9 @@ module Main
   where
 
 import Import
+import Simulate
 import System.Environment
+import qualified System.IO as IO
 
 main :: IO ()
 main = do
@@ -14,4 +16,11 @@ main = do
   runRIO app $ runDataSet dataSetDirectory
 
 runDataSet :: FilePath -> RIO App ()
-runDataSet = undefined
+runDataSet matchLogsDirectory = do
+  result <- withRoundsDirectories matchLogsDirectory runSearchForEachRound
+  case result of
+    Success           -> liftIO $ IO.putStrLn ("Ran search for each round in: " ++ matchLogsDirectory)
+    (Failure message) -> liftIO $ IO.putStrLn message
+
+runSearchForEachRound :: [FilePath] -> RIO App Result
+runSearchForEachRound = undefined
