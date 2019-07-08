@@ -1018,12 +1018,12 @@ myMovesFromTree (UnSearchedLevel (MyMoves myMoves) _ _) = myMoves
 myMovesFromTree SearchFront                             =
   error $ "myMovesFromTree of SearchFront"
 
-runForHalfSecond :: State -> IO Move
-runForHalfSecond state = do
+treeAfterHalfSecond :: State -> IO SearchTree
+treeAfterHalfSecond state = do
   startingTime <- getTime clock
   gen          <- getStdGen
   searchTree   <- go gen startingTime SearchFront
-  return $ successRecordMove $ chooseBestMove $ myMovesFromTree searchTree
+  return searchTree
   where
     clock = Realtime
     -- Search tree should be ! evaluated or `seq'd to not build up a
@@ -1036,6 +1036,9 @@ runForHalfSecond state = do
         let newTree         = updateTree state result searchTree
         go gen' startingTime newTree
       else return searchTree
+
+runForHalfSecond :: State -> IO Move
+runForHalfSecond = fmap (successRecordMove . chooseBestMove . myMovesFromTree) . treeAfterHalfSecond
 
 startBot :: StdGen -> Int -> RIO App ()
 startBot g roundNumber = do
