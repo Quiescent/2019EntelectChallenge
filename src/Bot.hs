@@ -1026,6 +1026,8 @@ runForHalfSecond state = do
   return $ successRecordMove $ chooseBestMove $ myMovesFromTree searchTree
   where
     clock = Realtime
+    -- Search tree should be ! evaluated or `seq'd to not build up a
+    -- thunk which we evaluate later
     go gen startingTime searchTree = do
       -- liftIO $ putStrLn $ show searchTree
       timeNow <- getTime clock
