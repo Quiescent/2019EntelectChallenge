@@ -11,10 +11,8 @@ import RIO.List.Partial
 import RIO.List
 import RIO.Directory
 import Data.Maybe
-import qualified RIO.ByteString.Lazy as B
 import qualified System.IO           as IO
 import qualified System.Process      as Process
-import Data.Aeson (decode)
 import Prelude (read)
 
 import qualified Data.List as L
@@ -71,14 +69,6 @@ diff this that = do
   liftIO $ IO.writeFile "diff_2" that
   liftIO $ Process.callCommand "diff diff_1 diff_2 || echo '' > diff_output"
   liftIO $ IO.readFile "diff_output"
-
-loadStateForRound :: FilePath -> RIO App (Maybe State)
-loadStateForRound path = do
-  playerPaths     <- listDirectory path
-  let aPlayersPath = headMaybe $ L.sort playerPaths
-  if isJust aPlayersPath
-  then fmap decode $ B.readFile (path ++ "/" ++ (fromJust aPlayersPath) ++ "/JsonMap.json")
-  else return Nothing
 
 loadCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
 loadCommandFromSubfolder choosePath coord directoryPath = do
