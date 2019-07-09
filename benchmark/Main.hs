@@ -24,12 +24,17 @@ type GamesPlayed = Int
 data BenchmarkResult = GamesPlayedPerRound [GamesPlayed]
                      | Failed Message
 
+joinString :: Show a => String -> [a] -> String
+joinString joiner strings =
+  let withExtra = concat $ map ( \ x -> show x ++ joiner) strings
+  in take ((length withExtra) - (length joiner)) withExtra
+
 runDataSet :: FilePath -> RIO App ()
 runDataSet matchLogsDirectory = do
   result <- withRoundsDirectories matchLogsDirectory runSearchForEachRound
   case result of
     (GamesPlayedPerRound gamesPlayedPerRound) ->
-      liftIO $ IO.putStrLn (join' "," $ map show gamesPlayedPerRound)
+      liftIO $ IO.putStrLn (joinString "," gamesPlayedPerRound)
     (Failed message) -> liftIO $ IO.putStrLn message
 
 runSearchForEachRound :: [FilePath] -> RIO App BenchmarkResult
