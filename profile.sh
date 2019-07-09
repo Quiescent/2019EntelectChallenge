@@ -10,7 +10,7 @@ stack install --profile --local-bin-path bin
 echo "======================================================================"
 echo "==========================Start of Profiling=========================="
 echo "======================================================================"
-./bin/Profile-exe "../2019-Worms/game-runner/match-logs/2019.07.02.12.47.48/" +RTS -p
+./bin/Profile-exe "matches/round-1/2019.07.07.13.24.43/" +RTS -p
 
 CURRENT_COMMIT=$(git log --oneline | head -1 | cut -d' ' -f1)
 CURRENT_MACHINE=$(uname)
