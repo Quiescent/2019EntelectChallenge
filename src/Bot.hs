@@ -21,7 +21,8 @@ import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), (.:?), FromJSON, parseJSON)
 import System.Clock
-import qualified Control.Concurrent.Chan as C
+import qualified Control.Concurrent.MVar as MVar
+import Control.Concurrent
 
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
@@ -1019,7 +1020,18 @@ myMovesFromTree SearchFront                             =
 iterationsBeforeComms :: Int
 iterationsBeforeComms = 10
 
-iterativelyImproveSearch :: State -> C.Chan SearchTree -> IO ()
+type CommsChannel = MVar.MVar
+
+readComms :: CommsChannel a -> IO (Maybe a)
+readComms = MVar.tryTakeMVar
+
+writeComms :: CommsChannel a -> a -> IO ()
+writeComms = MVar.putMVar
+
+newComms :: IO (CommsChannel a)
+newComms = MVar.newEmptyMVar
+
+iterativelyImproveSearch :: State -> CommsChannel SearchTree -> IO ()
 iterativelyImproveSearch state writeChannel = do
   gen <- getStdGen
   _   <- go gen iterationsBeforeComms SearchFront
@@ -1028,35 +1040,36 @@ iterativelyImproveSearch state writeChannel = do
     go :: StdGen -> Int -> SearchTree -> IO SearchTree
     go gen 0     searchTree = do
       searchTree' <- evaluate searchTree
-      C.writeChan writeChannel searchTree'
+      writeComms writeChannel searchTree'
       go gen iterationsBeforeComms searchTree'
     go gen count searchTree =
       let (result, gen') = search gen 0 state searchTree []
           newTree        = updateTree state result searchTree
       in go gen' (count - 1) newTree
 
-maxSearchTime :: TimeSpec
-maxSearchTime = 1000000
+maxSearchTime :: Integer
+maxSearchTime = 900000000
 
 treeAfterHalfSecond :: State -> IO SearchTree
 treeAfterHalfSecond state = do
-  startingTime <- getTime clock
-  gen          <- getStdGen
-  searchTree   <- go gen startingTime SearchFront
+  startingTime <- fmap toNanoSecs $ getTime clock
+  channel      <- newComms
+  _            <- forkIO (iterativelyImproveSearch state channel)
+  searchTree   <- go SearchFront startingTime channel
   return searchTree
   where
-    clock = Realtime
-    -- Search tree should be ! evaluated or `seq'd to not build up a
-    -- thunk which we evaluate later
-    go gen startingTime searchTree = do
-      -- liftIO $ putStrLn $ show searchTree
-      timeNow     <- getTime clock
-      searchTree' <- evaluate searchTree
-      if (timeNow - startingTime) < maxSearchTime then do
-        let (result, gen')  = search gen 0 state searchTree' []
-        let newTree         = updateTree state result searchTree
-        go gen' startingTime newTree
-      else return searchTree
+    clock = ProcessCPUTime
+    go searchTree startingTime channel =
+      (getTime clock) >>=
+      \ timeNow ->
+        if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
+        then return searchTree
+        else do
+          pollResult <- readComms channel
+          let searchTree' = case pollResult of
+                              Just    x -> x
+                              Nothing   -> searchTree
+          go searchTree' startingTime channel
 
 runForHalfSecond :: State -> IO Move
 runForHalfSecond = fmap (successRecordMove . chooseBestMove . myMovesFromTree) . treeAfterHalfSecond
