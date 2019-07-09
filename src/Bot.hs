@@ -21,6 +21,7 @@ import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), (.:?), FromJSON, parseJSON)
 import System.Clock
+import qualified Control.Concurrent.Chan as C
 
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
@@ -1009,14 +1010,33 @@ isAShootMove (Move x)
 readRound :: RIO App Int
 readRound = liftIO readLn
 
-maxSearchTime :: TimeSpec
-maxSearchTime = 1000000
-
 myMovesFromTree :: SearchTree -> SuccessRecords
 myMovesFromTree (SearchedLevel   (MyMoves myMoves) _ _) = myMoves
 myMovesFromTree (UnSearchedLevel (MyMoves myMoves) _ _) = myMoves
 myMovesFromTree SearchFront                             =
   error $ "myMovesFromTree of SearchFront"
+
+iterationsBeforeComms :: Int
+iterationsBeforeComms = 10
+
+iterativelyImproveSearch :: State -> C.Chan SearchTree -> IO ()
+iterativelyImproveSearch state writeChannel = do
+  gen <- getStdGen
+  _   <- go gen iterationsBeforeComms SearchFront
+  return ()
+  where
+    go :: StdGen -> Int -> SearchTree -> IO SearchTree
+    go gen 0     searchTree = do
+      searchTree' <- evaluate searchTree
+      C.writeChan writeChannel searchTree'
+      go gen iterationsBeforeComms searchTree'
+    go gen count searchTree =
+      let (result, gen') = search gen 0 state searchTree []
+          newTree        = updateTree state result searchTree
+      in go gen' (count - 1) newTree
+
+maxSearchTime :: TimeSpec
+maxSearchTime = 1000000
 
 treeAfterHalfSecond :: State -> IO SearchTree
 treeAfterHalfSecond state = do
@@ -1030,9 +1050,10 @@ treeAfterHalfSecond state = do
     -- thunk which we evaluate later
     go gen startingTime searchTree = do
       -- liftIO $ putStrLn $ show searchTree
-      timeNow <- getTime clock
+      timeNow     <- getTime clock
+      searchTree' <- evaluate searchTree
       if (timeNow - startingTime) < maxSearchTime then do
-        let (result, gen')  = search gen 0 state searchTree []
+        let (result, gen')  = search gen 0 state searchTree' []
         let newTree         = updateTree state result searchTree
         go gen' startingTime newTree
       else return searchTree
