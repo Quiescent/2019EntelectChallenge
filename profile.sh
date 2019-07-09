@@ -12,5 +12,10 @@ echo "==========================Start of Profiling=========================="
 echo "======================================================================"
 ./bin/Profile-exe "../2019-Worms/game-runner/match-logs/2019.07.02.12.47.48/" +RTS -p
 
-# TODO: Store these results in a new directory for this commit or tag
-# and machine automatically
+CURRENT_COMMIT=$(git log --oneline | head -1 | cut -d' ' -f1)
+CURRENT_MACHINE=$(uname)
+OUTPUT_DIRECTORY="profiling/$CURRENT_MACHINE"
+mkdir -p $OUTPUT_DIRECTORY
+mv Profile-exe.prof "$OUTPUT_DIRECTORY/$CURRENT_COMMIT.prof"
+
+echo "Done.  You can find the results in $OUTPUT_DIRECTORY/$CURRENT_COMMIT.prof"
