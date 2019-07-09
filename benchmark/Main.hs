@@ -50,9 +50,4 @@ runSearchForEachRound directories =
            ( \ tree -> go dirs (countGames tree : results))
 
 countGames :: SearchTree -> Int
-countGames tree =
-  let moves = case tree of
-                (UnSearchedLevel (MyMoves successRecords) _ _) -> successRecords
-                (SearchedLevel   (MyMoves successRecords) _ _) -> successRecords
-                SearchFront                                    -> []
-  in sum $ map ( (\ (Played x) -> x) . played) moves
+countGames = sum . map ( (\ (Played x) -> x) . played) . myMovesFromTree
