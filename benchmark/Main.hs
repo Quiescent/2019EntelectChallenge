@@ -1,4 +1,4 @@
-module Benchmark
+module Main
   where
 
 main :: IO ()
