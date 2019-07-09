@@ -14,7 +14,7 @@ import Data.Aeson (decode)
 data Result = Success
             | Failure String
 
-withRoundsDirectories :: FilePath -> ([FilePath] -> RIO App Result) -> RIO App Result
+withRoundsDirectories :: FilePath -> ([FilePath] -> RIO App a) -> RIO App a
 withRoundsDirectories matchLogsDirectory f = do
   (fmap (map ((++) (matchLogsDirectory ++ "/")) . L.sort . filter (L.isPrefixOf "Round")) $
     listDirectory matchLogsDirectory) >>= f
