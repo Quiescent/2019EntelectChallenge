@@ -481,13 +481,45 @@ friendly.
       The solution to this problem is probably to have one function which
       harms worms so that it can encapsulate the idea of a worm dying.
     :END:
-*** TODO BUG: can't move to an occupied square
-** IN_PROGRESS Model search tree type
+*** DONE BUG: can't move to an occupied square
+    CLOSED: [2019-07-10 Wed 05:19]
+    :LOGBOOK:
+    - CLOSING NOTE [2019-07-10 Wed 05:19] \\
+      This bug was actually only in which moves a worm could make and is now
+      resolved.  The engine already accounted for it.
+    :END:
+** DONE Model search tree type
+   CLOSED: [2019-07-10 Wed 05:20]
    :LOGBOOK:
+   - CLOSING NOTE [2019-07-10 Wed 05:20]
    - State "IN_PROGRESS" from "TODO"       [2019-07-04 Thu 20:37]
    :END:
-** TODO Implement search function
-
+** DONE Implement search function
+   CLOSED: [2019-07-10 Wed 05:20]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-07-10 Wed 05:20]
+   :END:
+** TODO Implement Banana Bomb
+*** TODO Encode banana bomb
+*** TODO Rule 1: Banana bombs have a maximum range of 5
+    :LOGBOOK:
+    - Note taken on [2019-07-10 Wed 05:32] \\
+      This should be encoded into the engine as a hard coded template or
+      iterator rather than calculating the euclidean distance the whole time.
+    :END:
+*** TODO Rule 2: Banana bombs do 20 damage at the landing site
+*** TODO Rule 3: Banana bombs have an impact radius of 2
+*** TODO Rule 4: Banana bombs do less damage the further from the landing site you're hit
+*** TODO Rule 5: Banana bombs destroy all dirt
+*** TODO Rule 6: You get points for destroying dirt as though you dug it out
+*** TODO Rule 7: The banana bomb destroys power ups
+*** TODO Rule 8: Both players receive points for dirt destroyed simultaneously by bombs
+*** TODO Rule 9: You receive 2 * damage as points for damaging enemies
+*** TODO Rule 10: You lose 2 * damage as points for damaging your own worms
+*** TODO Rule 11: Killing an enemy awards 40 points
+** TODO Implement Select
+*** TODO Encode select
+*** TODO Make select moves ahead of others
 * Questions About the Engine
 ** DONE Do two worms always get to move?  (Or do you miss turns when your other worms die)
    CLOSED: [2019-06-12 Wed 14:10]
