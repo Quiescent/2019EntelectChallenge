@@ -357,21 +357,33 @@ data Move = Move Int
 
 formatMove :: Move -> Coord -> String
 -- Shoot
-formatMove (Move 0) _ = "shoot N"
-formatMove (Move 1) _ = "shoot NE"
-formatMove (Move 2) _ = "shoot E"
-formatMove (Move 3) _ = "shoot SE"
-formatMove (Move 4) _ = "shoot S"
-formatMove (Move 5) _ = "shoot SW"
-formatMove (Move 6) _ = "shoot W"
-formatMove (Move 7) _ = "shoot NW"
 formatMove dir@(Move x) xy
+  -- Select
+  | x > 128 = formatSelect dir xy -- Calls back into this function without the select
+  -- Shoot
+  | x < 8   = formatShootMove dir
   -- Move
-  | x < 16 = moveFromMaybe $ fmap (\ newCoord -> "move " ++ show newCoord) $ displaceCoordByMove xy dir
+  | x < 16  = moveFromMaybe $ fmap (\ newCoord -> "move " ++ show newCoord) $ displaceCoordByMove xy dir
   -- Dig
-  | x < 24 = moveFromMaybe $ fmap (\ newCoord -> "dig "  ++ show newCoord) $ displaceCoordByMove xy (Move (x - 8))
+  | x < 24  = moveFromMaybe $ fmap (\ newCoord -> "dig "  ++ show newCoord) $ displaceCoordByMove xy (Move (x - 8))
+  -- Throwing the bomb
+  | x < 107 = undefined -- TODO !!!
 -- Nothing
 formatMove _ _ = "nothing"
+
+formatSelect :: Move -> Coord -> String
+formatSelect = undefined -- TODO !!!
+
+formatShootMove :: Move -> String
+formatShootMove (Move 0) = "shoot N"
+formatShootMove (Move 1) = "shoot NE"
+formatShootMove (Move 2) = "shoot E"
+formatShootMove (Move 3) = "shoot SE"
+formatShootMove (Move 4) = "shoot S"
+formatShootMove (Move 5) = "shoot SW"
+formatShootMove (Move 6) = "shoot W"
+formatShootMove (Move 7) = "shoot NW"
+formatShootMove x        = error $ "formatShootMove: " ++ show x
 
 moveFromMaybe :: IsString p => Maybe p -> p
 moveFromMaybe (Just move) = move
