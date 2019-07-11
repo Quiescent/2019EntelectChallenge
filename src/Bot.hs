@@ -355,9 +355,6 @@ readGameState r = do
 data Move = Move Int
   deriving (Show, Eq)
 
-allMoves :: V.Vector Move
-allMoves = fmap Move $ V.fromList [0..17]
-
 formatMove :: Move -> Coord -> String
 -- Shoot
 formatMove (Move 0) _ = "shoot N"
