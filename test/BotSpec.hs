@@ -29,8 +29,50 @@ withId id' = (== id') . idSlot
 findWormHealth :: WormId -> State -> Maybe WormHealth
 findWormHealth id' = fmap dataSlot . aListFind (withId id') . wormHealths
 
+-- TODO: Might want to consider never throwning the bomb at myself.
+-- TODO: Might want to consider never hurting myself too?
+coordDeltasInRange :: [(Coord -> Maybe Coord)]
+coordDeltasInRange =
+  zipWith ( \ dx dy ->
+              \ xy ->
+                fmap (uncurry toCoord) $
+                isOOB $
+                let (x', y') = fromCoord xy
+                in (x' + dx, y' + dy))
+  [                    0,
+           -3, -2, -1, 0, 1, 2, 3,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+   -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+        4, -3, -2, -1, 0, 1, 2, 3, 4,
+           -3, -2, -1, 0, 1, 2, 3,
+                       0]
+  [                    -5,
+           -4, -4, -4, -4, -4, -4, -4,
+       -3, -3, -3, -3, -3, -3, -3, -3, -3,
+       -2, -2, -2, -2, -2, -2, -2, -2, -2,
+       -1, -1, -1, -1, -1, -1, -1, -1, -1,
+     0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        1,  1,  1,  1,  1,  1,  1,  1,  1,
+        2,  2,  2,  2,  2,  2,  2,  2,  2,
+        3,  3,  3,  3,  3,  3,  3,  3,  3,
+            4,  4,  4,  4,  4,  4,  4,
+                        5]
+
 spec :: Spec
 spec = do
+  describe "coordDeltasInRange" $ do
+    prop "should always produce a coord within range of 5 (banana bomb range)" $  \ (i, j) ->
+      let x'     = abs i `mod` mapDim
+          y'     = abs j `mod` mapDim
+          coord' = toCoord x' y'
+          coords = catMaybes $ map ($ coord') coordDeltasInRange
+      in (coord', zip coords (map (flip (inRange coord') 5) coords))
+         `shouldSatisfy`
+         (all snd . snd)
   describe "findWormHealth" $ do
     context "given an empty collection of worm health facts" $
       it "produces Nothing" $
