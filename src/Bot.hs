@@ -332,6 +332,26 @@ readGameState r = do
   stateString <- B.readFile $ "./rounds/" ++ show r ++ "/state.json"
   return $ decode stateString
 
+-- ==========Move Encoding==========
+-- Integer encoded move representation
+-- 0  -> 8
+-- 9  -> 16
+-- 17 -> 24
+-- 81 -> 106
+
+-- Bit packing of move:
+-- 0000000 00 00000000000000000000000
+--    ^     ^
+--    |     |
+-- Moves  Selects
+-- Range of moves: 0 -> 127
+
+-- Process to extract:
+-- 1) check for a select;
+-- 2) mask out the select;
+-- 3) shift the select;
+-- 4) check the range of the remaining number;
+-- 5) extract and shift according to the type of move;
 data Move = Move Int
   deriving (Show, Eq)
 
