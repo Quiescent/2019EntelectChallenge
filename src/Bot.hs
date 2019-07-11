@@ -1475,4 +1475,4 @@ inRange xy' xy'' range' =
       (x'', y'') = fromCoord xy''
       dx         = (fromIntegral (x' - x''))
       dy         = (fromIntegral (y' - y''))
-  in sqrt (((dx::Double) ** 2) + (dy ** 2)) < (fromIntegral range')
+  in sqrt (((dx::Double) ** 2) + (dy ** 2)) <= (fromIntegral range')
