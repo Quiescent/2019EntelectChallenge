@@ -504,8 +504,9 @@ friendly.
     :LOGBOOK:
     - State "IN_PROGRESS" from "TODO"       [2019-07-10 Wed 05:46]
     :END:
-*** TODO Rule 1: Banana bombs have a maximum range of 5
+*** IN_PROGRESS Rule 1: Banana bombs have a maximum range of 5
     :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-11 Thu 12:45]
     - Note taken on [2019-07-10 Wed 05:32] \\
       This should be encoded into the engine as a hard coded template or
       iterator rather than calculating the euclidean distance the whole time.
