@@ -1166,8 +1166,7 @@ updateTree state _ SearchFront =
   UnSearchedLevel
   (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom        state)
   (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom state)
-  [] -- this will cause errors elsewhere soon, but is good because the
-     -- transitions should be built lazily.
+  []
 updateTree _ result level@(UnSearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
     (Win  (move':_)) -> (transitionLevelType mine opponents)
