@@ -363,13 +363,50 @@ formatMove dir@(Move x) xy
   -- Shoot
   | x < 8   = formatShootMove dir
   -- Move
-  | x < 16  = moveFromMaybe $ fmap (\ newCoord -> "move " ++ show newCoord) $ displaceCoordByMove xy dir
+  | x < 16  = moveFromMaybe $ fmap (\ newCoord -> "move "   ++ show newCoord) $ displaceCoordByMove xy dir
   -- Dig
-  | x < 24  = moveFromMaybe $ fmap (\ newCoord -> "dig "  ++ show newCoord) $ displaceCoordByMove xy (Move (x - 8))
+  | x < 24  = moveFromMaybe $ fmap (\ newCoord -> "dig "    ++ show newCoord) $ displaceCoordByMove xy (Move (x - 8))
   -- Throwing the bomb
-  | x < 107 = undefined -- TODO !!!
+  | x < 107 = moveFromMaybe $ fmap (\ newCoord -> "banana " ++ show newCoord) $ displaceToBananaDestination dir xy
 -- Nothing
 formatMove _ _ = "nothing"
+
+-- TODO: Might want to consider never throwning the bomb at myself.
+-- TODO: Might want to consider never hurting myself too?
+coordDeltasInRange :: [(Coord -> Maybe Coord)]
+coordDeltasInRange =
+  zipWith ( \ dx dy ->
+              \ xy ->
+                fmap (uncurry toCoord) $
+                isOOB $
+                let (x', y') = fromCoord xy
+                in (x' + dx, y' + dy))
+  [                    0,
+           -3, -2, -1, 0, 1, 2, 3,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+   -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+       -4, -3, -2, -1, 0, 1, 2, 3, 4,
+           -3, -2, -1, 0, 1, 2, 3,
+                       0]
+  [                    -5,
+           -4, -4, -4, -4, -4, -4, -4,
+       -3, -3, -3, -3, -3, -3, -3, -3, -3,
+       -2, -2, -2, -2, -2, -2, -2, -2, -2,
+       -1, -1, -1, -1, -1, -1, -1, -1, -1,
+     0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        1,  1,  1,  1,  1,  1,  1,  1,  1,
+        2,  2,  2,  2,  2,  2,  2,  2,  2,
+        3,  3,  3,  3,  3,  3,  3,  3,  3,
+            4,  4,  4,  4,  4,  4,  4,
+                        5]
+
+displaceToBananaDestination :: Move -> Coord -> Maybe Coord
+displaceToBananaDestination (Move dir) coord' =
+  (coordDeltasInRange !! (dir - 24)) coord'
 
 formatSelect :: Move -> Coord -> String
 formatSelect = undefined -- TODO !!!

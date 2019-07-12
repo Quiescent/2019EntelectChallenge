@@ -30,39 +30,6 @@ withId id' = (== id') . idSlot
 findWormHealth :: WormId -> State -> Maybe WormHealth
 findWormHealth id' = fmap dataSlot . aListFind (withId id') . wormHealths
 
--- TODO: Might want to consider never throwning the bomb at myself.
--- TODO: Might want to consider never hurting myself too?
-coordDeltasInRange :: [(Coord -> Maybe Coord)]
-coordDeltasInRange =
-  zipWith ( \ dx dy ->
-              \ xy ->
-                fmap (uncurry toCoord) $
-                isOOB $
-                let (x', y') = fromCoord xy
-                in (x' + dx, y' + dy))
-  [                    0,
-           -3, -2, -1, 0, 1, 2, 3,
-       -4, -3, -2, -1, 0, 1, 2, 3, 4,
-       -4, -3, -2, -1, 0, 1, 2, 3, 4,
-       -4, -3, -2, -1, 0, 1, 2, 3, 4,
-   -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-       -4, -3, -2, -1, 0, 1, 2, 3, 4,
-       -4, -3, -2, -1, 0, 1, 2, 3, 4,
-       -4, -3, -2, -1, 0, 1, 2, 3, 4,
-           -3, -2, -1, 0, 1, 2, 3,
-                       0]
-  [                    -5,
-           -4, -4, -4, -4, -4, -4, -4,
-       -3, -3, -3, -3, -3, -3, -3, -3, -3,
-       -2, -2, -2, -2, -2, -2, -2, -2, -2,
-       -1, -1, -1, -1, -1, -1, -1, -1, -1,
-     0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-        1,  1,  1,  1,  1,  1,  1,  1,  1,
-        2,  2,  2,  2,  2,  2,  2,  2,  2,
-        3,  3,  3,  3,  3,  3,  3,  3,  3,
-            4,  4,  4,  4,  4,  4,  4,
-                        5]
-
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
@@ -71,7 +38,7 @@ spec = do
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ x ->
       let x'            = abs x `mod` 108
-          formattedMove = formatMove (Move x') (toCoord 1 1)
+          formattedMove = formatMove (Move x') (toCoord 6 6)
       in if x' < 8
          then formattedMove `shouldStartWith` "shoot"
          else if x' < 16
