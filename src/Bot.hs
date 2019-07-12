@@ -499,8 +499,10 @@ makeBananaMoves this that state =
       thatBananaMove       = if isABananaMove that then Just that else Nothing
       thisWormsCoord'      = thisWormsCoord state
       thatWormsCoord'      = thatWormsCoord state
-      thisDestinationBlock = thisBananaMove >>= (flip displaceToBananaDestination) thisWormsCoord'
-      thatDestinationBlock = thatBananaMove >>= (flip displaceToBananaDestination) thatWormsCoord'
+      thisDestinationBlock = thisWormsCoord' >>=
+        (\ thisCoord -> thisBananaMove >>= (flip displaceToBananaDestination) thisCoord)
+      thatDestinationBlock = thatWormsCoord' >>=
+        (\ thatCoord -> thatBananaMove >>= (flip displaceToBananaDestination) thatCoord)
       thisIsValid          = isJust thisDestinationBlock
       thatIsValid          = isJust thatDestinationBlock
       thisTarget           = fromJust thisDestinationBlock
@@ -510,10 +512,10 @@ makeBananaMoves this that state =
   in thisBlast $ thatBlast state
 
 bananaBlastForThisWorm :: Coord -> ModifyState
-bananaBlastForThisWorm = undefined
+bananaBlastForThisWorm _ = id
 
 bananaBlastForThatWorm :: Coord -> ModifyState
-bananaBlastForThatWorm = undefined
+bananaBlastForThatWorm _ = id
 
 advanceWormSelections :: ModifyState
 advanceWormSelections =
@@ -566,9 +568,9 @@ makeMoveMoves swapping this that state =
       thatMoveMove          = if isAMoveMove that && (not $ targetOfThatMoveIsDirt that state) then Just that else Nothing
       thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
       thatTarget            = thatMoveMove >>= ((flip targetOfThatMove) state)
-      -- ASSUME: that a worm won't be on an invalid square
-      thisWormsPosition     = thisWormsCoord state
-      thatWormsPosition     = thatWormsCoord state
+      -- Assume: move moves always come first so the worm will be there
+      thisWormsPosition     = fromJust $ thisWormsCoord state
+      thatWormsPosition     = fromJust $ thatWormsCoord state
       thisWormId            = thisPlayersCurrentWormId state
       thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWormExcept state thisWormId) thisTarget) == Just False
       thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
@@ -681,6 +683,8 @@ knockBackDamage :: ModifyState
 knockBackDamage state =
   let thisWormId       = thisPlayersCurrentWormId state
       thatWormId       = thatPlayersCurrentWormId state
+      -- Assume: that there is a worm to apply knockback damage to
+      -- because both worms must have moved for this to happen
       thisWormHealth'  = fromJust $
                          fmap dataSlot $
                          aListFind ((== thisWormId) . idSlot) $
@@ -851,11 +855,11 @@ makeShootMoves this that state =
       let isShootMove     = isAShootMove move
           shootMove       = if isShootMove then Just move else Nothing
           gameMap'        = gameMap state
-          -- ASSUME: that a worm won't be on an invalid square
           wormsPosition   = wormsCoord state
           shotsDir        = shootMove >>= directionOfShot
-          coord           = shotsDir >>= ((flip (hitsWorm wormsPosition gameMap'))
-                                          (wormPositions state))
+          coord           = wormsPosition >>=
+            ( \ position' -> shotsDir >>= ((flip (hitsWorm position' gameMap')))
+                             (wormPositions state))
           isHit           = isJust coord
           coord'          = fromJust coord
           awardMissPoints = if isShootMove then awardPointsForMiss else id
@@ -1059,20 +1063,24 @@ iterateCoordinate coord depth fX fY =
      (zipWith fY (repeat y') (take depth [1..]))
 
 -- Assume that this worm is never at an invalid position.
-thisWormsCoord :: State -> Coord
+-- 
+-- This assumption is wrong because a worm could die before we get to
+-- later stages where we use it.
+thisWormsCoord :: State -> Maybe Coord
 thisWormsCoord state =
   let thisWormId = thisPlayersCurrentWormId state
-  in  dataSlot $
-      fromJust $
+  in  fmap dataSlot $
       aListFind ((== thisWormId) . idSlot) $
       wormPositions state
 
 -- Assume that that worm is never at an invalid position.
-thatWormsCoord :: State -> Coord
+-- 
+-- This assumption is wrong because a worm could die before we get to
+-- later stages where we use it.
+thatWormsCoord :: State -> Maybe Coord
 thatWormsCoord state =
   let thatWormId = thatPlayersCurrentWormId state
-  in  dataSlot $
-      fromJust $
+  in  fmap dataSlot $
       aListFind ((== thatWormId) . idSlot) $
       wormPositions state
 
@@ -1175,7 +1183,11 @@ startBot g roundNumber = do
   move   <- liftIO $ runForHalfSecond (fromJust state)
   liftIO $
     putStrLn $
-    "C;" ++ show roundNumber ++ ";" ++ formatMove move (thisWormsCoord (fromJust state)) ++ "\n"
+    -- Assume: that the worm is on a valid square to begin with
+    "C;" ++
+    show roundNumber ++
+    ";" ++
+    formatMove move (fromJust $ thisWormsCoord (fromJust state)) ++ "\n"
   startBot g (roundNumber + 1)
 
 data Wins = Wins Int
@@ -1473,7 +1485,7 @@ isThisMoveValid state move =
   else if isAMoveMove move
        then isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
        else if isAShootMove move
-            then elem move $ theseHits state
+            then any (elem move) $ theseHits state
             else True
 
 isThatMoveValid :: State -> Move -> Bool
@@ -1483,7 +1495,7 @@ isThatMoveValid state move =
   else if isAMoveMove move
        then isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
        else if isAShootMove move
-            then elem move $ thoseHits state
+            then any (elem move) $ thoseHits state
             else True
 
 targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
@@ -1508,35 +1520,33 @@ isValidDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 isValidDigMove targetOfMove' state move =
   (targetOfDigMove targetOfMove' state move >>= mapAtCoord state) == Just DIRT
 
-theseHits :: State -> [Move]
+theseHits :: State -> Maybe [Move]
 theseHits state =
-  map (directionFrom thisWormsPosition . dataSlot) $
-  aListFoldl' (flip (:)) [] $
-  aListFilter (hits') $
-  wormPositions state
+  fmap ( \ wormPosition -> map (directionFrom wormPosition . dataSlot) $
+         aListFoldl' (flip (:)) [] $
+         aListFilter (hits' wormPosition) $
+         wormPositions state) $
+  thisWormsCoord state
   where
-    -- Assume that this worm can't be on an invalid square
-    thisWormsPosition = thisWormsCoord state
-    hits' :: AListEntry Coord -> Bool
-    hits' (AListEntry wormId' opPosition') =
+    hits' :: Coord -> AListEntry Coord -> Bool
+    hits' wormPosition (AListEntry wormId' opPosition') =
       isOpponentWorm wormId' &&
-      aligns  thisWormsPosition opPosition' &&
-      inRange thisWormsPosition opPosition' (weaponRange state)
+      aligns  wormPosition opPosition' &&
+      inRange wormPosition opPosition' (weaponRange state)
 
-thoseHits :: State -> [Move]
+thoseHits :: State -> Maybe [Move]
 thoseHits state =
-  map (directionFrom thatWormsPosition . dataSlot) $
-  aListFoldl' (flip (:)) [] $
-  aListFilter (hits') $
-  wormPositions state
+  fmap ( \ wormPosition -> map (directionFrom wormPosition . dataSlot) $
+         aListFoldl' (flip (:)) [] $
+         aListFilter (hits' wormPosition) $
+         wormPositions state) $
+  thatWormsCoord state
   where
-    -- Assume that that worm can't be on an invalid square
-    thatWormsPosition = thatWormsCoord state
-    hits' :: AListEntry Coord -> Bool
-    hits' (AListEntry wormId' opPosition') =
+    hits' :: Coord -> AListEntry Coord -> Bool
+    hits' wormPosition (AListEntry wormId' opPosition') =
       isMyWorm wormId' &&
-      aligns  thatWormsPosition opPosition' &&
-      inRange thatWormsPosition opPosition' (weaponRange state)
+      aligns  wormPosition opPosition' &&
+      inRange wormPosition opPosition' (weaponRange state)
 
 directionFrom :: Coord -> Coord -> Move
 directionFrom xy' xy'' =

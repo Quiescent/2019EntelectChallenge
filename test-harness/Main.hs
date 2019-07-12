@@ -47,8 +47,9 @@ simulateAndCheckRounds dirs@(directory:_) = do
     iter currentState (path:nextPath:paths) = do
       let thisWormsCoord'    = thisWormsCoord currentState
       let thatWormsCoord'    = thatWormsCoord currentState
-      thisMove              <- loadThisPlayersCommand thisWormsCoord' path
-      thatMove              <- loadThatPlayersCommand thatWormsCoord' path
+      -- Assume: that there are valid initial worm positions
+      thisMove              <- loadThisPlayersCommand (fromJust thisWormsCoord') path
+      thatMove              <- loadThatPlayersCommand (fromJust thatWormsCoord') path
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
