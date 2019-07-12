@@ -7,6 +7,7 @@ import Import
 
 import qualified RIO.Vector.Boxed as V
 import RIO.List
+import qualified RIO.HashSet as S
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -62,6 +63,9 @@ coordDeltasInRange =
             4,  4,  4,  4,  4,  4,  4,
                         5]
 
+getIntFromCoord :: Coord -> Int
+getIntFromCoord (Coord xy) = xy
+
 spec :: Spec
 spec = do
   describe "coordDeltasInRange" $ do
@@ -74,11 +78,11 @@ spec = do
          `shouldSatisfy`
          (all snd . snd)
     prop "should produce 81 possible coords when the from coord is at least 5 inside of borders" $ \ (i, j) ->
-      let x'     = 5 + (abs i `mod` (mapDim - 6))
-          y'     = 5 + (abs j `mod` (mapDim - 6))
+      let x'     = 5 + (abs i `mod` (mapDim - 10))
+          y'     = 5 + (abs j `mod` (mapDim - 10))
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') coordDeltasInRange
-      in (coord', coords) `shouldSatisfy` ((== 81) . length . snd) -- Use a set here for distinct coords
+      in (coord', coords) `shouldSatisfy` ((== 81) . S.size . S.fromList . map getIntFromCoord . snd)
   describe "findWormHealth" $ do
     context "given an empty collection of worm health facts" $
       it "produces Nothing" $
