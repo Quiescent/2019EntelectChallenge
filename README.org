@@ -500,8 +500,10 @@ friendly.
    - CLOSING NOTE [2019-07-10 Wed 05:20]
    :END:
 ** TODO Implement Banana Bomb
-*** IN_PROGRESS Encode banana bomb
+*** DONE Encode banana bomb
+    CLOSED: [2019-07-12 Fri 05:57]
     :LOGBOOK:
+    - CLOSING NOTE [2019-07-12 Fri 05:57]
     - State "IN_PROGRESS" from "TODO"       [2019-07-10 Wed 05:46]
     :END:
 *** DONE Rule 1: Banana bombs have a maximum range of 5
