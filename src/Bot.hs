@@ -485,8 +485,13 @@ makeMove swapping moves =
   let (myMove, opponentsMove) = toMoves moves
   in advanceWormSelections .
      makeShootMoves          myMove opponentsMove .
+     makeBananaMoves         myMove opponentsMove .
      makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
+
+makeBananaMoves :: Move -> Move -> ModifyState
+makeBananaMoves _ _ =
+  undefined -- TODO !!!
 
 advanceWormSelections :: ModifyState
 advanceWormSelections =
