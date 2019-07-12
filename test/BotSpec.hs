@@ -73,6 +73,12 @@ spec = do
       in (coord', zip coords (map (flip (inRange coord') 5) coords))
          `shouldSatisfy`
          (all snd . snd)
+    prop "should produce 81 possible coords when the from coord is at least 5 inside of borders" $ \ (i, j) ->
+      let x'     = 5 + (abs i `mod` (mapDim - 6))
+          y'     = 5 + (abs j `mod` (mapDim - 6))
+          coord' = toCoord x' y'
+          coords = catMaybes $ map ($ coord') coordDeltasInRange
+      in (coord', coords) `shouldSatisfy` ((== 81) . length . snd) -- Use a set here for distinct coords
   describe "findWormHealth" $ do
     context "given an empty collection of worm health facts" $
       it "produces Nothing" $
