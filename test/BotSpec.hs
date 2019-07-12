@@ -68,6 +68,17 @@ getIntFromCoord (Coord xy) = xy
 
 spec :: Spec
 spec = do
+  describe "formatMove" $ do
+    prop "should produce the correct type of move for the correct range" $ \ x ->
+      let x'            = abs x `mod` 108
+          formattedMove = formatMove (Move x') (toCoord 1 1)
+      in if x' < 8
+         then formattedMove `shouldStartWith` "shoot"
+         else if x' < 16
+              then formattedMove `shouldStartWith` "move"
+              else if x' < 24
+                   then formattedMove `shouldStartWith` "dig"
+                   else formattedMove `shouldStartWith` "banana"
   describe "coordDeltasInRange" $ do
     prop "should always produce a coord within range of 5 (banana bomb range)" $  \ (i, j) ->
       let x'     = abs i `mod` mapDim
