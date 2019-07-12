@@ -489,9 +489,31 @@ makeMove swapping moves =
      makeDigMoves            myMove opponentsMove .
      makeMoveMoves  swapping myMove opponentsMove
 
+isABananaMove :: Move -> Bool
+isABananaMove (Move x) =
+  x < 107 && x >= 24
+
 makeBananaMoves :: Move -> Move -> ModifyState
-makeBananaMoves _ _ =
-  undefined -- TODO !!!
+makeBananaMoves this that state =
+  let thisBananaMove       = if isABananaMove this then Just this else Nothing
+      thatBananaMove       = if isABananaMove that then Just that else Nothing
+      thisWormsCoord'      = thisWormsCoord state
+      thatWormsCoord'      = thatWormsCoord state
+      thisDestinationBlock = thisBananaMove >>= (flip displaceToBananaDestination) thisWormsCoord'
+      thatDestinationBlock = thatBananaMove >>= (flip displaceToBananaDestination) thatWormsCoord'
+      thisIsValid          = isJust thisDestinationBlock
+      thatIsValid          = isJust thatDestinationBlock
+      thisTarget           = fromJust thisDestinationBlock
+      thatTarget           = fromJust thatDestinationBlock
+      thisBlast            = if thisIsValid then bananaBlastForThisWorm thisTarget else id
+      thatBlast            = if thatIsValid then bananaBlastForThatWorm thatTarget else id
+  in thisBlast $ thatBlast state
+
+bananaBlastForThisWorm :: Coord -> ModifyState
+bananaBlastForThisWorm = undefined
+
+bananaBlastForThatWorm :: Coord -> ModifyState
+bananaBlastForThatWorm = undefined
 
 advanceWormSelections :: ModifyState
 advanceWormSelections =
@@ -539,6 +561,7 @@ thatPlayersCurrentWormId = playerCurrentWormId . opponent
 -- TODO refactor with is valid and friends
 makeMoveMoves :: Bool -> Move -> Move -> ModifyState
 makeMoveMoves swapping this that state =
+  -- This check is old!!!  Digging is encoded differently now.
   let thisMoveMove          = if isAMoveMove this && (not $ targetOfThisMoveIsDirt this state) then Just this else Nothing
       thatMoveMove          = if isAMoveMove that && (not $ targetOfThatMoveIsDirt that state) then Just that else Nothing
       thisTarget            = thisMoveMove >>= ((flip targetOfThisMove) state)
