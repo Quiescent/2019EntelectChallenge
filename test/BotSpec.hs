@@ -142,8 +142,9 @@ spec = do
       in ((displaceCoordByMove coordInMap randomMove) >>= (\ newCoord -> displaceCoordByMove newCoord moveBack)) `shouldBe` Just coordInMap
   describe "combined moves" $ do
     prop "Can always be extracted" $ \ (i, j) ->
-      let iMove = Move $ (abs i) `mod` 16
-          jMove = Move $ (abs j) `mod` 16
+      -- There aren't 512 many moves but there are that many slots.
+      let iMove = Move $ (abs i) `mod` 512
+          jMove = Move $ (abs j) `mod` 512
       in toMoves (fromMoves iMove jMove) `shouldBe` (iMove, jMove)
   describe "coordinates" $ do
     prop "Can always be extracted" $ \ (i, j) ->
