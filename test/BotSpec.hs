@@ -15,6 +15,25 @@ import Test.Hspec.QuickCheck
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
+blastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
+blastCoordDeltasInRange =
+  zipWith ( \ dx dy ->
+              \ xy ->
+                fmap (uncurry toCoord) $
+                isOOB $
+                let (x', y') = fromCoord xy
+                in (x' + dx, y' + dy))
+  [        0,
+       -1, 0, 1,
+   -2, -1, 0, 1, 2,
+       -1, 0, 1,
+           0]
+  [       -2,
+      -1, -1, -1,
+   0,  0,  0,  0,  0,
+       1,  1,  1,
+           2]
+
 spec :: Spec
 spec = do
   describe "formatMove" $ do
@@ -28,6 +47,21 @@ spec = do
               else if x' < 24
                    then formattedMove `shouldStartWith` "dig"
                    else formattedMove `shouldStartWith` "banana"
+  describe "blastCoordDeltasInRange" $ do
+    prop "should always produce a coord within range of 2 (blast radius of banana bomb)" $ \ (i, j) ->
+      let x'     = abs i `mod` mapDim
+          y'     = abs j `mod` mapDim
+          coord' = toCoord x' y'
+          coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
+      in (coord', zip coords (map (flip (inRange coord') 2) coords))
+         `shouldSatisfy`
+         (all snd . snd)
+    prop "should produce 13 possible coords when the from coord is at least 2 inside of borders" $ \ (i, j) ->
+      let x'     = 2 + (abs i `mod` (mapDim - 4))
+          y'     = 2 + (abs j `mod` (mapDim - 4))
+          coord' = toCoord x' y'
+          coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
+      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . map getIntFromCoord . snd)
   describe "coordDeltasInRange" $ do
     prop "should always produce a coord within range of 5 (banana bomb range)" $  \ (i, j) ->
       let x'     = abs i `mod` mapDim
