@@ -441,6 +441,13 @@ spec = do
        mapGameMap aStateWithBothWormsNearTheSameDirtBlock (removeDirtAt (toCoord 11 2)))
     -- Bananas!
     let aStateWithOposingWormsNextToEachother =
+          withWormPositions (always $ AList [
+                                AListEntry (WormId 1)  (toCoord 15 31),
+                                AListEntry (WormId 2)  (toCoord 1 31),
+                                AListEntry (WormId 3)  (toCoord 1 30),
+                                AListEntry (WormId 4)  (toCoord 16 31),
+                                AListEntry (WormId 8)  (toCoord 19 1),
+                                AListEntry (WormId 12) (toCoord 20 1)]) $
           withWormHealths (always $ AList [
                               AListEntry (WormId 1)  (WormHealth 20),
                               AListEntry (WormId 2)  (WormHealth 20),
