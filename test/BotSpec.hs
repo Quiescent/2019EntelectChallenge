@@ -34,7 +34,7 @@ spec = do
           y'     = abs j `mod` mapDim
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
-      in (coord', zip coords (map (flip (inRange coord') 2) coords))
+      in (coord', zip coords (map (flip (inRange coord') 2) $ map snd coords))
          `shouldSatisfy`
          (all snd . snd)
     prop "should produce 13 possible coords when the from coord is at least 2 inside of borders" $ \ (i, j) ->
@@ -42,7 +42,7 @@ spec = do
           y'     = 2 + (abs j `mod` (mapDim - 4))
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
-      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . map getIntFromCoord . snd)
+      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . map getIntFromCoord . map snd . snd)
   describe "coordDeltasInRange" $ do
     prop "should always produce a coord within range of 5 (banana bomb range)" $  \ (i, j) ->
       let x'     = abs i `mod` mapDim
@@ -440,28 +440,36 @@ spec = do
        awardPointsToThisPlayerForDigging $
        mapGameMap aStateWithBothWormsNearTheSameDirtBlock (removeDirtAt (toCoord 11 2)))
     -- Bananas!
+    let aStateWithOposingWormsNextToEachother =
+          withWormHealths (always $ AList [
+                              AListEntry (WormId 1)  (WormHealth 20),
+                              AListEntry (WormId 2)  (WormHealth 20),
+                              AListEntry (WormId 3)  (WormHealth 20),
+                              AListEntry (WormId 4)  (WormHealth 20),
+                              AListEntry (WormId 8)  (WormHealth 20),
+                              AListEntry (WormId 12) (WormHealth 20)]) aState
     context "when I'm throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
-        makeMove False (fromMoves bananaOneToRight doNothing) aStateWithMyWormNextToAnEnemy `shouldBe`
+        makeMove False (fromMoves bananaOneToRight doNothing) aStateWithOposingWormsNextToEachother `shouldBe`
         (selectNextWormsDefault $
-         harmWorm (WormId 1) aStateWithMyWormNextToAnEnemy 20 id id id (toCoord 16 31) $
-         harmWorm (WormId 1) aStateWithMyWormNextToAnEnemy 20 id id id (toCoord 15 31)
-         aStateWithMyWormNextToAnEnemy)
-      let stateWithEnemyOneSquareFromEpicentre = moveThatWorm (toCoord 17 31) aStateWithMyWormNextToAnEnemy
+         harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
+         harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31)
+         aStateWithOposingWormsNextToEachother)
+      let stateWithEnemyOneSquareFromEpicentre = moveThatWorm (toCoord 17 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyOneSquareFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 20 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 20 id id id (toCoord 15 31)
          stateWithEnemyOneSquareFromEpicentre)
-      let stateWithEnemyTwoSquaresFromEpicentre = moveThatWorm (toCoord 18 31) aStateWithMyWormNextToAnEnemy
+      let stateWithEnemyTwoSquaresFromEpicentre = moveThatWorm (toCoord 18 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 20 id id id (toCoord 18 31) $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 20 id id id (toCoord 15 31)
          stateWithEnemyTwoSquaresFromEpicentre)
-      let stateWithEnemyThreeSquaresFromEpicentre = moveThatWorm (toCoord 19 31) aStateWithMyWormNextToAnEnemy
+      let stateWithEnemyThreeSquaresFromEpicentre = moveThatWorm (toCoord 19 31) aStateWithOposingWormsNextToEachother
       it "should not cause damage to the worms outside of the blast radius" $
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
@@ -469,26 +477,26 @@ spec = do
          stateWithEnemyThreeSquaresFromEpicentre)
     context "when the opponent is throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
-        makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithMyWormNextToAnEnemy `shouldBe`
+        makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithOposingWormsNextToEachother `shouldBe`
         (selectNextWormsDefault $
-         harmWorm (WormId 4) aStateWithMyWormNextToAnEnemy 20 id id id (toCoord 15 31) $
-         harmWorm (WormId 4) aStateWithMyWormNextToAnEnemy 20 id id id (toCoord 16 31)
-         aStateWithMyWormNextToAnEnemy)
-      let stateWithEnemyOneSquareFromEpicentre = moveThisWorm (toCoord 14 31) aStateWithMyWormNextToAnEnemy
+         harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
+         harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31)
+         aStateWithOposingWormsNextToEachother)
+      let stateWithEnemyOneSquareFromEpicentre = moveThisWorm (toCoord 14 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyOneSquareFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 20 id id id (toCoord 14 31) $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 20 id id id (toCoord 16 31)
          stateWithEnemyOneSquareFromEpicentre)
-      let stateWithEnemyTwoSquaresFromEpicentre = moveThisWorm (toCoord 13 31) aStateWithMyWormNextToAnEnemy
+      let stateWithEnemyTwoSquaresFromEpicentre = moveThisWorm (toCoord 13 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 20 id id id (toCoord 13 31) $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 20 id id id (toCoord 16 31)
          stateWithEnemyTwoSquaresFromEpicentre)
-      let stateWithEnemyThreeSquaresFromEpicentre = moveThisWorm (toCoord 12 31) aStateWithMyWormNextToAnEnemy
+      let stateWithEnemyThreeSquaresFromEpicentre = moveThisWorm (toCoord 12 31) aStateWithOposingWormsNextToEachother
       it "should not cause damage to the worms outside of the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $

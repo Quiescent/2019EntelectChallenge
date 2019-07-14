@@ -526,14 +526,41 @@ makeBananaMoves this that state =
       thatBlast            = if thatIsValid then bananaBlast thatWormsId thatTarget else id
   in thisBlast $ thatBlast state
 
-blastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
+blastCoordDeltasInRange :: [(Coord -> Maybe (Int, Coord))]
 blastCoordDeltasInRange =
-  zipWith ( \ dx dy ->
+  zipWith ( \ (damage', dx) dy ->
               \ xy ->
+                fmap ( \ x -> (damage', x)) $
                 fmap (uncurry toCoord) $
                 isOOB $
                 let (x', y') = fromCoord xy
                 in (x' + dx, y' + dy))
+  (zip damageTemplate
+   [        0,
+        -1, 0, 1,
+    -2, -1, 0, 1, 2,
+        -1, 0, 1,
+            0])
+   [       -2,
+       -1, -1, -1,
+    0,  0,  0,  0,  0,
+        1,  1,  1,
+            2]
+
+containsAnyWorm :: Coord -> State -> Bool
+containsAnyWorm coord' = anyWormFacts ((== coord') . dataSlot) . wormPositions
+
+bananaBlastRadius :: Int
+bananaBlastRadius = 2
+
+damageTemplate :: [Int]
+damageTemplate =
+  zipWith ( \ dx dy ->
+            let blastRadius' = bananaBlastRadius + 1
+            in round $
+               fromIntegral bananaCentreDamage *
+               (((fromIntegral blastRadius') - (sqrt $ squareAbsFloating dx + squareAbsFloating dy)) /
+                 fromIntegral blastRadius'))
   [        0,
        -1, 0, 1,
    -2, -1, 0, 1, 2,
@@ -544,15 +571,15 @@ blastCoordDeltasInRange =
    0,  0,  0,  0,  0,
        1,  1,  1,
            2]
-
-containsAnyWorm :: Coord -> State -> Bool
-containsAnyWorm coord' = anyWormFacts ((== coord') . dataSlot) . wormPositions
+  where
+    squareAbsFloating :: Int -> Double
+    squareAbsFloating x = fromIntegral $ abs x * abs x
 
 bananaBlast :: WormId -> Coord -> ModifyState
 bananaBlast wormId' targetCoord state =
   let potentialHits = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
-      wormHits      = filter ((flip containsAnyWorm) state) potentialHits
-  in foldl' (\ state' nextWormHit -> harmWorm wormId' state bananaCentreDamage id id id nextWormHit state')
+      wormHits      = filter ((flip containsAnyWorm) state . snd) potentialHits
+  in foldl' (\ state' (damage', nextWormHit) -> harmWorm wormId' state damage' id id id nextWormHit state')
             state
             wormHits
 
