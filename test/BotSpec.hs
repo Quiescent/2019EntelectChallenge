@@ -12,24 +12,6 @@ import qualified RIO.HashSet as S
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
-packThisWorm :: Int -> WormId
-packThisWorm 1 = WormId 1
-packThisWorm 2 = WormId 2
-packThisWorm 3 = WormId 3
-packThisWorm x = error $ "packThisWorm with invalid worm id: " ++ show x
-
-packThatWorm :: Int -> WormId
-packThatWorm 1 = WormId 4
-packThatWorm 2 = WormId 8
-packThatWorm 3 = WormId 12
-packThatWorm x  = error $ "packThatWorm with invalid worm id: " ++ show x
-
-withId :: WormId -> AListEntry a -> Bool
-withId id' = (== id') . idSlot
-
-findWormHealth :: WormId -> State -> Maybe WormHealth
-findWormHealth id' = fmap dataSlot . aListFind (withId id') . wormHealths
-
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
@@ -61,46 +43,6 @@ spec = do
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') coordDeltasInRange
       in (coord', coords) `shouldSatisfy` ((== 81) . S.size . S.fromList . map getIntFromCoord . snd)
-  describe "findWormHealth" $ do
-    context "given an empty collection of worm health facts" $
-      it "produces Nothing" $
-      findWormHealth (WormId 1) aStateWithNoFacts `shouldBe` Nothing
-    context "given an alist of worm health which doesn't contain the id" $
-      it "produces Nothing" $
-      findWormHealth (WormId 2) aStateWithTwoWormHealths `shouldBe` Nothing
-    context "given an alist of worm health which does contain the id" $
-      it "produces Just that cell" $
-      findWormHealth (WormId 1) aStateWithTwoWormHealths `shouldBe` (Just $ WormHealth 5)
-  describe "packThisWorm" $ do
-    context "given a number from 1 to 3" $
-      prop "is no different to the WormId constructor" $ \ x ->
-      let x' = 1 + x `mod` 3
-      in packThisWorm x' `shouldBe` WormId x'
-    context "given any number other than 1 to 3" $
-      prop "produces an exception" $ \ x ->
-      let x' = if x >= 1 && x <= 3 then 0 else x
-      in evaluate (packThisWorm x') `shouldThrow` anyErrorCall
-    context "given a number from 1 to 3" $
-      prop "produces an id for my worm" $ \ x ->
-      let x' = 1 + x `mod` 3
-      in packThisWorm x' `shouldSatisfy` isMyWorm
-    context "given a number from 1 to 3" $
-      prop "does not produce an id for an opponents worm" $ \ x ->
-      let x' = 1 + x `mod` 3
-      in packThisWorm x' `shouldSatisfy` (not . isOpponentWorm)
-  describe "packThatWorm" $ do
-    context "given a number of either 1, 2 or 3" $
-      prop "produces a worm which is an opponent worm" $ \ x ->
-      let x' = 1 + x `mod` 3
-      in packThatWorm x' `shouldSatisfy` isOpponentWorm
-    context "given a number of either 1, 2 or 3" $
-      prop "produces a worm which is not my worm" $ \ x ->
-      let x' = 1 + x `mod` 3
-      in packThatWorm x' `shouldSatisfy` (not . isMyWorm)
-    context "given any number other than 1 to 3" $
-      prop "produces an exception" $ \ x ->
-      let x' = if x >= 1 && x <= 3 then 0 else x
-      in evaluate (packThatWorm x') `shouldThrow` anyErrorCall
   describe "displaceCoordByMove" $ do
     it "N  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 8)  `shouldBe` Just (toCoord 1 0)
     it "NE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 9)  `shouldBe` Just (toCoord 2 0)
@@ -805,15 +747,6 @@ hasScore score' (Player score'' _) = score' == score''
 
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)
-
-aStateWithTwoWormHealths =
-  aState { wormHealths = AList [
-             AListEntry (WormId 1) (WormHealth 5),
-             AListEntry (WormId 3) startingHealth] }
-
-aStateWithNoFacts =
-  aState { wormHealths   = emptyWormHealths,
-           wormPositions = emptyWormPositions }
 
 emptyWormHealths = AList []
 
