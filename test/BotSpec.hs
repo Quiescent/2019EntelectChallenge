@@ -485,8 +485,9 @@ spec = do
     -- Bananas!
     it "should cause maximum damage to the worm which it lands on" $
       makeMove False (fromMoves bananaOneToRight doNothing) aStateWithMyWormNextToAnEnemy `shouldBe`
-      harmWorm (WormId 4) aStateWithMyWormNextToAnEnemy 20 id id id (toCoord 16 31)
-      aStateWithMyWormNextToAnEnemy
+      (selectNextWormsDefault $
+       harmWorm (WormId 1) aStateWithMyWormNextToAnEnemy 20 id id id (toCoord 16 31)
+       aStateWithMyWormNextToAnEnemy)
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -1033,7 +1034,7 @@ shootNorth = Move 0
 
 shootSouth = Move 4
 
-doNothing = Move 32
+doNothing = Move 108
 
 moveNorth = Move 8
 
