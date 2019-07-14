@@ -545,9 +545,16 @@ blastCoordDeltasInRange =
        1,  1,  1,
            2]
 
+containsAnyWorm :: Coord -> State -> Bool
+containsAnyWorm coord' = anyWormFacts ((== coord') . dataSlot) . wormPositions
+
 bananaBlast :: WormId -> Coord -> ModifyState
 bananaBlast wormId' targetCoord state =
-  harmWorm wormId' state bananaCentreDamage id id id targetCoord state
+  let potentialHits = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
+      wormHits      = filter ((flip containsAnyWorm) state) potentialHits
+  in foldl' (\ state' nextWormHit -> harmWorm wormId' state bananaCentreDamage id id id nextWormHit state')
+            state
+            wormHits
 
 bananaCentreDamage :: Int
 bananaCentreDamage = 20
