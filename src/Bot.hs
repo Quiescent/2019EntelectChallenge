@@ -522,19 +522,16 @@ makeBananaMoves this that state =
       thatIsValid          = isJust thatDestinationBlock
       thisTarget           = fromJust thisDestinationBlock
       thatTarget           = fromJust thatDestinationBlock
-      thisBlast            = if thisIsValid then bananaBlastForThisWorm thisWormsId thisTarget else id
-      thatBlast            = if thatIsValid then bananaBlastForThatWorm thatWormsId thatTarget else id
+      thisBlast            = if thisIsValid then bananaBlast thisWormsId thisTarget else id
+      thatBlast            = if thatIsValid then bananaBlast thatWormsId thatTarget else id
   in thisBlast $ thatBlast state
 
-bananaBlastForThisWorm :: WormId -> Coord -> ModifyState
-bananaBlastForThisWorm wormId' targetCoord state =
+bananaBlast :: WormId -> Coord -> ModifyState
+bananaBlast wormId' targetCoord state =
   harmWorm wormId' state bananaCentreDamage id id id targetCoord state
 
 bananaCentreDamage :: Int
 bananaCentreDamage = 20
-
-bananaBlastForThatWorm :: WormId -> Coord -> ModifyState
-bananaBlastForThatWorm _ _ = id
 
 advanceWormSelections :: ModifyState
 advanceWormSelections =
