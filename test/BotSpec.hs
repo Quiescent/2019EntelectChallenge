@@ -482,6 +482,11 @@ spec = do
        awardPointsToThatPlayerForDigging $
        awardPointsToThisPlayerForDigging $
        mapGameMap aStateWithBothWormsNearTheSameDirtBlock (removeDirtAt (toCoord 11 2)))
+    -- Bananas!
+    it "should cause maximum damage to the worm which it lands on" $
+      makeMove False (fromMoves bananaOneToRight doNothing) aStateWithMyWormNextToAnEnemy `shouldBe`
+      harmWorm (WormId 4) aStateWithMyWormNextToAnEnemy 20 id id id (toCoord 16 31)
+      aStateWithMyWormNextToAnEnemy
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -781,6 +786,10 @@ spec = do
           (selectNextWorms (WormId 1) (WormId 4) $
            awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
+
+-- For how to come up with this value take a look at the function
+-- `coordDeltasInRange' and the accompanying doc string.
+bananaOneToRight = Move 65
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
