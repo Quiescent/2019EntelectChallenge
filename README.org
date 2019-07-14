@@ -526,7 +526,10 @@ friendly.
     - CLOSING NOTE [2019-07-14 Sun 14:05]
     - State "IN_PROGRESS" from "TODO"       [2019-07-14 Sun 12:50]
     :END:
-*** TODO Rule 4: Banana bombs do less damage the further from the landing site you're hit
+*** IN_PROGRESS Rule 4: Banana bombs do less damage the further from the landing site you're hit
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-14 Sun 14:05]
+    :END:
 *** TODO Rule 5: Banana bombs destroy all dirt
 *** TODO Rule 6: You get points for destroying dirt as though you dug it out
 *** TODO Rule 7: The banana bomb destroys power ups
