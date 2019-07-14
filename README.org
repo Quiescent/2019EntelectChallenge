@@ -520,7 +520,10 @@ friendly.
     :LOGBOOK:
     - State "IN_PROGRESS" from "TODO"       [2019-07-14 Sun 11:42]
     :END:
-*** TODO Rule 3: Banana bombs have an impact radius of 2
+*** IN_PROGRESS Rule 3: Banana bombs have an impact radius of 2
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-14 Sun 12:50]
+    :END:
 *** TODO Rule 4: Banana bombs do less damage the further from the landing site you're hit
 *** TODO Rule 5: Banana bombs destroy all dirt
 *** TODO Rule 6: You get points for destroying dirt as though you dug it out
