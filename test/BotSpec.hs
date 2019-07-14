@@ -15,25 +15,6 @@ import Test.Hspec.QuickCheck
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
-blastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
-blastCoordDeltasInRange =
-  zipWith ( \ dx dy ->
-              \ xy ->
-                fmap (uncurry toCoord) $
-                isOOB $
-                let (x', y') = fromCoord xy
-                in (x' + dx, y' + dy))
-  [        0,
-       -1, 0, 1,
-   -2, -1, 0, 1, 2,
-       -1, 0, 1,
-           0]
-  [       -2,
-      -1, -1, -1,
-   0,  0,  0,  0,  0,
-       1,  1,  1,
-           2]
-
 spec :: Spec
 spec = do
   describe "formatMove" $ do

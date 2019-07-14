@@ -526,6 +526,25 @@ makeBananaMoves this that state =
       thatBlast            = if thatIsValid then bananaBlast thatWormsId thatTarget else id
   in thisBlast $ thatBlast state
 
+blastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
+blastCoordDeltasInRange =
+  zipWith ( \ dx dy ->
+              \ xy ->
+                fmap (uncurry toCoord) $
+                isOOB $
+                let (x', y') = fromCoord xy
+                in (x' + dx, y' + dy))
+  [        0,
+       -1, 0, 1,
+   -2, -1, 0, 1, 2,
+       -1, 0, 1,
+           0]
+  [       -2,
+      -1, -1, -1,
+   0,  0,  0,  0,  0,
+       1,  1,  1,
+           2]
+
 bananaBlast :: WormId -> Coord -> ModifyState
 bananaBlast wormId' targetCoord state =
   harmWorm wormId' state bananaCentreDamage id id id targetCoord state
