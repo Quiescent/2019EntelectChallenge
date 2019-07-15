@@ -522,8 +522,12 @@ makeBananaMoves this that state =
       thatIsValid          = isJust thatDestinationBlock
       thisTarget           = fromJust thisDestinationBlock
       thatTarget           = fromJust thatDestinationBlock
-      thisBlast            = if thisIsValid then bananaBlast thisWormsId thisTarget else id
-      thatBlast            = if thatIsValid then bananaBlast thatWormsId thatTarget else id
+      thisBlast            = if thisIsValid
+                             then bananaBlast thisWormsId awardPointsToThisPlayerForDigging thisTarget
+                             else id
+      thatBlast            = if thatIsValid
+                             then bananaBlast thatWormsId awardPointsToThatPlayerForDigging thatTarget
+                             else id
   in thisBlast $ thatBlast state
 
 blastCoordDeltasInRange :: [(Coord -> Maybe (Int, Coord))]
@@ -575,8 +579,8 @@ damageTemplate =
     squareAbsFloating :: Int -> Double
     squareAbsFloating x = fromIntegral $ abs x * abs x
 
-bananaBlast :: WormId -> Coord -> ModifyState
-bananaBlast wormId' targetCoord state =
+bananaBlast :: WormId -> ModifyState -> Coord -> ModifyState
+bananaBlast wormId' awardPointsForDigging' targetCoord state =
   let potentialHits    = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
       wormHits         = filter ((flip containsAnyWorm) state  . snd) potentialHits
       dirtHits         = filter ((flip dirtAt) (gameMap state) . snd) potentialHits
@@ -584,7 +588,8 @@ bananaBlast wormId' targetCoord state =
                                    harmWorm wormId' state damage' id id id nextWormHit state')
                          state
                          wormHits
-  in foldl' (\ state' (_, dirtHit) -> removeDirtFromMapAt dirtHit state') withWormsDamaged dirtHits
+  in foldl' (\ state' (_, dirtHit) -> awardPointsForDigging' $ removeDirtFromMapAt dirtHit state')
+     withWormsDamaged dirtHits
 
 dirtAt :: Coord -> GameMap -> Bool
 dirtAt coord' = any (== DIRT) . lookupCoord coord'
