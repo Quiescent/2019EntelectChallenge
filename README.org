@@ -550,6 +550,7 @@ friendly.
 ** TODO Implement Select
 *** TODO Encode select
 *** TODO Make select moves ahead of others
+** TODO Improve the types around all the functions which take multiple ModifyStates
 * Questions About the Engine
 ** DONE Do two worms always get to move?  (Or do you miss turns when your other worms die)
    CLOSED: [2019-06-12 Wed 14:10]
