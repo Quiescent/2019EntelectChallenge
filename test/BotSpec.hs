@@ -461,6 +461,11 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
+         -- Points for the four squares
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
          mapGameMap aStateWithOposingWormsNextToEachother
                     ((-- Up
                       addAirAt (toCoord 16 30) .
@@ -474,6 +479,11 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
+         -- Points for the four squares
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
          mapGameMap stateWithEnemyOneSquareFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 16 30) .
@@ -487,6 +497,11 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 18 31) $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31) $
+         -- Points for the four squares
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
          mapGameMap stateWithEnemyTwoSquaresFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 16 30) .
@@ -499,6 +514,11 @@ spec = do
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 15 31) $
+         -- Points for the four squares
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
          mapGameMap stateWithEnemyThreeSquaresFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 16 30) .
@@ -509,6 +529,20 @@ spec = do
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aState `shouldBe`
         (selectNextWormsDefault $
+         -- Points for the four squares
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
          mapGameMap aState ((addAirAt (toCoord 15 26) . -- epicentre
                              -- Up
                              addAirAt (toCoord 15 25) .
@@ -533,6 +567,11 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
+         -- Points for the four squares
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
          mapGameMap aStateWithOposingWormsNextToEachother
                     ((-- Up
                       addAirAt (toCoord 15 30) .
@@ -546,6 +585,11 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 14 31) $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31) $
+         -- Points for the four squares
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
          mapGameMap stateWithEnemyOneSquareFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 15 30) .
@@ -559,6 +603,11 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 13 31) $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
+         -- Points for the four squares
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
          mapGameMap stateWithEnemyTwoSquaresFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 15 30) .
@@ -571,6 +620,11 @@ spec = do
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31) $
+         -- Points for the four squares
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
          mapGameMap stateWithEnemyThreeSquaresFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 15 30) .
@@ -581,6 +635,20 @@ spec = do
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
         (selectNextWormsDefault $
+         -- Points for the four squares
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
          mapGameMap aState ((addAirAt (toCoord 16 6) . -- epicentre
                              -- Up
                              addAirAt (toCoord 16 5) .
