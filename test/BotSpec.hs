@@ -529,7 +529,7 @@ spec = do
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aState `shouldBe`
         (selectNextWormsDefault $
-         -- Points for the four squares
+         -- Points for the 13 squares
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
@@ -561,6 +561,42 @@ spec = do
                              addAirAt (toCoord 16 25) .
                              addAirAt (toCoord 14 27) .
                              addAirAt (toCoord 16 27))))
+      let aStateWithAMedipackInTheDirt = mapGameMap aState (addMedipackAt (toCoord 16 26))
+      it "should destroy medipacks" $
+        makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aStateWithAMedipackInTheDirt `shouldBe`
+        (selectNextWormsDefault $
+         -- Points for the 12 squares (one is a medipack)
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         mapGameMap aStateWithAMedipackInTheDirt
+                    ((addAirAt (toCoord 15 26) . -- epicentre
+                      -- Up
+                      addAirAt (toCoord 15 25) .
+                      addAirAt (toCoord 15 24) .
+                      -- Down
+                      addAirAt (toCoord 15 27) .
+                      addAirAt (toCoord 15 28) .
+                      -- Left
+                      addAirAt (toCoord 14 26) .
+                      addAirAt (toCoord 13 26) .
+                      -- Right
+                      addAirAt (toCoord 16 26) .
+                      addAirAt (toCoord 17 26) .
+                      -- Remaining
+                      addAirAt (toCoord 14 25) .
+                      addAirAt (toCoord 16 25) .
+                      addAirAt (toCoord 14 27) .
+                      addAirAt (toCoord 16 27))))
     context "when the opponent is throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
         makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithOposingWormsNextToEachother `shouldBe`
@@ -635,7 +671,7 @@ spec = do
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
         (selectNextWormsDefault $
-         -- Points for the four squares
+         -- Points for the 13 squares
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
@@ -667,6 +703,42 @@ spec = do
                              addAirAt (toCoord 17 5) .
                              addAirAt (toCoord 15 7) .
                              addAirAt (toCoord 17 7))))
+      let aStateWithAMedipackInTheDirt = mapGameMap aState (addMedipackAt (toCoord 16 7))
+      it "should destroy medipacks" $
+        makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithAMedipackInTheDirt `shouldBe`
+        (selectNextWormsDefault $
+         -- Points for the 12 squares (one is a medipack)
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         mapGameMap aStateWithAMedipackInTheDirt
+                    ((addAirAt (toCoord 16 6) . -- epicentre
+                      -- Up
+                      addAirAt (toCoord 16 5) .
+                      addAirAt (toCoord 16 4) .
+                      -- Down
+                      addAirAt (toCoord 16 7) .
+                      addAirAt (toCoord 16 8) .
+                      -- Left
+                      addAirAt (toCoord 15 6) .
+                      addAirAt (toCoord 14 6) .
+                      -- Right
+                      addAirAt (toCoord 17 6) .
+                      addAirAt (toCoord 18 6) .
+                      -- Remaining
+                      addAirAt (toCoord 15 5) .
+                      addAirAt (toCoord 17 5) .
+                      addAirAt (toCoord 15 7) .
+                      addAirAt (toCoord 17 7))))
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -1032,6 +1104,9 @@ addSpaceAt = (flip mapSquareAt) (always DEEP_SPACE)
 
 addAirAt :: Coord -> GameMap -> GameMap
 addAirAt = (flip mapSquareAt) (always AIR)
+
+addMedipackAt :: Coord -> GameMap -> GameMap
+addMedipackAt = (flip mapSquareAt) (always MEDIPACK)
 
 generateShotSwitch :: Move -> Move -> ShotSwitch
 generateShotSwitch a b x =
