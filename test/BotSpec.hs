@@ -514,8 +514,14 @@ spec = do
         makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithOposingWormsNextToEachother `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
-         harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31)
-         aStateWithOposingWormsNextToEachother)
+         harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
+         mapGameMap aStateWithOposingWormsNextToEachother
+                    ((-- Up
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 15 29) .
+                      -- Remaining
+                      addAirAt (toCoord 14 30) .
+                      addAirAt (toCoord 16 30))))
       let stateWithEnemyOneSquareFromEpicentre = moveThisWorm (toCoord 14 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyOneSquareFromEpicentre `shouldBe`
