@@ -482,6 +482,27 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 15 31)
          stateWithEnemyThreeSquaresFromEpicentre)
+      it "should destroy all 13 squares of dirt in range fo the epicentre" $
+        makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aState `shouldBe`
+        (selectNextWormsDefault $
+         mapGameMap aState ((addAirAt (toCoord 15 26) . -- epicentre
+                             -- Up
+                             addAirAt (toCoord 15 25) .
+                             addAirAt (toCoord 15 24) .
+                             -- Down
+                             addAirAt (toCoord 15 27) .
+                             addAirAt (toCoord 15 28) .
+                             -- Left
+                             addAirAt (toCoord 14 26) .
+                             addAirAt (toCoord 13 26) .
+                             -- Right
+                             addAirAt (toCoord 16 26) .
+                             addAirAt (toCoord 17 26) .
+                             -- Remaining
+                             addAirAt (toCoord 14 25) .
+                             addAirAt (toCoord 16 25) .
+                             addAirAt (toCoord 14 27) .
+                             addAirAt (toCoord 16 27))))
     context "when the opponent is throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
         makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithOposingWormsNextToEachother `shouldBe`
@@ -509,6 +530,27 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31)
          stateWithEnemyThreeSquaresFromEpicentre)
+      it "should destroy all 13 squares of dirt in range fo the epicentre" $
+        makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
+        (selectNextWormsDefault $
+         mapGameMap aState ((addAirAt (toCoord 16 6) . -- epicentre
+                             -- Up
+                             addAirAt (toCoord 16 5) .
+                             addAirAt (toCoord 16 4) .
+                             -- Down
+                             addAirAt (toCoord 16 7) .
+                             addAirAt (toCoord 16 8) .
+                             -- Left
+                             addAirAt (toCoord 15 6) .
+                             addAirAt (toCoord 14 6) .
+                             -- Right
+                             addAirAt (toCoord 17 6) .
+                             addAirAt (toCoord 18 6) .
+                             -- Remaining
+                             addAirAt (toCoord 15 5) .
+                             addAirAt (toCoord 17 5) .
+                             addAirAt (toCoord 15 7) .
+                             addAirAt (toCoord 17 7))))
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -811,8 +853,10 @@ spec = do
 
 -- For how to come up with this value take a look at the function
 -- `coordDeltasInRange' and the accompanying doc string.
-bananaOneToRight = Move 65
-bananaOneToLeft  = Move 63
+bananaOneToRight      = Move 65
+bananaOneToLeft       = Move 63
+bananaIntoDirtFromMe  = Move 24
+bananaIntoDirtFromHim = Move 104
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''
@@ -869,6 +913,9 @@ spaceBetween thisCoord thatCoord=
 
 addSpaceAt :: Coord -> GameMap -> GameMap
 addSpaceAt = (flip mapSquareAt) (always DEEP_SPACE)
+
+addAirAt :: Coord -> GameMap -> GameMap
+addAirAt = (flip mapSquareAt) (always AIR)
 
 generateShotSwitch :: Move -> Move -> ShotSwitch
 generateShotSwitch a b x =
