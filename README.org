@@ -544,7 +544,10 @@ friendly.
     - CLOSING NOTE [2019-07-15 Mon 17:10]
     - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 12:50]
     :END:
-*** TODO Rule 7: The banana bomb destroys power ups
+*** IN_PROGRESS Rule 7: The banana bomb destroys power ups
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 17:10]
+    :END:
 *** TODO Rule 8: Both players receive points for dirt destroyed simultaneously by bombs
 *** TODO Rule 9: You receive 2 * damage as points for damaging enemies
 *** TODO Rule 10: You lose 2 * damage as points for damaging your own worms
