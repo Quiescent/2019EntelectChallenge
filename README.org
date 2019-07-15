@@ -532,8 +532,10 @@ friendly.
     - CLOSING NOTE [2019-07-14 Sun 16:40]
     - State "IN_PROGRESS" from "TODO"       [2019-07-14 Sun 14:05]
     :END:
-*** IN_PROGRESS Rule 5: Banana bombs destroy all dirt
+*** DONE Rule 5: Banana bombs destroy all dirt
+    CLOSED: [2019-07-15 Mon 12:49]
     :LOGBOOK:
+    - CLOSING NOTE [2019-07-15 Mon 12:49]
     - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 08:40]
     :END:
 *** TODO Rule 6: You get points for destroying dirt as though you dug it out
