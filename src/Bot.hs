@@ -582,17 +582,24 @@ damageTemplate =
 bananaBlast :: WormId -> ModifyState -> Coord -> ModifyState
 bananaBlast wormId' awardPointsForDigging' targetCoord state =
   let potentialHits    = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
-      wormHits         = filter ((flip containsAnyWorm) state  . snd) potentialHits
-      dirtHits         = filter ((flip dirtAt) (gameMap state) . snd) potentialHits
+      wormHits         = filter ((flip containsAnyWorm)     state  . snd) potentialHits
+      dirtHits         = filter ((flip dirtAt)     (gameMap state) . snd) potentialHits
+      packHits         = filter ((flip medipackAt) (gameMap state) . snd) potentialHits
       withWormsDamaged = foldl' (\ state' (damage', nextWormHit) ->
                                    harmWorm wormId' state damage' id id id nextWormHit state')
                          state
                          wormHits
-  in foldl' (\ state' (_, dirtHit) -> awardPointsForDigging' $ removeDirtFromMapAt dirtHit state')
-     withWormsDamaged dirtHits
+      withDirtRemoved  = foldl' (\ state' (_, dirtHit) ->
+                                   awardPointsForDigging' $ removeDirtFromMapAt dirtHit state')
+                         withWormsDamaged dirtHits
+  in foldl' (\ state' (_, packHit) -> removeMedipack packHit state')
+                         withDirtRemoved packHits
 
 dirtAt :: Coord -> GameMap -> Bool
 dirtAt coord' = any (== DIRT) . lookupCoord coord'
+
+medipackAt :: Coord -> GameMap -> Bool
+medipackAt coord' = any (== MEDIPACK) . lookupCoord coord'
 
 bananaCentreDamage :: Int
 bananaCentreDamage = 20
