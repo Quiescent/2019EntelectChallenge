@@ -544,8 +544,10 @@ friendly.
     - CLOSING NOTE [2019-07-15 Mon 17:10]
     - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 12:50]
     :END:
-*** IN_PROGRESS Rule 7: The banana bomb destroys power ups
+*** DONE Rule 7: The banana bomb destroys power ups
+    CLOSED: [2019-07-15 Mon 17:30]
     :LOGBOOK:
+    - CLOSING NOTE [2019-07-15 Mon 17:30]
     - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 17:10]
     :END:
 *** TODO Rule 8: Both players receive points for dirt destroyed simultaneously by bombs
