@@ -473,21 +473,39 @@ spec = do
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyOneSquareFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
-         harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31)
-         stateWithEnemyOneSquareFromEpicentre)
+         harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
+         mapGameMap stateWithEnemyOneSquareFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 16 30) .
+                      addAirAt (toCoord 16 29) .
+                      -- Remaining
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 17 30))))
       let stateWithEnemyTwoSquaresFromEpicentre = moveThatWorm (toCoord 18 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 18 31) $
-         harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31)
-         stateWithEnemyTwoSquaresFromEpicentre)
+         harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31) $
+         mapGameMap stateWithEnemyTwoSquaresFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 16 30) .
+                      addAirAt (toCoord 16 29) .
+                      -- Remaining
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 17 30))))
       let stateWithEnemyThreeSquaresFromEpicentre = moveThatWorm (toCoord 19 31) aStateWithOposingWormsNextToEachother
       it "should not cause damage to the worms outside of the blast radius" $
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
-         harmWorm (WormId 1) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 15 31)
-         stateWithEnemyThreeSquaresFromEpicentre)
+         harmWorm (WormId 1) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 15 31) $
+         mapGameMap stateWithEnemyThreeSquaresFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 16 30) .
+                      addAirAt (toCoord 16 29) .
+                      -- Remaining
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 17 30))))
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aState `shouldBe`
         (selectNextWormsDefault $
@@ -527,21 +545,39 @@ spec = do
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyOneSquareFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 14 31) $
-         harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31)
-         stateWithEnemyOneSquareFromEpicentre)
+         harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31) $
+         mapGameMap stateWithEnemyOneSquareFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 15 29) .
+                      -- Remaining
+                      addAirAt (toCoord 14 30) .
+                      addAirAt (toCoord 16 30))))
       let stateWithEnemyTwoSquaresFromEpicentre = moveThisWorm (toCoord 13 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 13 31) $
-         harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31)
-         stateWithEnemyTwoSquaresFromEpicentre)
+         harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
+         mapGameMap stateWithEnemyTwoSquaresFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 15 29) .
+                      -- Remaining
+                      addAirAt (toCoord 14 30) .
+                      addAirAt (toCoord 16 30))))
       let stateWithEnemyThreeSquaresFromEpicentre = moveThisWorm (toCoord 12 31) aStateWithOposingWormsNextToEachother
       it "should not cause damage to the worms outside of the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
-         harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31)
-         stateWithEnemyThreeSquaresFromEpicentre)
+         harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31) $
+         mapGameMap stateWithEnemyThreeSquaresFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 15 29) .
+                      -- Remaining
+                      addAirAt (toCoord 14 30) .
+                      addAirAt (toCoord 16 30))))
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
         (selectNextWormsDefault $
