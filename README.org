@@ -538,8 +538,10 @@ friendly.
     - CLOSING NOTE [2019-07-15 Mon 12:49]
     - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 08:40]
     :END:
-*** IN_PROGRESS Rule 6: You get points for destroying dirt as though you dug it out
+*** DONE Rule 6: You get points for destroying dirt as though you dug it out
+    CLOSED: [2019-07-15 Mon 17:10]
     :LOGBOOK:
+    - CLOSING NOTE [2019-07-15 Mon 17:10]
     - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 12:50]
     :END:
 *** TODO Rule 7: The banana bomb destroys power ups
