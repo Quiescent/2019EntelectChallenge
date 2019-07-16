@@ -15,12 +15,6 @@ import Test.Hspec.QuickCheck
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
-penaliseThisPlayerForDamage :: Int -> ModifyState
-penaliseThisPlayerForDamage  damage' = mapThisPlayer (awardPointsForDamage (-damage'))
-
-penaliseThatPlayerForDamage :: Int -> ModifyState
-penaliseThatPlayerForDamage  damage' = mapThatPlayer (awardPointsForDamage (-damage'))
-
 spec :: Spec
 spec = do
   describe "formatMove" $ do

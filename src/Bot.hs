@@ -526,6 +526,7 @@ makeBananaMoves this that state =
                              then bananaBlast thisWormsId
                                               awardPointsToThisPlayerForDigging
                                               awardPointsToThisPlayerForDamage
+                                              penaliseThisPlayerForDamage
                                               state
                                               thisTarget
                              else id
@@ -533,6 +534,7 @@ makeBananaMoves this that state =
                              then bananaBlast thatWormsId
                                               awardPointsToThatPlayerForDigging
                                               awardPointsToThatPlayerForDamage
+                                              penaliseThatPlayerForDamage
                                               state
                                               thatTarget
                              else id
@@ -543,6 +545,12 @@ awardPointsToThisPlayerForDamage damage' = mapThisPlayer (awardPointsForDamage d
 
 awardPointsToThatPlayerForDamage :: Int -> ModifyState
 awardPointsToThatPlayerForDamage damage' = mapThatPlayer (awardPointsForDamage damage')
+
+penaliseThisPlayerForDamage :: Int -> ModifyState
+penaliseThisPlayerForDamage  damage' = mapThisPlayer (awardPointsForDamage (-damage'))
+
+penaliseThatPlayerForDamage :: Int -> ModifyState
+penaliseThatPlayerForDamage  damage' = mapThatPlayer (awardPointsForDamage (-damage'))
 
 blastCoordDeltasInRange :: [(Coord -> Maybe (Int, Coord))]
 blastCoordDeltasInRange =
@@ -593,10 +601,11 @@ damageTemplate =
     squareAbsFloating :: Int -> Double
     squareAbsFloating x = fromIntegral $ abs x * abs x
 
-bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> State -> Coord -> ModifyState
+bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> State -> Coord -> ModifyState
 bananaBlast wormId'
             awardPointsForDigging'
             awardPointsForDamage'
+            penaliseForDamage'
             originalState
             targetCoord
             state =
@@ -611,7 +620,7 @@ bananaBlast wormId'
                                    harmWorm wormId'
                                             state
                                             damage'
-                                            id
+                                            (penaliseForDamage'    damage')
                                             (awardPointsForDamage' damage')
                                             id
                                             nextWormHit
