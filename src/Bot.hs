@@ -527,6 +527,7 @@ makeBananaMoves this that state =
                                               awardPointsToThisPlayerForDigging
                                               awardPointsToThisPlayerForDamage
                                               penaliseThisPlayerForDamage
+                                              awardPointsToThisPlayerForKillingAnEnemy
                                               state
                                               thisTarget
                              else id
@@ -535,6 +536,7 @@ makeBananaMoves this that state =
                                               awardPointsToThatPlayerForDigging
                                               awardPointsToThatPlayerForDamage
                                               penaliseThatPlayerForDamage
+                                              awardPointsToThatPlayerForKillingAnEnemy
                                               state
                                               thatTarget
                              else id
@@ -601,11 +603,12 @@ damageTemplate =
     squareAbsFloating :: Int -> Double
     squareAbsFloating x = fromIntegral $ abs x * abs x
 
-bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> State -> Coord -> ModifyState
+bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> State -> Coord -> ModifyState
 bananaBlast wormId'
             awardPointsForDigging'
             awardPointsForDamage'
             penaliseForDamage'
+            rewardKill
             originalState
             targetCoord
             state =
@@ -622,7 +625,7 @@ bananaBlast wormId'
                                             damage'
                                             (penaliseForDamage'    damage')
                                             (awardPointsForDamage' damage')
-                                            id
+                                            rewardKill
                                             nextWormHit
                                             state')
                          state
