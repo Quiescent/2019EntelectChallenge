@@ -15,6 +15,12 @@ import Test.Hspec.QuickCheck
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
+penaliseThisPlayerForDamage :: Int -> ModifyState
+penaliseThisPlayerForDamage  damage' = mapThisPlayer (awardPointsForDamage (-damage'))
+
+penaliseThatPlayerForDamage :: Int -> ModifyState
+penaliseThatPlayerForDamage  damage' = mapThatPlayer (awardPointsForDamage (-damage'))
+
 spec :: Spec
 spec = do
   describe "formatMove" $ do
@@ -462,6 +468,7 @@ spec = do
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
          -- Points for the four squares
+         penaliseThisPlayerForDamage 13    $
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
@@ -480,6 +487,7 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
          -- Points for the four squares
+         penaliseThisPlayerForDamage      13 $
          awardPointsToThisPlayerForDamage 13 $
          awardPointsToThisPlayerForDigging   $
          awardPointsToThisPlayerForDigging   $
@@ -499,6 +507,7 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 18 31) $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31) $
          -- Points for the four squares
+         penaliseThisPlayerForDamage     13 $
          awardPointsToThisPlayerForDamage 7 $
          awardPointsToThisPlayerForDigging  $
          awardPointsToThisPlayerForDigging  $
@@ -517,6 +526,7 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 15 31) $
          -- Points for the four squares
+         penaliseThisPlayerForDamage    13 $
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
@@ -606,6 +616,7 @@ spec = do
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
          -- Points for the four squares
+         penaliseThatPlayerForDamage 13    $
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
@@ -624,6 +635,7 @@ spec = do
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 14 31) $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31) $
          -- Points for the four squares
+         penaliseThatPlayerForDamage      13 $
          awardPointsToThatPlayerForDamage 13 $
          awardPointsToThatPlayerForDigging   $
          awardPointsToThatPlayerForDigging   $
@@ -643,6 +655,7 @@ spec = do
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 13 31) $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Points for the four squares
+         penaliseThatPlayerForDamage     13 $
          awardPointsToThatPlayerForDamage 7 $
          awardPointsToThatPlayerForDigging  $
          awardPointsToThatPlayerForDigging  $
@@ -661,6 +674,7 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Points for the four squares
+         penaliseThatPlayerForDamage    13 $
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
