@@ -562,7 +562,10 @@ friendly.
     - CLOSING NOTE [2019-07-16 Tue 12:40]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 12:25]
     :END:
-*** TODO Rule 10: You lose 2 * damage as points for damaging your own worms
+*** IN_PROGRESS Rule 10: You lose 2 * damage as points for damaging your own worms
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 12:40]
+    :END:
 *** TODO Rule 11: Killing an enemy awards 40 points
 ** TODO Implement Select
 *** TODO Encode select
