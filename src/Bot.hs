@@ -525,16 +525,24 @@ makeBananaMoves this that state =
       thisBlast            = if thisIsValid
                              then bananaBlast thisWormsId
                                               awardPointsToThisPlayerForDigging
+                                              awardPointsToThisPlayerForDamage
                                               state
                                               thisTarget
                              else id
       thatBlast            = if thatIsValid
                              then bananaBlast thatWormsId
                                               awardPointsToThatPlayerForDigging
+                                              awardPointsToThatPlayerForDamage
                                               state
                                               thatTarget
                              else id
   in thisBlast $ thatBlast state
+
+awardPointsToThisPlayerForDamage :: Int -> ModifyState
+awardPointsToThisPlayerForDamage damage' = mapThisPlayer (awardPointsForDamage damage')
+
+awardPointsToThatPlayerForDamage :: Int -> ModifyState
+awardPointsToThatPlayerForDamage damage' = mapThatPlayer (awardPointsForDamage damage')
 
 blastCoordDeltasInRange :: [(Coord -> Maybe (Int, Coord))]
 blastCoordDeltasInRange =
@@ -585,8 +593,13 @@ damageTemplate =
     squareAbsFloating :: Int -> Double
     squareAbsFloating x = fromIntegral $ abs x * abs x
 
-bananaBlast :: WormId -> ModifyState -> State -> Coord -> ModifyState
-bananaBlast wormId' awardPointsForDigging' originalState targetCoord state =
+bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> State -> Coord -> ModifyState
+bananaBlast wormId'
+            awardPointsForDigging'
+            awardPointsForDamage'
+            originalState
+            targetCoord
+            state =
   let potentialHits    = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
       -- Compute the things to hit off of the original state
       wormHits         = filter ((flip containsAnyWorm)     originalState  . snd) potentialHits
@@ -595,7 +608,14 @@ bananaBlast wormId' awardPointsForDigging' originalState targetCoord state =
       -- Effect the current state (could have changed as a result of
       -- the other worm blasting too)
       withWormsDamaged = foldl' (\ state' (damage', nextWormHit) ->
-                                   harmWorm wormId' state damage' id id id nextWormHit state')
+                                   harmWorm wormId'
+                                            state
+                                            damage'
+                                            id
+                                            (awardPointsForDamage' damage')
+                                            id
+                                            nextWormHit
+                                            state')
                          state
                          wormHits
       withDirtRemoved  = foldl' (\ state' (_, dirtHit) ->
