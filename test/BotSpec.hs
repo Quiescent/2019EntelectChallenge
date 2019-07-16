@@ -462,11 +462,12 @@ spec = do
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
          -- Points for the four squares
-         penaliseThisPlayerForDamage 13    $
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForKillingAnEnemy $
+         penaliseThisPlayerForDamage 13           $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
          mapGameMap aStateWithOposingWormsNextToEachother
                     ((-- Up
                       addAirAt (toCoord 16 30) .
@@ -610,11 +611,12 @@ spec = do
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
          -- Points for the four squares
-         penaliseThatPlayerForDamage 13    $
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForKillingAnEnemy $
+         penaliseThatPlayerForDamage 13           $
+         awardPointsToThatPlayerForDigging        $
+         awardPointsToThatPlayerForDigging        $
+         awardPointsToThatPlayerForDigging        $
+         awardPointsToThatPlayerForDigging        $
          mapGameMap aStateWithOposingWormsNextToEachother
                     ((-- Up
                       addAirAt (toCoord 15 30) .
