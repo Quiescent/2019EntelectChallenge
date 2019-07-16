@@ -499,7 +499,11 @@ friendly.
    :LOGBOOK:
    - CLOSING NOTE [2019-07-10 Wed 05:20]
    :END:
-** TODO Implement Banana Bomb
+** DONE Implement Banana Bomb
+   CLOSED: [2019-07-16 Tue 12:54]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-07-16 Tue 12:54]
+   :END:
 *** DONE Encode banana bomb
     CLOSED: [2019-07-12 Fri 05:57]
     :LOGBOOK:
