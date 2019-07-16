@@ -550,7 +550,10 @@ friendly.
     - CLOSING NOTE [2019-07-15 Mon 17:30]
     - State "IN_PROGRESS" from "TODO"       [2019-07-15 Mon 17:10]
     :END:
-*** TODO Rule 8: Both players receive points for dirt destroyed simultaneously by bombs
+*** IN_PROGRESS Rule 8: Both players receive points for dirt destroyed simultaneously by bombs
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 09:05]
+    :END:
 *** TODO Rule 9: You receive 2 * damage as points for damaging enemies
 *** TODO Rule 10: You lose 2 * damage as points for damaging your own worms
 *** TODO Rule 11: Killing an enemy awards 40 points
