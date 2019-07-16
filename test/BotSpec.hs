@@ -15,6 +15,12 @@ import Test.Hspec.QuickCheck
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
+awardPointsToThisPlayerForDamage :: Int -> ModifyState
+awardPointsToThisPlayerForDamage damage' = mapThisPlayer (awardPointsForDamage damage')
+
+awardPointsToThatPlayerForDamage :: Int -> ModifyState
+awardPointsToThatPlayerForDamage damage' = mapThatPlayer (awardPointsForDamage damage')
+
 spec :: Spec
 spec = do
   describe "formatMove" $ do
@@ -480,10 +486,11 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
          -- Points for the four squares
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDamage 13 $
+         awardPointsToThisPlayerForDigging   $
+         awardPointsToThisPlayerForDigging   $
+         awardPointsToThisPlayerForDigging   $
+         awardPointsToThisPlayerForDigging   $
          mapGameMap stateWithEnemyOneSquareFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 16 30) .
@@ -498,10 +505,11 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 18 31) $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31) $
          -- Points for the four squares
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
-         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDamage 7 $
+         awardPointsToThisPlayerForDigging  $
+         awardPointsToThisPlayerForDigging  $
+         awardPointsToThisPlayerForDigging  $
+         awardPointsToThisPlayerForDigging  $
          mapGameMap stateWithEnemyTwoSquaresFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 16 30) .
@@ -622,10 +630,11 @@ spec = do
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 14 31) $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31) $
          -- Points for the four squares
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDamage 13 $
+         awardPointsToThatPlayerForDigging   $
+         awardPointsToThatPlayerForDigging   $
+         awardPointsToThatPlayerForDigging   $
+         awardPointsToThatPlayerForDigging   $
          mapGameMap stateWithEnemyOneSquareFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 15 30) .
@@ -640,10 +649,11 @@ spec = do
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 13 31) $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Points for the four squares
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
-         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDamage 7 $
+         awardPointsToThatPlayerForDigging  $
+         awardPointsToThatPlayerForDigging  $
+         awardPointsToThatPlayerForDigging  $
+         awardPointsToThatPlayerForDigging  $
          mapGameMap stateWithEnemyTwoSquaresFromEpicentre
                     ((-- Up
                       addAirAt (toCoord 15 30) .

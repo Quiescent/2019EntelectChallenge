@@ -977,8 +977,11 @@ awardPointsToThisPlayerForMissing = mapThisPlayer awardPointsForMissing
 awardPointsToThatPlayerForMissing :: ModifyState
 awardPointsToThatPlayerForMissing = mapThatPlayer awardPointsForMissing
 
+awardPointsForDamage :: Int -> Player -> Player
+awardPointsForDamage damage' = modifyScore (2 * damage')
+
 awardPointsForHittingAnEnemy :: Player -> Player
-awardPointsForHittingAnEnemy = modifyScore 2 -- (2 * rocketDamage)
+awardPointsForHittingAnEnemy = awardPointsForDamage rocketDamage
 
 awardPointsToThisPlayerForHittingAnEnemy :: ModifyState
 awardPointsToThisPlayerForHittingAnEnemy = mapThisPlayer awardPointsForHittingAnEnemy
