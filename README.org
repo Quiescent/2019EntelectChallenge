@@ -581,6 +581,10 @@ friendly.
 ** TODO Implement Select
 *** TODO Encode select
 *** TODO Make select moves ahead of others
+** TODO Implement Banana Bombs Parsing for Worms
+*** TODO Implement Storage of Banana Bombs Remaining
+** TODO Implement Selection of Banana Bombs
+** TODO Simulate a game with Banana Bombs in it
 ** TODO Improve the types around all the functions which take multiple ModifyStates
 * Questions About the Engine
 ** DONE Do two worms always get to move?  (Or do you miss turns when your other worms die)
