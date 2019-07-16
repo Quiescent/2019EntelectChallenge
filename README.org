@@ -568,7 +568,10 @@ friendly.
     - CLOSING NOTE [2019-07-16 Tue 12:49]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 12:40]
     :END:
-*** TODO Rule 11: Killing an enemy awards 40 points
+*** IN_PROGRESS Rule 11: Killing an enemy awards 40 points
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 12:49]
+    :END:
 ** TODO Implement Select
 *** TODO Encode select
 *** TODO Make select moves ahead of others
