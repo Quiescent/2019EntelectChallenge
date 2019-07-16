@@ -562,8 +562,10 @@ friendly.
     - CLOSING NOTE [2019-07-16 Tue 12:40]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 12:25]
     :END:
-*** IN_PROGRESS Rule 10: You lose 2 * damage as points for damaging your own worms
+*** DONE Rule 10: You lose 2 * damage as points for damaging your own worms
+    CLOSED: [2019-07-16 Tue 12:49]
     :LOGBOOK:
+    - CLOSING NOTE [2019-07-16 Tue 12:49]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 12:40]
     :END:
 *** TODO Rule 11: Killing an enemy awards 40 points
