@@ -739,6 +739,63 @@ spec = do
                       addAirAt (toCoord 17 5) .
                       addAirAt (toCoord 15 7) .
                       addAirAt (toCoord 17 7))))
+    context "when both the opponent and I throw the bomb" $ do
+      it "should give us both points for the squares which we both hit" $
+        makeMove False (fromMoves bananaIntoDirtFromMe bananaIntoDirtFromMe) aStateWithOposingWormsNextToEachother `shouldBe`
+        (selectNextWormsDefault $
+         -- Points for the 13 squares
+         -- For him
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         awardPointsToThatPlayerForDigging $
+         -- For me
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         awardPointsToThisPlayerForDigging $
+         -- Add his hits. (offset one to the right)
+         mapGameMap aState ((addAirAt (toCoord 15 26) . -- epicentre
+                             -- Up
+                             addAirAt (toCoord 15 25) .
+                             addAirAt (toCoord 15 24) .
+                             addAirAt (toCoord 16 24) .
+                             -- Down
+                             addAirAt (toCoord 15 27) .
+                             addAirAt (toCoord 15 28) .
+                             addAirAt (toCoord 16 28) .
+                             -- Left
+                             addAirAt (toCoord 14 26) .
+                             addAirAt (toCoord 13 26) .
+                             -- Right
+                             addAirAt (toCoord 16 26) .
+                             addAirAt (toCoord 17 26) .
+                             addAirAt (toCoord 18 26) .
+                             -- Remaining
+                             addAirAt (toCoord 14 25) .
+                             addAirAt (toCoord 16 25) .
+                             addAirAt (toCoord 17 25) .
+                             addAirAt (toCoord 14 27) .
+                             addAirAt (toCoord 16 27) .
+                             addAirAt (toCoord 17 27))))
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
