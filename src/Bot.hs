@@ -523,10 +523,16 @@ makeBananaMoves this that state =
       thisTarget           = fromJust thisDestinationBlock
       thatTarget           = fromJust thatDestinationBlock
       thisBlast            = if thisIsValid
-                             then bananaBlast thisWormsId awardPointsToThisPlayerForDigging thisTarget
+                             then bananaBlast thisWormsId
+                                              awardPointsToThisPlayerForDigging
+                                              state
+                                              thisTarget
                              else id
       thatBlast            = if thatIsValid
-                             then bananaBlast thatWormsId awardPointsToThatPlayerForDigging thatTarget
+                             then bananaBlast thatWormsId
+                                              awardPointsToThatPlayerForDigging
+                                              state
+                                              thatTarget
                              else id
   in thisBlast $ thatBlast state
 
@@ -579,12 +585,15 @@ damageTemplate =
     squareAbsFloating :: Int -> Double
     squareAbsFloating x = fromIntegral $ abs x * abs x
 
-bananaBlast :: WormId -> ModifyState -> Coord -> ModifyState
-bananaBlast wormId' awardPointsForDigging' targetCoord state =
+bananaBlast :: WormId -> ModifyState -> State -> Coord -> ModifyState
+bananaBlast wormId' awardPointsForDigging' originalState targetCoord state =
   let potentialHits    = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
-      wormHits         = filter ((flip containsAnyWorm)     state  . snd) potentialHits
-      dirtHits         = filter ((flip dirtAt)     (gameMap state) . snd) potentialHits
-      packHits         = filter ((flip medipackAt) (gameMap state) . snd) potentialHits
+      -- Compute the things to hit off of the original state
+      wormHits         = filter ((flip containsAnyWorm)     originalState  . snd) potentialHits
+      dirtHits         = filter ((flip dirtAt)     (gameMap originalState) . snd) potentialHits
+      packHits         = filter ((flip medipackAt) (gameMap originalState) . snd) potentialHits
+      -- Effect the current state (could have changed as a result of
+      -- the other worm blasting too)
       withWormsDamaged = foldl' (\ state' (damage', nextWormHit) ->
                                    harmWorm wormId' state damage' id id id nextWormHit state')
                          state

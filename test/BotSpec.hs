@@ -773,29 +773,30 @@ spec = do
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
          -- Add his hits. (offset one to the right)
-         mapGameMap aState ((addAirAt (toCoord 15 26) . -- epicentre
-                             -- Up
-                             addAirAt (toCoord 15 25) .
-                             addAirAt (toCoord 15 24) .
-                             addAirAt (toCoord 16 24) .
-                             -- Down
-                             addAirAt (toCoord 15 27) .
-                             addAirAt (toCoord 15 28) .
-                             addAirAt (toCoord 16 28) .
-                             -- Left
-                             addAirAt (toCoord 14 26) .
-                             addAirAt (toCoord 13 26) .
-                             -- Right
-                             addAirAt (toCoord 16 26) .
-                             addAirAt (toCoord 17 26) .
-                             addAirAt (toCoord 18 26) .
-                             -- Remaining
-                             addAirAt (toCoord 14 25) .
-                             addAirAt (toCoord 16 25) .
-                             addAirAt (toCoord 17 25) .
-                             addAirAt (toCoord 14 27) .
-                             addAirAt (toCoord 16 27) .
-                             addAirAt (toCoord 17 27))))
+         mapGameMap aStateWithOposingWormsNextToEachother
+                    ((addAirAt (toCoord 15 26) . -- epicentre
+                      -- Up
+                      addAirAt (toCoord 15 25) .
+                      addAirAt (toCoord 15 24) .
+                      addAirAt (toCoord 16 24) .
+                      -- Down
+                      addAirAt (toCoord 15 27) .
+                      addAirAt (toCoord 15 28) .
+                      addAirAt (toCoord 16 28) .
+                      -- Left
+                      addAirAt (toCoord 14 26) .
+                      addAirAt (toCoord 13 26) .
+                      -- Right
+                      addAirAt (toCoord 16 26) .
+                      addAirAt (toCoord 17 26) .
+                      addAirAt (toCoord 18 26) .
+                      -- Remaining
+                      addAirAt (toCoord 14 25) .
+                      addAirAt (toCoord 16 25) .
+                      addAirAt (toCoord 17 25) .
+                      addAirAt (toCoord 14 27) .
+                      addAirAt (toCoord 16 27) .
+                      addAirAt (toCoord 17 27))))
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
