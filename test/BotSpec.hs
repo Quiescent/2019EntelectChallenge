@@ -8,6 +8,7 @@ import Import
 import qualified RIO.Vector.Boxed as V
 import RIO.List
 import qualified RIO.HashSet as S
+import Data.Bits
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -18,16 +19,20 @@ getIntFromCoord (Coord xy) = xy
 spec :: Spec
 spec = do
   describe "formatMove" $ do
-    prop "should produce the correct type of move for the correct range" $ \ x ->
+    prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
       let x'            = abs x `mod` 108
-          formattedMove = formatMove (Move x') (toCoord 6 6)
+          y'            = shiftL 7 $ abs y `mod` 4
+          move'         = x' .|. y'
+          formattedMove = formatMove (Move move') (toCoord 6 6)
       in if x' < 8
          then formattedMove `shouldStartWith` "shoot"
          else if x' < 16
               then formattedMove `shouldStartWith` "move"
               else if x' < 24
                    then formattedMove `shouldStartWith` "dig"
-                   else formattedMove `shouldStartWith` "banana"
+                   else if x' < 64
+                        then formattedMove `shouldStartWith` "banana"
+                        else formattedMove `shouldStartWith` "select"
   describe "blastCoordDeltasInRange" $ do
     prop "should always produce a coord within range of 2 (blast radius of banana bomb)" $ \ (i, j) ->
       let x'     = abs i `mod` mapDim
