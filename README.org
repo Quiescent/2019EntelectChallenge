@@ -582,8 +582,10 @@ friendly.
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 18:00]
    :END:
-*** IN_PROGRESS Encode select
+*** DONE Encode select
+    CLOSED: [2019-07-17 Wed 05:50]
     :LOGBOOK:
+    - CLOSING NOTE [2019-07-17 Wed 05:50]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 18:01]
     :END:
 *** TODO Make select moves ahead of others
