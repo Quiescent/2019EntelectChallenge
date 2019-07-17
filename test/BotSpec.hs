@@ -1164,6 +1164,30 @@ spec = do
                                   fromJust $
                                   aListFind ((== thatSelection) . idSlot) positions)
                                  (wormPositions state))
+      prop "should always move the next worm when no selects are left" $ \ (i, j, k, l) ->
+        -- TODO: change the state so that there are no selects left!!!
+        let thisSelection  = WormId $ oneIfZero $ abs i `mod` 4
+            thisMove       = withSelection thisSelection $
+                             moveMoves L.!! (abs j `mod` (length moveMoves))
+            thatSelection  = WormId $ fourIfZero $ shiftL (abs k `mod` 4) 2
+            thatMove       = withSelection thatSelection $
+                             moveMoves L.!! (abs l `mod` (length moveMoves))
+            positions      = wormPositions aStateWithWormsOn20Health
+        in ((thisMove, thatMove),
+             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
+           \ (_, state) ->
+             (not $
+              isAHit $
+              isAPositionOfAWorm (dataSlot $
+                                  fromJust $
+                                  aListFind ((== thisSelection) . idSlot) positions)
+                                 (wormPositions state)) &&
+             (not $
+              isAHit $
+              isAPositionOfAWorm (dataSlot $
+                                  fromJust $
+                                  aListFind ((== thatSelection) . idSlot) positions)
+                                 (wormPositions state))
 
 isAHit (HitWorm _) = True
 isAHit _           = False
