@@ -359,7 +359,7 @@ formatMove :: Move -> Coord -> String
 -- Shoot
 formatMove dir@(Move x) xy
   -- Select
-  | x > 128 = formatSelect dir xy -- Calls back into this function without the select
+  | x >= 128 = formatSelect dir xy -- Calls back into this function without the select
   -- Shoot
   | x < 8   = formatShootMove dir
   -- Move
