@@ -1091,7 +1091,7 @@ penaliseThatPlayerForHittingHisFriendlyWorm :: ModifyState
 penaliseThatPlayerForHittingHisFriendlyWorm = mapThatPlayer penaliseForHittingFriendlyWorm
 
 penaliseForHittingFriendlyWorm :: Player -> Player
-penaliseForHittingFriendlyWorm = modifyScore (-2 * rocketDamage)
+penaliseForHittingFriendlyWorm = awardPointsForDamage (-rocketDamage)
 
 wormsBelongToSamePlayer :: WormId -> WormId -> Bool
 wormsBelongToSamePlayer thisWormId thatWormId =
