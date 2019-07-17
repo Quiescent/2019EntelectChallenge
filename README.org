@@ -588,7 +588,10 @@ friendly.
     - CLOSING NOTE [2019-07-17 Wed 05:50]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 18:01]
     :END:
-*** TODO Make select moves ahead of others
+*** IN_PROGRESS Make select moves ahead of others
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-07-17 Wed 05:50]
+    :END:
 ** TODO Implement Banana Bombs Parsing for Worms
 *** TODO Implement Storage of Banana Bombs Remaining
 ** TODO Implement Selection of Banana Bombs
