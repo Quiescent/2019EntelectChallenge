@@ -21,16 +21,16 @@ spec = do
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
       let x'            = abs x `mod` 108
-          y'            = shiftL 7 $ abs y `mod` 4
+          y'            = shiftL (abs y `mod` 4) 7
           move'         = x' .|. y'
           formattedMove = formatMove (Move move') (toCoord 6 6)
-      in if x' < 8
+      in if move' < 8
          then formattedMove `shouldStartWith` "shoot"
-         else if x' < 16
+         else if move' < 16
               then formattedMove `shouldStartWith` "move"
-              else if x' < 24
+              else if move' < 24
                    then formattedMove `shouldStartWith` "dig"
-                   else if x' < 64
+                   else if move' < 107
                         then formattedMove `shouldStartWith` "banana"
                         else formattedMove `shouldStartWith` "select"
   describe "blastCoordDeltasInRange" $ do

@@ -421,8 +421,27 @@ displaceToBananaDestination :: Move -> Coord -> Maybe Coord
 displaceToBananaDestination (Move dir) coord' =
   (coordDeltasInRange !! (dir - 24)) coord'
 
+selectEncodingRange :: Int
+selectEncodingRange = 7
+
+selectMoveMask :: Int
+selectMoveMask = shiftL 3 selectEncodingRange
+
+decodeSelection :: Move -> Int
+decodeSelection (Move x) = shiftR (x .&. selectMoveMask) selectEncodingRange
+
+moveMask :: Int
+moveMask = complement selectMoveMask
+
+removeSelectionFromMove :: Move -> Move
+removeSelectionFromMove (Move x) =
+  Move $ x .&. moveMask
+
 formatSelect :: Move -> Coord -> String
-formatSelect = undefined -- TODO !!!
+formatSelect move coord' =
+  let selection = decodeSelection move
+      move'     = removeSelectionFromMove move
+  in "select " ++ show selection ++ ";" ++ formatMove move' coord'
 
 formatShootMove :: Move -> String
 formatShootMove (Move 0) = "shoot N"
