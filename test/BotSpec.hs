@@ -1129,11 +1129,12 @@ spec = do
             thisMove       = withSelection (WormId thisSelection) $
                              Move $ abs j `mod` 107
             thisNextWormId = nextWormId (WormId thisSelection) [WormId 1, WormId 2, WormId 3]
-            thatSelection  = fourIfZero $ shiftL (abs k `mod` 4) 3
+            thatSelection  = fourIfZero $ shiftL (abs k `mod` 4) 2
             thatMove       = withSelection (WormId thatSelection) $
                              Move $ abs l `mod` 107
             thatNextWormId = nextWormId (WormId thatSelection) [WormId 4, WormId 8, WormId 12]
-        in ((thisMove, thatMove, thisNextWormId, thatNextWormId),
+        in ((formatMove thisMove (toCoord 20 20), formatMove thatMove (toCoord 20 20),
+             thisNextWormId, thatNextWormId),
             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
            \ (_, (State { myPlayer = (Player _ thisCurrentWormId), opponent = (Player _ thatCurrentWormId)})) ->
              thisCurrentWormId == thisNextWormId &&
