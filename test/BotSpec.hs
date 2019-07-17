@@ -1115,6 +1115,37 @@ spec = do
           (selectNextWorms (WormId 1) (WormId 4) $
            awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
+    context "when selecting a worm" $ do
+      let aStateWithWormsOn20Health =
+            withWormHealths (always $ AList [
+                                AListEntry (WormId 1)  (WormHealth 20),
+                                AListEntry (WormId 2)  (WormHealth 20),
+                                AListEntry (WormId 3)  (WormHealth 20),
+                                AListEntry (WormId 4)  (WormHealth 20),
+                                AListEntry (WormId 8)  (WormHealth 20),
+                                AListEntry (WormId 12) (WormHealth 20)]) aState
+      prop "the worm after the selected worm should be next" $ \ (i, j, k, l) ->
+        let thisSelection  = oneIfZero $ abs i `mod` 4
+            thisMove       = withSelection (WormId thisSelection) $
+                             Move $ abs j `mod` 107
+            thisNextWormId = nextWormId (WormId thisSelection) [WormId 1, WormId 2, WormId 3]
+            thatSelection  = fourIfZero $ shiftL (abs k `mod` 4) 3
+            thatMove       = withSelection (WormId thatSelection) $
+                             Move $ abs l `mod` 107
+            thatNextWormId = nextWormId (WormId thatSelection) [WormId 4, WormId 8, WormId 12]
+        in ((thisMove, thatMove, thisNextWormId, thatNextWormId),
+            makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
+           \ (_, (State { myPlayer = (Player _ thisCurrentWormId), opponent = (Player _ thatCurrentWormId)})) ->
+             thisCurrentWormId == thisNextWormId &&
+             thatCurrentWormId == thatNextWormId
+
+oneIfZero :: Int -> Int
+oneIfZero 0 = 1
+oneIfZero x = x
+
+fourIfZero :: Int -> Int
+fourIfZero 0 = 4
+fourIfZero x = x
 
 -- For how to come up with this value take a look at the function
 -- `coordDeltasInRange' and the accompanying doc string.
@@ -1122,6 +1153,10 @@ bananaOneToRight      = Move 65
 bananaOneToLeft       = Move 63
 bananaIntoDirtFromMe  = Move 24
 bananaIntoDirtFromHim = Move 104
+
+withSelection :: WormId -> Move -> Move
+withSelection  (WormId id') (Move x) =
+  Move $ x .|. (shiftL id' selectMoveMask)
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''

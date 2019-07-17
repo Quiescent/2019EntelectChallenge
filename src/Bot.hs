@@ -340,10 +340,11 @@ readGameState r = do
 -- 81 -> 106
 
 -- Bit packing of move:
--- 0000000 00 00000000000000000000000
+-- 0000000 0000 000000000000000000000
 --    ^     ^
 --    |     |
--- Moves  Selects
+-- Moves Selects (mine then his because his worm id's are always left
+-- shifted by 3)
 -- Range of moves: 0 -> 127
 
 -- Process to extract:
@@ -425,7 +426,7 @@ selectEncodingRange :: Int
 selectEncodingRange = 7
 
 selectMoveMask :: Int
-selectMoveMask = shiftL 3 selectEncodingRange
+selectMoveMask = shiftL 15 selectEncodingRange
 
 decodeSelection :: Move -> Int
 decodeSelection (Move x) = shiftR (x .&. selectMoveMask) selectEncodingRange
