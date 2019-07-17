@@ -84,9 +84,9 @@ spec = do
       in ((displaceCoordByMove coordInMap randomMove) >>= (\ newCoord -> displaceCoordByMove newCoord moveBack)) `shouldBe` Just coordInMap
   describe "combined moves" $ do
     prop "Can always be extracted" $ \ (i, j) ->
-      -- There aren't 512 many moves but there are that many slots.
-      let iMove = Move $ (abs i) `mod` 512
-          jMove = Move $ (abs j) `mod` 512
+      -- There aren't 2048 many moves but there are that many slots.
+      let iMove = Move $ (abs i) `mod` 2048
+          jMove = Move $ (abs j) `mod` 2048
       in toMoves (fromMoves iMove jMove) `shouldBe` (iMove, jMove)
   describe "coordinates" $ do
     prop "Can always be extracted" $ \ (i, j) ->
@@ -1136,6 +1136,7 @@ spec = do
                              Move $ abs l `mod` 107
             thatNextWormId = nextWormId (WormId thatSelection) [WormId 4, WormId 8, WormId 12]
         in ((formatMove thisMove (toCoord 20 20), formatMove thatMove (toCoord 20 20),
+             thisSelection, thatSelection,
              thisNextWormId, thatNextWormId),
             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
            \ (_, (State { myPlayer = (Player _ thisCurrentWormId), opponent = (Player _ thatCurrentWormId)})) ->
@@ -1212,7 +1213,7 @@ bananaIntoDirtFromHim = Move 104
 
 withSelection :: WormId -> Move -> Move
 withSelection  (WormId id') (Move x) =
-  Move $ x .|. (shiftL id' selectMoveMask)
+  Move $ x .|. (shiftL id' selectEncodingRange)
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _) = score' == score''

@@ -515,12 +515,40 @@ toMoves (CombinedMove moves) =
 
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove swapping moves =
-  let (myMove, opponentsMove) = toMoves moves
+  let (myMove,  opponentsMove)  = toMoves moves
+      (myMove', opponentsMove') = (removeSelectionFromMove myMove,
+                                   removeSelectionFromMove opponentsMove)
   in advanceWormSelections .
-     makeShootMoves          myMove opponentsMove .
-     makeBananaMoves         myMove opponentsMove .
-     makeDigMoves            myMove opponentsMove .
-     makeMoveMoves  swapping myMove opponentsMove
+     makeShootMoves          myMove' opponentsMove' .
+     makeBananaMoves         myMove' opponentsMove' .
+     makeDigMoves            myMove' opponentsMove' .
+     makeMoveMoves  swapping myMove' opponentsMove' .
+     makeSelections          myMove  opponentsMove
+
+makeSelections :: Move -> Move -> ModifyState
+makeSelections thisMove@(Move this) thatMove@(Move that) state =
+  let thisSelection      = if this >= 128 then Just (WormId $ decodeSelection thisMove) else Nothing
+      thatSelection      = if that >= 128 then Just (WormId $ decodeSelection thatMove) else Nothing
+      thisValidSelection = thisSelection >>= (\ selection -> if wormExists selection state
+                                                             then Just selection
+                                                             else Nothing)
+      thatValidSelection = thatSelection >>= (\ selection -> if wormExists selection state
+                                                             then Just selection
+                                                             else Nothing)
+      thisIsValid        = isJust thisValidSelection
+      thatIsValid        = isJust thatValidSelection
+      thisWormId         = fromJust thisValidSelection
+      thatWormId         = fromJust thatValidSelection
+      selectThis         = if thisIsValid
+                           then mapThisPlayer (withCurrentWormId thisWormId)
+                           else id
+      selectThat         = if thatIsValid
+                           then mapThatPlayer (withCurrentWormId thatWormId)
+                           else id
+  in selectThis $ selectThat state
+
+wormExists :: WormId -> State -> Bool
+wormExists wormId' = isJust . aListFind ((== wormId') . idSlot) . wormPositions
 
 isABananaMove :: Move -> Bool
 isABananaMove (Move x) =
