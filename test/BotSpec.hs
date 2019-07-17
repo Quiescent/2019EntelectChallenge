@@ -6,9 +6,11 @@ import Bot
 import Import
 
 import qualified RIO.Vector.Boxed as V
+import qualified RIO.List.Partial as L
 import RIO.List
 import qualified RIO.HashSet as S
 import Data.Bits
+import Data.Maybe
 
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -1123,7 +1125,7 @@ spec = do
                                 AListEntry (WormId 3)  (WormHealth 20),
                                 AListEntry (WormId 4)  (WormHealth 20),
                                 AListEntry (WormId 8)  (WormHealth 20),
-                                AListEntry (WormId 12) (WormHealth 20)]) aState
+                                AListEntry (WormId 12) (WormHealth 20)]) aStateWithOnlyAirOnMap
       prop "the worm after the selected worm should be next" $ \ (i, j, k, l) ->
         let thisSelection  = oneIfZero $ abs i `mod` 4
             thisMove       = withSelection (WormId thisSelection) $
@@ -1139,6 +1141,35 @@ spec = do
            \ (_, (State { myPlayer = (Player _ thisCurrentWormId), opponent = (Player _ thatCurrentWormId)})) ->
              thisCurrentWormId == thisNextWormId &&
              thatCurrentWormId == thatNextWormId
+      prop "should move the worm which was selected when a move move is made" $ \ (i, j, k, l) ->
+        let thisSelection  = WormId $ oneIfZero $ abs i `mod` 4
+            thisMove       = withSelection thisSelection $
+                             moveMoves L.!! (abs j `mod` (length moveMoves))
+            thatSelection  = WormId $ fourIfZero $ shiftL (abs k `mod` 4) 2
+            thatMove       = withSelection thatSelection $
+                             moveMoves L.!! (abs l `mod` (length moveMoves))
+            positions      = wormPositions aStateWithWormsOn20Health
+        in ((thisMove, thatMove),
+             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
+           \ (_, state) ->
+             (not $
+              isAHit $
+              isAPositionOfAWorm (dataSlot $
+                                  fromJust $
+                                  aListFind ((== thisSelection) . idSlot) positions)
+                                 (wormPositions state)) &&
+             (not $
+              isAHit $
+              isAPositionOfAWorm (dataSlot $
+                                  fromJust $
+                                  aListFind ((== thatSelection) . idSlot) positions)
+                                 (wormPositions state))
+
+isAHit (HitWorm _) = True
+isAHit _           = False
+
+
+moveMoves = [Move 8, Move 9, Move 10, Move 11, Move 12, Move 13, Move 14, Move 15]
 
 oneIfZero :: Int -> Int
 oneIfZero 0 = 1
