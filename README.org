@@ -593,7 +593,7 @@ friendly.
     - State "IN_PROGRESS" from "TODO"       [2019-07-17 Wed 05:50]
     :END:
 ** TODO Implement Banana Bombs Parsing for Worms
-*** TODO Implement Storage of Banana Bombs Remaining
+** TODO Implement Selection Parsing
 ** TODO Implement Selection of Banana Bombs
 ** TODO Simulate a game with Banana Bombs in it
 ** TODO Improve the types around all the functions which take multiple ModifyStates
