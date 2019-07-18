@@ -599,6 +599,11 @@ friendly.
 *** TODO Implement the test for ignoring select when there are no selects left
 ** TODO Implement Selection of Banana Bombs
 ** TODO Simulate a game with Banana Bombs in it
+** TODO Debug the test which should be failing
+   :LOGBOOK:
+   - Note taken on [2019-07-18 Thu 07:16] \\
+     To replicate the problem set the player move bits back to 9.
+   :END:
 ** TODO Improve the types around all the functions which take multiple ModifyStates
 * Questions About the Engine
 ** DONE Do two worms always get to move?  (Or do you miss turns when your other worms die)

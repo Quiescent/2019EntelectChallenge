@@ -83,7 +83,12 @@ spec = do
           moveBack    = Move $ ((indexOfMove + 4) `mod` 8) + 8
       in ((displaceCoordByMove coordInMap randomMove) >>= (\ newCoord -> displaceCoordByMove newCoord moveBack)) `shouldBe` Just coordInMap
   describe "combined moves" $ do
+    it "should be able to extract the maximum move" $
+      let iMove = Move 2047
+          jMove = Move 2047
+      in toMoves (fromMoves iMove jMove) `shouldBe` (iMove, jMove)
     prop "Can always be extracted" $ \ (i, j) ->
+      -- TODO: this should be failing :/
       -- There aren't 2048 many moves but there are that many slots.
       let iMove = Move $ (abs i) `mod` 2048
           jMove = Move $ (abs j) `mod` 2048
