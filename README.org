@@ -596,7 +596,10 @@ friendly.
     - CLOSING NOTE [2019-07-19 Fri 05:28]
     - State "IN_PROGRESS" from "TODO"       [2019-07-17 Wed 05:50]
     :END:
-** TODO Implement Banana Bombs Parsing for Worms
+** IN_PROGRESS Implement Banana Bombs Parsing for Worms
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-07-19 Fri 05:28]
+   :END:
 *** TODO Implement test for ignoring the banana move when no banana bombs left
 *** TODO Implement test for not throwing the banana when the wrong worm is selected
 ** TODO Implement Selection Parsing
