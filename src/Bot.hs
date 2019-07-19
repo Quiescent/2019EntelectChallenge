@@ -618,10 +618,27 @@ isABananaMove :: Move -> Bool
 isABananaMove (Move x) =
   x < 107 && x >= 24
 
+hasBananas :: Bananas -> Bool
+hasBananas (Bananas x) = x > 0
+
+thisWormHasBananasLeft :: State -> Bool
+thisWormHasBananasLeft state =
+  let wormId' = thisPlayersCurrentWormId state
+  in any (hasBananas . dataSlot) $ aListFind ((== wormId') . idSlot) $ wormBananas state
+
+thatWormHasBananasLeft :: State -> Bool
+thatWormHasBananasLeft state =
+  let wormId' = thatPlayersCurrentWormId state
+  in any (hasBananas . dataSlot) $ aListFind ((== wormId') . idSlot) $ wormBananas state
+
 makeBananaMoves :: Move -> Move -> ModifyState
 makeBananaMoves this that state =
-  let thisBananaMove       = if isABananaMove this then Just this else Nothing
-      thatBananaMove       = if isABananaMove that then Just that else Nothing
+  let thisBananaMove       = if isABananaMove this && thisWormHasBananasLeft state
+                             then Just this
+                             else Nothing
+      thatBananaMove       = if isABananaMove that && thatWormHasBananasLeft state
+                             then Just that
+                             else Nothing
       thisWormsId          = thisPlayersCurrentWormId state
       thatWormsId          = thatPlayersCurrentWormId state
       thisWormsCoord'      = thisWormsCoord state

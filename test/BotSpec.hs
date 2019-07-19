@@ -549,8 +549,12 @@ spec = do
                       -- Remaining
                       addAirAt (toCoord 15 30) .
                       addAirAt (toCoord 17 30))))
+      let aStateWithBananasLeftForWorms1And4 =
+            withWormBananas (always $ AList [
+                                AListEntry (WormId 1)  (Bananas 3),
+                                AListEntry (WormId 4)  (Bananas 3)]) aState
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
-        makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aState `shouldBe`
+        makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aStateWithBananasLeftForWorms1And4 `shouldBe`
         (selectNextWormsDefault $
          -- Points for the 13 squares
          awardPointsToThisPlayerForDigging $
@@ -566,7 +570,8 @@ spec = do
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
-         mapGameMap aState ((addAirAt (toCoord 15 26) . -- epicentre
+         mapGameMap aStateWithBananasLeftForWorms1And4
+                           ((addAirAt (toCoord 15 26) . -- epicentre
                              -- Up
                              addAirAt (toCoord 15 25) .
                              addAirAt (toCoord 15 24) .
@@ -584,7 +589,10 @@ spec = do
                              addAirAt (toCoord 16 25) .
                              addAirAt (toCoord 14 27) .
                              addAirAt (toCoord 16 27))))
-      let aStateWithAMedipackInTheDirt = mapGameMap aState (addMedipackAt (toCoord 16 26))
+      let aStateWithAMedipackInTheDirt = withWormBananas (always $ AList [
+                                                             AListEntry (WormId 1)  (Bananas 3),
+                                                             AListEntry (WormId 4)  (Bananas 3)]) $
+                                         mapGameMap aState (addMedipackAt (toCoord 16 26))
       it "should destroy medipacks" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aStateWithAMedipackInTheDirt `shouldBe`
         (selectNextWormsDefault $
@@ -701,8 +709,12 @@ spec = do
                       -- Remaining
                       addAirAt (toCoord 14 30) .
                       addAirAt (toCoord 16 30))))
+      let aStateWithBananasLeftForWorms1And4 =
+            withWormBananas (always $ AList [
+                                AListEntry (WormId 1)  (Bananas 3),
+                                AListEntry (WormId 4)  (Bananas 3)]) aState
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
-        makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
+        makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithBananasLeftForWorms1And4 `shouldBe`
         (selectNextWormsDefault $
          -- Points for the 13 squares
          awardPointsToThatPlayerForDigging $
@@ -718,7 +730,8 @@ spec = do
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
-         mapGameMap aState ((addAirAt (toCoord 16 6) . -- epicentre
+         mapGameMap aStateWithBananasLeftForWorms1And4
+                           ((addAirAt (toCoord 16 6) . -- epicentre
                              -- Up
                              addAirAt (toCoord 16 5) .
                              addAirAt (toCoord 16 4) .
@@ -736,7 +749,10 @@ spec = do
                              addAirAt (toCoord 17 5) .
                              addAirAt (toCoord 15 7) .
                              addAirAt (toCoord 17 7))))
-      let aStateWithAMedipackInTheDirt = mapGameMap aState (addMedipackAt (toCoord 16 7))
+      let aStateWithAMedipackInTheDirt = withWormBananas (always $ AList [
+                                                             AListEntry (WormId 1)  (Bananas 3),
+                                                             AListEntry (WormId 4)  (Bananas 3)]) $
+                                         mapGameMap aState (addMedipackAt (toCoord 16 7))
       it "should destroy medipacks" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithAMedipackInTheDirt `shouldBe`
         (selectNextWormsDefault $
