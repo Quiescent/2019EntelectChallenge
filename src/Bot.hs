@@ -631,6 +631,23 @@ thatWormHasBananasLeft state =
   let wormId' = thatPlayersCurrentWormId state
   in any (hasBananas . dataSlot) $ aListFind ((== wormId') . idSlot) $ wormBananas state
 
+decrementBananas :: Bananas -> Bananas
+decrementBananas (Bananas x) = Bananas $ x - 1
+
+decrementThisWormsBananas :: ModifyState
+decrementThisWormsBananas state =
+  let wormId' = thisPlayersCurrentWormId state
+  in withWormBananas (mapWormById wormId' (mapDataSlot decrementBananas)) state
+
+decrementThatWormsBananas :: ModifyState
+decrementThatWormsBananas state =
+  let wormId' = thatPlayersCurrentWormId state
+  in withWormBananas (mapWormById wormId' (mapDataSlot decrementBananas)) state
+
+withWormBananas :: WithWormFacts Bananas
+withWormBananas f state@(State { wormBananas = wormBananas' }) =
+  state { wormBananas = f wormBananas' }
+
 makeBananaMoves :: Move -> Move -> ModifyState
 makeBananaMoves this that state =
   let thisBananaMove       = if isABananaMove this && thisWormHasBananasLeft state
@@ -652,7 +669,8 @@ makeBananaMoves this that state =
       thisTarget           = fromJust thisDestinationBlock
       thatTarget           = fromJust thatDestinationBlock
       thisBlast            = if thisIsValid
-                             then bananaBlast thisWormsId
+                             then decrementThisWormsBananas .
+                                  bananaBlast thisWormsId
                                               awardPointsToThisPlayerForDigging
                                               awardPointsToThisPlayerForDamage
                                               penaliseThisPlayerForDamage
@@ -661,7 +679,8 @@ makeBananaMoves this that state =
                                               thisTarget
                              else id
       thatBlast            = if thatIsValid
-                             then bananaBlast thatWormsId
+                             then decrementThatWormsBananas .
+                                  bananaBlast thatWormsId
                                               awardPointsToThatPlayerForDigging
                                               awardPointsToThatPlayerForDamage
                                               penaliseThatPlayerForDamage

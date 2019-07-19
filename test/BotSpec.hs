@@ -800,6 +800,10 @@ spec = do
       it "should destroy medipacks" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithAMedipackInTheDirt `shouldBe`
         (selectNextWormsDefault $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 3),
+                              AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the 12 squares (one is a medipack)
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
@@ -1275,10 +1279,6 @@ spec = do
                                   fromJust $
                                   aListFind ((== thatSelection) . idSlot) positions)
                                  (wormPositions state))
-
-withWormBananas :: WithWormFacts Bananas
-withWormBananas f state@(State { wormBananas = wormBananas' }) =
-  state { wormBananas = f wormBananas' }
 
 isAHit (HitWorm _) = True
 isAHit _           = False
