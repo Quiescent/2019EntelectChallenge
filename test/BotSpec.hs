@@ -477,6 +477,10 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 2),
+                              AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the four squares
          awardPointsToThisPlayerForKillingAnEnemy $
          penaliseThisPlayerForDamage 13           $
@@ -497,6 +501,10 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 2),
+                              AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage      13 $
          awardPointsToThisPlayerForDamage 13 $
@@ -517,6 +525,10 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 18 31) $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 2),
+                              AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage     13 $
          awardPointsToThisPlayerForDamage 7 $
@@ -536,6 +548,10 @@ spec = do
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 15 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 2),
+                              AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage    13 $
          awardPointsToThisPlayerForDigging $
@@ -556,6 +572,10 @@ spec = do
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aStateWithBananasLeftForWorms1And4 `shouldBe`
         (selectNextWormsDefault $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 2),
+                              AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the 13 squares
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
@@ -596,6 +616,10 @@ spec = do
       it "should destroy medipacks" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aStateWithAMedipackInTheDirt `shouldBe`
         (selectNextWormsDefault $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 2),
+                              AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the 12 squares (one is a medipack)
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
@@ -637,6 +661,10 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 3),
+                              AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the four squares
          awardPointsToThatPlayerForKillingAnEnemy $
          penaliseThatPlayerForDamage 13           $
@@ -657,6 +685,10 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 14 31) $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 3),
+                              AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the four squares
          penaliseThatPlayerForDamage      13 $
          awardPointsToThatPlayerForDamage 13 $
@@ -677,6 +709,10 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 13 31) $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 3),
+                              AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the four squares
          penaliseThatPlayerForDamage     13 $
          awardPointsToThatPlayerForDamage 7 $
@@ -696,6 +732,10 @@ spec = do
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 3),
+                              AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the four squares
          penaliseThatPlayerForDamage    13 $
          awardPointsToThatPlayerForDigging $
@@ -716,6 +756,10 @@ spec = do
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithBananasLeftForWorms1And4 `shouldBe`
         (selectNextWormsDefault $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 3),
+                              AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the 13 squares
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
@@ -788,10 +832,17 @@ spec = do
                       addAirAt (toCoord 17 5) .
                       addAirAt (toCoord 15 7) .
                       addAirAt (toCoord 17 7))))
+      it "should not throw a banana bomb when the current worm has none" $
+        makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
+        (selectNextWormsDefault $ aState)
     context "when both the opponent and I throw the bomb" $ do
       it "should give us both points for the squares which we both hit" $
         makeMove False (fromMoves bananaIntoDirtFromMe bananaIntoDirtFromMe) aStateWithOposingWormsNextToEachother `shouldBe`
         (selectNextWormsDefault $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 2),
+                              AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the 13 squares
          -- For him
          awardPointsToThatPlayerForDigging $
@@ -846,9 +897,6 @@ spec = do
                       addAirAt (toCoord 14 27) .
                       addAirAt (toCoord 16 27) .
                       addAirAt (toCoord 17 27))))
-      it "should not throw a banana bomb when the current worm has none" $
-        makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
-        (selectNextWormsDefault $ aState)
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
