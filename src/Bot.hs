@@ -43,11 +43,7 @@ splitGameMap (GameMap xs) =
     iter []  = []
     iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
 
-data State = State { weaponRange   :: Int,
-                     weaponDamage  :: Int,
-                     digRange      :: Int,
-                     moveRange     :: Int,
-                     wormHealths   :: WormHealths,
+data State = State { wormHealths   :: WormHealths,
                      wormPositions :: WormPositions,
                      myPlayer      :: Player,
                      opponent      :: Player,
@@ -81,20 +77,12 @@ data WormId = WormId Int
   deriving (Eq, Show, Ord)
 
 instance Show State where
-  show (State weaponRange'
-              weaponDamage'
-              digRange'
-              moveRange'
-              wormsHealth'
+  show (State wormsHealth'
               wormPositions'
               myPlayer'
               opponent'
               gameMap') =
     "State {\n" ++
-    "  weaponRange'   = " ++ show weaponRange'   ++ "\n" ++
-    "  weaponDamage'  = " ++ show weaponDamage'  ++ "\n" ++
-    "  digRange'      = " ++ show digRange'      ++ "\n" ++
-    "  moveRange'     = " ++ show moveRange'     ++ "\n" ++
     "  wormHealths'   = " ++ show wormsHealth'   ++ "\n" ++
     "  wormPositions' = " ++ show wormPositions' ++ "\n" ++
     "  myPlayer'      = " ++ show myPlayer'      ++ "\n" ++
@@ -118,24 +106,14 @@ toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> Sta
 toState myPlayer' opponents' gameMap' =
   let state = do
         opponent'                    <- opponents'        V.!? 0
-        exampleWorm                  <- (worms myPlayer') V.!? 0
         let (healths',  positions')   = factsFromMyWorms myPlayer'
         let (healths'', positions'')  = factsFromOpponentsWorms opponent'
         let wormHealths'              = aListConcat healths' healths''
         let wormPositions'            = aListConcat positions' positions''
-        let weapon'                   = weapon        exampleWorm
-        let weaponRange'              = range         weapon'
-        let weaponDamage'             = damage        weapon'
-        let moveRange'                = movementRange exampleWorm
-        let digRange'                 = diggingRange  exampleWorm
-        return (opponent', weaponRange', weaponDamage', moveRange', digRange', wormHealths', wormPositions')
+        return (opponent', wormHealths', wormPositions')
   in case state of
-    Just (opponent', weaponRange', weaponDamage', moveRange', digRange', wormHealths', wormPositions') ->
-      State weaponRange'
-            weaponDamage'
-            moveRange'
-            digRange'
-            wormHealths'
+    Just (opponent', wormHealths', wormPositions') ->
+      State wormHealths'
             wormPositions'
             (removeHealthPoints isMyWorm       wormHealths' $ toPlayer myPlayer')
             (removeHealthPoints isOpponentWorm wormHealths' $ opponentToPlayer opponent')
@@ -1711,7 +1689,10 @@ theseHits state =
     hits' wormPosition (AListEntry wormId' opPosition') =
       isOpponentWorm wormId' &&
       aligns  wormPosition opPosition' &&
-      inRange wormPosition opPosition' (weaponRange state)
+      inRange wormPosition opPosition' weaponRange
+
+weaponRange :: Int
+weaponRange = 4
 
 thoseHits :: State -> Maybe [Move]
 thoseHits state =
@@ -1725,7 +1706,7 @@ thoseHits state =
     hits' wormPosition (AListEntry wormId' opPosition') =
       isMyWorm wormId' &&
       aligns  wormPosition opPosition' &&
-      inRange wormPosition opPosition' (weaponRange state)
+      inRange wormPosition opPosition' weaponRange
 
 directionFrom :: Coord -> Coord -> Move
 directionFrom xy' xy'' =
