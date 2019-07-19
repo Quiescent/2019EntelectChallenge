@@ -1140,7 +1140,7 @@ spec = do
             thatMove       = withSelection (WormId thatSelection) $
                              Move $ abs l `mod` 107
             thatNextWormId = nextWormId (WormId thatSelection) [WormId 4, WormId 8, WormId 12]
-        in ((formatMove thisMove (toCoord 20 20), formatMove thatMove (toCoord 20 20),
+        in ((debugMove thisMove, debugMove thatMove,
              thisSelection, thatSelection,
              thisNextWormId, thatNextWormId),
             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
@@ -1155,7 +1155,7 @@ spec = do
             thatMove       = withSelection thatSelection $
                              moveMoves L.!! (abs l `mod` (length moveMoves))
             positions      = wormPositions aStateWithWormsOn20Health
-        in ((thisMove, thatMove),
+        in ((debugMove thisMove, debugMove thatMove),
              makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
            \ (_, state) ->
              (not $
@@ -1179,7 +1179,7 @@ spec = do
             thatMove       = withSelection thatSelection $
                              moveMoves L.!! (abs l `mod` (length moveMoves))
             positions      = wormPositions aStateWithWormsOn20Health
-        in ((thisMove, thatMove),
+        in ((debugMove thisMove, debugMove thatMove),
              makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
            \ (_, state) ->
              (not $
@@ -1198,6 +1198,49 @@ spec = do
 isAHit (HitWorm _) = True
 isAHit _           = False
 
+debugMove :: Move -> String
+-- Shoot
+debugMove dir@(Move x)
+  -- Select
+  | x >= 128 = debugSelect dir -- Calls back into this function without the select
+  -- Shoot
+  | x < 8   = debugShootMove dir
+  -- Move
+  | x < 16  = "move "   ++ (toDirection $ Move $ x - 8)
+  -- Dig
+  | x < 24  = "dig "    ++ (toDirection $ Move $ x - 16)
+  -- Throwing the bomb
+  | x < 107 = "banana " ++ (show $ Move $ x - 24)
+-- Nothing
+debugMove _ = "nothing"
+
+toDirection :: Move -> String
+toDirection (Move 0) = "N"
+toDirection (Move 1) = "NE"
+toDirection (Move 2) = "E"
+toDirection (Move 3) = "SE"
+toDirection (Move 4) = "S"
+toDirection (Move 5) = "SW"
+toDirection (Move 6) = "W"
+toDirection (Move 7) = "NW"
+toDirection x        = error $ "toDirection: " ++ show x
+
+debugSelect :: Move -> String
+debugSelect move =
+  let selection = decodeSelection move
+      move'     = removeSelectionFromMove move
+  in "select " ++ show selection ++ ";" ++ debugMove move'
+
+debugShootMove :: Move -> String
+debugShootMove (Move 0) = "shoot N"
+debugShootMove (Move 1) = "shoot NE"
+debugShootMove (Move 2) = "shoot E"
+debugShootMove (Move 3) = "shoot SE"
+debugShootMove (Move 4) = "shoot S"
+debugShootMove (Move 5) = "shoot SW"
+debugShootMove (Move 6) = "shoot W"
+debugShootMove (Move 7) = "shoot NW"
+debugShootMove x        = error $ "debugShootMove: " ++ show x
 
 moveMoves = [Move 8, Move 9, Move 10, Move 11, Move 12, Move 13, Move 14, Move 15]
 
