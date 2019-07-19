@@ -1130,7 +1130,14 @@ spec = do
                                 AListEntry (WormId 3)  (WormHealth 20),
                                 AListEntry (WormId 4)  (WormHealth 20),
                                 AListEntry (WormId 8)  (WormHealth 20),
-                                AListEntry (WormId 12) (WormHealth 20)]) aStateWithOnlyAirOnMap
+                                AListEntry (WormId 12) (WormHealth 20)]) $
+            withWormPositions (always $ AList [
+                                  AListEntry (WormId 1)  (toCoord 1  1),
+                                  AListEntry (WormId 2)  (toCoord 1  5),
+                                  AListEntry (WormId 3)  (toCoord 1  10),
+                                  AListEntry (WormId 4)  (toCoord 31 1),
+                                  AListEntry (WormId 8)  (toCoord 31 5),
+                                  AListEntry (WormId 12) (toCoord 31 10)]) aStateWithOnlyAirOnMap
       prop "the worm after the selected worm should be next" $ \ (i, j, k, l) ->
         let thisSelection  = oneIfZero $ abs i `mod` 4
             thisMove       = withSelection (WormId thisSelection) $
