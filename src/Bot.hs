@@ -207,50 +207,6 @@ factsFromOpponentsWorms (Opponent _ _ worms') =
       aListFilter notDead positions,
       aListFilter notDead bananas)
 
--- "opponents": [
---     {
---       "id": 2,
---       "score": 133,
---       "currentWormId": 1,
---       "remainingWormSelections": 5,
---       "worms": [
---         {
---           "id": 1,
---           "health": 150,
---           "position": {
---             "x": 31,
---             "y": 16
---           },
---           "diggingRange": 1,
---           "movementRange": 1,
---           "profession": "Commando"
---         },
---         {
---           "id": 2,
---           "health": 150,
---           "position": {
---             "x": 8,
---             "y": 28
---           },
---           "diggingRange": 1,
---           "movementRange": 1,
---           "profession": "Commando"
---         },
---         {
---           "id": 3,
---           "health": 100,
---           "position": {
---             "x": 8,
---             "y": 4
---           },
---           "diggingRange": 1,
---           "movementRange": 1,
---           "profession": "Agent"
---         }
---       ]
---     }
---   ]
-
 vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
 
