@@ -54,6 +54,10 @@ type WormHealths = AList WormHealth
 
 type WormPositions = AList Coord
 
+type WormBananas = AList Bananas
+
+data Bananas = Bananas Int
+
 data AList a = AList [AListEntry a]
   deriving (Eq)
 
@@ -105,12 +109,13 @@ data Player = Player Int WormId
 toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
 toState myPlayer' opponents' gameMap' =
   let state = do
-        opponent'                    <- opponents'        V.!? 0
-        let (healths',  positions')   = factsFromMyWorms myPlayer'
-        let (healths'', positions'')  = factsFromOpponentsWorms opponent'
-        let wormHealths'              = aListConcat healths' healths''
-        let wormPositions'            = aListConcat positions' positions''
-        return (opponent', wormHealths', wormPositions')
+        opponent'                               <- opponents'        V.!? 0
+        let (healths',  positions',  bananas')   = factsFromMyWorms myPlayer'
+        let (healths'', positions'', bananas'')  = factsFromOpponentsWorms opponent'
+        let wormHealths'                         = aListConcat healths'   healths''
+        let wormPositions'                       = aListConcat positions' positions''
+        let wormBananas'                         = aListConcat bananas'   bananas''
+        return (opponent', wormHealths', wormPositions', wormBananas')
   in case state of
     Just (opponent', wormHealths', wormPositions') ->
       State wormHealths'
@@ -134,7 +139,7 @@ removeHealthPoints idPredicate wormHealths' (Player score' wormId') =
 aListConcat :: AList a -> AList a -> AList a
 aListConcat (AList xs) (AList ys) = AList $ xs ++ ys
 
-factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions)
+factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions, WormBananas)
 factsFromMyWorms (ScratchPlayer _ _ worms') =
   let healths   = AList $
                   V.toList $
@@ -152,9 +157,20 @@ factsFromMyWorms (ScratchPlayer _ _ worms') =
                                           position = position' }) -> AListEntry (WormId wormId')
                                                                                 position')
                   worms'
-  in (aListFilter notDead healths, aListFilter notDead positions)
+      bananas   = AList $
+                  catMaybes $
+                  V.toList $
+                  V.map ( \ (ScratchWorm { wormId      = wormId',
+                                           bananaBombs = bananas' }) ->
+                            fmap ( \ (BananaBomb count) -> AListEntry (WormId wormId')
+                                                                      (Bananas count) )
+                            bananas')
+                  worms'
+  in (aListFilter notDead healths,
+      aListFilter notDead positions,
+      aListFilter notDead bananas)
 
-factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions)
+factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions, WormBananas)
 factsFromOpponentsWorms (Opponent _ _ worms') =
   let healths   = AList $
                   V.toList $
@@ -172,7 +188,62 @@ factsFromOpponentsWorms (Opponent _ _ worms') =
                                            opPosition = position' }) -> AListEntry (WormId (shift wormId' 2))
                                                                                    position')
                   worms'
-  in (aListFilter notDead healths, aListFilter notDead positions)
+      bananas   = AList $
+                  catMaybes $
+                  V.toList $
+                  V.map ( \ (ScratchWorm { wormId      = wormId',
+                                           bananaBombs = bananas' }) ->
+                            fmap ( \ (BananaBomb count) -> AListEntry (WormId wormId')
+                                                                      (Bananas count) )
+                            bananas')
+                  worms'
+  in (aListFilter notDead healths,
+      aListFilter notDead positions,
+      aListFilter notDead bananas)
+
+-- "opponents": [
+--     {
+--       "id": 2,
+--       "score": 133,
+--       "currentWormId": 1,
+--       "remainingWormSelections": 5,
+--       "worms": [
+--         {
+--           "id": 1,
+--           "health": 150,
+--           "position": {
+--             "x": 31,
+--             "y": 16
+--           },
+--           "diggingRange": 1,
+--           "movementRange": 1,
+--           "profession": "Commando"
+--         },
+--         {
+--           "id": 2,
+--           "health": 150,
+--           "position": {
+--             "x": 8,
+--             "y": 28
+--           },
+--           "diggingRange": 1,
+--           "movementRange": 1,
+--           "profession": "Commando"
+--         },
+--         {
+--           "id": 3,
+--           "health": 100,
+--           "position": {
+--             "x": 8,
+--             "y": 4
+--           },
+--           "diggingRange": 1,
+--           "movementRange": 1,
+--           "profession": "Agent"
+--         }
+--       ]
+--     }
+--   ]
 
 vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
@@ -199,26 +270,33 @@ data Opponent = Opponent { opponentsScore :: Int,
 
 instance FromJSON Opponent where
   parseJSON = withObject "Opponent" $ \ v ->
-    Opponent <$> v .: "score"
-             <*> v .: "currentWormId"
-             <*> v .: "worms"
+    Opponent <$> v .:  "score"
+             <*> v .:  "currentWormId"
+             <*> v .:  "worms"
 
 data ScratchWorm = ScratchWorm { wormId        :: Int,
                                  wormHealth    :: Int,
                                  position      :: Coord,
                                  weapon        :: Weapon,
                                  diggingRange  :: Int,
-                                 movementRange :: Int }
+                                 movementRange :: Int,
+                                 bananaBombs   :: Maybe BananaBomb}
             deriving (Show, Generic, Eq)
 
 instance FromJSON ScratchWorm where
   parseJSON = withObject "Worm" $ \ v ->
-    ScratchWorm <$> v .: "id"
-                <*> v .: "health"
-                <*> v .: "position"
-                <*> v .: "weapon"
-                <*> v .: "diggingRange"
-                <*> v .: "movementRange"
+    ScratchWorm <$> v .:  "id"
+                <*> v .:  "health"
+                <*> v .:  "position"
+                <*> v .:  "weapon"
+                <*> v .:  "diggingRange"
+                <*> v .:  "movementRange"
+                <*> v .:? "bananaBombs"
+
+data BananaBomb = BananaBomb { count :: Int }
+                deriving (Show, Generic, Eq)
+
+instance FromJSON BananaBomb
 
 data OpponentWorm = OpponentWorm { opWormId :: Int,
                                    opWormHealth :: Int,
