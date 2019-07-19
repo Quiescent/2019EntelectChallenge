@@ -101,39 +101,39 @@ spec = do
   describe "penaliseForInvalidCommand" $ do
     it "should reduce the given players score by 4" $
       penaliseForInvalidCommand aPlayer `shouldBe`
-      Player 296 (WormId 1)
+      Player 296 (WormId 1) startingSelections
   describe "penaliseThatPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the opponent by 4" $
       penaliseThatPlayerForAnInvalidCommand aState `shouldBe`
-      aState { opponent = Player 296 (WormId 4) }
+      aState { opponent = Player 296 (WormId 4) startingSelections }
   describe "penaliseThisPlayerForAnInvalidCommand" $ do
     it "should reduce the points of the player by 4" $
       penaliseThisPlayerForAnInvalidCommand aState `shouldBe`
-      aState { myPlayer = Player 296 (WormId 1) }
+      aState { myPlayer = Player 296 (WormId 1) startingSelections }
   describe "awardPointsForMovingToAir" $ do
     it "should increment the points of a player by 5" $
       awardPointsForMovingToAir aPlayer `shouldBe`
-      Player 305 (WormId 1)
+      Player 305 (WormId 1) startingSelections
   describe "awardPointsToThatPlayerForMovingToAir" $ do
     it "should increment the points of opponent by 5" $
       awardPointsToThatPlayerForMovingToAir aState `shouldBe`
-      aState { opponent = Player 305 (WormId 4) }
+      aState { opponent = Player 305 (WormId 4) startingSelections }
   describe "awardPointsToThisPlayerForMovingToAir" $ do
     it "should increment the points of my player by 5" $
       awardPointsToThisPlayerForMovingToAir aState `shouldBe`
-      aState { myPlayer = Player 305 (WormId 1) }
+      aState { myPlayer = Player 305 (WormId 1) startingSelections }
   describe "awardPointsForDigging" $ do
     it "should increment the points of a player by 7" $
       awardPointsForDigging aPlayer `shouldBe`
-      Player 307 (WormId 1)
+      Player 307 (WormId 1) startingSelections
   describe "awardPointsToThisPlayerForDigging" $ do
     it "should increment this players points by 7" $
       awardPointsToThisPlayerForDigging aState `shouldBe`
-      aState { myPlayer = Player 307 (WormId 1) }
+      aState { myPlayer = Player 307 (WormId 1) startingSelections }
   describe "awardPointsToThatPlayerForDigging" $ do
     it "should increment that players points by 7" $
       awardPointsToThatPlayerForDigging aState `shouldBe`
-      aState { opponent = Player 307 (WormId 4) }
+      aState { opponent = Player 307 (WormId 4) startingSelections }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
       (harmWormWithRocket (WormId (-1)) aState id id id (toCoord 15 31) aState) `shouldBe`
@@ -1229,7 +1229,8 @@ spec = do
              thisSelection, thatSelection,
              thisNextWormId, thatNextWormId),
             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
-           \ (_, (State { myPlayer = (Player _ thisCurrentWormId), opponent = (Player _ thatCurrentWormId)})) ->
+           \ (_, (State { myPlayer = (Player _ thisCurrentWormId _),
+                          opponent = (Player _ thatCurrentWormId _)})) ->
              thisCurrentWormId == thisNextWormId &&
              thatCurrentWormId == thatNextWormId
       prop "should move the worm which was selected when a move move is made" $ \ (i, j, k, l) ->
@@ -1349,7 +1350,7 @@ withSelection  (WormId id') (Move x) =
   Move $ x .|. (shiftL id' selectEncodingRange)
 
 hasScore :: Int -> Player -> Bool
-hasScore score' (Player score'' _) = score' == score''
+hasScore score' (Player score'' _ _) = score' == score''
 
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)
@@ -1517,8 +1518,8 @@ generateShotScenarioWithMapModifications generateCoord displace switchShot addFa
       state                   = State emptyWormHealths
                                       emptyWormPositions
                                       emptyBananaBombs
-                                      (Player 300 (WormId 1))
-                                      (Player 300 (WormId 4))
+                                      (Player 300 (WormId 1) startingSelections)
+                                      (Player 300 (WormId 4) startingSelections)
                                       modifiedMap
       state'                  = addFacts originatingCoord displacedCoord state
   in (state', shot)
@@ -1808,7 +1809,7 @@ aStateWithImpendingCollision = aState {
   wormPositions = wormPositionsWithImpendingCollision,
   wormHealths   = wormHealthsForOneAndFive }
 
-anOpponent = Player 300 (WormId 4)
+anOpponent = Player 300 (WormId 4) startingSelections
 
 wormPositionsWithImpendingCollision = AList [
   AListEntry (WormId 1) (toCoord 15 31),
@@ -1876,7 +1877,9 @@ wormHealthsWithMyWormHavingReceivedTheMedipack = AList [
 wormPositionsWithMyWormAtTop = AList [
   AListEntry (WormId 1) (toCoord 15 0)]
 
-aPlayer = Player 300 (WormId 1)
+startingSelections = (Selections 3)
+
+aPlayer = Player 300 (WormId 1) startingSelections
 
 -- Medipack is at 31 31
 aGameMapWithAMedipack = vectorGameMapToHashGameMap $ V.fromList $
