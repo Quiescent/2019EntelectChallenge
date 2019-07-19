@@ -496,7 +496,7 @@ data CombinedMove = CombinedMove Int
   deriving (Eq, Show)
 
 playersMoveBits :: Int
-playersMoveBits = 9
+playersMoveBits = 11
 
 playersMoveShift :: Int
 playersMoveShift = playersMoveBits + 1
