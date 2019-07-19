@@ -578,8 +578,10 @@ friendly.
     - CLOSING NOTE [2019-07-16 Tue 12:54]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 12:49]
     :END:
-** IN_PROGRESS Implement Select
+** DONE Implement Select
+   CLOSED: [2019-07-19 Fri 05:28]
    :LOGBOOK:
+   - CLOSING NOTE [2019-07-19 Fri 05:28]
    - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 18:00]
    :END:
 *** DONE Encode select
@@ -588,8 +590,10 @@ friendly.
     - CLOSING NOTE [2019-07-17 Wed 05:50]
     - State "IN_PROGRESS" from "TODO"       [2019-07-16 Tue 18:01]
     :END:
-*** IN_PROGRESS Make select moves ahead of others
+*** DONE Make select moves ahead of others
+    CLOSED: [2019-07-19 Fri 05:28]
     :LOGBOOK:
+    - CLOSING NOTE [2019-07-19 Fri 05:28]
     - State "IN_PROGRESS" from "TODO"       [2019-07-17 Wed 05:50]
     :END:
 ** TODO Implement Banana Bombs Parsing for Worms
