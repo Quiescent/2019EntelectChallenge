@@ -466,7 +466,11 @@ spec = do
                               AListEntry (WormId 3)  (WormHealth 20),
                               AListEntry (WormId 4)  (WormHealth 20),
                               AListEntry (WormId 8)  (WormHealth 20),
-                              AListEntry (WormId 12) (WormHealth 20)]) aState
+                              AListEntry (WormId 12) (WormHealth 20)]) $
+          withWormBananas (always $ AList [
+                              AListEntry (WormId 1)  (Bananas 3),
+                              AListEntry (WormId 4)  (Bananas 3)])
+          aState
     context "when I'm throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
         makeMove False (fromMoves bananaOneToRight doNothing) aStateWithOposingWormsNextToEachother `shouldBe`
@@ -616,6 +620,9 @@ spec = do
                       addAirAt (toCoord 16 25) .
                       addAirAt (toCoord 14 27) .
                       addAirAt (toCoord 16 27))))
+      it "should not throw a banana bomb when the current worm has none" $
+        makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aState `shouldBe`
+        (selectNextWormsDefault $ aState)
     context "when the opponent is throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
         makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithOposingWormsNextToEachother `shouldBe`
@@ -823,6 +830,9 @@ spec = do
                       addAirAt (toCoord 14 27) .
                       addAirAt (toCoord 16 27) .
                       addAirAt (toCoord 17 27))))
+      it "should not throw a banana bomb when the current worm has none" $
+        makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
+        (selectNextWormsDefault $ aState)
     -- Shooting
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -1201,6 +1211,10 @@ spec = do
                                   fromJust $
                                   aListFind ((== thatSelection) . idSlot) positions)
                                  (wormPositions state))
+
+withWormBananas :: WithWormFacts Bananas
+withWormBananas f state@(State { wormBananas = wormBananas' }) =
+  state { wormBananas = f wormBananas' }
 
 isAHit (HitWorm _) = True
 isAHit _           = False
