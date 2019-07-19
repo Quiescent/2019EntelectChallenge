@@ -1141,11 +1141,11 @@ spec = do
       prop "the worm after the selected worm should be next" $ \ (i, j, k, l) ->
         let thisSelection  = oneIfZero $ abs i `mod` 4
             thisMove       = withSelection (WormId thisSelection) $
-                             Move $ abs j `mod` 107
+                             Move $ abs j `mod` 24
             thisNextWormId = nextWormId (WormId thisSelection) [WormId 1, WormId 2, WormId 3]
             thatSelection  = fourIfZero $ shiftL (abs k `mod` 4) 2
             thatMove       = withSelection (WormId thatSelection) $
-                             Move $ abs l `mod` 107
+                             Move $ abs l `mod` 24
             thatNextWormId = nextWormId (WormId thatSelection) [WormId 4, WormId 8, WormId 12]
         in ((debugMove thisMove, debugMove thatMove,
              thisSelection, thatSelection,
