@@ -45,6 +45,7 @@ splitGameMap (GameMap xs) =
 
 data State = State { wormHealths   :: WormHealths,
                      wormPositions :: WormPositions,
+                     wormBananas   :: WormBananas,
                      myPlayer      :: Player,
                      opponent      :: Player,
                      gameMap       :: GameMap }
@@ -57,6 +58,7 @@ type WormPositions = AList Coord
 type WormBananas = AList Bananas
 
 data Bananas = Bananas Int
+  deriving (Eq, Show)
 
 data AList a = AList [AListEntry a]
   deriving (Eq)
@@ -83,15 +85,17 @@ data WormId = WormId Int
 instance Show State where
   show (State wormsHealth'
               wormPositions'
+              wormBananas'
               myPlayer'
               opponent'
               gameMap') =
     "State {\n" ++
-    "  wormHealths'   = " ++ show wormsHealth'   ++ "\n" ++
-    "  wormPositions' = " ++ show wormPositions' ++ "\n" ++
-    "  myPlayer'      = " ++ show myPlayer'      ++ "\n" ++
-    "  opponent'      = " ++ show opponent'      ++ "\n" ++
-    "  gameMap':\n" ++
+    "  wormHealths   = " ++ show wormsHealth'   ++ "\n" ++
+    "  wormPositions = " ++ show wormPositions' ++ "\n" ++
+    "  wormBananas   = " ++ show wormBananas'   ++ "\n" ++
+    "  myPlayer      = " ++ show myPlayer'      ++ "\n" ++
+    "  opponent      = " ++ show opponent'      ++ "\n" ++
+    "  gameMap:\n" ++
     show gameMap' ++
     "}"
 
@@ -117,9 +121,10 @@ toState myPlayer' opponents' gameMap' =
         let wormBananas'                         = aListConcat bananas'   bananas''
         return (opponent', wormHealths', wormPositions', wormBananas')
   in case state of
-    Just (opponent', wormHealths', wormPositions') ->
+    Just (opponent', wormHealths', wormPositions', wormBananas') ->
       State wormHealths'
             wormPositions'
+            wormBananas'
             (removeHealthPoints isMyWorm       wormHealths' $ toPlayer myPlayer')
             (removeHealthPoints isOpponentWorm wormHealths' $ opponentToPlayer opponent')
             (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')
@@ -162,8 +167,8 @@ factsFromMyWorms (ScratchPlayer _ _ worms') =
                   V.toList $
                   V.map ( \ (ScratchWorm { wormId      = wormId',
                                            bananaBombs = bananas' }) ->
-                            fmap ( \ (BananaBomb count) -> AListEntry (WormId wormId')
-                                                                      (Bananas count) )
+                            fmap ( \ (BananaBomb count') -> AListEntry (WormId wormId')
+                                                                       (Bananas count') )
                             bananas')
                   worms'
   in (aListFilter notDead healths,
@@ -188,14 +193,15 @@ factsFromOpponentsWorms (Opponent _ _ worms') =
                                            opPosition = position' }) -> AListEntry (WormId (shift wormId' 2))
                                                                                    position')
                   worms'
+      -- This will parse the wrong thing if I lose the state on the first round
       bananas   = AList $
                   catMaybes $
                   V.toList $
-                  V.map ( \ (ScratchWorm { wormId      = wormId',
-                                           bananaBombs = bananas' }) ->
-                            fmap ( \ (BananaBomb count) -> AListEntry (WormId wormId')
-                                                                      (Bananas count) )
-                            bananas')
+                  V.map ( \ (OpponentWorm { opWormId = wormId', profession = profession' }) ->
+                            if profession' == "Agent"
+                            then Just (AListEntry (WormId wormId')
+                                                  (Bananas 3))
+                            else Nothing)
                   worms'
   in (aListFilter notDead healths,
       aListFilter notDead positions,
@@ -280,7 +286,7 @@ data ScratchWorm = ScratchWorm { wormId        :: Int,
                                  weapon        :: Weapon,
                                  diggingRange  :: Int,
                                  movementRange :: Int,
-                                 bananaBombs   :: Maybe BananaBomb}
+                                 bananaBombs   :: Maybe BananaBomb }
             deriving (Show, Generic, Eq)
 
 instance FromJSON ScratchWorm where
@@ -298,11 +304,12 @@ data BananaBomb = BananaBomb { count :: Int }
 
 instance FromJSON BananaBomb
 
-data OpponentWorm = OpponentWorm { opWormId :: Int,
-                                   opWormHealth :: Int,
-                                   opPosition :: Coord,
-                                   opDiggingRange :: Int,
-                                   opMovementRange :: Int }
+data OpponentWorm = OpponentWorm { opWormId        :: Int,
+                                   opWormHealth    :: Int,
+                                   opPosition      :: Coord,
+                                   opDiggingRange  :: Int,
+                                   opMovementRange :: Int,
+                                   profession      :: String }
             deriving (Show, Generic, Eq)
 
 instance FromJSON OpponentWorm where
@@ -312,6 +319,7 @@ instance FromJSON OpponentWorm where
                  <*> v .: "position"
                  <*> v .: "diggingRange"
                  <*> v .: "movementRange"
+                 <*> v .: "profession"
 
 data Coord = Coord Int
   deriving (Generic, Eq)
@@ -1379,10 +1387,10 @@ iterativelyImproveSearch state writeChannel = do
       searchTree' <- evaluate searchTree
       writeComms writeChannel searchTree'
       go gen iterationsBeforeComms searchTree'
-    go gen count searchTree =
+    go gen count' searchTree =
       let (result, gen') = search gen 0 state searchTree []
           newTree        = updateTree state result searchTree
-      in go gen' (count - 1) newTree
+      in go gen' (count' - 1) newTree
 
 maxSearchTime :: Integer
 maxSearchTime = 900000000
