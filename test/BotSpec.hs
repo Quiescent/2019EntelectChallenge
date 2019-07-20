@@ -1272,30 +1272,34 @@ spec = do
              ((== (Selections 2)) $
               selections $
               opponent state)
+      let aStateWithNoSelections = mapThisPlayer (withSelections (always (Selections 0))) $
+                                   mapThatPlayer (withSelections (always (Selections 0)))
+                                   aStateWithWormsOn20Health
       prop "should always move the next worm when no selects are left" $ \ (i, j, k, l) ->
-        -- TODO: change the state so that there are no selects left!!!
-        let thisSelection  = WormId $ oneIfZero $ abs i `mod` 4
+        let thisSelection  = [WormId 2, WormId 3] L.!! (abs i `mod` 2)
             thisMove       = withSelection thisSelection $
                              moveMoves L.!! (abs j `mod` (length moveMoves))
-            thatSelection  = WormId $ fourIfZero $ shiftL (abs k `mod` 4) 2
+            thatSelection  = [WormId 8, WormId 12] L.!! (abs k `mod` 2)
             thatMove       = withSelection thatSelection $
                              moveMoves L.!! (abs l `mod` (length moveMoves))
-            positions      = wormPositions aStateWithWormsOn20Health
+            positions      = wormPositions aStateWithNoSelections
         in ((debugMove thisMove, debugMove thatMove),
-             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
+             makeMove False (fromMoves thisMove thatMove) aStateWithNoSelections) `shouldSatisfy`
            \ (_, state) ->
-             (not $
-              isAHit $
+             (isAHit $
               isAPositionOfAWorm (dataSlot $
                                   fromJust $
                                   aListFind ((== thisSelection) . idSlot) positions)
                                  (wormPositions state)) &&
-             (not $
-              isAHit $
+             (isAHit $
               isAPositionOfAWorm (dataSlot $
                                   fromJust $
                                   aListFind ((== thatSelection) . idSlot) positions)
                                  (wormPositions state))
+
+withSelections :: (Selections -> Selections) -> ModifyPlayer
+withSelections f (Player points' wormId' selections') =
+  Player points' wormId' $ f selections'
 
 selections :: Player -> Selections
 selections (Player _ _ selections') = selections'
