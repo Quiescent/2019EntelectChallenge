@@ -1256,6 +1256,22 @@ spec = do
                                   fromJust $
                                   aListFind ((== thatSelection) . idSlot) positions)
                                  (wormPositions state))
+      prop "should decrement the number of selections left" $ \ (i, j, k, l) ->
+        let thisSelection  = WormId $ oneIfZero $ abs i `mod` 4
+            thisMove       = withSelection thisSelection $
+                             moveMoves L.!! (abs j `mod` (length moveMoves))
+            thatSelection  = WormId $ fourIfZero $ shiftL (abs k `mod` 4) 2
+            thatMove       = withSelection thatSelection $
+                             moveMoves L.!! (abs l `mod` (length moveMoves))
+        in ((debugMove thisMove, debugMove thatMove),
+             makeMove False (fromMoves thisMove thatMove) aStateWithWormsOn20Health) `shouldSatisfy`
+           \ (_, state) ->
+             ((== (Selections 2)) $
+              selections $
+              myPlayer state) &&
+             ((== (Selections 2)) $
+              selections $
+              opponent state)
       prop "should always move the next worm when no selects are left" $ \ (i, j, k, l) ->
         -- TODO: change the state so that there are no selects left!!!
         let thisSelection  = WormId $ oneIfZero $ abs i `mod` 4
@@ -1280,6 +1296,9 @@ spec = do
                                   fromJust $
                                   aListFind ((== thatSelection) . idSlot) positions)
                                  (wormPositions state))
+
+selections :: Player -> Selections
+selections (Player _ _ selections') = selections'
 
 isAHit (HitWorm _) = True
 isAHit _           = False
