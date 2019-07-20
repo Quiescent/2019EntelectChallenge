@@ -564,14 +564,25 @@ decrementThisPlayersSelecetions = mapThisPlayer decrementPlayerSelections
 decrementThatPlayersSelecetions :: ModifyState
 decrementThatPlayersSelecetions = mapThatPlayer decrementPlayerSelections
 
+hasSelectionsLeft :: Player -> Bool
+hasSelectionsLeft (Player _ _ (Selections x)) = x > 0
+
+thisPlayerHasSelectionsLeft :: State -> Bool
+thisPlayerHasSelectionsLeft = hasSelectionsLeft . myPlayer
+
+thatPlayerHasSelectionsLeft :: State -> Bool
+thatPlayerHasSelectionsLeft = hasSelectionsLeft . opponent
+
 makeSelections :: Move -> Move -> ModifyState
 makeSelections thisMove@(Move this) thatMove@(Move that) state =
   let thisSelection      = if this >= 128 then Just (WormId $ decodeSelection thisMove) else Nothing
       thatSelection      = if that >= 128 then Just (WormId $ decodeSelection thatMove) else Nothing
-      thisValidSelection = thisSelection >>= (\ selection -> if wormExists selection state
+      thisValidSelection = thisSelection >>= (\ selection -> if wormExists selection state &&
+                                                                thisPlayerHasSelectionsLeft state
                                                              then Just selection
                                                              else Nothing)
-      thatValidSelection = thatSelection >>= (\ selection -> if wormExists selection state
+      thatValidSelection = thatSelection >>= (\ selection -> if wormExists selection state &&
+                                                                thatPlayerHasSelectionsLeft state
                                                              then Just selection
                                                              else Nothing)
       thisIsValid        = isJust thisValidSelection
