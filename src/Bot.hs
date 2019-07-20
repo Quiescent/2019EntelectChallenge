@@ -551,6 +551,19 @@ makeMove swapping moves =
      makeMoveMoves  swapping myMove' opponentsMove' .
      makeSelections          myMove  opponentsMove
 
+decrementSelections :: Selections -> Selections
+decrementSelections (Selections x) = Selections $ x - 1
+
+decrementPlayerSelections :: ModifyPlayer
+decrementPlayerSelections (Player points' wormId' selections') =
+  Player points' wormId' $ decrementSelections selections'
+
+decrementThisPlayersSelecetions :: ModifyState
+decrementThisPlayersSelecetions = mapThisPlayer decrementPlayerSelections
+
+decrementThatPlayersSelecetions :: ModifyState
+decrementThatPlayersSelecetions = mapThatPlayer decrementPlayerSelections
+
 makeSelections :: Move -> Move -> ModifyState
 makeSelections thisMove@(Move this) thatMove@(Move that) state =
   let thisSelection      = if this >= 128 then Just (WormId $ decodeSelection thisMove) else Nothing
@@ -566,10 +579,12 @@ makeSelections thisMove@(Move this) thatMove@(Move that) state =
       thisWormId         = fromJust thisValidSelection
       thatWormId         = fromJust thatValidSelection
       selectThis         = if thisIsValid
-                           then mapThisPlayer (withCurrentWormId thisWormId)
+                           then decrementThisPlayersSelecetions .
+                                mapThisPlayer (withCurrentWormId thisWormId)
                            else id
       selectThat         = if thatIsValid
-                           then mapThatPlayer (withCurrentWormId thatWormId)
+                           then decrementThatPlayersSelecetions .
+                                mapThatPlayer (withCurrentWormId thatWormId)
                            else id
   in selectThis $ selectThat state
 
