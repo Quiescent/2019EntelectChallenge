@@ -612,8 +612,16 @@ friendly.
     :LOGBOOK:
     - CLOSING NOTE [2019-07-19 Fri 12:50]
     :END:
-** TODO Implement Selection Parsing
-*** TODO Implement the test for ignoring select when there are no selects left
+** DONE Implement Selection Parsing
+   CLOSED: [2019-07-20 Sat 09:54]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-07-20 Sat 09:54]
+   :END:
+*** DONE Implement the test for ignoring select when there are no selects left
+    CLOSED: [2019-07-20 Sat 09:53]
+    :LOGBOOK:
+    - CLOSING NOTE [2019-07-20 Sat 09:53]
+    :END:
 ** TODO Implement Selection of Banana Bombs
 ** TODO Simulate a game with Banana Bombs in it
 ** TODO Debug the test which should be failing
