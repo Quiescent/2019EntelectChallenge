@@ -25,7 +25,7 @@ spec = do
       let x'            = abs x `mod` 108
           y'            = shiftL (abs y `mod` 4) 7
           move'         = x' .|. y'
-          formattedMove = formatMove (Move move') (toCoord 6 6)
+          formattedMove = formatMove (Move move') (toCoord 6 6) aState
       in if move' < 8
          then formattedMove `shouldStartWith` "shoot"
          else if move' < 16
