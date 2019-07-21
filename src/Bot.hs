@@ -1707,8 +1707,8 @@ gameOver state round' =
     myScore       = playerScore $ myPlayer state
     opponentScore = playerScore $ opponent state
     in if myScore > opponentScore
-       then OpponentWon
-       else IWon
+       then IWon
+       else OpponentWon
   else let
     myWormCount       = length $
                         filter (isMyWorm . idSlot) $
