@@ -656,9 +656,9 @@ makeBananaMoves this that state =
       thisWormsId          = thisPlayersCurrentWormId state
       thatWormsId          = thatPlayersCurrentWormId state
       thisDestinationBlock = thisBananaMove >>=
-        ( \ thisMove -> bananaMoveDestination thisMove state thisWormHasBananasLeft thisWormsCoord)
+        ( \ thisMove -> bananaMoveDestination thisWormHasBananasLeft thisWormsCoord thisMove state)
       thatDestinationBlock = thatBananaMove >>=
-        ( \ thatMove -> bananaMoveDestination thatMove state thatWormHasBananasLeft thatWormsCoord)
+        ( \ thatMove -> bananaMoveDestination thatWormHasBananasLeft thatWormsCoord thatMove state)
       thisIsValid          = isJust thisDestinationBlock
       thatIsValid          = isJust thatDestinationBlock
       thisTarget           = fromJust thisDestinationBlock
@@ -685,11 +685,11 @@ makeBananaMoves this that state =
                              else id
   in thisBlast $ thatBlast state
 
-bananaMoveDestination :: Move -> State -> (State -> Bool) -> (State -> Maybe Coord) -> Maybe Coord
-bananaMoveDestination move
-                      state
-                      currentWormHasBananasLeft
-                      currentWormCoord =
+bananaMoveDestination :: (State -> Bool) -> (State -> Maybe Coord) -> Move -> State -> Maybe Coord
+bananaMoveDestination currentWormHasBananasLeft
+                      currentWormCoord
+                      move
+                      state =
   let move'     = if currentWormHasBananasLeft state then Just move else Nothing
       wormCoord = currentWormCoord state
   in wormCoord >>= (\ coord' -> move' >>= (flip displaceToBananaDestination) coord')
@@ -1798,21 +1798,28 @@ shouldMakeThisMove state move
   | isADigMove move    = isValidDigMove targetOfThisMove state move
   | isAMoveMove move   = isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
   | isAShootMove move  = any (elem move) $ theseHits state
-  | isABananaMove move = shouldMakeBananaMove state move
+  | isABananaMove move = shouldMakeBananaMove
+                         (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
+                         state
+                         move
   | hasASelection move = thisPlayerHasSelectionsLeft state &&
                          (shouldMakeThisMove (makeSelections move doNothing state) $
                           removeSelectionFromMove move)
   | otherwise          = True
 
-shouldMakeBananaMove :: State -> Move -> Bool
-shouldMakeBananaMove _ _ = True
+shouldMakeBananaMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
+shouldMakeBananaMove destination state move =
+  isJust $ destination move state
 
 shouldMakeThatMove :: State -> Move -> Bool
 shouldMakeThatMove state move
   | isADigMove    move = isValidDigMove targetOfThatMove state move
   | isAMoveMove   move = isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
   | isAShootMove  move = any (elem move) $ thoseHits state
-  | isABananaMove move = shouldMakeBananaMove state move
+  | isABananaMove move = shouldMakeBananaMove
+                         (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
+                         state
+                         move
   | hasASelection move = thatPlayerHasSelectionsLeft state &&
                          (shouldMakeThatMove (makeSelections doNothing move state) $
                           removeSelectionFromMove move)
