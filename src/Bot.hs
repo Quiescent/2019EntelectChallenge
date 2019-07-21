@@ -1830,13 +1830,44 @@ shouldMakeThisMove state moves move
 
 shouldThisPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
 shouldThisPlayerMakeMoveMove =
-  shouldMakeMoveMove targetOfThisMove thisPlayersCurrentWormId thoseHits
+  shouldMakeMoveMove targetOfThisMove thisPlayersCurrentWormId thoseHitCoords
 
-shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> (State -> Maybe [Move]) -> [Move] -> State -> Move -> Bool
+shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> (State -> Maybe [Coord]) -> [Move] -> State -> Move -> Bool
 shouldMakeMoveMove targetOfMove' currentWormId' hitFunction moves state move =
-  isValidMoveMove targetOfMove' currentWormId' state move &&
-  ((not $ any (isValidDigMove targetOfMove' state) moves) ||
-   (any (/= []) $ hitFunction state))
+  let wormId' = currentWormId' state
+      coord'  = fromJust $ fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormPositions state
+  in isValidMoveMove targetOfMove' currentWormId' state move &&
+     ((not $ any (isValidDigMove targetOfMove' state) moves) ||
+      (any (elem coord') $ hitFunction state))
+
+-- TODO bad repitition!
+thoseHitCoords :: State -> Maybe [Coord]
+thoseHitCoords state =
+  fmap ( \ wormPosition -> map dataSlot $
+         aListToList $
+         aListFilter (hits' wormPosition) $
+         wormPositions state) $
+  thatWormsCoord state
+  where
+    hits' :: Coord -> AListEntry Coord -> Bool
+    hits' wormPosition (AListEntry wormId' opPosition') =
+      isMyWorm wormId' &&
+      aligns  wormPosition opPosition' &&
+      inRange wormPosition opPosition' weaponRange
+-- TODO bad repitition!
+theseHitCoords :: State -> Maybe [Coord]
+theseHitCoords state =
+  fmap ( \ wormPosition -> map dataSlot $
+         aListToList $
+         aListFilter (hits' wormPosition) $
+         wormPositions state) $
+  thisWormsCoord state
+  where
+    hits' :: Coord -> AListEntry Coord -> Bool
+    hits' wormPosition (AListEntry wormId' opPosition') =
+      isOpponentWorm wormId' &&
+      aligns  wormPosition opPosition' &&
+      inRange wormPosition opPosition' weaponRange
 
 shouldMakeBananaMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 shouldMakeBananaMove destination state move =
@@ -1858,7 +1889,7 @@ shouldMakeThatMove state moves move
 
 shouldThatPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
 shouldThatPlayerMakeMoveMove =
-  shouldMakeMoveMove targetOfThatMove thatPlayersCurrentWormId theseHits
+  shouldMakeMoveMove targetOfThatMove thatPlayersCurrentWormId theseHitCoords
 
 targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
 targetOfMoveMove targetOfMove' state move =
