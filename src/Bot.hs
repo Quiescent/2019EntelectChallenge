@@ -651,20 +651,14 @@ withWormBananas f state@(State { wormBananas = wormBananas' }) =
 
 makeBananaMoves :: Move -> Move -> ModifyState
 makeBananaMoves this that state =
-  let thisBananaMove       = if isABananaMove this && thisWormHasBananasLeft state
-                             then Just this
-                             else Nothing
-      thatBananaMove       = if isABananaMove that && thatWormHasBananasLeft state
-                             then Just that
-                             else Nothing
+  let thisBananaMove       = if isABananaMove this then Just this else Nothing
+      thatBananaMove       = if isABananaMove that then Just that else Nothing
       thisWormsId          = thisPlayersCurrentWormId state
       thatWormsId          = thatPlayersCurrentWormId state
-      thisWormsCoord'      = thisWormsCoord state
-      thatWormsCoord'      = thatWormsCoord state
-      thisDestinationBlock = thisWormsCoord' >>=
-        (\ thisCoord -> thisBananaMove >>= (flip displaceToBananaDestination) thisCoord)
-      thatDestinationBlock = thatWormsCoord' >>=
-        (\ thatCoord -> thatBananaMove >>= (flip displaceToBananaDestination) thatCoord)
+      thisDestinationBlock = thisBananaMove >>=
+        ( \ thisMove -> bananaMoveDestination thisMove state thisWormHasBananasLeft thisWormsCoord)
+      thatDestinationBlock = thatBananaMove >>=
+        ( \ thatMove -> bananaMoveDestination thatMove state thatWormHasBananasLeft thatWormsCoord)
       thisIsValid          = isJust thisDestinationBlock
       thatIsValid          = isJust thatDestinationBlock
       thisTarget           = fromJust thisDestinationBlock
@@ -690,6 +684,15 @@ makeBananaMoves this that state =
                                               thatTarget
                              else id
   in thisBlast $ thatBlast state
+
+bananaMoveDestination :: Move -> State -> (State -> Bool) -> (State -> Maybe Coord) -> Maybe Coord
+bananaMoveDestination move
+                      state
+                      currentWormHasBananasLeft
+                      currentWormCoord =
+  let move'     = if currentWormHasBananasLeft state then Just move else Nothing
+      wormCoord = currentWormCoord state
+  in wormCoord >>= (\ coord' -> move' >>= (flip displaceToBananaDestination) coord')
 
 awardPointsToThisPlayerForDamage :: Int -> ModifyState
 awardPointsToThisPlayerForDamage damage' = mapThisPlayer (awardPointsForDamage damage')
