@@ -141,7 +141,7 @@ removeHealthPoints idPredicate wormHealths' (Player score' wormId' selections') 
   let totalHealth = sum $
                     map (deconstructHealth . dataSlot) $
                     filter (idPredicate . idSlot) $
-                    aListFoldl' (flip (:)) [] wormHealths'
+                    aListToList wormHealths'
   in Player (score' - (totalHealth `div` wormCount)) wormId' selections'
 
 aListConcat :: AList a -> AList a -> AList a
@@ -157,7 +157,7 @@ factsFromMyWorms (ScratchPlayer _ _ worms' _) =
                   worms'
       deadIds   = map idSlot $
                   filter ((<= 0) . deconstructHealth . dataSlot) $
-                  aListFoldl' (flip (:)) [] healths
+                  aListToList healths
       notDead   = \ (AListEntry wormId' _) -> not $ elem wormId' deadIds
       positions = AList $
                   V.toList $
@@ -188,7 +188,7 @@ factsFromOpponentsWorms (Opponent _ _ worms' _) =
                   worms'
       deadIds   = map idSlot $
                   filter ((<= 0) . deconstructHealth . dataSlot) $
-                  aListFoldl' (flip (:)) [] healths
+                  aListToList healths
       notDead   = \ (AListEntry wormId' _) -> not $ elem wormId' deadIds
       positions = AList $
                   V.toList $
@@ -1695,11 +1695,11 @@ gameOver state round' =
   else let
     myWormCount       = length $
                         filter (isMyWorm . idSlot) $
-                        aListFoldl' (flip (:)) [] $
+                        aListToList $
                         wormHealths state
     opponentWormCount = length $
                         filter (isOpponentWorm . idSlot) $
-                        aListFoldl' (flip (:)) [] $
+                        aListToList $
                         wormHealths state
     in if myWormCount == 0
        then OpponentWon
@@ -1738,6 +1738,9 @@ myMovesFrom state = do
   myMove        <- map Move [0..23]
   guard (isThisMoveValid state myMove)
   return myMove
+
+aListToList :: AList a -> [AListEntry a]
+aListToList = aListFoldl' (flip (:)) []
 
 opponentsMovesFrom :: State -> [Move]
 opponentsMovesFrom state = do
@@ -1790,7 +1793,7 @@ isValidDigMove targetOfMove' state move =
 theseHits :: State -> Maybe [Move]
 theseHits state =
   fmap ( \ wormPosition -> map (directionFrom wormPosition . dataSlot) $
-         aListFoldl' (flip (:)) [] $
+         aListToList $
          aListFilter (hits' wormPosition) $
          wormPositions state) $
   thisWormsCoord state
@@ -1807,7 +1810,7 @@ weaponRange = 4
 thoseHits :: State -> Maybe [Move]
 thoseHits state =
   fmap ( \ wormPosition -> map (directionFrom wormPosition . dataSlot) $
-         aListFoldl' (flip (:)) [] $
+         aListToList $
          aListFilter (hits' wormPosition) $
          wormPositions state) $
   thatWormsCoord state
