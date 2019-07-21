@@ -1699,6 +1699,10 @@ maxRound = 7
 playerScore :: Player -> Int
 playerScore (Player score' _ _) = score'
 
+-- REALLY IMPORTANT IDEA: Never ever make a move if it would lead to
+-- defeat in the next turn!!  i.e. become super conservative on 6
+-- health, just run away and don't run into the line of fire.
+
 -- IDEA: When winning or losing, instead of getting one point and the
 -- number of rounds increasing by one get points as a ratio of 500
 -- points ahead or behind hte opponent.  i.e. 10 points for being 500
