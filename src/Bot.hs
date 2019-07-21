@@ -116,7 +116,7 @@ data Player = Player Int WormId Selections
 toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
 toState myPlayer' opponents' gameMap' =
   let state = do
-        opponent'                               <- opponents'        V.!? 0
+        opponent'                               <- opponents' V.!? 0
         let (healths',  positions',  bananas')   = factsFromMyWorms myPlayer'
         let (healths'', positions'', bananas'')  = factsFromOpponentsWorms opponent'
         let wormHealths'                         = aListConcat healths'   healths''
