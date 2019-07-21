@@ -617,7 +617,7 @@ wormExists wormId' = isJust . aListFind ((== wormId') . idSlot) . wormPositions
 
 isABananaMove :: Move -> Bool
 isABananaMove (Move x) =
-  x < 107 && x >= 24
+  x < 105 && x >= 24
 
 hasBananas :: Bananas -> Bool
 hasBananas (Bananas x) = x > 0
@@ -1772,7 +1772,7 @@ withSelection  (WormId id') (Move x) =
 
 opponentsMovesFrom :: State -> [Move]
 opponentsMovesFrom state = do
-  let moves  = map Move [0..107]
+  let moves  = map Move [0..105]
   let moves' = addThisPlayersSelects state moves
   opponentsMove <- moves'
   guard (shouldMakeThatMove state opponentsMove)
@@ -1791,7 +1791,7 @@ addThatPlayersSelects state moves =
     return $ withSelection selection move
 
 doNothing :: Move
-doNothing = Move 108
+doNothing = Move 106
 
 shouldMakeThisMove :: State -> Move -> Bool
 shouldMakeThisMove state move
