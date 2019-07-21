@@ -1773,7 +1773,7 @@ withSelection  (WormId id') (Move x) =
 opponentsMovesFrom :: State -> [Move]
 opponentsMovesFrom state = do
   let moves  = map Move [0..105]
-  let moves' = addThisPlayersSelects state moves
+  let moves' = addThatPlayersSelects state moves
   opponentsMove <- moves'
   guard (shouldMakeThatMove state opponentsMove)
   return $ opponentsMove
@@ -1892,7 +1892,7 @@ directionFrom xy' xy'' =
        (False, False, True,  False) -> Move 13
        (False, False, False, False) -> Move 11
        -- TODO
-       _                            -> error "Implement!"
+       _                            -> error $ "Implement! " ++ show (y' == y'', x' == x'', x' > x'', y' > y'')
 
 aligns :: Coord -> Coord -> Bool
 aligns xy' xy'' =
