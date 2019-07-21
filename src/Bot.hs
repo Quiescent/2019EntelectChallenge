@@ -1817,12 +1817,14 @@ shouldMakeThisMove state moves move
   | otherwise          = True
 
 shouldThisPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
-shouldThisPlayerMakeMoveMove = shouldMakeMoveMove targetOfThisMove thisPlayersCurrentWormId
+shouldThisPlayerMakeMoveMove =
+  shouldMakeMoveMove targetOfThisMove thisPlayersCurrentWormId thoseHits
 
-shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> [Move] -> State -> Move -> Bool
-shouldMakeMoveMove targetOfMove' currentWormId' moves state move =
+shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> (State -> Maybe [Move]) -> [Move] -> State -> Move -> Bool
+shouldMakeMoveMove targetOfMove' currentWormId' hitFunction moves state move =
   isValidMoveMove targetOfMove' currentWormId' state move &&
-  (not $ any (isValidDigMove targetOfMove' state) moves)
+  ((not $ any (isValidDigMove targetOfMove' state) moves) ||
+   (any (/= []) $ hitFunction state))
 
 shouldMakeBananaMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 shouldMakeBananaMove destination state move =
@@ -1843,7 +1845,8 @@ shouldMakeThatMove state moves move
   | otherwise          = True
 
 shouldThatPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
-shouldThatPlayerMakeMoveMove = shouldMakeMoveMove targetOfThatMove thatPlayersCurrentWormId
+shouldThatPlayerMakeMoveMove =
+  shouldMakeMoveMove targetOfThatMove thatPlayersCurrentWormId theseHits
 
 targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
 targetOfMoveMove targetOfMove' state move =
