@@ -1368,10 +1368,6 @@ bananaOneToLeft       = Move 63
 bananaIntoDirtFromMe  = Move 24
 bananaIntoDirtFromHim = Move 104
 
-withSelection :: WormId -> Move -> Move
-withSelection  (WormId id') (Move x) =
-  Move $ x .|. (shiftL id' selectEncodingRange)
-
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _ _) = score' == score''
 
@@ -1615,8 +1611,6 @@ shootWest = Move 6
 shootNorth = Move 0
 
 shootSouth = Move 4
-
-doNothing = Move 108
 
 moveNorth = Move 8
 

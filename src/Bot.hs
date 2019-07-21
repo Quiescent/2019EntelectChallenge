@@ -1748,38 +1748,75 @@ movesFrom state = do
 
 myMovesFrom :: State -> [Move]
 myMovesFrom state = do
-  myMove        <- map Move [0..23]
+  let moves  = map Move [0..106]
+  let moves' = addThisPlayersSelects state moves
+  myMove <- moves'
   guard (isThisMoveValid state myMove)
   return myMove
 
 aListToList :: AList a -> [AListEntry a]
 aListToList = aListFoldl' (flip (:)) []
 
+addThisPlayersSelects :: State -> [Move] -> [Move]
+addThisPlayersSelects state moves =
+  if not $ thisPlayerHasSelectionsLeft state
+  then moves
+  else do
+    selection <- map idSlot $
+                 aListToList $
+                 aListFilter (isMyWorm . idSlot) $
+                 wormPositions state
+    move      <- moves
+    return $ withSelection selection move
+
+withSelection :: WormId -> Move -> Move
+withSelection  (WormId id') (Move x) =
+  Move $ x .|. (shiftL id' selectEncodingRange)
+
 opponentsMovesFrom :: State -> [Move]
 opponentsMovesFrom state = do
-  opponentsMove <- map Move [0..23]
+  let moves  = map Move [0..107]
+  let moves' = addThisPlayersSelects state moves
+  opponentsMove <- moves'
   guard (isThatMoveValid state opponentsMove)
   return $ opponentsMove
 
+addThatPlayersSelects :: State -> [Move] -> [Move]
+addThatPlayersSelects state moves =
+  if not $ thatPlayerHasSelectionsLeft state
+  then moves
+  else do
+    selection <- map idSlot $
+                 aListToList $
+                 aListFilter (isMyWorm . idSlot) $
+                 wormPositions state
+    move      <- moves
+    return $ withSelection selection move
+
+doNothing :: Move
+doNothing = Move 108
+
 isThisMoveValid :: State -> Move -> Bool
-isThisMoveValid state move =
-  if isADigMove move
-  then isValidDigMove targetOfThisMove state move
-  else if isAMoveMove move
-       then isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
-       else if isAShootMove move
-            then any (elem move) $ theseHits state
-            else True
+isThisMoveValid state move
+  | isADigMove move    = isValidDigMove targetOfThisMove state move
+  | isAMoveMove move   = isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
+  | isAShootMove move  = any (elem move) $ theseHits state
+  | isABananaMove move = True
+  | hasASelection move = thisPlayerHasSelectionsLeft state &&
+                         (isThatMoveValid (makeSelections move doNothing state) $
+                          removeSelectionFromMove move)
+  | otherwise          = True
 
 isThatMoveValid :: State -> Move -> Bool
-isThatMoveValid state move =
-  if isADigMove move
-  then isValidDigMove targetOfThatMove state move
-  else if isAMoveMove move
-       then isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
-       else if isAShootMove move
-            then any (elem move) $ thoseHits state
-            else True
+isThatMoveValid state move
+  | isADigMove    move = isValidDigMove targetOfThatMove state move
+  | isAMoveMove   move = isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
+  | isAShootMove  move = any (elem move) $ thoseHits state
+  | isABananaMove move = True
+  | hasASelection move = thatPlayerHasSelectionsLeft state &&
+                         (isThatMoveValid (makeSelections doNothing move state) $
+                          removeSelectionFromMove move)
+  | otherwise          = True
 
 targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
 targetOfMoveMove targetOfMove' state move =
