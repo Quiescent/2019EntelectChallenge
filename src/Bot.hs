@@ -1532,23 +1532,23 @@ instance Show SearchTree where
   show SearchFront =
     "SearchFront"
 
-data SearchResult = Win  Moves
-                  | Loss Moves
+data SearchResult = Win  Int Moves
+                  | Loss Int Moves
                   deriving (Show)
 
-inc :: Int -> Int
-inc = (+1)
+inc :: Int -> Int -> Int
+inc x = (+x)
 
-dec :: Int -> Int
-dec x = x - 1
+dec :: Int -> Int -> Int
+dec x y = y - x
 
-incInc :: SuccessRecord -> SuccessRecord
-incInc (SuccessRecord (Wins wins') (Played played') playerMove') =
-  SuccessRecord (Wins $ inc wins') (Played $ inc played') playerMove'
+incInc :: Int -> SuccessRecord -> SuccessRecord
+incInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
+  SuccessRecord (Wins $ (inc x) wins') (Played $ (inc x) played') playerMove'
 
-decInc :: SuccessRecord -> SuccessRecord
-decInc (SuccessRecord (Wins wins') (Played played') playerMove') =
-  SuccessRecord (Wins $ dec wins') (Played $ inc played') playerMove'
+decInc :: Int -> SuccessRecord -> SuccessRecord
+decInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
+  SuccessRecord (Wins $ (dec x) wins') (Played $ (inc x) played') playerMove'
 
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
@@ -1559,26 +1559,26 @@ updateTree state _ SearchFront =
   []
 updateTree _ result level@(UnSearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  (move':_)) -> (transitionLevelType mine opponents)
-                        (MyMoves        $ updateCount incInc myMoves        $ fst $ toMoves move')
-                        (OpponentsMoves $ updateCount decInc opponentsMoves $ snd $ toMoves move')
-                        stateTransitions
-    (Loss (move':_)) -> UnSearchedLevel
-                        (MyMoves        $ updateCount decInc myMoves        $ fst $ toMoves move')
-                        (OpponentsMoves $ updateCount incInc opponentsMoves $ snd $ toMoves move')
-                        stateTransitions
-    _                -> level
+    (Win  x (move':_)) -> (transitionLevelType mine opponents)
+                         (MyMoves        $ updateCount (incInc x) myMoves        $ fst $ toMoves move')
+                         (OpponentsMoves $ updateCount (decInc x) opponentsMoves $ snd $ toMoves move')
+                         stateTransitions
+    (Loss x (move':_)) -> UnSearchedLevel
+                         (MyMoves        $ updateCount (decInc x) myMoves        $ fst $ toMoves move')
+                         (OpponentsMoves $ updateCount (incInc x) opponentsMoves $ snd $ toMoves move')
+                         stateTransitions
+    _                  -> level
 updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  (move':_)) -> SearchedLevel
-                        (MyMoves        $ updateCount incInc myMoves        $ fst $ toMoves move')
-                        (OpponentsMoves $ updateCount decInc opponentsMoves $ snd $ toMoves move')
-                        stateTransitions
-    (Loss (move':_)) -> SearchedLevel
-                        (MyMoves        $ updateCount decInc myMoves        $ fst $ toMoves move')
-                        (OpponentsMoves $ updateCount incInc opponentsMoves $ snd $ toMoves move')
-                        stateTransitions
-    _                -> level
+    (Win  x (move':_)) -> SearchedLevel
+                         (MyMoves        $ updateCount (incInc x) myMoves        $ fst $ toMoves move')
+                         (OpponentsMoves $ updateCount (decInc x) opponentsMoves $ snd $ toMoves move')
+                         stateTransitions
+    (Loss x (move':_)) -> SearchedLevel
+                         (MyMoves        $ updateCount (decInc x) myMoves        $ fst $ toMoves move')
+                         (OpponentsMoves $ updateCount (incInc x) opponentsMoves $ snd $ toMoves move')
+                         stateTransitions
+    _                  -> level
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> StateTransitions -> SearchTree)
 transitionLevelType (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
@@ -1678,16 +1678,16 @@ nextUnSearched :: [SuccessRecord] -> Maybe SuccessRecord
 nextUnSearched successRecords =
   find isUnSearched successRecords
 
-data GameOver = IWon
-              | OpponentWon
+data GameOver = IWon        Int
+              | OpponentWon Int
               | NoResult
 
 playRandomly :: StdGen -> Int -> State -> [CombinedMove] -> (SearchResult, StdGen)
 playRandomly g round' state moves =
   case gameOver state round' of
-    IWon        -> (Win  (reverse moves), g)
-    OpponentWon -> (Loss (reverse moves), g)
-    NoResult    ->
+    IWon        x -> (Win  x (reverse moves), g)
+    OpponentWon x -> (Loss x (reverse moves), g)
+    NoResult      ->
       let moves'     = movesFrom state
           (move, g') = pickOneAtRandom g moves'
           state'     = makeMove False move state
@@ -1708,27 +1708,33 @@ playerScore (Player score' _ _) = score'
 -- TODO simplified score calculation to save time here...
 gameOver :: State -> Int -> GameOver
 gameOver state round' =
-  if round' >= maxRound
-  then let
-    myScore       = playerScore $ myPlayer state
-    opponentScore = playerScore $ opponent state
-    in if myScore > opponentScore
-       then IWon
-       else OpponentWon
-  else let
-    myWormCount       = length $
-                        filter (isMyWorm . idSlot) $
-                        aListToList $
-                        wormHealths state
-    opponentWormCount = length $
-                        filter (isOpponentWorm . idSlot) $
-                        aListToList $
-                        wormHealths state
-    in if myWormCount == 0
-       then OpponentWon
-       else if opponentWormCount == 0
-            then IWon
-            else NoResult
+  let myWormCount       = length $
+                          filter (isMyWorm . idSlot) $
+                          aListToList $
+                          wormHealths state
+      opponentWormCount = length $
+                          filter (isOpponentWorm . idSlot) $
+                          aListToList $
+                          wormHealths state
+      myScore           = playerScore $ myPlayer state
+      opponentScore     = playerScore $ opponent state
+  in if round' >= maxRound || myWormCount == 0 && opponentWormCount == 0
+     then if myScore > opponentScore
+          then IWon        $ diffMax500 myScore opponentScore
+          else OpponentWon $ diffMax500 myScore opponentScore
+     else if myWormCount == 0
+          then OpponentWon 10
+          else if opponentWormCount == 0
+               then IWon 10
+               else NoResult
+
+diffMax500 :: Int -> Int -> Int
+diffMax500 x y =
+  let diff :: Double
+      diff  = (fromIntegral $ abs (x - y))
+      diff' :: Double
+      diff' = if diff > 500.0 then 500.0 else 0
+  in round (10.0 * ((diff' / 500.0)))
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =
