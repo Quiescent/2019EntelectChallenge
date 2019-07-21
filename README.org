@@ -622,9 +622,12 @@ friendly.
     :LOGBOOK:
     - CLOSING NOTE [2019-07-20 Sat 09:53]
     :END:
+** IN_PROGRESS Implement Selection of Banana Bombs & Selects
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-07-21 Sun 11:51]
+   :END:
 ** TODO Simulate a game with Banana Bombs in it
 ** TODO Simulate a game with selections in it
-** TODO Implement Selection of Banana Bombs
 ** TODO Debug the test which should be failing
    :LOGBOOK:
    - Note taken on [2019-07-18 Thu 07:16] \\
