@@ -1785,7 +1785,7 @@ addThatPlayersSelects state moves =
   else do
     selection <- map idSlot $
                  aListToList $
-                 aListFilter (isMyWorm . idSlot) $
+                 aListFilter (isOpponentWorm . idSlot) $
                  wormPositions state
     move      <- moves
     return $ withSelection selection move
