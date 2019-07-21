@@ -1699,6 +1699,12 @@ maxRound = 31
 playerScore :: Player -> Int
 playerScore (Player score' _ _) = score'
 
+-- IDEA: When winning or losing, instead of getting one point and the
+-- number of rounds increasing by one get points as a ratio of 500
+-- points ahead or behind hte opponent.  i.e. 10 points for being 500
+-- or more points ahead and -10 for being as much behind (although the
+-- numbers here will always be positive.)
+
 -- TODO simplified score calculation to save time here...
 gameOver :: State -> Int -> GameOver
 gameOver state round' =
