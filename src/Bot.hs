@@ -1694,7 +1694,7 @@ playRandomly g round' state moves =
       in playRandomly g' (round' + 1) state' moves
 
 maxRound :: Int
-maxRound = 31
+maxRound = 7
 
 playerScore :: Player -> Int
 playerScore (Player score' _ _) = score'
@@ -1716,17 +1716,33 @@ gameOver state round' =
                           filter (isOpponentWorm . idSlot) $
                           aListToList $
                           wormHealths state
-      myScore           = playerScore $ myPlayer state
-      opponentScore     = playerScore $ opponent state
+      myScore           = (playerScore $ myPlayer state) + 100 * myTotalWormHealth        state
+      opponentScore     = (playerScore $ opponent state) + 100 * opponentsTotalWormHealth state
   in if round' >= maxRound || myWormCount == 0 && opponentWormCount == 0
      then if myScore > opponentScore
           then IWon        $ diffMax500 myScore opponentScore
           else OpponentWon $ diffMax500 myScore opponentScore
      else if myWormCount == 0
-          then OpponentWon 10
+          then OpponentWon 1000
           else if opponentWormCount == 0
-               then IWon 10
+               then IWon 1000
                else NoResult
+
+myTotalWormHealth :: State -> Int
+myTotalWormHealth state =
+  sum $
+  map (deconstructHealth . dataSlot) $
+  aListToList $
+  aListFilter (isMyWorm . idSlot) $
+  wormHealths state
+
+opponentsTotalWormHealth :: State -> Int
+opponentsTotalWormHealth state =
+  sum $
+  map (deconstructHealth . dataSlot) $
+  aListToList $
+  aListFilter (isMyWorm . idSlot) $
+  wormHealths state
 
 diffMax500 :: Int -> Int -> Int
 diffMax500 x y =
