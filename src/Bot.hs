@@ -382,11 +382,11 @@ readGameState r = do
 data Move = Move Int
   deriving (Show, Eq)
 
-formatMove :: Move -> Coord -> String
+formatMove :: Move -> Coord -> State -> String
 -- Shoot
-formatMove dir@(Move x) xy
-  -- Select
-  | hasASelection dir = formatSelect dir xy -- Calls back into this function without the select
+formatMove dir@(Move x) xy state
+  -- Select: Calls back into this function without the select
+  | hasASelection dir = formatSelect dir state
   -- Shoot
   | isAShootMove  dir = formatShootMove dir
   -- Move
@@ -402,7 +402,7 @@ formatMove dir@(Move x) xy
                         fmap (\ newCoord -> "banana " ++ show newCoord) $
                         displaceToBananaDestination dir xy
 -- Nothing
-formatMove _ _ = "nothing"
+formatMove _ _ _ = "nothing"
 
 -- For reference.  Here's how to visualise the encoding of banana bomb
 -- destinations:
@@ -470,11 +470,17 @@ removeSelectionFromMove :: Move -> Move
 removeSelectionFromMove (Move x) =
   Move $ x .&. moveMask
 
-formatSelect :: Move -> Coord -> String
-formatSelect move coord' =
+formatSelect :: Move -> State -> String
+formatSelect move state =
   let selection = decodeSelection move
       move'     = removeSelectionFromMove move
-  in "select " ++ show selection ++ ";" ++ formatMove move' coord'
+  in "select " ++
+     show selection ++
+     ";" ++
+     formatMove move'
+                -- Assume that we're selecting a worm at a valid coord
+                (fromJust $ thisWormsCoord $ makeSelections move doNothing state)
+                state
 
 formatShootMove :: Move -> String
 formatShootMove (Move 0) = "shoot N"
@@ -1458,13 +1464,14 @@ startBot g roundNumber = do
   round' <- readRound
   state  <- readGameState round'
   move   <- liftIO $ runForHalfSecond (fromJust state)
+  let state' = fromJust state
   liftIO $
     putStrLn $
     -- Assume: that the worm is on a valid square to begin with
     "C;" ++
     show roundNumber ++
     ";" ++
-    formatMove move (fromJust $ thisWormsCoord (fromJust state)) ++ "\n"
+    formatMove move (fromJust $ thisWormsCoord (fromJust state)) state' ++ "\n"
   startBot g (roundNumber + 1)
 
 data Wins = Wins Int
