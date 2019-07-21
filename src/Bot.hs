@@ -942,9 +942,7 @@ containsAnyWormExcept State { wormPositions = wormPositions' } wormId' coord' =
   anyWormFacts (\ (AListEntry wormId'' coord'') -> coord' == coord'' && wormId' /= wormId'') wormPositions'
 
 isAMoveMove :: Move -> Bool
-isAMoveMove (Move x)
-  | x >= 8 && x < 16 = True
-  | otherwise        = False
+isAMoveMove (Move x) = x >= 8 && x < 16
 
 mapAtCoord :: State -> Coord -> Maybe Cell
 mapAtCoord State { gameMap = gameMap' } (Coord target) = (\(GameMap xs) -> M.lookup target xs) gameMap'
@@ -1059,9 +1057,7 @@ awardPointsToThatPlayerForMovingToAir :: ModifyState
 awardPointsToThatPlayerForMovingToAir = mapThatPlayer awardPointsForMovingToAir
 
 isADigMove :: Move -> Bool
-isADigMove (Move x)
-  | x >= 16 && x < 24 = True
-  | otherwise         = False
+isADigMove (Move x) = x >= 16 && x < 24
 
 -- Assumes that the move is a dig move
 shiftDigToMoveRange :: Move -> Move
@@ -1389,9 +1385,7 @@ directionOfShot (Move 7) = Just NW
 directionOfShot _        = Nothing
 
 isAShootMove :: Move -> Bool
-isAShootMove (Move x)
-  | x < 8 && x >= 0 = True
-  | otherwise       = False
+isAShootMove (Move x) = x < 8 && x >= 0
 
 readRound :: RIO App Int
 readRound = liftIO readLn
