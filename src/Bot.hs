@@ -573,10 +573,17 @@ thisPlayerHasSelectionsLeft = hasSelectionsLeft . myPlayer
 thatPlayerHasSelectionsLeft :: State -> Bool
 thatPlayerHasSelectionsLeft = hasSelectionsLeft . opponent
 
+hasASelection :: Move -> Bool
+hasASelection (Move x) = x >= 128
+
 makeSelections :: Move -> Move -> ModifyState
-makeSelections thisMove@(Move this) thatMove@(Move that) state =
-  let thisSelection      = if this >= 128 then Just (WormId $ decodeSelection thisMove) else Nothing
-      thatSelection      = if that >= 128 then Just (WormId $ decodeSelection thatMove) else Nothing
+makeSelections this that state =
+  let thisSelection      = if hasASelection this
+                           then Just (WormId $ decodeSelection this)
+                           else Nothing
+      thatSelection      = if hasASelection that
+                           then Just (WormId $ decodeSelection that)
+                           else Nothing
       thisValidSelection = thisSelection >>= (\ selection -> if wormExists selection state &&
                                                                 thisPlayerHasSelectionsLeft state
                                                              then Just selection
