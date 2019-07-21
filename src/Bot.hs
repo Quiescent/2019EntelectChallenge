@@ -1903,14 +1903,14 @@ directionFrom xy' xy'' =
   let (x', y')   = fromCoord xy'
       (x'', y'') = fromCoord xy''
   in case (y' == y'', x' == x'', x' > x'', y' > y'') of
-       (True,  False, True,  False) -> Move 14
-       (True,  False, False, False) -> Move 10
-       (False, True,  False, True)  -> Move 8
-       (False, True,  False, False) -> Move 12
-       (False, False, True,  True)  -> Move 15
-       (False, False, False, True)  -> Move 9
-       (False, False, True,  False) -> Move 13
-       (False, False, False, False) -> Move 11
+       (True,  False, True,  False) -> Move 6
+       (True,  False, False, False) -> Move 2
+       (False, True,  False, True)  -> Move 0
+       (False, True,  False, False) -> Move 4
+       (False, False, True,  True)  -> Move 7
+       (False, False, False, True)  -> Move 1
+       (False, False, True,  False) -> Move 5
+       (False, False, False, False) -> Move 3
        -- TODO
        _                            -> error $ "Implement! " ++ show (y' == y'', x' == x'', x' > x'', y' > y'')
 
