@@ -386,15 +386,21 @@ formatMove :: Move -> Coord -> String
 -- Shoot
 formatMove dir@(Move x) xy
   -- Select
-  | x >= 128 = formatSelect dir xy -- Calls back into this function without the select
+  | hasASelection dir = formatSelect dir xy -- Calls back into this function without the select
   -- Shoot
-  | x < 8   = formatShootMove dir
+  | isAShootMove  dir = formatShootMove dir
   -- Move
-  | x < 16  = moveFromMaybe $ fmap (\ newCoord -> "move "   ++ show newCoord) $ displaceCoordByMove xy dir
+  | isAMoveMove   dir = moveFromMaybe $
+                        fmap (\ newCoord -> "move "   ++ show newCoord) $
+                        displaceCoordByMove xy dir
   -- Dig
-  | x < 24  = moveFromMaybe $ fmap (\ newCoord -> "dig "    ++ show newCoord) $ displaceCoordByMove xy (Move (x - 8))
+  | isADigMove    dir = moveFromMaybe $
+                        fmap (\ newCoord -> "dig "    ++ show newCoord) $
+                        displaceCoordByMove xy (Move (x - 8))
   -- Throwing the bomb
-  | x < 107 = moveFromMaybe $ fmap (\ newCoord -> "banana " ++ show newCoord) $ displaceToBananaDestination dir xy
+  | isABananaMove dir = moveFromMaybe $
+                        fmap (\ newCoord -> "banana " ++ show newCoord) $
+                        displaceToBananaDestination dir xy
 -- Nothing
 formatMove _ _ = "nothing"
 
