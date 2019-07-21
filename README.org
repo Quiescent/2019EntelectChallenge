@@ -629,6 +629,7 @@ friendly.
 ** TODO Simulate a game with Banana Bombs in it
 ** TODO Simulate a game with selections in it
 ** TODO Test that banana bombing space does not cause a blast
+** TODO Only throw bananas when they'll good
 ** TODO Debug the test which should be failing
    :LOGBOOK:
    - Note taken on [2019-07-18 Thu 07:16] \\
