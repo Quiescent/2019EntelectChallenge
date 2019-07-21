@@ -1748,7 +1748,7 @@ myMovesFrom state = do
   let moves  = map Move [0..106]
   let moves' = addThisPlayersSelects state moves
   myMove <- moves'
-  guard (isThisMoveValid state myMove)
+  guard (shouldMakeThisMove state myMove)
   return myMove
 
 aListToList :: AList a -> [AListEntry a]
@@ -1775,7 +1775,7 @@ opponentsMovesFrom state = do
   let moves  = map Move [0..107]
   let moves' = addThisPlayersSelects state moves
   opponentsMove <- moves'
-  guard (isThatMoveValid state opponentsMove)
+  guard (shouldMakeThatMove state opponentsMove)
   return $ opponentsMove
 
 addThatPlayersSelects :: State -> [Move] -> [Move]
@@ -1793,25 +1793,28 @@ addThatPlayersSelects state moves =
 doNothing :: Move
 doNothing = Move 108
 
-isThisMoveValid :: State -> Move -> Bool
-isThisMoveValid state move
+shouldMakeThisMove :: State -> Move -> Bool
+shouldMakeThisMove state move
   | isADigMove move    = isValidDigMove targetOfThisMove state move
   | isAMoveMove move   = isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
   | isAShootMove move  = any (elem move) $ theseHits state
-  | isABananaMove move = True
+  | isABananaMove move = shouldMakeBananaMove state move
   | hasASelection move = thisPlayerHasSelectionsLeft state &&
-                         (isThatMoveValid (makeSelections move doNothing state) $
+                         (shouldMakeThisMove (makeSelections move doNothing state) $
                           removeSelectionFromMove move)
   | otherwise          = True
 
-isThatMoveValid :: State -> Move -> Bool
-isThatMoveValid state move
+shouldMakeBananaMove :: State -> Move -> Bool
+shouldMakeBananaMove _ _ = True
+
+shouldMakeThatMove :: State -> Move -> Bool
+shouldMakeThatMove state move
   | isADigMove    move = isValidDigMove targetOfThatMove state move
   | isAMoveMove   move = isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
   | isAShootMove  move = any (elem move) $ thoseHits state
-  | isABananaMove move = True
+  | isABananaMove move = shouldMakeBananaMove state move
   | hasASelection move = thatPlayerHasSelectionsLeft state &&
-                         (isThatMoveValid (makeSelections doNothing move state) $
+                         (shouldMakeThatMove (makeSelections doNothing move state) $
                           removeSelectionFromMove move)
   | otherwise          = True
 
