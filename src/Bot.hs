@@ -1703,6 +1703,13 @@ playerScore (Player score' _ _) = score'
 -- defeat in the next turn!!  i.e. become super conservative on 6
 -- health, just run away and don't run into the line of fire.
 
+-- IMPROVEMENT ON REALLY IMPORTANT IDEA: Actually the end of a game is
+-- very simple.  I should be playing from a play book during it.  Modes:
+--  - If I'm ahead in points then I should run such that I'm never in
+--    the line of fire.
+--  - If I'm ahead in health and the other worm is engaging me then
+--    kill him.
+
 -- IDEA: When winning or losing, instead of getting one point and the
 -- number of rounds increasing by one get points as a ratio of 500
 -- points ahead or behind hte opponent.  i.e. 10 points for being 500
