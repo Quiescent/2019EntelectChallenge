@@ -1,0 +1,3 @@
+Command: move 4 4
+Execution time: 901ms
+Exception: null
