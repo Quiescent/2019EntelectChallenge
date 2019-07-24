@@ -634,7 +634,10 @@ friendly.
    - CLOSING NOTE [2019-07-24 Wed 07:39]
    - State "IN_PROGRESS" from "TODO"       [2019-07-23 Tue 17:04]
    :END:
-** TODO Get the engine to tell us what move was made
+** IN_PROGRESS Get the engine to tell us what move was made
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-07-24 Wed 07:41]
+   :END:
 ** TODO Simulate a game with Banana Bombs in it
 ** TODO Simulate a game with selections in it
 ** TODO Test that banana bombing space does not cause a blast
