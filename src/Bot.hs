@@ -1432,8 +1432,13 @@ iterativelyImproveSearch state writeChannel = do
           newTree        = updateTree state result searchTree
       in go gen' (count' - 1) newTree
 
+-- In nanoseconds
 maxSearchTime :: Integer
 maxSearchTime = 900000000
+
+-- In microseconds
+pollInterval :: Int
+pollInterval = 5000
 
 treeAfterHalfSecond :: State -> IO SearchTree
 treeAfterHalfSecond state = do
@@ -1454,6 +1459,7 @@ treeAfterHalfSecond state = do
           let searchTree' = case pollResult of
                               Just    x -> x
                               Nothing   -> searchTree
+          Control.Concurrent.threadDelay pollInterval
           go searchTree' startingTime channel
 
 runForHalfSecond :: State -> IO Move
