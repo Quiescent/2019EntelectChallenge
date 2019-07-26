@@ -641,6 +641,7 @@ friendly.
      I did this in the game repository.
    - State "IN_PROGRESS" from "TODO"       [2019-07-24 Wed 07:41]
    :END:
+** TODO Add opponents last selection to the game
 ** TODO Simulate a game with Banana Bombs in it
 ** TODO Simulate a game with selections in it
 ** TODO Test that banana bombing space does not cause a blast
