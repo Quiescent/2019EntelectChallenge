@@ -24,6 +24,9 @@ import System.Clock
 import qualified Control.Concurrent.MVar as MVar
 import Control.Concurrent
 
+-- TODO: think long and hard about this...
+import Prelude (read)
+
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
 
@@ -128,7 +131,9 @@ toState myPlayer' opponents' gameMap' =
         return (opponent', wormHealths', wormPositions', wormBananas')
   in case state of
     Just (opponent', wormHealths', wormPositions', wormBananas') ->
-      State (lastCommand opponent')
+      State (fromJust $
+             readMove (fromJust $ coordForWorm (WormId $ opponentCurrentWormId opponent') wormPositions')
+                      (lastCommand opponent'))
             wormHealths'
             wormPositions'
             wormBananas'
@@ -233,7 +238,7 @@ data ScratchPlayer = ScratchPlayer { score                   :: Int,
 
 instance FromJSON ScratchPlayer
 
-data Opponent = Opponent { lastCommand               :: Move,
+data Opponent = Opponent { lastCommand               :: String,
                            opponentsScore            :: Int,
                            opponentCurrentWormId     :: Int,
                            opponentsWorms            :: V.Vector OpponentWorm,
@@ -250,12 +255,106 @@ instance FromJSON Opponent where
 
 -- TODO add parsing here
 toOpponent :: String -> Int -> Int -> V.Vector OpponentWorm -> Int -> Opponent
-toOpponent _ score' currentWormId' worms' remainingWormSelections' =
-  Opponent doNothing
+toOpponent opponentsLastCommand' score' currentWormId' worms' remainingWormSelections' =
+  Opponent opponentsLastCommand'
            score'
            currentWormId'
            worms'
            remainingWormSelections'
+
+readMove :: Coord -> String -> Maybe Move
+readMove coord moveString =
+  msum [
+    matchMoveCommand      coord moveString,
+    matchDirectionCommand moveString,
+    matchDigCommand       coord moveString,
+    Just doNothing]
+
+matchDirectionCommand :: String -> Maybe Move
+matchDirectionCommand original = do
+  tokens     <- tailMaybe $ words original
+  firstToken <- headMaybe tokens
+  guard (firstToken == "shoot")
+  direction <- tailMaybe tokens >>= headMaybe
+  return $ case direction of
+               "N"  -> Move 0
+               "NE" -> Move 1
+               "E"  -> Move 2
+               "SE" -> Move 3
+               "S"  -> Move 4
+               "SW" -> Move 5
+               "W"  -> Move 6
+               "NW" -> Move 7
+               _    -> error $ "matchDirectionCommand: " ++ show direction
+
+toInt :: String -> Int
+toInt x' = read x'
+
+matchMoveCommand :: Coord -> String -> Maybe Move
+matchMoveCommand origCoord original = do
+  tokens       <- tailMaybe $ words original
+  firstToken   <- headMaybe tokens
+  guard (firstToken == "move")
+  coords       <- tailMaybe tokens
+  xValue       <- fmap toInt $ headMaybe coords
+  yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
+  let destCoord = toCoord xValue yValue
+  return $ moveFrom origCoord destCoord
+
+matchDigCommand :: Coord -> String -> Maybe Move
+matchDigCommand origCoord original = do
+  tokens       <- tailMaybe $ words original
+  firstToken   <- headMaybe tokens
+  guard (firstToken == "dig")
+  coords       <- tailMaybe tokens
+  xValue       <- fmap toInt $ headMaybe coords
+  yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
+  let destCoord = toCoord xValue yValue
+  return $ digFrom origCoord destCoord
+
+data Ternary = NegOne
+             | Zero
+             | One
+
+compareToTernary :: Int -> Int -> Ternary
+compareToTernary x' y' =
+  if x' - y' < 0
+  then NegOne
+  else if x' - y' > 0
+       then One
+       else Zero
+
+digFrom :: Coord -> Coord -> Move
+digFrom from to' =
+  let (x',  y')  = fromCoord from
+      (x'', y'') = fromCoord to'
+  in case (compareToTernary x'' x', compareToTernary y'' y') of
+    -- Start from N and move anti clockwise
+    (Zero,   NegOne) -> Move 16
+    (One,    NegOne) -> Move 17
+    (One,    Zero)   -> Move 18
+    (One,    One)    -> Move 19
+    (Zero,   One)    -> Move 20
+    (NegOne, One)    -> Move 21
+    (NegOne, Zero)   -> Move 22
+    (NegOne, NegOne) -> Move 23
+    (Zero,   Zero)   -> Move 32
+
+moveFrom :: Coord -> Coord -> Move
+moveFrom from to' =
+  let (x',  y')  = fromCoord from
+      (x'', y'') = fromCoord to'
+  in case (compareToTernary x'' x', compareToTernary y'' y') of
+    -- Start from N and move anti clockwise
+    (Zero,   NegOne) -> Move 8
+    (One,    NegOne) -> Move 9
+    (One,    Zero)   -> Move 10
+    (One,    One)    -> Move 11
+    (Zero,   One)    -> Move 12
+    (NegOne, One)    -> Move 13
+    (NegOne, Zero)   -> Move 14
+    (NegOne, NegOne) -> Move 15
+    (Zero,   Zero)   -> Move 32
 
 data ScratchWorm = ScratchWorm { wormId        :: Int,
                                  wormHealth    :: Int,
@@ -1369,9 +1468,10 @@ iterateCoordinate coord depth fX fY =
 thisWormsCoord :: State -> Maybe Coord
 thisWormsCoord state =
   let thisWormId = thisPlayersCurrentWormId state
-  in  fmap dataSlot $
-      aListFind ((== thisWormId) . idSlot) $
-      wormPositions state
+  in  coordForWorm thisWormId $ wormPositions state
+
+coordForWorm :: WormId -> WormPositions -> Maybe Coord
+coordForWorm wormId' = fmap dataSlot . aListFind ((== wormId') . idSlot)
 
 -- Assume that that worm is never at an invalid position.
 --
@@ -1380,9 +1480,7 @@ thisWormsCoord state =
 thatWormsCoord :: State -> Maybe Coord
 thatWormsCoord state =
   let thatWormId = thatPlayersCurrentWormId state
-  in  fmap dataSlot $
-      aListFind ((== thatWormId) . idSlot) $
-      wormPositions state
+  in  coordForWorm thatWormId $ wormPositions state
 
 data Direction = N
                | NE
