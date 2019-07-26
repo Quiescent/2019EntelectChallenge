@@ -634,8 +634,11 @@ friendly.
    - CLOSING NOTE [2019-07-24 Wed 07:39]
    - State "IN_PROGRESS" from "TODO"       [2019-07-23 Tue 17:04]
    :END:
-** IN_PROGRESS Get the engine to tell us what move was made
+** DONE Get the engine to tell us what move was made
+   CLOSED: [2019-07-26 Fri 08:16]
    :LOGBOOK:
+   - CLOSING NOTE [2019-07-26 Fri 08:16] \\
+     I did this in the game repository.
    - State "IN_PROGRESS" from "TODO"       [2019-07-24 Wed 07:41]
    :END:
 ** TODO Simulate a game with Banana Bombs in it
