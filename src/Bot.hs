@@ -43,12 +43,13 @@ splitGameMap (GameMap xs) =
     iter []  = []
     iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
 
-data State = State { wormHealths   :: WormHealths,
-                     wormPositions :: WormPositions,
-                     wormBananas   :: WormBananas,
-                     myPlayer      :: Player,
-                     opponent      :: Player,
-                     gameMap       :: GameMap }
+data State = State { opponentsLastCommand :: Move,
+                     wormHealths          :: WormHealths,
+                     wormPositions        :: WormPositions,
+                     wormBananas          :: WormBananas,
+                     myPlayer             :: Player,
+                     opponent             :: Player,
+                     gameMap              :: GameMap }
              deriving (Generic, Eq)
 
 type WormHealths = AList WormHealth
@@ -83,18 +84,20 @@ data WormId = WormId Int
   deriving (Eq, Show, Ord)
 
 instance Show State where
-  show (State wormsHealth'
+  show (State opponentsLastCommand'
+              wormsHealth'
               wormPositions'
               wormBananas'
               myPlayer'
               opponent'
               gameMap') =
     "State {\n" ++
-    "  wormHealths   = " ++ show wormsHealth'   ++ "\n" ++
-    "  wormPositions = " ++ show wormPositions' ++ "\n" ++
-    "  wormBananas   = " ++ show wormBananas'   ++ "\n" ++
-    "  myPlayer      = " ++ show myPlayer'      ++ "\n" ++
-    "  opponent      = " ++ show opponent'      ++ "\n" ++
+    "  opponentsLastCommand = " ++ show opponentsLastCommand' ++ "\n" ++
+    "  wormHealths          = " ++ show wormsHealth'          ++ "\n" ++
+    "  wormPositions        = " ++ show wormPositions'        ++ "\n" ++
+    "  wormBananas          = " ++ show wormBananas'          ++ "\n" ++
+    "  myPlayer             = " ++ show myPlayer'             ++ "\n" ++
+    "  opponent             = " ++ show opponent'             ++ "\n" ++
     "  gameMap:\n" ++
     show gameMap' ++
     "}"
@@ -125,7 +128,8 @@ toState myPlayer' opponents' gameMap' =
         return (opponent', wormHealths', wormPositions', wormBananas')
   in case state of
     Just (opponent', wormHealths', wormPositions', wormBananas') ->
-      State wormHealths'
+      State (lastCommand opponent')
+            wormHealths'
             wormPositions'
             wormBananas'
             (removeHealthPoints isMyWorm       wormHealths' $ toPlayer myPlayer')
@@ -179,7 +183,7 @@ factsFromMyWorms (ScratchPlayer _ _ worms' _) =
       aListFilter notDead bananas)
 
 factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions, WormBananas)
-factsFromOpponentsWorms (Opponent _ _ worms' _) =
+factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
   let healths   = AList $
                   V.toList $
                   V.map (\ (OpponentWorm { opWormId = wormId',
@@ -214,7 +218,7 @@ vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
 
 opponentToPlayer :: Opponent -> Player
-opponentToPlayer (Opponent score' currentWormId' _ selections') =
+opponentToPlayer (Opponent _ score' currentWormId' _ selections') =
   Player score' (WormId (shift currentWormId' 2)) (Selections selections')
 
 toPlayer :: ScratchPlayer -> Player
@@ -229,7 +233,8 @@ data ScratchPlayer = ScratchPlayer { score                   :: Int,
 
 instance FromJSON ScratchPlayer
 
-data Opponent = Opponent { opponentsScore            :: Int,
+data Opponent = Opponent { lastCommand               :: Move,
+                           opponentsScore            :: Int,
                            opponentCurrentWormId     :: Int,
                            opponentsWorms            :: V.Vector OpponentWorm,
                            opRemainingWormSelections :: Int }
@@ -237,10 +242,20 @@ data Opponent = Opponent { opponentsScore            :: Int,
 
 instance FromJSON Opponent where
   parseJSON = withObject "Opponent" $ \ v ->
-    Opponent <$> v .: "score"
-             <*> v .: "currentWormId"
-             <*> v .: "worms"
-             <*> v .: "remainingWormSelections"
+    toOpponent <$> v .: "lastCommand"
+               <*> v .: "score"
+               <*> v .: "currentWormId"
+               <*> v .: "worms"
+               <*> v .: "remainingWormSelections"
+
+-- TODO add parsing here
+toOpponent :: String -> Int -> Int -> V.Vector OpponentWorm -> Int -> Opponent
+toOpponent _ score' currentWormId' worms' remainingWormSelections' =
+  Opponent doNothing
+           score'
+           currentWormId'
+           worms'
+           remainingWormSelections'
 
 data ScratchWorm = ScratchWorm { wormId        :: Int,
                                  wormHealth    :: Int,

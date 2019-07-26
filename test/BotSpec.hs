@@ -1534,7 +1534,8 @@ generateShotScenarioWithMapModifications generateCoord displace switchShot addFa
       (displacedCoord, delta) = displace      originatingCoord k
       shot                    = switchShot    delta
       modifiedMap             = modifyMap originatingCoord displacedCoord aGameMapWithOnlyAir
-      state                   = State emptyWormHealths
+      state                   = State doNothing
+                                      emptyWormHealths
                                       emptyWormPositions
                                       emptyBananaBombs
                                       (Player 300 (WormId 1) startingSelections)
@@ -1630,14 +1631,16 @@ moveWest = Move 14
 
 emptyBananaBombs = AList []
 
-aStateWithoutWorms = State emptyWormHealths
+aStateWithoutWorms = State doNothing
+                           emptyWormHealths
                            emptyWormPositions
                            emptyBananaBombs
                            aPlayer
                            anOpponent
                            aGameMap
 
-aState = State someWormHealths
+aState = State doNothing
+               someWormHealths
                someWormPositions
                emptyBananaBombs
                aPlayer
