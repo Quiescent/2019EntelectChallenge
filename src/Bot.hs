@@ -703,12 +703,17 @@ makeMove swapping moves =
   let (myMove,  opponentsMove)  = toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
-  in advanceWormSelections .
+  in setOpponentsLastMove  opponentsMove'           .
+     advanceWormSelections                          .
      makeShootMoves          myMove' opponentsMove' .
      makeBananaMoves         myMove' opponentsMove' .
      makeDigMoves            myMove' opponentsMove' .
      makeMoveMoves  swapping myMove' opponentsMove' .
      makeSelections          myMove  opponentsMove
+
+setOpponentsLastMove :: Move -> State -> State
+setOpponentsLastMove move' state =
+  state { opponentsLastCommand = move' }
 
 decrementSelections :: Selections -> Selections
 decrementSelections (Selections x) = Selections $ x - 1
