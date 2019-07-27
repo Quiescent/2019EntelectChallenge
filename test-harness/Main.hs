@@ -70,21 +70,39 @@ diff this that = do
   liftIO $ Process.callCommand "diff diff_1 diff_2 || echo '' > diff_output"
   liftIO $ IO.readFile "diff_output"
 
-loadCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
-loadCommandFromSubfolder choosePath coord directoryPath = do
+loadCommandFromSubfolder :: (Coord -> String -> Maybe Move) -> ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
+loadCommandFromSubfolder readMove choosePath coord directoryPath = do
   playerPaths     <- listDirectory directoryPath
   let aPlayersPath = choosePath playerPaths
   if isJust aPlayersPath
   then liftIO $
-       fmap (readMove coord) $
+       fmap (withoutCommandWord >=> readMove coord) $
        IO.readFile (directoryPath ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
   else return Nothing
 
+loadThisCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
+loadThisCommandFromSubfolder = loadCommandFromSubfolder readThisMove
+
+readThisMove :: Coord -> String -> Maybe Move
+readThisMove coord moveString =
+  msum [
+    matchThisSelectMove   coord moveString,
+    matchMoveCommand      coord moveString,
+    matchDirectionCommand moveString,
+    matchDigCommand       coord moveString,
+    Just doNothing]
+
+matchThisSelectMove :: Coord -> String -> Maybe Move
+matchThisSelectMove = matchSelectMove readThisWorm
+
+loadThatCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
+loadThatCommandFromSubfolder = loadCommandFromSubfolder readThatMove
+
 loadThisPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
-loadThisPlayersCommand = loadCommandFromSubfolder (headMaybe . L.sort)
+loadThisPlayersCommand = loadThisCommandFromSubfolder (headMaybe . L.sort)
 
 loadThatPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
-loadThatPlayersCommand = loadCommandFromSubfolder ((tailMaybe >=> headMaybe) . L.sort)
+loadThatPlayersCommand = loadThatCommandFromSubfolder ((tailMaybe >=> headMaybe) . L.sort)
 
 tickState :: Move -> Move -> State -> State
 tickState thisMove thatMove state =

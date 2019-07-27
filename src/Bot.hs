@@ -131,9 +131,7 @@ toState myPlayer' opponents' gameMap' =
         return (opponent', wormHealths', wormPositions', wormBananas')
   in case state of
     Just (opponent', wormHealths', wormPositions', wormBananas') ->
-      State (fromJust $
-             readMove (fromJust $ coordForWorm (WormId $ opponentCurrentWormId opponent') wormPositions')
-                      (lastCommand opponent'))
+      State (parseLastCommand opponent' wormPositions' (lastCommand opponent'))
             wormHealths'
             wormPositions'
             wormBananas'
@@ -141,6 +139,19 @@ toState myPlayer' opponents' gameMap' =
             (removeHealthPoints isOpponentWorm wormHealths' $ opponentToPlayer opponent')
             (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
+
+parseLastCommand :: Opponent -> WormPositions -> Maybe String -> Move
+parseLastCommand _         _              Nothing             = doNothing
+parseLastCommand opponent' wormPositions' (Just lastCommand') =
+  fromJust $ do
+  tokensSansCommandWord <- withoutCommandWord lastCommand'
+  readThatMove (fromJust $
+                coordForWorm (WormId $ opponentCurrentWormId opponent')
+                             wormPositions')
+               tokensSansCommandWord
+
+withoutCommandWord :: String -> Maybe String
+withoutCommandWord = tailMaybe . dropWhile (/= ' ')
 
 wormCount :: Int
 wormCount = 3
@@ -238,7 +249,7 @@ data ScratchPlayer = ScratchPlayer { score                   :: Int,
 
 instance FromJSON ScratchPlayer
 
-data Opponent = Opponent { lastCommand               :: String,
+data Opponent = Opponent { lastCommand               :: Maybe String,
                            opponentsScore            :: Int,
                            opponentCurrentWormId     :: Int,
                            opponentsWorms            :: V.Vector OpponentWorm,
@@ -247,14 +258,14 @@ data Opponent = Opponent { lastCommand               :: String,
 
 instance FromJSON Opponent where
   parseJSON = withObject "Opponent" $ \ v ->
-    toOpponent <$> v .: "lastCommand"
-               <*> v .: "score"
-               <*> v .: "currentWormId"
-               <*> v .: "worms"
-               <*> v .: "remainingWormSelections"
+    toOpponent <$> v .:? "lastCommand"
+               <*> v .:  "score"
+               <*> v .:  "currentWormId"
+               <*> v .:  "worms"
+               <*> v .:  "remainingWormSelections"
 
 -- TODO add parsing here
-toOpponent :: String -> Int -> Int -> V.Vector OpponentWorm -> Int -> Opponent
+toOpponent :: Maybe String -> Int -> Int -> V.Vector OpponentWorm -> Int -> Opponent
 toOpponent opponentsLastCommand' score' currentWormId' worms' remainingWormSelections' =
   Opponent opponentsLastCommand'
            score'
@@ -262,17 +273,39 @@ toOpponent opponentsLastCommand' score' currentWormId' worms' remainingWormSelec
            worms'
            remainingWormSelections'
 
-readMove :: Coord -> String -> Maybe Move
-readMove coord moveString =
+readThatMove :: Coord -> String -> Maybe Move
+readThatMove coord moveString =
   msum [
+    matchThatSelectMove   coord moveString,
     matchMoveCommand      coord moveString,
     matchDirectionCommand moveString,
     matchDigCommand       coord moveString,
     Just doNothing]
 
+readThatWorm :: String -> WormId
+readThatWorm = WormId . shiftL 2 . read
+
+readThisWorm :: String -> WormId
+readThisWorm = WormId . read
+
+matchThatSelectMove :: Coord -> String -> Maybe Move
+matchThatSelectMove = matchSelectMove readThatWorm
+
+matchSelectMove :: (String -> WormId) -> Coord -> String -> Maybe Move
+matchSelectMove readWorm coord' move' = do
+  guard (any (== ';') move')
+  let moves        = span (/= ';') move'
+  let selectTokens = words (fst moves)
+  firstToken      <- headMaybe selectTokens
+  guard (firstToken == "select")
+  let selectedWorm = readWorm $ last selectTokens
+  otherTokens     <- tailMaybe $ snd moves
+  otherMove       <- readThatMove coord' otherTokens
+  return $ withSelection selectedWorm otherMove
+
 matchDirectionCommand :: String -> Maybe Move
 matchDirectionCommand original = do
-  tokens     <- tailMaybe $ words original
+  let tokens  = words original
   firstToken <- headMaybe tokens
   guard (firstToken == "shoot")
   direction <- tailMaybe tokens >>= headMaybe
@@ -292,7 +325,7 @@ toInt x' = read x'
 
 matchMoveCommand :: Coord -> String -> Maybe Move
 matchMoveCommand origCoord original = do
-  tokens       <- tailMaybe $ words original
+  let tokens    = words original
   firstToken   <- headMaybe tokens
   guard (firstToken == "move")
   coords       <- tailMaybe tokens
@@ -303,7 +336,7 @@ matchMoveCommand origCoord original = do
 
 matchDigCommand :: Coord -> String -> Maybe Move
 matchDigCommand origCoord original = do
-  tokens       <- tailMaybe $ words original
+  let tokens    = words original
   firstToken   <- headMaybe tokens
   guard (firstToken == "dig")
   coords       <- tailMaybe tokens
@@ -1342,7 +1375,7 @@ harmWorm shootingWormId'
                       aListFind ((== wormId') . idSlot) $
                       wormHealths originalState
       wormDied      = (deconstructHealth wormHealth') <= damage'
-      awardPoints   = if wormDied then awardPlayerForKill else awardPlayer
+      awardPoints   = if wormDied then (awardPlayer . awardPlayerForKill) else awardPlayer
       dishOutPoints = if samePlayer
                       then penalisePlayer
                       else awardPoints

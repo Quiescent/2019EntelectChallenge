@@ -483,6 +483,7 @@ spec = do
                               AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the four squares
          awardPointsToThisPlayerForKillingAnEnemy $
+         awardPointsToThisPlayerForDamage 20      $
          penaliseThisPlayerForDamage 13           $
          awardPointsToThisPlayerForDigging        $
          awardPointsToThisPlayerForDigging        $
@@ -667,6 +668,7 @@ spec = do
                               AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the four squares
          awardPointsToThatPlayerForKillingAnEnemy $
+         awardPointsToThatPlayerForDamage 20      $
          penaliseThatPlayerForDamage 13           $
          awardPointsToThatPlayerForDigging        $
          awardPointsToThatPlayerForDigging        $
@@ -913,6 +915,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit this players first horizontal target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -939,6 +942,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit this players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -965,6 +969,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit this players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -991,6 +996,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThisPlayerForKillingAnEnemy $
+          awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 4) $ wormHealths state,
                   wormPositions = removeWormById (WormId 4) $ wormPositions state })
     prop "should hit that players first horizontal target in range when it's my worm" $ \ (i, j, k) ->
@@ -1004,6 +1010,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should hit that players first horizontal target in range when it's friendly" $ \ (i, j, k) ->
@@ -1030,6 +1037,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should hit that players first vertical target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -1056,6 +1064,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should hit that players first NW-SE diagonal target in range when it's a friendly worm" $ \ (i, j, k) ->
@@ -1082,6 +1091,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
+          awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
                   wormPositions = removeWormById (WormId 1) $ wormPositions state })
     prop "should not hit this players first horizontal target in range when there's dirt or space in the way" $ \ (i, j, k, l) ->
@@ -1167,7 +1177,9 @@ spec = do
         in makeMove True (fromMoves shot (oppositeShot shot)) state `shouldBe`
            (selectNextWormsDefault $
             awardPointsToThatPlayerForKillingAnEnemy $
+            awardPointsToThatPlayerForHittingAnEnemy $
             awardPointsToThisPlayerForKillingAnEnemy $
+            awardPointsToThisPlayerForHittingAnEnemy $
             state { wormHealths =
                       removeWormById (WormId 4) $
                       removeWormById (WormId 1) $
