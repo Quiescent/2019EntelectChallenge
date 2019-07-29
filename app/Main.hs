@@ -12,4 +12,4 @@ main = do
   hSetBuffering stdout NoBuffering
   let app = App {}
   g <- getStdGen
-  runRIO app (startBot g 1)
+  runRIO app $ startBot g

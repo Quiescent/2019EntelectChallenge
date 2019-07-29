@@ -27,6 +27,12 @@ import Control.Concurrent
 -- TODO: think long and hard about this...
 import Prelude (read)
 
+import Debug.Trace
+
+probe :: Show a => String -> a -> a
+probe message x =
+  Debug.Trace.trace (message ++ ": " ++ show x) x
+
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
 
@@ -46,7 +52,7 @@ splitGameMap (GameMap xs) =
     iter []  = []
     iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
 
-data State = State { opponentsLastCommand :: Move,
+data State = State { opponentsLastCommand :: Maybe String,
                      wormHealths          :: WormHealths,
                      wormPositions        :: WormPositions,
                      wormBananas          :: WormBananas,
@@ -131,7 +137,7 @@ toState myPlayer' opponents' gameMap' =
         return (opponent', wormHealths', wormPositions', wormBananas')
   in case state of
     Just (opponent', wormHealths', wormPositions', wormBananas') ->
-      State (parseLastCommand opponent' wormPositions' (lastCommand opponent'))
+      State (lastCommand (probe "Opponent" opponent'))
             wormHealths'
             wormPositions'
             wormBananas'
@@ -139,19 +145,6 @@ toState myPlayer' opponents' gameMap' =
             (removeHealthPoints isOpponentWorm wormHealths' $ opponentToPlayer opponent')
             (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
-
-parseLastCommand :: Opponent -> WormPositions -> Maybe String -> Move
-parseLastCommand _         _              Nothing             = doNothing
-parseLastCommand opponent' wormPositions' (Just lastCommand') =
-  fromJust $ do
-  tokensSansCommandWord <- withoutCommandWord lastCommand'
-  readThatMove (fromJust $
-                coordForWorm (WormId $ opponentCurrentWormId opponent')
-                             wormPositions')
-               tokensSansCommandWord
-
-withoutCommandWord :: String -> Maybe String
-withoutCommandWord = tailMaybe . dropWhile (/= ' ')
 
 wormCount :: Int
 wormCount = 3
@@ -258,7 +251,7 @@ data Opponent = Opponent { lastCommand               :: Maybe String,
 
 instance FromJSON Opponent where
   parseJSON = withObject "Opponent" $ \ v ->
-    toOpponent <$> v .:? "lastCommand"
+    toOpponent <$> v .:? "previousCommand"
                <*> v .:  "score"
                <*> v .:  "currentWormId"
                <*> v .:  "worms"
@@ -500,7 +493,7 @@ toCell "AIR"        (Just powerup) =
   else AIR
 toCell cellType     _       = error $ "Can't create a cell with type: " ++ cellType
 
-readGameState :: Int -> RIO App (Maybe State)
+readGameState :: Int -> IO (Maybe State)
 readGameState r = do
   stateString <- B.readFile $ "./rounds/" ++ show r ++ "/state.json"
   return $ decode stateString
@@ -711,9 +704,13 @@ makeMove swapping moves =
      makeMoveMoves  swapping myMove' opponentsMove' .
      makeSelections          myMove  opponentsMove
 
+-- TODO I shouldn't even be doing this at all.
 setOpponentsLastMove :: Move -> State -> State
 setOpponentsLastMove move' state =
-  state { opponentsLastCommand = move' }
+    -- TODO fromJust?
+  let wormId' = thatPlayersCurrentWormId state
+      coord'  = dataSlot $ fromJust $ aListFind ((== wormId') . idSlot) $ wormPositions state
+  in state { opponentsLastCommand = Just $ formatMove move' coord' state }
 
 decrementSelections :: Selections -> Selections
 decrementSelections (Selections x) = Selections $ x - 1
@@ -1544,8 +1541,8 @@ directionOfShot _        = Nothing
 isAShootMove :: Move -> Bool
 isAShootMove (Move x) = x < 8 && x >= 0
 
-readRound :: RIO App Int
-readRound = liftIO readLn
+readRound :: IO Int
+readRound = readLn
 
 myMovesFromTree :: SearchTree -> SuccessRecords
 myMovesFromTree (SearchedLevel   (MyMoves myMoves) _ _) = myMoves
@@ -1558,8 +1555,11 @@ iterationsBeforeComms = 10
 
 type CommsChannel = MVar.MVar
 
-readComms :: CommsChannel a -> IO (Maybe a)
-readComms = MVar.tryTakeMVar
+pollComms :: CommsChannel a -> IO (Maybe a)
+pollComms = MVar.tryTakeMVar
+
+readComms :: CommsChannel a -> IO a
+readComms = MVar.takeMVar
 
 writeComms :: CommsChannel a -> a -> IO ()
 writeComms = MVar.putMVar
@@ -1567,21 +1567,39 @@ writeComms = MVar.putMVar
 newComms :: IO (CommsChannel a)
 newComms = MVar.newEmptyMVar
 
-iterativelyImproveSearch :: State -> CommsChannel SearchTree -> IO ()
-iterativelyImproveSearch state writeChannel = do
-  gen <- getStdGen
-  _   <- go gen iterationsBeforeComms SearchFront
-  return ()
+logStdErr :: String -> IO ()
+logStdErr = hPutStr stderr
+
+-- First iteration I think that I'll suspend the thread until a new
+-- state comes along.
+-- TODO: don't suspend the thread when the new state comes along.
+iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
+iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
+  go gen iterationsBeforeComms tree
   where
-    go :: StdGen -> Int -> SearchTree -> IO SearchTree
-    go gen 0     searchTree = do
-      searchTree' <- evaluate searchTree
-      writeComms writeChannel searchTree'
-      go gen iterationsBeforeComms searchTree'
-    go gen count' searchTree =
-      let (result, gen') = search gen 0 state searchTree []
-          newTree        = updateTree state result searchTree
-      in go gen' (count' - 1) newTree
+    go :: StdGen -> Int -> SearchTree-> IO ()
+    go gen' 0      searchTree = do
+      searchTree'    <- evaluate searchTree
+      writeComms treeChannel searchTree'
+      newRoundsState <- pollComms stateChannel
+      case newRoundsState of
+        Just (move', state') -> do
+          -- This isn't good enough.  I need to have a mode of searching in
+          -- between, when the runner hasn't yet told me to move because it's
+          -- 900ms from that point that I communicate back.
+          let tree'' = makeMoveInTree move' tree
+          when (tree'' == SearchFront) $ logStdErr "Move combination not in search tree!"
+          iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
+        Nothing -> go gen' iterationsBeforeComms searchTree'
+    go gen' count' searchTree =
+      let (result, gen'') = search gen' 0 initialState searchTree []
+          newTree        = updateTree initialState result searchTree
+      in go gen'' (count' - 1) newTree
+
+makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
+makeMoveInTree move (SearchedLevel   _ _ transitions) = findSubTree move transitions
+makeMoveInTree move (UnSearchedLevel _ _ transitions) = findSubTree move transitions
+makeMoveInTree _    SearchFront                       = SearchFront
 
 -- In nanoseconds
 maxSearchTime :: Integer
@@ -1591,37 +1609,40 @@ maxSearchTime = 900000000
 pollInterval :: Int
 pollInterval = 5000
 
-treeAfterHalfSecond :: State -> IO SearchTree
-treeAfterHalfSecond state = do
+treeAfterAlottedTime :: CommsChannel SearchTree -> IO SearchTree
+treeAfterAlottedTime treeChannel = do
   startingTime <- fmap toNanoSecs $ getTime clock
-  channel      <- newComms
-  _            <- forkIO (iterativelyImproveSearch state channel)
-  searchTree   <- go SearchFront startingTime channel
+  searchTree   <- go SearchFront startingTime
   return searchTree
   where
     clock = ProcessCPUTime
-    go searchTree startingTime channel =
+    go searchTree startingTime =
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
         then return searchTree
         else do
-          pollResult <- readComms channel
+          pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
                               Just    x -> x
                               Nothing   -> searchTree
           Control.Concurrent.threadDelay pollInterval
-          go searchTree' startingTime channel
+          go searchTree' startingTime
 
-runForHalfSecond :: State -> IO Move
-runForHalfSecond = fmap (successRecordMove . chooseBestMove . myMovesFromTree) . treeAfterHalfSecond
+searchForAlottedTime :: CommsChannel SearchTree -> IO Move
+searchForAlottedTime =
+  fmap (successRecordMove . chooseBestMove . myMovesFromTree) . treeAfterAlottedTime
 
-startBot :: StdGen -> Int -> RIO App ()
-startBot g roundNumber = do
-  round' <- readRound
-  state  <- readGameState round'
-  move   <- liftIO $ runForHalfSecond (fromJust state)
-  let state' = fromJust state
+runRound :: State -> Move -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
+runRound previousState myLastMove stateChannel treeChannel = do
+  roundNumber          <- readRound
+  state                <- readGameState roundNumber
+  -- TODO fromJust?
+  let state'            = fromJust state
+  let opponentsLastMove = parseLastCommand previousState $ opponentsLastCommand state'
+  when (roundNumber /= 0) $
+    writeComms stateChannel $ (fromMoves myLastMove opponentsLastMove, state')
+  move        <- liftIO $ searchForAlottedTime treeChannel
   liftIO $
     putStrLn $
     -- Assume: that the worm is on a valid square to begin with
@@ -1629,7 +1650,28 @@ startBot g roundNumber = do
     show roundNumber ++
     ";" ++
     formatMove move (fromJust $ thisWormsCoord (fromJust state)) state' ++ "\n"
-  startBot g (roundNumber + 1)
+  runRound state' move stateChannel treeChannel
+
+parseLastCommand :: State -> Maybe String -> Move
+parseLastCommand _             Nothing             = doNothing
+parseLastCommand previousState (Just lastCommand') =
+  -- TODO fromJust?
+  let wormId' = thatPlayersCurrentWormId previousState
+      coord'  = dataSlot $ fromJust $ aListFind ((== wormId') . idSlot) $ wormPositions previousState
+  in fromJust $ readThatMove coord' lastCommand'
+
+withoutCommandWord :: String -> Maybe String
+withoutCommandWord = tailMaybe . dropWhile (/= ' ')
+
+startBot :: StdGen -> RIO App ()
+startBot g = do
+  treeChannel   <- liftIO newComms
+  stateChannel  <- liftIO newComms
+  -- This is where I seed it with a search front
+  initialRound' <- liftIO $ readRound
+  initialState  <- liftIO $ fmap fromJust $ readGameState initialRound'
+  _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeChannel)
+  liftIO $ runRound initialState doNothing stateChannel treeChannel
 
 data Wins = Wins Int
   deriving (Eq)
@@ -1638,6 +1680,7 @@ data Played = Played Int
   deriving (Eq)
 
 data SuccessRecord = SuccessRecord Wins Played Move
+  deriving (Eq)
 
 instance Show SuccessRecord where
   show (SuccessRecord (Wins wins') (Played played') move') =
@@ -1655,10 +1698,13 @@ played :: SuccessRecord -> Played
 played (SuccessRecord _ played' _) = played'
 
 data MyMoves = MyMoves SuccessRecords
+  deriving (Eq)
 
 data OpponentsMoves = OpponentsMoves SuccessRecords
+  deriving (Eq)
 
 data StateTransition = StateTransition CombinedMove SearchTree
+  deriving (Eq)
 
 hasMove :: CombinedMove -> StateTransition -> Bool
 hasMove move' (StateTransition move'' _) = move' == move''
@@ -1671,6 +1717,7 @@ type StateTransitions = [StateTransition]
 data SearchTree = SearchedLevel   MyMoves OpponentsMoves StateTransitions
                 | UnSearchedLevel MyMoves OpponentsMoves StateTransitions
                 | SearchFront
+                deriving (Eq)
 
 join' :: Show a => String -> [a] -> String
 join' joinString strings =

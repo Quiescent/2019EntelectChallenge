@@ -5,7 +5,9 @@ import Import
 import Simulate
 import Bot
 
+import System.Random
 import System.Environment
+import Control.Concurrent
 import qualified System.IO as IO
 import Data.Maybe
 
@@ -37,17 +39,27 @@ runDataSet matchLogsDirectory = do
       liftIO $ IO.putStrLn (joinString "," gamesPlayedPerRound)
     (Failed message) -> liftIO $ IO.putStrLn message
 
+-- TODO: Fix.  This will block the searching thread because it can't
+-- write into the mutex.
 runSearchForEachRound :: [FilePath] -> RIO App BenchmarkResult
-runSearchForEachRound directories =
-  go directories []
+runSearchForEachRound []                      = error "No directories to benchmark over."
+runSearchForEachRound (directory:directories) = do
+  state         <- fmap fromJust $ loadStateForRound directory
+  gen           <- liftIO getStdGen
+  treeChannel   <- liftIO newComms
+  stateChannel  <- liftIO newComms
+  _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
+  go directories [] treeChannel stateChannel
   where
-    go []         results = return $ GamesPlayedPerRound (reverse results)
-    go (dir:dirs) results = do
+    go []         results _           _            = return $ GamesPlayedPerRound (reverse results)
+    go (dir:dirs) results treeChannel stateChannel = do
       state <- loadStateForRound dir
       if not $ isJust state
       then return (Failed $ "Couldn't load state from: " ++ show dir)
-      else liftIO (treeAfterHalfSecond (fromJust state)) >>=
-           ( \ tree -> go dirs (countGames tree : results))
+      else do
+        _    <- liftIO $ searchForAlottedTime treeChannel
+        tree <- liftIO $ readComms treeChannel
+        go dirs (countGames tree : results) treeChannel stateChannel
 
 countGames :: SearchTree -> Int
 countGames = sum . map ( (\ (Played x) -> x) . played) . myMovesFromTree

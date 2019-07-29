@@ -5,6 +5,8 @@ import Import
 import Simulate
 import Bot
 
+import Control.Concurrent
+import System.Random
 import System.Environment
 import Data.Maybe
 import qualified System.IO as IO
@@ -20,15 +22,27 @@ main = do
 
 runDataSet :: FilePath -> RIO App ()
 runDataSet matchLogsDirectory = do
-  result <- withRoundsDirectories matchLogsDirectory runSearchForEachRound
-  case result of
-    Success           -> liftIO $ IO.putStrLn ("Ran search for each round in: " ++ matchLogsDirectory)
-    (Failure message) -> liftIO $ IO.putStrLn message
+  withRoundsDirectories matchLogsDirectory runSearchForEachRound
+  liftIO $ IO.putStrLn ("Ran search for each round in: " ++ matchLogsDirectory)
 
-runSearchForEachRound :: [FilePath] -> RIO App Result
-runSearchForEachRound []     = return $ Success
+oneSecond :: Int
+oneSecond = 1000000000
+
+-- TODO: Fix.  This will block the searching thread because it can't
+-- write into the mutex variable.
+runSearchForEachRound :: [FilePath] -> RIO App ()
+runSearchForEachRound []                      = error "No round directories to profile over."
 runSearchForEachRound (directory:directories) = do
-  state <- loadStateForRound directory
-  if not $ isJust state
-  then return (Failure $ "Couldn't load state from: " ++ show directory)
-  else liftIO (runForHalfSecond (fromJust state)) >>= ( \ move -> move `seq` runSearchForEachRound directories)
+  state         <- fmap fromJust $ loadStateForRound directory
+  gen           <- liftIO getStdGen
+  treeChannel   <- liftIO newComms
+  stateChannel  <- liftIO newComms
+  _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
+  mapM_ (\ directory' -> do
+            liftIO $ Control.Concurrent.threadDelay oneSecond
+            state' <- fmap fromJust $ loadStateForRound directory'
+            _      <- liftIO $ readComms treeChannel
+            -- Simulate the worst case scenario.  Both players do
+            -- nothing and we don't have it in the tree.
+            liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), state'))
+        directories

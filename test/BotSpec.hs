@@ -274,8 +274,8 @@ spec = do
       (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aState)
     it "moving opponents worm into dirt should dig out the dirt" $
       makeMove True (fromMoves doNothing digSouth) aState `shouldBe`
-      (selectNextWormsDefault            $
-       setOpponentsLastMove digSouth     $
+      (setOpponentsLastMove digSouth     $
+       selectNextWormsDefault            $
        awardPointsToThatPlayerForDigging $
        removeDirtFromMapAt (toCoord 16 2) aState)
     it "moving my worm into air should move the worm to that spot" $
@@ -283,14 +283,14 @@ spec = do
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir $ moveThisWorm (toCoord 16 31) aState)
     it "moving opponents worm into air should move the worm to that spot" $
       makeMove True (fromMoves doNothing moveEast) aState `shouldBe`
-      (selectNextWormsDefault                $
-       setOpponentsLastMove moveEast         $
+      (setOpponentsLastMove moveEast         $
+       selectNextWormsDefault                $
        awardPointsToThatPlayerForMovingToAir $
        moveThatWorm (toCoord 17 1) aState)
     it "moving to the same square should swap the worms if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      (selectNextWormsDefault                $
-       setOpponentsLastMove moveWest         $
+      (setOpponentsLastMove moveWest         $
+       selectNextWormsDefault                $
        awardPointsToThatPlayerForMovingToAir $
        awardPointsToThisPlayerForMovingToAir $
        moveThisWorm (toCoord 17 31)          $
@@ -300,8 +300,8 @@ spec = do
        aStateWithImpendingCollision)
     it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      (selectNextWormsDefault                $
-       setOpponentsLastMove moveWest         $
+      (setOpponentsLastMove moveWest         $
+       selectNextWormsDefault                $
        awardPointsToThatPlayerForMovingToAir $
        awardPointsToThisPlayerForMovingToAir $
        harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 17 31) $
@@ -315,13 +315,13 @@ spec = do
       (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy)
     it "moving an opponents worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves doNothing moveWest) aStateWithMyWormNextToAnEnemy `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveWest $
+      (setOpponentsLastMove moveWest $
+       selectNextWormsDefault        $
        penaliseThatPlayerForAnInvalidCommand aStateWithMyWormNextToAnEnemy)
     it "moving an opponents worm to a square occupied by one of the opponents worms does nothing" $
       makeMove True (fromMoves doNothing moveEast) aStateWithEnemyWormsNextToEachother `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveEast $
+      (setOpponentsLastMove moveEast $
+       selectNextWormsDefault        $
        penaliseThatPlayerForAnInvalidCommand aStateWithEnemyWormsNextToEachother)
     it "moving my worm onto the medipack increases my worms health by 10 and changes that square to AIR" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormNextToTheMedipack `shouldBe`
@@ -329,20 +329,20 @@ spec = do
        awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheMedipack)
     it "moving the opponents worm onto the medipack should increase its health by ten and change that square to AIR" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentsWormNextToTheMedipack `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveSouth $
+      (setOpponentsLastMove moveSouth $
+       selectNextWormsDefault         $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentsWormOnTheMedipack)
     it "moving both worms onto the same medipack results in a swap when the bit is set" $
       makeMove True (fromMoves moveEast moveSouth) aStateWithBothWormsNextToTheMedipack `shouldBe`
-      (selectNextWormsDefault                $
+      (setOpponentsLastMove moveSouth        $
+       selectNextWormsDefault                $
        awardPointsToThatPlayerForMovingToAir $
-       setOpponentsLastMove moveSouth        $
        awardPointsToThisPlayerForMovingToAir aStateWhereWeSwappedOverTheMedipack)
     it "moving both worms onto the same medipack results no swap when the bit is set" $
       makeMove False (fromMoves moveEast moveSouth) aStateWithBothWormsNextToTheMedipack `shouldBe`
-      (selectNextWormsDefault                $
+      (setOpponentsLastMove moveSouth        $
+       selectNextWormsDefault                $
        knockBackDamage                       $
-       setOpponentsLastMove moveSouth        $
        awardPointsToThatPlayerForMovingToAir $
        awardPointsToThisPlayerForMovingToAir aStateWhereNoSwapHappened)
     -- Top
@@ -351,32 +351,32 @@ spec = do
       (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnTop)
     it "moving opponent worm off the top edge of the map changes nothing" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTop `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveNorth $
+      (setOpponentsLastMove moveNorth $
+       selectNextWormsDefault         $
        penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTop)
     it "moving my worm on the top to the east results in the worm moving east" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTop `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTopMovedRight)
     it "moving opponent worm on the top to the east results in the worm moving east" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnTop `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveEast $
+      (setOpponentsLastMove moveEast $
+       selectNextWormsDefault        $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTopMovedRight)
     it "moving my worm on the top to the west results in the worm moving west" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnTop `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTopMovedLeft)
     it "moving opponent worm on the top to the west results in the worm moving west" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTop `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveWest $
+      (setOpponentsLastMove moveWest $
+       selectNextWormsDefault        $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTopMovedLeft)
     it "moving my worm south from the top of the map results in that worm moving down" $
       makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnTop `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTopMovedDown)
     it "moving opponent worm south from the top of the map results in that worm moving down" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnTop `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveSouth $
+      (setOpponentsLastMove moveSouth $
+       selectNextWormsDefault         $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTopMovedDown)
     -- Left edge
     it "moving my worm north on the left edge of the map moves that worm north" $
@@ -384,32 +384,32 @@ spec = do
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormUpwardsOnLeftEdge)
     it "moving opponent worm north on the left edge of the map moves that worm north" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveNorth $
+      (setOpponentsLastMove moveNorth $
+       selectNextWormsDefault         $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormUpwardOnLeftEdge)
     it "moving my worm south on the left edge of the map moves that worm south" $
       makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormDownwardOnLeftEdge)
     it "moving opponent worm south on the left edge of the map moves that worm south" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveSouth $
+      (setOpponentsLastMove moveSouth $
+       selectNextWormsDefault         $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormDownwardOnLeftEdge)
     it "moving my worm east on the left edge of the map moves that worm east" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormRightFromLeftEdge)
     it "moving opponent worm east on the left edge of the map moves that worm east" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveEast $
+      (setOpponentsLastMove moveEast $
+       selectNextWormsDefault        $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormRightFromLeftEdge)
     it "moving my worm off the edge on the left of the map changes nothing" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnLeftEdge `shouldBe`
       (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnLeftEdge)
     it "moving opponent worm off the edge on left of the map changes nothing" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnLeftEdge `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveWest $
+      (setOpponentsLastMove moveWest $
+       selectNextWormsDefault        $
        penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnLeftEdge)
     -- Bottom edge
     it "moving my worm south from the bottom edge results in no change" $
@@ -417,32 +417,32 @@ spec = do
       (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnTheBottomEdge)
     it "moving opponent worm south from the bottom edge results in no change" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveSouth $
+      (setOpponentsLastMove moveSouth $
+       selectNextWormsDefault         $
        penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTheBottomEdge)
     it "moving my worm to the east from the bottom edge results in that worm moving right" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheBottomEdgeMovedRight)
     it "moving opponent worm to the east from the bottom edge results in that worm moving right" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveEast $
+      (setOpponentsLastMove moveEast $
+       selectNextWormsDefault        $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheBottomEdgeMovedRight)
     it "moving my worm to the west from the bottom edge results in that worm moving left" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheBottomEdgeMovedLeft)
     it "moving opponent to the west from the bottom edge results in that worm moving left" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveWest $
+      (setOpponentsLastMove moveWest $
+       selectNextWormsDefault        $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheBottomEdgeMovedLeft)
     it "moving my worm to the north from the bottom edge results in that worm moving up" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTheBottomEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormUpFromTheBottomEdge)
     it "moving opponent worm to the north from the bottom edge results in that worm moving up" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTheBottomEdge `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveNorth $
+      (setOpponentsLastMove moveNorth $
+       selectNextWormsDefault         $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormUpFromTheBottomEdge)
     -- Right edge
     it "moving my worm east from the right edge results in no change" $
@@ -450,32 +450,32 @@ spec = do
       (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnTheRightEdge)
     it "moving opponent worm east from the right edge results in no change" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveEast $
+      (setOpponentsLastMove moveEast $
+       selectNextWormsDefault        $
        penaliseThatPlayerForAnInvalidCommand aStateWithOpponentWormOnTheRightEdge)
     it "moving my worm north from the right edge results in that worm moving up" $
       makeMove True (fromMoves moveNorth doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheRightEdgeMovedUp)
     it "moving opponent worm north from the right edge results in that worm moving up" $
       makeMove True (fromMoves doNothing moveNorth) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveNorth $
+      (setOpponentsLastMove moveNorth $
+       selectNextWormsDefault         $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheRightEdgeMovedUp)
     it "moving my worm south from the right edge results in that worm moving down" $
       makeMove True (fromMoves moveSouth doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormOnTheRightEdgeMovedDown)
     it "moving opponent worm south from the right edge results in that worm moving down" $
       makeMove True (fromMoves doNothing moveSouth) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      (selectNextWormsDefault         $
-       setOpponentsLastMove moveSouth $
+      (setOpponentsLastMove moveSouth $
+       selectNextWormsDefault         $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormOnTheRightEdgeMovedDown)
     it "moving my worm to the west from the right edge results in that worm moving left" $
       makeMove True (fromMoves moveWest doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForMovingToAir aStateWithMyWormMovedLeftFromTheRightEdge)
     it "moving opponent worm to the west from the right edge results in that worm moving left" $
       makeMove True (fromMoves doNothing moveWest) aStateWithOpponentWormOnTheRightEdge `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove moveWest $
+      (setOpponentsLastMove moveWest $
+       selectNextWormsDefault        $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormMovedLeftFromTheRightEdge)
     -- Digging
     it "should remove dirt when my player digs a dirt block" $
@@ -483,27 +483,27 @@ spec = do
       (selectNextWormsDefault $ awardPointsToThisPlayerForDigging aStateWithDirtMissingAboveMyWorm)
     it "should remove dirt when opponent digs a dirt block" $
       makeMove True (fromMoves doNothing digNorth) aStateWithOpponentBeneathDirt `shouldBe`
-      (selectNextWormsDefault        $
-       setOpponentsLastMove digNorth $
+      (setOpponentsLastMove digNorth $
+       selectNextWormsDefault        $
        awardPointsToThatPlayerForDigging aStateWithDirtMissingAboveOpponentWorm)
     it "should penalise my player when I dig air" $
       makeMove True (fromMoves digEast doNothing) aState `shouldBe`
       (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aState)
     it "should penalise my opponent when he digs air" $
       makeMove True (fromMoves doNothing digEast) aState `shouldBe`
-      (selectNextWormsDefault       $
-       setOpponentsLastMove digEast $
+      (setOpponentsLastMove digEast $
+       selectNextWormsDefault       $
        penaliseThatPlayerForAnInvalidCommand aState)
     it "moving next to dirt should not dig out that dirt when it would be in our way if we continued going that way" $
       makeMove True (fromMoves doNothing moveEast) aStateWithOpponentNearDirtToTheEast `shouldBe`
-      (selectNextWormsDefault                $
-       setOpponentsLastMove moveEast         $ 
+      (setOpponentsLastMove moveEast         $ 
+       selectNextWormsDefault                $
        awardPointsToThatPlayerForMovingToAir $
        moveThatWorm (toCoord 10 2) aStateWithOpponentNearDirtToTheEast)
     it "should reward both players and remove dirt when both worms dig the same dirt block" $
       makeMove True (fromMoves digSouthEast digSouth) aStateWithBothWormsNearTheSameDirtBlock `shouldBe`
-      (selectNextWormsDefault            $
-       setOpponentsLastMove digSouth     $
+      (setOpponentsLastMove digSouth     $
+       selectNextWormsDefault            $
        awardPointsToThatPlayerForDigging $
        awardPointsToThisPlayerForDigging $
        mapGameMap aStateWithBothWormsNearTheSameDirtBlock (removeDirtAt (toCoord 11 2)))
@@ -715,8 +715,8 @@ spec = do
     context "when the opponent is throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
         makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithOposingWormsNextToEachother `shouldBe`
-        (selectNextWormsDefault $
-         setOpponentsLastMove bananaOneToLeft $
+        (setOpponentsLastMove bananaOneToLeft $
+         selectNextWormsDefault $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
@@ -741,8 +741,8 @@ spec = do
       let stateWithEnemyOneSquareFromEpicentre = moveThisWorm (toCoord 14 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyOneSquareFromEpicentre `shouldBe`
-        (selectNextWormsDefault $
-         setOpponentsLastMove bananaOneToLeft $
+        (setOpponentsLastMove bananaOneToLeft $
+         selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 14 31) $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
@@ -766,8 +766,8 @@ spec = do
       let stateWithEnemyTwoSquaresFromEpicentre = moveThisWorm (toCoord 13 31) aStateWithOposingWormsNextToEachother
       it "should cause damage to the worms in the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
-        (selectNextWormsDefault $
-         setOpponentsLastMove bananaOneToLeft $
+        (setOpponentsLastMove bananaOneToLeft $
+         selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 13 31) $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
@@ -791,8 +791,8 @@ spec = do
       let stateWithEnemyThreeSquaresFromEpicentre = moveThisWorm (toCoord 12 31) aStateWithOposingWormsNextToEachother
       it "should not cause damage to the worms outside of the blast radius" $
         makeMove False (fromMoves doNothing bananaOneToLeft) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
-        (selectNextWormsDefault $
-         setOpponentsLastMove bananaOneToLeft $
+        (setOpponentsLastMove bananaOneToLeft $
+         selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
          withWormBananas (always $ AList [
@@ -817,8 +817,8 @@ spec = do
                                 AListEntry (WormId 4)  (Bananas 3)]) aState
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithBananasLeftForWorms1And4 `shouldBe`
-        (selectNextWormsDefault $
-         setOpponentsLastMove bananaIntoDirtFromHim $
+        (setOpponentsLastMove bananaIntoDirtFromHim $
+         selectNextWormsDefault $
          -- Decrement banana bombs
          withWormBananas (always $ AList [
                               AListEntry (WormId 1)  (Bananas 3),
@@ -862,8 +862,8 @@ spec = do
                                          mapGameMap aState (addMedipackAt (toCoord 16 7))
       it "should destroy medipacks" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithAMedipackInTheDirt `shouldBe`
-        (selectNextWormsDefault $
-         setOpponentsLastMove bananaIntoDirtFromHim $
+        (setOpponentsLastMove bananaIntoDirtFromHim $
+         selectNextWormsDefault $
          -- Decrement banana bombs
          withWormBananas (always $ AList [
                               AListEntry (WormId 1)  (Bananas 3),
@@ -902,12 +902,13 @@ spec = do
                       addAirAt (toCoord 17 7))))
       it "should not throw a banana bomb when the current worm has none" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
-        (selectNextWormsDefault $ setOpponentsLastMove bananaIntoDirtFromHim aState)
+        (setOpponentsLastMove bananaIntoDirtFromHim $
+         selectNextWormsDefault aState)
     context "when both the opponent and I throw the bomb" $ do
       it "should give us both points for the squares which we both hit" $
         makeMove False (fromMoves bananaIntoDirtFromMe bananaIntoDirtFromMe) aStateWithOposingWormsNextToEachother `shouldBe`
-        (selectNextWormsDefault $
-         setOpponentsLastMove bananaIntoDirtFromMe $
+        (setOpponentsLastMove bananaIntoDirtFromMe $
+         selectNextWormsDefault $         
          -- Decrement banana bombs
          withWormBananas (always $ AList [
                               AListEntry (WormId 1)  (Bananas 2),
@@ -1071,8 +1072,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
@@ -1086,8 +1087,8 @@ spec = do
                           (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWorms (WormId 2) (WormId 12) $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
                   wormPositions = removeWormById (WormId 8) $ wormPositions state })
@@ -1100,8 +1101,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
@@ -1115,8 +1116,8 @@ spec = do
                           (takeBothWorms          (WormId 4) (WormId 8))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWorms (WormId 2) (WormId 12) $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
                   wormPositions = removeWormById (WormId 8) $ wormPositions state })
@@ -1129,8 +1130,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
@@ -1144,8 +1145,8 @@ spec = do
                           (takeBothWorms          (WormId 8) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWorms (WormId 2) (WormId 12) $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = removeWormById (WormId 8) $ wormHealths state,
                   wormPositions = removeWormById (WormId 8) $ wormPositions state })
@@ -1158,8 +1159,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = removeWormById (WormId 1) $ wormHealths state,
@@ -1197,8 +1198,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     prop "should not hit that players first vertical target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -1209,8 +1210,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     prop "should not hit that players first NE-SW target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -1221,8 +1222,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     -- TODO this test is broken and that's worrying.  To reproduce
     -- this problem set the generated delta for out of range to one
@@ -1236,8 +1237,8 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
-         (selectNextWormsDefault $
-          setOpponentsLastMove shot $
+         (setOpponentsLastMove shot $
+          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     context "when both worms shoot at eachother simultaneously and they're both in range of eachother" $
       prop "both worms should be harmed" $ \ (i, j, k) ->
@@ -1249,8 +1250,8 @@ spec = do
                             (takeBothWorms          (WormId 1) (WormId 4))
                             (i, j, k)
         in makeMove True (fromMoves shot (oppositeShot shot)) state `shouldBe`
-           (selectNextWormsDefault $
-            setOpponentsLastMove (oppositeShot shot) $
+           (setOpponentsLastMove (oppositeShot shot) $
+            selectNextWormsDefault $
             awardPointsToThatPlayerForKillingAnEnemy $
             awardPointsToThatPlayerForHittingAnEnemy $
             awardPointsToThisPlayerForKillingAnEnemy $
@@ -1284,8 +1285,8 @@ spec = do
                            (takeBothWormsWithHealth (WormHealth 100) (WormId 1) (WormId 4))
                            (i, j, k)
        in makeMove True (fromMoves doNothing shot) state `shouldBe`
-          (selectNextWorms (WormId 1) (WormId 4) $
-           setOpponentsLastMove shot $
+          (setOpponentsLastMove shot $
+           selectNextWorms (WormId 1) (WormId 4) $
            awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
     context "when selecting a worm" $ do
@@ -1616,13 +1617,16 @@ type ShotSwitch             = Int -> Move
 type AddToWormFacts         = Coord -> Coord -> ModifyState
 type ModifyMap              = Coord -> Coord -> GameMap -> GameMap
 
+justNothing :: Maybe String
+justNothing = Just "nothing"
+
 generateShotScenarioWithMapModifications :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> AddToWormFacts -> ModifyMap -> (Int, Int, Int) -> (State, Move)
 generateShotScenarioWithMapModifications generateCoord displace switchShot addFacts modifyMap (i, j, k) =
   let originatingCoord        = generateCoord i j
       (displacedCoord, delta) = displace      originatingCoord k
       shot                    = switchShot    delta
       modifiedMap             = modifyMap originatingCoord displacedCoord aGameMapWithOnlyAir
-      state                   = State doNothing
+      state                   = State justNothing
                                       emptyWormHealths
                                       emptyWormPositions
                                       emptyBananaBombs
@@ -1719,7 +1723,7 @@ moveWest = Move 14
 
 emptyBananaBombs = AList []
 
-aStateWithoutWorms = State doNothing
+aStateWithoutWorms = State justNothing
                            emptyWormHealths
                            emptyWormPositions
                            emptyBananaBombs
@@ -1727,7 +1731,7 @@ aStateWithoutWorms = State doNothing
                            anOpponent
                            aGameMap
 
-aState = State doNothing
+aState = State justNothing
                someWormHealths
                someWormPositions
                emptyBananaBombs
@@ -1933,7 +1937,11 @@ wormHealthsForOneAndFive = AList [
 
 wormPositionsWithHisNextToMine = AList [
   AListEntry (WormId 1) (toCoord 15 31),
-  AListEntry (WormId 4) (toCoord 16 31)]
+  AListEntry (WormId 2)  (toCoord 1 31),
+  AListEntry (WormId 3)  (toCoord 1 30),
+  AListEntry (WormId 4) (toCoord 16 31),
+  AListEntry (WormId 8)  (toCoord 19 1),
+  AListEntry (WormId 12) (toCoord 20 1)]
 
 wormPositionsWithHisNextToHis = AList [
   AListEntry (WormId 4) (toCoord 15 31),
@@ -1958,7 +1966,12 @@ wormHealthsWithOpponentHavingReceivedTheMedipack = AList [
   AListEntry (WormId 12) (WormHealth 20)]
 
 wormPositionsWithOpponentAtTop = AList [
-  AListEntry (WormId 4) (toCoord 15 0)]
+  AListEntry (WormId 1)  (toCoord 15 31),
+  AListEntry (WormId 2)  (toCoord 1 31),
+  AListEntry (WormId 3)  (toCoord 1 30),
+  AListEntry (WormId 4)  (toCoord 15 0),
+  AListEntry (WormId 8)  (toCoord 19 1),
+  AListEntry (WormId 12) (toCoord 20 1)]
 
 wormPositionsWithMyWormsNextToEachother = AList [
   AListEntry (WormId 1) (toCoord 15 31),
