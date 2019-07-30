@@ -25,10 +25,6 @@ runDataSet matchLogsDirectory = do
   withRoundsDirectories matchLogsDirectory runSearchForEachRound
   liftIO $ IO.putStrLn ("Ran search for each round in: " ++ matchLogsDirectory)
 
--- This is in microseconds.
-oneSecond :: Int
-oneSecond = 1000000
-
 runSearchForEachRound :: [FilePath] -> RIO App ()
 runSearchForEachRound []                      = error "No round directories to profile over."
 runSearchForEachRound (directory:directories) = do
