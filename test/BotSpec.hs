@@ -28,6 +28,17 @@ spec = do
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
           newTree        = updateTree aState (Loss 1 [fromMoves thisMove thatMove]) SearchFront
       in newTree `shouldSatisfy` ((== 1) . countGames)
+    prop "should increment the game count when given a level" $ \ (i, j) ->
+      let myMoves        = myMovesFrom aState
+          thisMove       = myMoves L.!! (i `mod` length myMoves)
+          opponentsMoves = opponentsMovesFrom aState
+          thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
+          oldTree        = UnSearchedLevel
+                           (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
+                           (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
+                           []
+          newTree        = updateTree aState (Loss 1 [fromMoves thisMove thatMove]) oldTree
+      in newTree `shouldSatisfy` ((== (1 + countGames oldTree)) . countGames)
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
       let x'            = abs x `mod` 108
