@@ -57,4 +57,7 @@ runSearchForEachRound (directory:directories) = do
       else do
         liftIO $ logStdErr $ "Benchmarking directory: " ++ dir
         tree <- liftIO $ treeAfterAlottedTime treeChannel
-        go dirs (countGames tree : results) treeChannel stateChannel
+        let count' = countGames tree
+        liftIO $ logStdErr $ "Games played for state: " ++ show count'
+        liftIO $ writeComms stateChannel (fromMoves doNothing doNothing, (fromJust state))
+        go dirs (count' : results) treeChannel stateChannel
