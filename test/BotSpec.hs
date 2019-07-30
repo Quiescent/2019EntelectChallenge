@@ -20,6 +20,14 @@ getIntFromCoord (Coord xy) = xy
 
 spec :: Spec
 spec = do
+  describe "updateTree" $ do
+    prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j) ->
+      let myMoves        = myMovesFrom aState
+          thisMove       = myMoves L.!! (i `mod` length myMoves)
+          opponentsMoves = opponentsMovesFrom aState
+          thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
+          newTree        = updateTree aState (Loss 1 [fromMoves thisMove thatMove]) SearchFront
+      in newTree `shouldSatisfy` ((== 1) . countGames)
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
       let x'            = abs x `mod` 108
