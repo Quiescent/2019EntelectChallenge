@@ -1755,7 +1755,8 @@ decInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
 
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
-updateTree state _ SearchFront =
+updateTree state result SearchFront =
+  updateTree state result $
   UnSearchedLevel
   (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom        state)
   (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom state)
