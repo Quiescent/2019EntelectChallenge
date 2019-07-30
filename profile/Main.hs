@@ -29,8 +29,6 @@ runDataSet matchLogsDirectory = do
 oneSecond :: Int
 oneSecond = 1000000
 
--- TODO: Fix.  This will block the searching thread because it can't
--- write into the mutex variable.
 runSearchForEachRound :: [FilePath] -> RIO App ()
 runSearchForEachRound []                      = error "No round directories to profile over."
 runSearchForEachRound (directory:directories) = do
@@ -40,9 +38,8 @@ runSearchForEachRound (directory:directories) = do
   stateChannel  <- liftIO newComms
   _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
   mapM_ (\ directory' -> do
-            liftIO $ Control.Concurrent.threadDelay oneSecond
             state' <- fmap fromJust $ loadStateForRound directory'
-            _      <- liftIO $ readComms treeChannel
+            _      <- liftIO $ searchForAlottedTime treeChannel
             -- Simulate the worst case scenario.  Both players do
             -- nothing and we don't have it in the tree.
             liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), state'))
