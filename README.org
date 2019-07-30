@@ -641,8 +641,10 @@ friendly.
      I did this in the game repository.
    - State "IN_PROGRESS" from "TODO"       [2019-07-24 Wed 07:41]
    :END:
-** IN_PROGRESS Add opponents last selection to the game
+** DONE Add opponents last selection to the game
+   CLOSED: [2019-07-30 Tue 12:45]
    :LOGBOOK:
+   - CLOSING NOTE [2019-07-30 Tue 12:45]
    - State "IN_PROGRESS" from "TODO"       [2019-07-26 Fri 08:17]
    :END:
 ** TODO Simulate a game with Banana Bombs in it
