@@ -1593,7 +1593,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
         Nothing -> go gen' iterationsBeforeComms searchTree'
     go gen' count' searchTree =
       let (result, gen'') = search gen' 0 initialState searchTree []
-          newTree        = updateTree initialState result searchTree
+          newTree         = updateTree initialState result searchTree
       in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
@@ -1965,10 +1965,11 @@ opponentsTotalWormHealth state =
 diffMax500 :: Int -> Int -> Int
 diffMax500 x y =
   let diff :: Double
-      diff  = (fromIntegral $ abs (x - y))
+      diff    = (fromIntegral $ abs (x - y))
       diff' :: Double
-      diff' = if diff > 500.0 then 500.0 else 0
-  in round (10.0 * ((diff' / 500.0)))
+      diff'   = if diff > 500.0 then 500.0 else 0
+      rounded = round (10.0 * ((diff' / 500.0)))
+  in if rounded == 0 then 1 else rounded
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =
