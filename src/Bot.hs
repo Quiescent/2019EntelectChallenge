@@ -1587,7 +1587,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           -- This isn't good enough.  I need to have a mode of searching in
           -- between, when the runner hasn't yet told me to move because it's
           -- 900ms from that point that I communicate back.
-          let tree'' = makeMoveInTree move' tree
+          let tree'' = makeMoveInTree move' searchTree
           when (tree'' == SearchFront) $ logStdErr "Move combination not in search tree!"
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree'
