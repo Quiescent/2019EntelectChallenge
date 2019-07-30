@@ -647,8 +647,12 @@ friendly.
    - CLOSING NOTE [2019-07-30 Tue 12:45]
    - State "IN_PROGRESS" from "TODO"       [2019-07-26 Fri 08:17]
    :END:
+** DONE Simulate a game with selections in it
+   CLOSED: [2019-07-30 Tue 12:48]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-07-30 Tue 12:48]
+   :END:
 ** TODO Simulate a game with Banana Bombs in it
-** TODO Simulate a game with selections in it
 ** TODO Test that banana bombing space does not cause a blast
 ** TODO Only throw bananas when they'll good
 ** TODO Debug the test which should be failing
