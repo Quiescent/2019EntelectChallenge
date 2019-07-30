@@ -656,6 +656,7 @@ friendly.
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-07-30 Tue 12:49]
    :END:
+** TODO Add multiple levels to the search tree
 ** TODO Simulate a game with Banana Bombs in it
 ** TODO Test that banana bombing space does not cause a blast
 ** TODO Only throw bananas when they'll good
