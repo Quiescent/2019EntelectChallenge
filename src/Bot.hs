@@ -1894,7 +1894,7 @@ playRandomly g round' state moves =
       let moves'     = movesFrom state
           (move, g') = pickOneAtRandom g moves'
           state'     = makeMove False move state
-      in playRandomly g' (round' + 1) state' moves
+      in playRandomly g' (round' + 1) state' moves'
 
 maxRound :: Int
 maxRound = 7
