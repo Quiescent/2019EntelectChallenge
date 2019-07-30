@@ -38,6 +38,7 @@ runSearchForEachRound (directory:directories) = do
   stateChannel  <- liftIO newComms
   _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
   mapM_ (\ directory' -> do
+            liftIO $ logStdErr $ "Profiling directory: " ++ directory'
             state' <- fmap fromJust $ loadStateForRound directory'
             _      <- liftIO $ searchForAlottedTime treeChannel
             -- Simulate the worst case scenario.  Both players do
