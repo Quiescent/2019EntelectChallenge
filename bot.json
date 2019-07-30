@@ -6,6 +6,6 @@
     "botFileName": "2019EntelectChallenge-exe",
     "botLanguage": "haskell",
     "arguments": {
-        "coreCount": 1
+        "coreCount": 2
     }
 }

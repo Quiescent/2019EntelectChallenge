@@ -15,7 +15,7 @@ echo "======================================================================"
 echo "=======================Start of Benchmarking=========================="
 echo "======================================================================"
 OUTPUT_FILE="benchmarking.bench"
-./bin/Benchmark-exe "matches/round-2/2019.07.21.22.42.46" > "$OUTPUT_FILE"
+./bin/Benchmark-exe "matches/round-2/2019.07.21.22.42.46" +RTS -N2 -RTS > "$OUTPUT_FILE"
 
 CURRENT_COMMIT=$(git log --oneline | head -1 | cut -d' ' -f1)
 CURRENT_MACHINE=$(uname)
