@@ -58,6 +58,3 @@ runSearchForEachRound (directory:directories) = do
         liftIO $ logStdErr $ "Benchmarking directory: " ++ dir
         tree <- liftIO $ treeAfterAlottedTime treeChannel
         go dirs (countGames tree : results) treeChannel stateChannel
-
-countGames :: SearchTree -> Int
-countGames = sum . map ( (\ (Played x) -> x) . played) . myMovesFromTree

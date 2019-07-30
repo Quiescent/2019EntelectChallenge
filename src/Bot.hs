@@ -1753,6 +1753,9 @@ decInc :: Int -> SuccessRecord -> SuccessRecord
 decInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
   SuccessRecord (Wins $ (dec x) wins') (Played $ (inc x) played') playerMove'
 
+countGames :: SearchTree -> Int
+countGames = sum . map ( (\ (Played x) -> x) . played) . myMovesFromTree
+
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
 updateTree state result SearchFront =
