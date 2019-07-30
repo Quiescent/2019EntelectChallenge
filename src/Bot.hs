@@ -1568,7 +1568,7 @@ newComms :: IO (CommsChannel a)
 newComms = MVar.newEmptyMVar
 
 logStdErr :: String -> IO ()
-logStdErr = hPutStr stderr
+logStdErr = hPutStrLn stderr
 
 -- First iteration I think that I'll suspend the thread until a new
 -- state comes along.
@@ -1633,24 +1633,23 @@ searchForAlottedTime :: CommsChannel SearchTree -> IO Move
 searchForAlottedTime =
   fmap (successRecordMove . chooseBestMove . myMovesFromTree) . treeAfterAlottedTime
 
-runRound :: State -> Move -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
-runRound previousState myLastMove stateChannel treeChannel = do
-  roundNumber          <- readRound
-  state                <- readGameState roundNumber
-  -- TODO fromJust?
-  let state'            = fromJust state
-  let opponentsLastMove = parseLastCommand previousState $ opponentsLastCommand state'
-  when (roundNumber /= 0) $
-    writeComms stateChannel $ (fromMoves myLastMove opponentsLastMove, state')
-  move        <- liftIO $ searchForAlottedTime treeChannel
+runRound :: Int -> State -> Move -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
+runRound roundNumber previousState myLastMove stateChannel treeChannel = do
+  move                 <- liftIO $ searchForAlottedTime treeChannel
   liftIO $
     putStrLn $
     -- Assume: that the worm is on a valid square to begin with
     "C;" ++
     show roundNumber ++
     ";" ++
-    formatMove move (fromJust $ thisWormsCoord (fromJust state)) state' ++ "\n"
-  runRound state' move stateChannel treeChannel
+    formatMove move (fromJust $ thisWormsCoord previousState) previousState ++ "\n"
+  roundNumber'         <- readRound
+  state                <- readGameState roundNumber'
+  -- TODO fromJust?
+  let state'            = fromJust state
+  let opponentsLastMove = parseLastCommand previousState $ opponentsLastCommand state'
+  writeComms stateChannel $ (fromMoves myLastMove opponentsLastMove, state')
+  runRound roundNumber' state' move stateChannel treeChannel
 
 parseLastCommand :: State -> Maybe String -> Move
 parseLastCommand _             Nothing             = doNothing
@@ -1671,7 +1670,7 @@ startBot g = do
   initialRound' <- liftIO $ readRound
   initialState  <- liftIO $ fmap fromJust $ readGameState initialRound'
   _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeChannel)
-  liftIO $ runRound initialState doNothing stateChannel treeChannel
+  liftIO $ runRound initialRound' initialState doNothing stateChannel treeChannel
 
 data Wins = Wins Int
   deriving (Eq)

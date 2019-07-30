@@ -25,8 +25,9 @@ runDataSet matchLogsDirectory = do
   withRoundsDirectories matchLogsDirectory runSearchForEachRound
   liftIO $ IO.putStrLn ("Ran search for each round in: " ++ matchLogsDirectory)
 
+-- This is in microseconds.
 oneSecond :: Int
-oneSecond = 1000000000
+oneSecond = 1000000
 
 -- TODO: Fix.  This will block the searching thread because it can't
 -- write into the mutex variable.
