@@ -39,8 +39,6 @@ runDataSet matchLogsDirectory = do
       liftIO $ IO.putStrLn (joinString "," gamesPlayedPerRound)
     (Failed message) -> liftIO $ IO.putStrLn message
 
--- TODO: Fix.  This will block the searching thread because it can't
--- write into the mutex.
 runSearchForEachRound :: [FilePath] -> RIO App BenchmarkResult
 runSearchForEachRound []                      = error "No directories to benchmark over."
 runSearchForEachRound (directory:directories) = do
@@ -57,8 +55,8 @@ runSearchForEachRound (directory:directories) = do
       if not $ isJust state
       then return (Failed $ "Couldn't load state from: " ++ show dir)
       else do
-        _    <- liftIO $ searchForAlottedTime treeChannel
-        tree <- liftIO $ readComms treeChannel
+        liftIO $ logStdErr $ "Benchmarking directory: " ++ dir
+        tree <- liftIO $ treeAfterAlottedTime treeChannel
         go dirs (countGames tree : results) treeChannel stateChannel
 
 countGames :: SearchTree -> Int
