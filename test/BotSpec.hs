@@ -59,7 +59,7 @@ spec = do
           l' :: Int
           l'           = l `mod` 2
           k'           = (k `mod` 10) + 1
-          wins'        = k' + if l' == 0 then 0 else 1
+          wins'        = 1 + if l' == 0 then 0 else k'
           updateCount' = if l' == 0 then decInc k' else incInc k'
           oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
           newCounts    = updateCount updateCount' oldCounts thisMove
