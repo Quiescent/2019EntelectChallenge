@@ -27,12 +27,6 @@ import Control.Concurrent
 -- TODO: think long and hard about this...
 import Prelude (read)
 
-import Debug.Trace
-
-probe :: Show a => String -> a -> a
-probe message x =
-  Debug.Trace.trace (message ++ ": " ++ show x) x
-
 data GameMap = GameMap (M.HashMap Int Cell)
   deriving (Generic, Eq)
 
@@ -137,7 +131,7 @@ toState myPlayer' opponents' gameMap' =
         return (opponent', wormHealths', wormPositions', wormBananas')
   in case state of
     Just (opponent', wormHealths', wormPositions', wormBananas') ->
-      State (lastCommand (probe "Opponent" opponent'))
+      State (lastCommand opponent')
             wormHealths'
             wormPositions'
             wormBananas'
@@ -1588,7 +1582,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           -- between, when the runner hasn't yet told me to move because it's
           -- 900ms from that point that I communicate back.
           let tree'' = makeMoveInTree move' searchTree
-          when (tree'' == SearchFront) $ logStdErr "Move combination not in search tree!"
+          when (tree'' == SearchFront) $ logStdErr $ "Move combination " ++ show (toMoves move') ++ "not in search tree!"
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree'
     go gen' count' searchTree =
@@ -1620,7 +1614,7 @@ treeAfterAlottedTime treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then return searchTree
+        then (liftIO $ putStrLn $ show searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -1896,10 +1890,10 @@ playRandomly g round' state moves =
     IWon        x -> (Win  x (reverse moves), g)
     OpponentWon x -> (Loss x (reverse moves), g)
     NoResult      ->
-      let moves'     = movesFrom state
-          (move, g') = pickOneAtRandom g moves'
-          state'     = makeMove False move state
-      in playRandomly g' (round' + 1) state' moves'
+      let availableMoves = movesFrom state
+          (move, g')     = pickOneAtRandom g availableMoves
+          state'         = makeMove False move state
+      in playRandomly g' (round' + 1) state' (move:moves)
 
 maxRound :: Int
 maxRound = 7
