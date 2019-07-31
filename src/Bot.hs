@@ -1767,27 +1767,31 @@ updateTree state result SearchFront =
   (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom        state)
   (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom state)
   []
-updateTree _ result level@(UnSearchedLevel mine@(MyMoves myMoves) opponents@(OpponentsMoves opponentsMoves) stateTransitions) =
+updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  x (move':_)) -> (transitionLevelType mine opponents)
-                          (MyMoves        $ updateCount (incInc x) myMoves        $ fst $ toMoves move')
-                          (OpponentsMoves $ updateCount (decInc x) opponentsMoves $ snd $ toMoves move')
-                          stateTransitions
-    (Loss x (move':_)) -> UnSearchedLevel
-                          (MyMoves        $ updateCount (decInc x) myMoves        $ fst $ toMoves move')
-                          (OpponentsMoves $ updateCount (incInc x) opponentsMoves $ snd $ toMoves move')
-                          stateTransitions
+    (Win  x (move':_)) ->
+      let (thisMove, thatMove) = toMoves move'
+          myMoves'             = MyMoves        $ updateCount (incInc x) myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (decInc x) opponentsMoves thatMove
+      in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves' stateTransitions
+    (Loss x (move':_)) ->
+      let (thisMove, thatMove) = toMoves move'
+          myMoves'             = MyMoves        $ updateCount (decInc x) myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (incInc x) opponentsMoves thatMove
+      in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves' stateTransitions
     _                  -> level
 updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  x (move':_)) -> SearchedLevel
-                          (MyMoves        $ updateCount (incInc x) myMoves        $ fst $ toMoves move')
-                          (OpponentsMoves $ updateCount (decInc x) opponentsMoves $ snd $ toMoves move')
-                          stateTransitions
-    (Loss x (move':_)) -> SearchedLevel
-                          (MyMoves        $ updateCount (decInc x) myMoves        $ fst $ toMoves move')
-                          (OpponentsMoves $ updateCount (incInc x) opponentsMoves $ snd $ toMoves move')
-                          stateTransitions
+    (Win  x (move':_)) ->
+      let (thisMove, thatMove) = toMoves move'
+          myMoves'             = MyMoves        $ updateCount (incInc x) myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (decInc x) opponentsMoves thatMove
+      in SearchedLevel myMoves' opponentsMoves' stateTransitions
+    (Loss x (move':_)) ->
+      let (thisMove, thatMove) = toMoves move'
+          myMoves'             = MyMoves        $ updateCount (decInc x) myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (incInc x) opponentsMoves thatMove
+      in SearchedLevel myMoves' opponentsMoves' stateTransitions
     _                  -> level
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> StateTransitions -> SearchTree)
