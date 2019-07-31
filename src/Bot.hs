@@ -2006,18 +2006,18 @@ myMovesFrom state = do
 aListToList :: AList a -> [AListEntry a]
 aListToList = aListFoldl' (flip (:)) []
 
+-- TODO: Lots of repitition
 addThisPlayersSelects :: State -> [Move] -> [Move]
 addThisPlayersSelects state moves =
   if not $ thisPlayerHasSelectionsLeft state
   then moves
-  else do
+  else moves ++ do
     selection  <- map idSlot $
                   aListToList $
                   aListFilter (isMyWorm . idSlot) $
                   wormPositions state
     move       <- moves
-    eitherMove <- [withSelection selection move, move]
-    return eitherMove
+    return $ withSelection selection move
 
 withSelection :: WormId -> Move -> Move
 withSelection  (WormId id') (Move x) =
@@ -2035,14 +2035,13 @@ addThatPlayersSelects :: State -> [Move] -> [Move]
 addThatPlayersSelects state moves =
   if not $ thatPlayerHasSelectionsLeft state
   then moves
-  else do
+  else moves ++ do
     selection  <- map idSlot $
                   aListToList $
                   aListFilter (isOpponentWorm . idSlot) $
                   wormPositions state
     move       <- moves
-    eitherMove <- [withSelection selection move, move]
-    return eitherMove
+    return $ withSelection selection move
 
 doNothing :: Move
 doNothing = Move 106
