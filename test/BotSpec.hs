@@ -30,9 +30,40 @@ opponentsMovesFromTree SearchFront                                           =
 countOpponentsWins :: SearchTree -> Int
 countOpponentsWins = sum . map ( (\ (Wins x) -> x) . wins) . opponentsMovesFromTree
 
+isSearched :: SearchTree -> Bool
+isSearched (SearchedLevel myMoves opponentsMoves _) = allGamesPlayed myMoves opponentsMoves
+isSearched _                                        = False
+
+-- isUnSearched :: SuccessRecord -> Bool
+-- isUnSearched successRecord = played successRecord == Played 0
+
+-- nextUnSearched :: [SuccessRecord] -> Maybe SuccessRecord
+-- nextUnSearched successRecords = find isUnSearched successRecords
+
 spec :: Spec
 spec = do
   describe "updateTree" $ do
+    prop "should produce a searched level from an unsearched level when the last game is played for the level" $  \ (k, l) ->
+      let myMoves        = myMovesFrom aState
+          thisMove       = L.head myMoves
+          opponentsMoves = opponentsMovesFrom aState
+          thatMove       = L.head opponentsMoves
+          l' :: Int
+          l'             = l `mod` 2
+          k'             = (k `mod` 10) + 1
+          winLoss        = if l' == 0 then Loss else Win
+          oldTree        = UnSearchedLevel
+                           (MyMoves        $
+                            (SuccessRecord (Wins 0) (Played 0) $ L.head myMoves) :
+                            (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail myMoves))
+                           (OpponentsMoves $
+                            (SuccessRecord (Wins 0) (Played 0) $ L.head opponentsMoves) :
+                            (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail opponentsMoves))
+                           []
+          newTree        = updateTree aState
+                                      (winLoss (abs k') [fromMoves thisMove thatMove])
+                                      oldTree
+      in ((thisMove, thatMove), newTree) `shouldSatisfy` isSearched . snd
     prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j, k, l) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)

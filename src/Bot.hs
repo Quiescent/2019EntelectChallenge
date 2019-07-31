@@ -1791,10 +1791,14 @@ updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves oppon
     _                  -> level
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> StateTransitions -> SearchTree)
-transitionLevelType (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
-  if all hasBeenPlayed myMoves && all hasBeenPlayed opponentsMoves
+transitionLevelType myMoves opponentsMoves =
+  if allGamesPlayed myMoves opponentsMoves
   then SearchedLevel
   else UnSearchedLevel
+
+allGamesPlayed :: MyMoves -> OpponentsMoves -> Bool
+allGamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
+  all hasBeenPlayed myMoves && all hasBeenPlayed opponentsMoves
   where
     hasBeenPlayed (SuccessRecord _ (Played played') _) = played' /= 0
 
@@ -1877,15 +1881,6 @@ searchSearchedLevel g
             (makeMove True combinedMove state)
             (findSubTree combinedMove transitions)
             (combinedMove:moves)
-
-isUnSearched :: SuccessRecord -> Bool
-isUnSearched successRecord =
-  (wins   successRecord == Wins   0) &&
-  (played successRecord == Played 0)
-
-nextUnSearched :: [SuccessRecord] -> Maybe SuccessRecord
-nextUnSearched successRecords =
-  find isUnSearched successRecords
 
 data GameOver = IWon        Int
               | OpponentWon Int
