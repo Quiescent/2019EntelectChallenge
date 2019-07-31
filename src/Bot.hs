@@ -1750,8 +1750,8 @@ incInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
   SuccessRecord (Wins $ (inc x) wins') (Played $ (inc x) played') playerMove'
 
 decInc :: Int -> SuccessRecord -> SuccessRecord
-decInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
-  SuccessRecord (Wins $ (dec x) wins') (Played $ (inc x) played') playerMove'
+decInc x (SuccessRecord wins' (Played played') playerMove') =
+  SuccessRecord wins' (Played $ (inc x) played') playerMove'
 
 gamesPlayedForRecords :: [SuccessRecord] -> Int
 gamesPlayedForRecords = sum . map ( (\ (Played x) -> x) . played)
