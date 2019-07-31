@@ -1796,8 +1796,7 @@ transitionLevelType (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
   then SearchedLevel
   else UnSearchedLevel
   where
-    hasBeenPlayed (SuccessRecord (Wins wins')  (Played played') _) =
-      wins' /= 0 || played' /= 0
+    hasBeenPlayed (SuccessRecord _ (Played played') _) = played' /= 0
 
 updateCount :: (SuccessRecord -> SuccessRecord) -> SuccessRecords -> Move -> SuccessRecords
 updateCount _           []            _ = []
