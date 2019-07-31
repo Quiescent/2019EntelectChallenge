@@ -18,27 +18,51 @@ import Test.Hspec.QuickCheck
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
+countMyWins :: SearchTree -> Int
+countMyWins = sum . map ( (\ (Wins x) -> x) . wins) . myMovesFromTree
+
+opponentsMovesFromTree :: SearchTree -> SuccessRecords
+opponentsMovesFromTree (SearchedLevel   _ (OpponentsMoves opponentsMoves) _) = opponentsMoves
+opponentsMovesFromTree (UnSearchedLevel _ (OpponentsMoves opponentsMoves) _) = opponentsMoves
+opponentsMovesFromTree SearchFront                                           =
+  error $ "myMovesFromTree of SearchFront"
+
+countOpponentsWins :: SearchTree -> Int
+countOpponentsWins = sum . map ( (\ (Wins x) -> x) . wins) . opponentsMovesFromTree
+
 spec :: Spec
 spec = do
   describe "updateTree" $ do
-    prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j) ->
+    prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j, k, l) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          newTree        = updateTree aState (Loss 1 [fromMoves thisMove thatMove]) SearchFront
-      in newTree `shouldSatisfy` ((== 1) . countGames)
-    prop "should increment the game count when given a level" $ \ (i, j) ->
+          l' :: Int
+          l'             = l `mod` 2
+          k'             = (if l' == 0 then -1 else 1) * ((k `mod` 10) + 1)
+          winLoss        = if l' == 0 then Win else Loss
+          newTree        = updateTree aState (winLoss k' [fromMoves thisMove thatMove]) SearchFront
+      in newTree `shouldSatisfy` (((== k') . countOpponentsWins) .&&.
+                                  ((== -k') . countMyWins)       .&&.
+                                  ((== k') . countGames))
+    prop "should increment the game count when given a level" $ \ (i, j, k, l) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
+          l' :: Int
+          l'             = l `mod` 2
+          k'             = (if l' == 0 then -1 else 1) * ((k `mod` 10) + 1)
+          winLoss        = if l' == 0 then Win else Loss
           oldTree        = UnSearchedLevel
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree aState (Loss 1 [fromMoves thisMove thatMove]) oldTree
-      in newTree `shouldSatisfy` ((== (1 + countGames oldTree)) . countGames)
+          newTree        = updateTree aState (winLoss k' [fromMoves thisMove thatMove]) oldTree
+      in newTree `shouldSatisfy` (((== (k'  + countGames oldTree))        . countGames)          .&&.
+                                  ((== (k'  + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
+                                  ((== (-k' + countMyWins        oldTree)) . countMyWins))
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
       let x'            = abs x `mod` 108

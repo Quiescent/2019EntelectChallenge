@@ -1753,8 +1753,11 @@ decInc :: Int -> SuccessRecord -> SuccessRecord
 decInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
   SuccessRecord (Wins $ (dec x) wins') (Played $ (inc x) played') playerMove'
 
+gamesPlayedForRecords :: [SuccessRecord] -> Int
+gamesPlayedForRecords = sum . map ( (\ (Played x) -> x) . played)
+
 countGames :: SearchTree -> Int
-countGames = sum . map ( (\ (Played x) -> x) . played) . myMovesFromTree
+countGames = gamesPlayedForRecords . myMovesFromTree
 
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
@@ -1973,10 +1976,7 @@ diffMax500 x y =
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =
-  let totalGames = foldl'
-                   ( \ acc (SuccessRecord (Wins wins') (Played played') _) -> acc + wins' + played')
-                   0
-                   successRecords
+  let totalGames = gamesPlayedForRecords successRecords
       computeConfidence (SuccessRecord (Wins wins')  (Played played') _) =
         confidence totalGames wins' played'
   in maximumBy ( \ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
