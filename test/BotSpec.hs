@@ -42,6 +42,34 @@ isSearched _                                        = False
 
 spec :: Spec
 spec = do
+  describe "updateCount" $ do
+    prop "should produce the same number of records when updating a record regardless of whether it's there or not" $ \ (i, k, l) ->
+      let myMoves      = myMovesFrom aState
+          thisMove     = myMoves L.!! (i `mod` length myMoves)
+          l' :: Int
+          l'           = l `mod` 2
+          k'           = (k `mod` 10) + 1
+          updateCount' = if l' == 0 then decInc k' else incInc k'
+          oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
+          newCounts    = updateCount updateCount' oldCounts thisMove
+      in newCounts `shouldSatisfy` ((== (length oldCounts)) . length)
+    prop "should change the played count of the selected record and might change the win count" $ \ (i, k, l) ->
+      let myMoves      = myMovesFrom aState
+          thisMove     = myMoves L.!! (i `mod` length myMoves)
+          l' :: Int
+          l'           = l `mod` 2
+          k'           = (k `mod` 10) + 1
+          wins'        = k' + if l' == 0 then 0 else 1
+          updateCount' = if l' == 0 then decInc k' else incInc k'
+          oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
+          newCounts    = updateCount updateCount' oldCounts thisMove
+      in newCounts `shouldSatisfy` ((((== (Played $ 1 + k')) . played) .&&.
+                                    (((== (Wins     wins'))  . wins))) .
+                                    fromJust . find ((== thisMove) . successRecordMove))
+  describe "myMovesFrom" $ do
+    it "should  not contain repeats" $
+      let myMoves = myMovesFrom aState
+      in myMoves `shouldSatisfy` (== (length (nub myMoves))) . length
   describe "updateTree" $ do
     prop "should produce a searched level from an unsearched level when the last game is played for the level" $  \ (k, l) ->
       let myMoves        = myMovesFrom aState
