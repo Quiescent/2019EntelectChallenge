@@ -48,7 +48,7 @@ spec = do
       in newTree `shouldSatisfy` (((== (if l' == 0 then k' else 0)) . countOpponentsWins) .&&.
                                   ((== (if l' == 0 then 0  else k')) . countMyWins)       .&&.
                                   ((== k') . countGames))
-    prop "should increment the game count when given a level" $ \ (i, j, k, l) ->
+    prop "should increment the game count when given an UnSearchedLevel" $ \ (i, j, k, l) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
@@ -60,6 +60,27 @@ spec = do
           hisK'          = if l' == 0 then k' else 0
           winLoss        = if l' == 0 then Loss else Win
           oldTree        = UnSearchedLevel
+                           (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
+                           (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
+                           []
+          newTree        = updateTree aState
+                                      (winLoss (abs k') [fromMoves thisMove thatMove])
+                                      oldTree
+      in newTree `shouldSatisfy` (((== (k'    + countGames oldTree))         . countGames)          .&&.
+                                  ((== (hisK' + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
+                                  ((== (myK'  + countMyWins        oldTree)) . countMyWins))
+    prop "should increment the game count when given a SearchedLevel" $ \ (i, j, k, l) ->
+      let myMoves        = myMovesFrom aState
+          thisMove       = myMoves L.!! (i `mod` length myMoves)
+          opponentsMoves = opponentsMovesFrom aState
+          thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
+          l' :: Int
+          l'             = l `mod` 2
+          k'             = (k `mod` 10) + 1
+          myK'           = if l' == 0 then 0  else k'
+          hisK'          = if l' == 0 then k' else 0
+          winLoss        = if l' == 0 then Loss else Win
+          oldTree        = SearchedLevel
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
