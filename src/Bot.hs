@@ -1904,7 +1904,7 @@ playerScore (Player score' _ _) = score'
 -- numbers here will always be positive.)
 
 maxScore :: Int
-maxScore = 10
+maxScore = 20
 
 -- TODO simplified score calculation to save time here...
 gameOver :: State -> Int -> GameOver
@@ -1948,37 +1948,23 @@ opponentsTotalWormHealth state =
   wormHealths state
 
 halfMaxScore :: Int
-halfMaxScore = 5
+halfMaxScore = 10
 
-diffMaxResolution :: Double
-diffMaxResolution = 100
-
-halfDiffMaxResolution :: Double
-halfDiffMaxResolution = 50
+diffMaxScale :: [Int]
+diffMaxScale = [2, 5, 7, 20, 40, 100, 200, 300, 1000, 10000]
 
 -- Here zero means 50 points behind the opponent and 10 means 50
 -- points ahead.
 --
--- TODO: Make this a sliding scale so low values have high resolution
--- and it begins to tail off with larger values.  Linear isn't a good
--- idea because the bot loses incentive to get ahead.
+-- This is a sliding scale so low values have high resolution and it
+-- begins to tail off with larger values.  Linear isn't a good idea
+-- because the bot loses incentive to get ahead.
 diffMax :: Int -> Int -> Int
 diffMax myScore' opponentsScore' =
-  let diff :: Double
-      diff      = fromIntegral $ myScore' - opponentsScore'
-      diff' :: Double
-      diff'     = if diff > halfDiffMaxResolution
-                  then halfDiffMaxResolution
-                  else if diff < -halfDiffMaxResolution
-                       then -halfDiffMaxResolution
-                       else diff
-      rounded   = halfMaxScore + (round $ fromIntegral maxScore * (diff' / diffMaxResolution))
-      rounded'  = if rounded == 0
-                  then 1
-                  else if rounded == 10
-                       then 9
-                       else rounded
-  in rounded'
+  let iWon  = myScore' > opponentsScore'
+      diff  = abs $ myScore' - opponentsScore'
+      index = fromJust $ findIndex (>= diff) diffMaxScale
+  in if iWon then index + halfMaxScore else (halfMaxScore - index)
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =

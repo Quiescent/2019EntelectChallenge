@@ -47,11 +47,11 @@ spec :: Spec
 spec = do
   describe "diffMax" $ do
     it "should produce a value of zero when the diff is greater than half max score in the opponents favour" $ do
-      diffMax 100 400 `shouldBe` 1
+      diffMax 100 1500 `shouldBe` 1
     it "should produce a value of 9 when the diff is greater than half max score in my favour" $
-      diffMax 400 100 `shouldBe` 9
+      diffMax 1500 100 `shouldBe` 19
     prop "should never be 10 or 0" $ \ (x, y) ->
-      diffMax (abs x) (abs y) `shouldSatisfy` (> 0) .&&. (< 10)
+      diffMax (abs x) (abs y) `shouldSatisfy` (> 0) .&&. (< maxScore)
   describe "updateCount" $ do
     prop "should produce the same number of records when updating a record regardless of whether it's there or not" $ \ (i, k) ->
       let myMoves      = myMovesFrom aState
