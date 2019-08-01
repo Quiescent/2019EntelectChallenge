@@ -1642,6 +1642,8 @@ runRound roundNumber previousState myLastMove stateChannel treeChannel = do
   -- TODO fromJust?
   let state'            = fromJust state
   let opponentsLastMove = parseLastCommand previousState $ opponentsLastCommand state'
+  -- TODO!!!!!  I shouldn't be reading this state in the searcher.
+  -- All I care about is the opponents move...
   writeComms stateChannel $ (fromMoves myLastMove opponentsLastMove, state')
   runRound roundNumber' state' move stateChannel treeChannel
 
@@ -1771,7 +1773,7 @@ updateTree state result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves o
           myMoves'             = MyMoves        $ updateCount (incInc x)              myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc (maxScore - x)) opponentsMoves thatMove
       in SearchedLevel myMoves' opponentsMoves' $ updateSubTree state result stateTransitions
-    _                                -> level
+    _                           -> level
 
 updateSubTree :: State -> SearchResult -> StateTransitions -> StateTransitions
 updateSubTree state (SearchResult points' (move':moves')) [] =
@@ -1781,7 +1783,8 @@ updateSubTree state
               result@(SearchResult points' (move':moves'))
               (transition@(StateTransition transitionMove' subTree'):transitions)
   | move' == transitionMove' = (StateTransition transitionMove' $
-                                updateTree state (SearchResult points' moves') subTree') : transitions
+                                updateTree (makeMove False transitionMove' state)
+                                           (SearchResult points' moves') subTree') : transitions
   | otherwise                = transition : updateSubTree state result transitions
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> SearchTree)
@@ -1802,30 +1805,17 @@ updateCount changeCount (record:rest) move'
   | successRecordMove record == move' = (changeCount record):rest
   | otherwise                         = record:(updateCount changeCount rest move')
 
--- updateTree :: State -> SearchResult -> SearchTree -> SearchTree
--- updateTree state result tree =
---   case result of
---     (Win  moves) -> undefined
---     (Loss moves) -> undefined
---   where
---     go state' (SearchedLevel   subTrees) (move':moves) =
---       SearchedLevel (updatCount (makeMove False move' state') subTrees move' moves)
---     go state' (UnSearchedLevel subTrees) (move':moves) = undefined
---       (if (isJust $ nextUnSearched subTrees)
---        then UnSearchedLevel
---        else SearchedLevel) (updatCount (makeMove False move' state') subTrees move' moves)
---     go _      SearchFront                _             =
---       UnSearchedLevel $
---       map (\ move -> SuccessRecord (Wins 0) (Played 0) move SearchFront) $
---       movesFrom state
---     updatCount :: State -> SuccessRecords -> CombinedMove -> Moves -> SuccessRecords
---     updatCount state'
---                (tree@(SuccessRecord (Wins wins') (Played played') subTreeMove' subTrees'))
---                move'
---       |
-
 search :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
-search g round' state SearchFront                moves = playRandomly g round' state moves
+-- The first iteration of play randomly is here because we need to use
+-- that move when we write the first entry in an unsearched level.
+search g round' state SearchFront                moves =
+  case gameOver state round' of
+    GameOver x -> (SearchResult  x (reverse moves), g)
+    NoResult   ->
+      let availableMoves = filteredMovesFrom state
+          (move, g')     = pickOneAtRandom g availableMoves
+          state'         = makeMove False move state
+      in playRandomly g' (round' + 1) state' (move:moves)
 search g round' state tree@(SearchedLevel _ _ _) moves =
   searchSearchedLevel g round' state tree moves
 search g
@@ -1888,7 +1878,7 @@ playRandomly g round' state moves =
       let availableMoves = filteredMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
-      in playRandomly g' (round' + 1) state' (move:moves)
+      in playRandomly g' (round' + 1) state' moves
 
 maxRound :: Int
 maxRound = 31
