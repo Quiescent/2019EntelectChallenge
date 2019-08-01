@@ -1964,18 +1964,21 @@ halfDiffMaxResolution = 50
 -- idea because the bot loses incentive to get ahead.
 diffMax :: Int -> Int -> Int
 diffMax myScore' opponentsScore' =
-  let iWon     = myScore' > opponentsScore'
-      diff :: Double
-      diff     = fromIntegral $ myScore' - opponentsScore'
+  let diff :: Double
+      diff      = fromIntegral $ myScore' - opponentsScore'
       diff' :: Double
-      diff'    = if diff > halfDiffMaxResolution
-                 then halfDiffMaxResolution
-                 else if diff < -halfDiffMaxResolution
-                      then -halfDiffMaxResolution
-                      else diff
-      rounded  = halfMaxScore + (round $ fromIntegral maxScore * (diff' / diffMaxResolution))
-      rounded' = if iWon then rounded else maxScore - rounded
-  in if rounded' == 0 then 1 else rounded'
+      diff'     = if diff > halfDiffMaxResolution
+                  then halfDiffMaxResolution
+                  else if diff < -halfDiffMaxResolution
+                       then -halfDiffMaxResolution
+                       else diff
+      rounded   = halfMaxScore + (round $ fromIntegral maxScore * (diff' / diffMaxResolution))
+      rounded'  = if rounded == 0
+                  then 1
+                  else if rounded == 10
+                       then 9
+                       else rounded
+  in rounded'
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =
