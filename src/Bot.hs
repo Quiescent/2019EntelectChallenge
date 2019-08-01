@@ -1729,8 +1729,7 @@ instance Show SearchTree where
   show SearchFront =
     "SearchFront"
 
-data SearchResult = Win  Int Moves
-                  | Loss Int Moves
+data SearchResult = SearchResult Int Moves
                   deriving (Show)
 
 inc :: Int -> Int -> Int
@@ -1741,11 +1740,7 @@ dec x y = y - x
 
 incInc :: Int -> SuccessRecord -> SuccessRecord
 incInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
-  SuccessRecord (Wins $ (inc x) wins') (Played $ (inc x) played') playerMove'
-
-decInc :: Int -> SuccessRecord -> SuccessRecord
-decInc x (SuccessRecord wins' (Played played') playerMove') =
-  SuccessRecord wins' (Played $ (inc x) played') playerMove'
+  SuccessRecord (Wins $ (inc x) wins') (Played $ (inc maxScore) played') playerMove'
 
 gamesPlayedForRecords :: [SuccessRecord] -> Int
 gamesPlayedForRecords = sum . map ( (\ (Played x) -> x) . played)
@@ -1763,28 +1758,18 @@ updateTree state result SearchFront =
   []
 updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  x (move':_)) ->
+    (SearchResult  x (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (incInc x) myMoves        thisMove
-          opponentsMoves'      = OpponentsMoves $ updateCount (decInc x) opponentsMoves thatMove
-      in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves' stateTransitions
-    (Loss x (move':_)) ->
-      let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (decInc x) myMoves        thisMove
-          opponentsMoves'      = OpponentsMoves $ updateCount (incInc x) opponentsMoves thatMove
+          myMoves'             = MyMoves        $ updateCount (incInc x)              myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (incInc (maxScore - x)) opponentsMoves thatMove
       in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves' stateTransitions
     _                  -> level
 updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (Win  x (move':_)) ->
+    (SearchResult  x (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (incInc x) myMoves        thisMove
-          opponentsMoves'      = OpponentsMoves $ updateCount (decInc x) opponentsMoves thatMove
-      in SearchedLevel myMoves' opponentsMoves' stateTransitions
-    (Loss x (move':_)) ->
-      let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (decInc x) myMoves        thisMove
-          opponentsMoves'      = OpponentsMoves $ updateCount (incInc x) opponentsMoves thatMove
+          myMoves'             = MyMoves        $ updateCount (incInc x)              myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (incInc (maxScore - x)) opponentsMoves thatMove
       in SearchedLevel myMoves' opponentsMoves' stateTransitions
     _                  -> level
 
@@ -1880,16 +1865,16 @@ searchSearchedLevel g
             (findSubTree combinedMove transitions)
             (combinedMove:moves)
 
-data GameOver = IWon        Int
-              | OpponentWon Int
+-- Number is the points I get.  The opponent gets ten less that
+-- number.
+data GameOver = GameOver Int
               | NoResult
 
 playRandomly :: StdGen -> Int -> State -> [CombinedMove] -> (SearchResult, StdGen)
 playRandomly g round' state moves =
   case gameOver state round' of
-    IWon        x -> (Win  x (reverse moves), g)
-    OpponentWon x -> (Loss x (reverse moves), g)
-    NoResult      ->
+    GameOver x -> (SearchResult  x (reverse moves), g)
+    NoResult   ->
       let availableMoves = movesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
@@ -1918,28 +1903,33 @@ playerScore (Player score' _ _) = score'
 -- or more points ahead and -10 for being as much behind (although the
 -- numbers here will always be positive.)
 
+maxScore :: Int
+maxScore = 10
+
 -- TODO simplified score calculation to save time here...
 gameOver :: State -> Int -> GameOver
 gameOver state round' =
-  let myWormCount       = length $
-                          filter (isMyWorm . idSlot) $
-                          aListToList $
-                          wormHealths state
-      opponentWormCount = length $
-                          filter (isOpponentWorm . idSlot) $
-                          aListToList $
-                          wormHealths state
-      myScore           = (playerScore $ myPlayer state) + 100 * myTotalWormHealth        state
-      opponentScore     = (playerScore $ opponent state) + 100 * opponentsTotalWormHealth state
+  let myWormCount            = length $
+                               filter (isMyWorm . idSlot) $
+                               aListToList $
+                               wormHealths state
+      myAverageHealth :: Double
+      myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral myWormCount
+      myScore                = (playerScore $ myPlayer state) + round myAverageHealth
+      opponentWormCount      = length $
+                               filter (isOpponentWorm . idSlot) $
+                               aListToList $
+                               wormHealths state
+      opponentsAverageHealth :: Double
+      opponentsAverageHealth = (fromIntegral $ opponentsTotalWormHealth state) / fromIntegral opponentWormCount
+      opponentScore          = (playerScore $ opponent state) + round opponentsAverageHealth
   in if round' >= maxRound || myWormCount == 0 && opponentWormCount == 0
-     then if myScore > opponentScore
-          then IWon        $ diffMax500 myScore opponentScore
-          else OpponentWon $ diffMax500 myScore opponentScore
-     else if myWormCount == 0
-          then OpponentWon 1000
+     then if myWormCount == 0
+          then GameOver 0
           else if opponentWormCount == 0
-               then IWon 1000
+               then GameOver 10
                else NoResult
+     else GameOver $ diffMax myScore opponentScore
 
 myTotalWormHealth :: State -> Int
 myTotalWormHealth state =
@@ -1957,14 +1947,31 @@ opponentsTotalWormHealth state =
   aListFilter (isMyWorm . idSlot) $
   wormHealths state
 
-diffMax500 :: Int -> Int -> Int
-diffMax500 x y =
-  let diff :: Double
-      diff    = (fromIntegral $ abs (x - y))
+halfMaxScore :: Int
+halfMaxScore = 5
+
+diffMaxResolution :: Double
+diffMaxResolution = 100
+
+halfDiffMaxResolution :: Double
+halfDiffMaxResolution = 50
+
+-- Here zero means 50 points behind the opponent and 10 means 50
+-- points ahead.
+diffMax :: Int -> Int -> Int
+diffMax myScore' opponentsScore' =
+  let iWon     = myScore' > opponentsScore'
+      diff :: Double
+      diff     = fromIntegral $ myScore' - opponentsScore'
       diff' :: Double
-      diff'   = if diff > 500.0 then 500.0 else 0
-      rounded = round (10.0 * ((diff' / 500.0)))
-  in if rounded == 0 then 1 else rounded
+      diff'    = if diff > halfDiffMaxResolution
+                 then halfDiffMaxResolution
+                 else if diff < -halfDiffMaxResolution
+                      then -halfDiffMaxResolution
+                      else diff
+      rounded  = halfMaxScore + (round $ fromIntegral maxScore * (diff' / diffMaxResolution))
+      rounded' = if iWon then rounded else maxScore - rounded
+  in if rounded' == 0 then 1 else rounded'
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =

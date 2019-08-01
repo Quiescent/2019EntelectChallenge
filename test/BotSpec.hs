@@ -43,43 +43,35 @@ isSearched _                                        = False
 spec :: Spec
 spec = do
   describe "updateCount" $ do
-    prop "should produce the same number of records when updating a record regardless of whether it's there or not" $ \ (i, k, l) ->
+    prop "should produce the same number of records when updating a record regardless of whether it's there or not" $ \ (i, k) ->
       let myMoves      = myMovesFrom aState
           thisMove     = myMoves L.!! (i `mod` length myMoves)
-          l' :: Int
-          l'           = l `mod` 2
-          k'           = (k `mod` 10) + 1
-          updateCount' = if l' == 0 then decInc k' else incInc k'
+          k'           = k `mod` 11
+          updateCount' = incInc k'
           oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
           newCounts    = updateCount updateCount' oldCounts thisMove
       in newCounts `shouldSatisfy` ((== (length oldCounts)) . length)
-    prop "should change the played count of the selected record and might change the win count" $ \ (i, k, l) ->
+    prop "should change the played count of the selected record and might change the win count" $ \ (i, k) ->
       let myMoves      = myMovesFrom aState
           thisMove     = myMoves L.!! (i `mod` length myMoves)
-          l' :: Int
-          l'           = l `mod` 2
-          k'           = (k `mod` 10) + 1
-          wins'        = 1 + if l' == 0 then 0 else k'
-          updateCount' = if l' == 0 then decInc k' else incInc k'
+          k'           = k `mod` 11
+          updateCount' = incInc k'
           oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
           newCounts    = updateCount updateCount' oldCounts thisMove
-      in newCounts `shouldSatisfy` ((((== (Played $ 1 + k')) . played) .&&.
-                                    (((== (Wins     wins'))  . wins))) .
+      in newCounts `shouldSatisfy` ((((== (Played $ 1 + maxScore)) . played) .&&.
+                                    (((== (Wins   $ 1 + k'))       . wins))) .
                                     fromJust . find ((== thisMove) . successRecordMove))
   describe "myMovesFrom" $ do
     it "should  not contain repeats" $
       let myMoves = myMovesFrom aState
       in myMoves `shouldSatisfy` (== (length (nub myMoves))) . length
   describe "updateTree" $ do
-    prop "should produce a searched level from an unsearched level when the last game is played for the level" $  \ (k, l) ->
+    prop "should produce a searched level from an unsearched level when the last game is played for the level" $  \ (k) ->
       let myMoves        = myMovesFrom aState
           thisMove       = L.head myMoves
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = L.head opponentsMoves
-          l' :: Int
-          l'             = l `mod` 2
-          k'             = (k `mod` 10) + 1
-          winLoss        = if l' == 0 then Loss else Win
+          k'             = k `mod` 11
           oldTree        = UnSearchedLevel
                            (MyMoves        $
                             (SuccessRecord (Wins 0) (Played 0) $ L.head myMoves) :
@@ -89,66 +81,53 @@ spec = do
                             (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail opponentsMoves))
                            []
           newTree        = updateTree aState
-                                      (winLoss (abs k') [fromMoves thisMove thatMove])
+                                      (SearchResult (abs k') [fromMoves thisMove thatMove])
                                       oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy` isSearched . snd
-    prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j, k, l) ->
+    prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j, k) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          l' :: Int
-          l'             = l `mod` 2
-          k'             = (k `mod` 10) + 1
-          winLoss        = if l' == 0 then Loss else Win
+          k'             = k `mod` 11
           newTree        = updateTree aState
-                                      (winLoss (abs k') [fromMoves thisMove thatMove])
+                                      (SearchResult (abs k') [fromMoves thisMove thatMove])
                                       SearchFront
-      in newTree `shouldSatisfy` (((== (if l' == 0 then k' else 0)) . countOpponentsWins) .&&.
-                                  ((== (if l' == 0 then 0  else k')) . countMyWins)       .&&.
-                                  ((== k') . countGames))
-    prop "should increment the game count when given an UnSearchedLevel" $ \ (i, j, k, l) ->
+      in newTree `shouldSatisfy` (((== (maxScore - k')) . countOpponentsWins) .&&.
+                                  ((== k')        . countMyWins)       .&&.
+                                  ((== maxScore)        . countGames))
+    prop "should increment the game count when given an UnSearchedLevel" $ \ (i, j, k) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          l' :: Int
-          l'             = l `mod` 2
-          k'             = (k `mod` 10) + 1
-          myK'           = if l' == 0 then 0  else k'
-          hisK'          = if l' == 0 then k' else 0
-          winLoss        = if l' == 0 then Loss else Win
+          k'             = k `mod` 11
           oldTree        = UnSearchedLevel
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
           newTree        = updateTree aState
-                                      (winLoss (abs k') [fromMoves thisMove thatMove])
+                                      (SearchResult k' [fromMoves thisMove thatMove])
                                       oldTree
-      in newTree `shouldSatisfy` (((== (k'    + countGames oldTree))         . countGames)          .&&.
-                                  ((== (hisK' + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
-                                  ((== (myK'  + countMyWins        oldTree)) . countMyWins))
-    prop "should increment the game count when given a SearchedLevel" $ \ (i, j, k, l) ->
+      in newTree `shouldSatisfy` (((== (maxScore        + countGames oldTree))         . countGames)         .&&.
+                                  ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
+                                  ((== (k'              + countMyWins        oldTree)) . countMyWins))
+    prop "should increment the game count when given a SearchedLevel" $ \ (i, j, k) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          l' :: Int
-          l'             = l `mod` 2
-          k'             = (k `mod` 10) + 1
-          myK'           = if l' == 0 then 0  else k'
-          hisK'          = if l' == 0 then k' else 0
-          winLoss        = if l' == 0 then Loss else Win
+          k'             = k `mod` 11
           oldTree        = SearchedLevel
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
           newTree        = updateTree aState
-                                      (winLoss (abs k') [fromMoves thisMove thatMove])
+                                      (SearchResult (abs k') [fromMoves thisMove thatMove])
                                       oldTree
-      in newTree `shouldSatisfy` (((== (k'    + countGames oldTree))         . countGames)          .&&.
-                                  ((== (hisK' + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
-                                  ((== (myK'  + countMyWins        oldTree)) . countMyWins))
+      in newTree `shouldSatisfy` (((== (maxScore        + countGames oldTree))         . countGames)         .&&.
+                                  ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
+                                  ((== (k'              + countMyWins        oldTree)) . countMyWins))
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
       let x'            = abs x `mod` 108
