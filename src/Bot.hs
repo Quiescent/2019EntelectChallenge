@@ -1875,7 +1875,7 @@ playRandomly g round' state moves =
   case gameOver state round' of
     GameOver x -> (SearchResult  x (reverse moves), g)
     NoResult   ->
-      let availableMoves = movesFrom state
+      let availableMoves = filteredMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
       in playRandomly g' (round' + 1) state' (move:moves)
@@ -2000,13 +2000,24 @@ movesFrom state = do
   opponentsMove <- opponentsMovesFrom state
   return $ fromMoves myMove opponentsMove
 
+filteredMovesFrom :: State -> [CombinedMove]
+filteredMovesFrom state = do
+  myMove        <- myFilteredMovesFrom        state
+  opponentsMove <- opponentsFilteredMovesFrom state
+  return $ fromMoves myMove opponentsMove
+
 myMovesFrom :: State -> [Move]
 myMovesFrom state = do
   let moves  = map Move [0..104]
   let moves' = addThisPlayersSelects state moves
   myMove <- moves'
-  guard (shouldMakeThisMove state moves' myMove)
+  guard (isThisMoveValid state myMove)
   return myMove
+
+myFilteredMovesFrom :: State -> [Move]
+myFilteredMovesFrom state =
+  let moves' = myMovesFrom state
+  in filter (shouldMakeThisMove state moves') moves'
 
 aListToList :: AList a -> [AListEntry a]
 aListToList = aListFoldl' (flip (:)) []
@@ -2033,8 +2044,13 @@ opponentsMovesFrom state = do
   let moves  = map Move [0..104]
   let moves' = addThatPlayersSelects state moves
   opponentsMove <- moves'
-  guard (shouldMakeThatMove state moves' opponentsMove)
+  guard (isThatMoveValid state opponentsMove)
   return $ opponentsMove
+
+opponentsFilteredMovesFrom :: State -> [Move]
+opponentsFilteredMovesFrom state =
+  let moves' = opponentsMovesFrom state
+  in filter (shouldMakeThatMove state moves') moves'
 
 addThatPlayersSelects :: State -> [Move] -> [Move]
 addThatPlayersSelects state moves =
@@ -2050,6 +2066,20 @@ addThatPlayersSelects state moves =
 
 doNothing :: Move
 doNothing = Move 106
+
+isThisMoveValid :: State -> Move -> Bool
+isThisMoveValid state move
+  | isADigMove move    = isValidDigMove targetOfThisMove state move
+  | isAMoveMove move   = isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
+  | isAShootMove move  = True
+  | isABananaMove move = shouldMakeBananaMove
+                         (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
+                         state
+                         move
+  | hasASelection move = thisPlayerHasSelectionsLeft state &&
+                         (isThisMoveValid (makeSelections move doNothing state) $
+                          removeSelectionFromMove move)
+  | otherwise          = True
 
 shouldMakeThisMove :: State -> [Move] -> Move -> Bool
 shouldMakeThisMove state moves move
@@ -2109,6 +2139,20 @@ theseHitCoords state =
 shouldMakeBananaMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 shouldMakeBananaMove destination state move =
   isJust $ destination move state
+
+isThatMoveValid :: State -> Move -> Bool
+isThatMoveValid state move
+  | isADigMove    move = isValidDigMove targetOfThatMove state move
+  | isAMoveMove   move = isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
+  | isAShootMove  move = True
+  | isABananaMove move = shouldMakeBananaMove
+                         (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
+                         state
+                         move
+  | hasASelection move = thatPlayerHasSelectionsLeft state &&
+                         (isThatMoveValid (makeSelections doNothing move state) $
+                          removeSelectionFromMove move)
+  | otherwise          = True
 
 shouldMakeThatMove :: State -> [Move] -> Move -> Bool
 shouldMakeThatMove state moves move
