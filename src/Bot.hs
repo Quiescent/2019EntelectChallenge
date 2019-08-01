@@ -1540,7 +1540,7 @@ readRound = readLn
 
 myMovesFromTree :: SearchTree -> SuccessRecords
 myMovesFromTree (SearchedLevel   (MyMoves myMoves) _ _) = myMoves
-myMovesFromTree (UnSearchedLevel (MyMoves myMoves) _ _) = myMoves
+myMovesFromTree (UnSearchedLevel (MyMoves myMoves) _)   = myMoves
 myMovesFromTree SearchFront                             =
   error $ "myMovesFromTree of SearchFront"
 
@@ -1591,9 +1591,9 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
       in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
-makeMoveInTree move (SearchedLevel   _ _ transitions) = findSubTree move transitions
-makeMoveInTree move (UnSearchedLevel _ _ transitions) = findSubTree move transitions
-makeMoveInTree _    SearchFront                       = SearchFront
+makeMoveInTree move' (SearchedLevel   _ _ transitions) = findSubTree move' transitions
+makeMoveInTree _     (UnSearchedLevel _ _)             = SearchFront
+makeMoveInTree _     SearchFront                       = SearchFront
 
 -- In nanoseconds
 maxSearchTime :: Integer
@@ -1697,7 +1697,7 @@ data OpponentsMoves = OpponentsMoves SuccessRecords
   deriving (Eq)
 
 data StateTransition = StateTransition CombinedMove SearchTree
-  deriving (Eq)
+  deriving (Eq, Show)
 
 hasMove :: CombinedMove -> StateTransition -> Bool
 hasMove move' (StateTransition move'' _) = move' == move''
@@ -1708,7 +1708,7 @@ subTree (StateTransition _ tree) = tree
 type StateTransitions = [StateTransition]
 
 data SearchTree = SearchedLevel   MyMoves OpponentsMoves StateTransitions
-                | UnSearchedLevel MyMoves OpponentsMoves StateTransitions
+                | UnSearchedLevel MyMoves OpponentsMoves
                 | SearchFront
                 deriving (Eq)
 
@@ -1718,11 +1718,12 @@ join' joinString strings =
   in take ((length withExtra) - (length joinString)) withExtra
 
 instance Show SearchTree where
-  show (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
+  show (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
     "Searched: " ++ "\n" ++
     "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves)
-  show (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
+    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves) ++ "\n" ++
+    "Transitions: " ++ show transitions
+  show (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched: " ++ "\n" ++
     "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
     "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves)
@@ -1755,14 +1756,13 @@ updateTree state result SearchFront =
   UnSearchedLevel
   (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom        state)
   (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom state)
-  []
-updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
+updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
   case result of
     (SearchResult  x (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
           myMoves'             = MyMoves        $ updateCount (incInc x)              myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc (maxScore - x)) opponentsMoves thatMove
-      in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves' stateTransitions
+      in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves'
     _                  -> level
 updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
@@ -1773,11 +1773,11 @@ updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves oppon
       in SearchedLevel myMoves' opponentsMoves' stateTransitions
     _                  -> level
 
-transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> StateTransitions -> SearchTree)
+transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> SearchTree)
 transitionLevelType myMoves opponentsMoves =
-  if allGamesPlayed myMoves opponentsMoves
-  then SearchedLevel
-  else UnSearchedLevel
+    if allGamesPlayed myMoves opponentsMoves
+    then \ myMoves' opponentsMoves' -> SearchedLevel   myMoves' opponentsMoves' []
+    else \ myMoves' opponentsMoves' -> UnSearchedLevel myMoves' opponentsMoves'
 
 allGamesPlayed :: MyMoves -> OpponentsMoves -> Bool
 allGamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
@@ -1820,18 +1820,17 @@ search g round' state tree@(SearchedLevel _ _ _) moves =
 search g
        round'
        state
-       (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions)
+       (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves))
        moves =
   let (myRecord,        g')  = pickOneAtRandom g  myMoves
       (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
       myMove                 = successRecordMove myRecord
       opponentsMove          = successRecordMove opponentsRecord
       combinedMove           = fromMoves myMove opponentsMove
-      subTree'               = findSubTree combinedMove stateTransitions
   in search g''
             (round' + 1)
             (makeMove False combinedMove state)
-            subTree'
+            SearchFront
             (combinedMove:moves)
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
@@ -1850,7 +1849,7 @@ type Moves = [CombinedMove]
 
 searchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 searchSearchedLevel _ _ _ SearchFront                   _ = error "searchSearchedLevel: SearchFront"
-searchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _) _ = error $ "searchSearchedLevel: " ++ show level
+searchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ )  _ = error $ "searchSearchedLevel: " ++ show level
 searchSearchedLevel g
                     round'
                     state
