@@ -1609,12 +1609,12 @@ treeAfterAlottedTime treeChannel = do
   searchTree   <- go SearchFront startingTime
   return searchTree
   where
-    clock = ProcessCPUTime
+    clock = Realtime
     go searchTree startingTime =
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then (liftIO $ putStrLn $ show searchTree) >> return searchTree
+        then (logStdErr $ show searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -1746,7 +1746,7 @@ gamesPlayedForRecords :: [SuccessRecord] -> Int
 gamesPlayedForRecords = sum . map ( (\ (Played x) -> x) . played)
 
 countGames :: SearchTree -> Int
-countGames = gamesPlayedForRecords . myMovesFromTree
+countGames = (`div` maxScore) . gamesPlayedForRecords . myMovesFromTree
 
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
