@@ -1763,15 +1763,26 @@ updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opp
           myMoves'             = MyMoves        $ updateCount (incInc x)              myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc (maxScore - x)) opponentsMoves thatMove
       in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves'
-    _                  -> level
-updateTree _ result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
+    _                           -> level
+updateTree state result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
     (SearchResult  x (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
           myMoves'             = MyMoves        $ updateCount (incInc x)              myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc (maxScore - x)) opponentsMoves thatMove
-      in SearchedLevel myMoves' opponentsMoves' stateTransitions
-    _                  -> level
+      in SearchedLevel myMoves' opponentsMoves' $ updateSubTree state result stateTransitions
+    _                                -> level
+
+updateSubTree :: State -> SearchResult -> StateTransitions -> StateTransitions
+updateSubTree state (SearchResult points' (move':moves')) [] =
+  [StateTransition move' $ updateTree state (SearchResult points' moves') SearchFront]
+updateSubTree _     (SearchResult _ [])                   transitions = transitions
+updateSubTree state
+              result@(SearchResult points' (move':moves'))
+              (transition@(StateTransition transitionMove' subTree'):transitions)
+  | move' == transitionMove' = (StateTransition transitionMove' $
+                                updateTree state (SearchResult points' moves') subTree') : transitions
+  | otherwise                = transition : updateSubTree state result transitions
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> SearchTree)
 transitionLevelType myMoves opponentsMoves =
