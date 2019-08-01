@@ -1914,14 +1914,14 @@ gameOver state round' =
                                aListToList $
                                wormHealths state
       myAverageHealth :: Double
-      myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral myWormCount
+      myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral wormCount
       myScore                = (playerScore $ myPlayer state) + round myAverageHealth
       opponentWormCount      = length $
                                filter (isOpponentWorm . idSlot) $
                                aListToList $
                                wormHealths state
       opponentsAverageHealth :: Double
-      opponentsAverageHealth = (fromIntegral $ opponentsTotalWormHealth state) / fromIntegral opponentWormCount
+      opponentsAverageHealth = (fromIntegral $ opponentsTotalWormHealth state) / fromIntegral wormCount
       opponentScore          = (playerScore $ opponent state) + round opponentsAverageHealth
   in if round' >= maxRound || myWormCount == 0 && opponentWormCount == 0
      then if myWormCount == 0
