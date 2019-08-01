@@ -658,7 +658,10 @@ friendly.
    - CLOSING NOTE [2019-08-01 Thu 17:19]
    - State "IN_PROGRESS" from "TODO"       [2019-07-30 Tue 12:49]
    :END:
-** TODO Add multiple levels to the search tree
+** IN_PROGRESS Add multiple levels to the search tree
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-01 Thu 17:19]
+   :END:
 ** TODO Make the Search Faster
 *** TODO Pass down whether there is a dig move
 *** TODO Improve aList
