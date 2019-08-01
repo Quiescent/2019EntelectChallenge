@@ -1582,7 +1582,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           -- between, when the runner hasn't yet told me to move because it's
           -- 900ms from that point that I communicate back.
           let tree'' = makeMoveInTree move' searchTree
-          when (tree'' == SearchFront) $ logStdErr $ "Move combination " ++ show (toMoves move') ++ "not in search tree!"
+          when (tree'' == SearchFront) $ logStdErr $ "Move combination " ++ show (toMoves move') ++ " not in search tree!"
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree'
     go gen' count' searchTree =
