@@ -1927,7 +1927,7 @@ gameOver state round' =
      then if myWormCount == 0
           then GameOver 0
           else if opponentWormCount == 0
-               then GameOver 10
+               then GameOver maxScore
                else NoResult
      else GameOver $ diffMax myScore opponentScore
 
@@ -1958,6 +1958,10 @@ halfDiffMaxResolution = 50
 
 -- Here zero means 50 points behind the opponent and 10 means 50
 -- points ahead.
+--
+-- TODO: Make this a sliding scale so low values have high resolution
+-- and it begins to tail off with larger values.  Linear isn't a good
+-- idea because the bot loses incentive to get ahead.
 diffMax :: Int -> Int -> Int
 diffMax myScore' opponentsScore' =
   let iWon     = myScore' > opponentsScore'
