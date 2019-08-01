@@ -40,6 +40,9 @@ isSearched _                                        = False
 -- nextUnSearched :: [SuccessRecord] -> Maybe SuccessRecord
 -- nextUnSearched successRecords = find isUnSearched successRecords
 
+countGames' :: SearchTree -> Int
+countGames' = gamesPlayedForRecords . myMovesFromTree
+
 spec :: Spec
 spec = do
   describe "updateCount" $ do
@@ -94,8 +97,8 @@ spec = do
                                       (SearchResult (abs k') [fromMoves thisMove thatMove])
                                       SearchFront
       in newTree `shouldSatisfy` (((== (maxScore - k')) . countOpponentsWins) .&&.
-                                  ((== k')        . countMyWins)       .&&.
-                                  ((== maxScore)        . countGames))
+                                  ((== k')              . countMyWins)        .&&.
+                                  ((== maxScore)        . countGames'))
     prop "should increment the game count when given an UnSearchedLevel" $ \ (i, j, k) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
@@ -109,7 +112,7 @@ spec = do
           newTree        = updateTree aState
                                       (SearchResult k' [fromMoves thisMove thatMove])
                                       oldTree
-      in newTree `shouldSatisfy` (((== (maxScore        + countGames oldTree))         . countGames)         .&&.
+      in newTree `shouldSatisfy` (((== (maxScore        + countGames' oldTree))        . countGames')         .&&.
                                   ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
                                   ((== (k'              + countMyWins        oldTree)) . countMyWins))
     prop "should increment the game count when given a SearchedLevel" $ \ (i, j, k) ->
@@ -125,7 +128,7 @@ spec = do
           newTree        = updateTree aState
                                       (SearchResult (abs k') [fromMoves thisMove thatMove])
                                       oldTree
-      in newTree `shouldSatisfy` (((== (maxScore        + countGames oldTree))         . countGames)         .&&.
+      in newTree `shouldSatisfy` (((== (maxScore        + countGames' oldTree))        . countGames')         .&&.
                                   ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
                                   ((== (k'              + countMyWins        oldTree)) . countMyWins))
   describe "formatMove" $ do
