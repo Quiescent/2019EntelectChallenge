@@ -158,10 +158,10 @@ spec = do
          (((== 1) . length . transitions) .&&.
           ((((== (Wins $ 1 +  k'))         . wins) .&&.
             ((== (Played $ 1 +  maxScore)) . played)) .
-            (fromJust . find ((== thisMove) . successRecordMove) . myMovesFromTree)) .&&.
+           (fromJust . find ((== thisMove) . successRecordMove) . myMovesFromTree)) .&&.
           ((((== (Wins $ 1 + maxScore - k')) . wins) .&&.
-             ((== (Played $ 1 + maxScore))   . played)) .
-            (fromJust . find ((== thatMove) . successRecordMove) . opponentsMovesFromTree))) . snd
+            ((== (Played $ 1 + maxScore))   . played)) .
+           (fromJust . find ((== thatMove) . successRecordMove) . opponentsMovesFromTree))) . snd
     prop "should add an unsearched level to the state transitions for this tree" $ \ (i, j, k, l, m) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
@@ -181,10 +181,10 @@ spec = do
          (((== 1) . length . transitions) .&&.
           ((((== (Wins k'))         . wins) .&&.
             ((== (Played maxScore)) . played)) .
-            (fromJust . find ((== thisMove') . successRecordMove) . myMovesFromTree)) .&&.
+           (fromJust . find ((== thisMove') . successRecordMove) . myMovesFromTree)) .&&.
           ((((== (Wins $ maxScore - k')) . wins) .&&.
-             ((== (Played maxScore))     . played)) .
-            (fromJust . find ((== thatMove') . successRecordMove) . opponentsMovesFromTree))) .
+            ((== (Played maxScore))      . played)) .
+           (fromJust . find ((== thatMove') . successRecordMove) . opponentsMovesFromTree))) .
          makeMoveInTree (fromMoves thisMove thatMove) . snd
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
