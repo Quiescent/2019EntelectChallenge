@@ -175,11 +175,11 @@ spec = do
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
           newTree        = updateTree aState
-                                      (SearchResult (abs k') [fromMoves thisMove thatMove, fromMoves thisMove thatMove])
+                                      (SearchResult (abs k') [fromMoves thisMove thatMove,
+                                                              fromMoves thisMove' thatMove'])
                                       oldTree
       in ((thisMove', thatMove'), newTree) `shouldSatisfy`
-         (((== 1) . length . transitions) .&&.
-          ((((== (Wins k'))         . wins) .&&.
+         (((((== (Wins k'))         . wins) .&&.
             ((== (Played maxScore)) . played)) .
            (fromJust . find ((== thisMove') . successRecordMove) . myMovesFromTree)) .&&.
           ((((== (Wins $ maxScore - k')) . wins) .&&.
