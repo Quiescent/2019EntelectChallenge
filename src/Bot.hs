@@ -1951,7 +1951,7 @@ halfMaxScore :: Int
 halfMaxScore = 10
 
 diffMaxScale :: [Int]
-diffMaxScale = [2, 2, 2, 2, 2, 7, 20, 40, 500, 10000]
+diffMaxScale = [3, 3, 3, 3, 3, 7, 20, 40, 500, 10000]
 
 -- Here zero means 50 points behind the opponent and 10 means 50
 -- points ahead.
