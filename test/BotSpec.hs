@@ -51,12 +51,18 @@ transitions SearchFront                        = []
 spec :: Spec
 spec = do
   describe "diffMax" $ do
-    it "should produce a value of zero when the diff is greater than half max score in the opponents favour" $ do
-      diffMax 100 1500 `shouldBe` 1
-    it "should produce a value of 9 when the diff is greater than half max score in my favour" $
-      diffMax 1500 100 `shouldBe` 19
+    it "should produce a very high payoff when the score which I got was very high" $ do
+      diffMax [Reward (MyReward 100)  (OpponentsReward 1500)] `shouldBe` (Payoff (MyPayoff 9) (OpponentsPayoff 9))
+    it "should decrease with every move down the chain" $
+      diffMax [Reward (MyReward 0) (OpponentsReward 9),
+               Reward (MyReward 0) (OpponentsReward 10),
+               Reward (MyReward 0) (OpponentsReward 10)] `shouldBe`
+      (Payoff (MyPayoff 1) (OpponentsPayoff $ fromJust $ findIndex (>= (10 + 5 + 3)) diffMaxScale))
     prop "should never be 10 or 0" $ \ (x, y) ->
-      diffMax (abs x) (abs y) `shouldSatisfy` (> 0) .&&. (< maxScore)
+      let inRange' = (> 0) .&&. (< maxScore)
+      in diffMax [Reward (MyReward $ abs x) (OpponentsReward $ abs y)] `shouldSatisfy`
+      (inRange' . (\ (Payoff _            (OpponentsPayoff x')) -> x')) .&&.
+      (inRange' . (\ (Payoff (MyPayoff x') _)                   -> x'))
   describe "updateCount" $ do
     prop "should produce the same number of records when updating a record regardless of whether it's there or not" $ \ (i, k) ->
       let myMoves      = myMovesFrom aState
@@ -95,7 +101,9 @@ spec = do
                             (SuccessRecord (Wins 0) (Played 0) $ L.head opponentsMoves) :
                             (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail opponentsMoves))
           newTree        = updateTree aState
-                                      (SearchResult (abs k') [fromMoves thisMove thatMove])
+                                      (SearchResult
+                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k'))
+                                       [fromMoves thisMove thatMove])
                                       oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy` isSearched . snd
     prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j, k) ->
@@ -105,7 +113,9 @@ spec = do
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
           k'             = k `mod` (maxScore + 1)
           newTree        = updateTree aState
-                                      (SearchResult (abs k') [fromMoves thisMove thatMove])
+                                      (SearchResult
+                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k'))
+                                       [fromMoves thisMove thatMove])
                                       SearchFront
       in newTree `shouldSatisfy` (((== (maxScore - k')) . countOpponentsWins) .&&.
                                   ((== k')              . countMyWins)        .&&.
@@ -120,7 +130,9 @@ spec = do
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
           newTree        = updateTree aState
-                                      (SearchResult k' [fromMoves thisMove thatMove])
+                                      (SearchResult
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k'))
+                                       [fromMoves thisMove thatMove])
                                       oldTree
       in newTree `shouldSatisfy` (((== (maxScore        + countGames' oldTree))        . countGames')         .&&.
                                   ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
@@ -136,7 +148,9 @@ spec = do
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
           newTree        = updateTree aState
-                                      (SearchResult (abs k') [fromMoves thisMove thatMove])
+                                      (SearchResult
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k'))
+                                       [fromMoves thisMove thatMove])
                                       oldTree
       in newTree `shouldSatisfy` (((== (maxScore        + countGames' oldTree))        . countGames')         .&&.
                                   ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
@@ -152,7 +166,9 @@ spec = do
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
           newTree        = updateTree aState
-                                      (SearchResult (abs k') [fromMoves thisMove thatMove, fromMoves thisMove thatMove])
+                                      (SearchResult
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k'))
+                                       [fromMoves thisMove thatMove, fromMoves thisMove thatMove])
                                       oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy`
          (((== 1) . length . transitions) .&&.
@@ -175,8 +191,10 @@ spec = do
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
           newTree        = updateTree aState
-                                      (SearchResult (abs k') [fromMoves thisMove thatMove,
-                                                              fromMoves thisMove' thatMove'])
+                                      (SearchResult
+                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k'))
+                                        [fromMoves thisMove thatMove,
+                                         fromMoves thisMove' thatMove'])
                                       oldTree
       in ((thisMove', thatMove'), newTree) `shouldSatisfy`
          (((((== (Wins k'))         . wins) .&&.
