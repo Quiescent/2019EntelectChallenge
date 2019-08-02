@@ -1732,7 +1732,9 @@ instance Show SearchTree where
   show SearchFront =
     "SearchFront"
 
-data SearchResult = SearchResult Int Moves
+type Points = [Int]
+
+data SearchResult = SearchResult Int Moves Points
                   deriving (Show)
 
 inc :: Int -> Int -> Int
