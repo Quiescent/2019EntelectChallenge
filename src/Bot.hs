@@ -1166,32 +1166,24 @@ mapHealth f (WormHealth x) = WormHealth $ f x
 
 knockBackDamage :: ModifyState
 knockBackDamage state =
-  let thisWormId       = thisPlayersCurrentWormId state
-      thatWormId       = thatPlayersCurrentWormId state
-      -- Assume: that there is a worm to apply knockback damage to
-      -- because both worms must have moved for this to happen
-      thisWormHealth'  = fromJust $
+  knockBackDamageToOne thisPlayersCurrentWormId $
+  knockBackDamageToOne thatPlayersCurrentWormId state
+  where
+    knockBackDamage' = mapDataSlot (mapHealth (+ (-knockBackDamageAmount)))
+    -- Assume: that there is a worm to apply knockback damage to
+    -- because both worms must have moved for this to happen
+    knockBackDamageToOne wormsId =
+      let wormId'      = wormsId state
+          wormsHealth' = fromJust $
                          fmap dataSlot $
-                         findById thisWormId $
+                         findById wormId' $
                          wormHealths state
-      thatWormHealth'  = fromJust $
-                         fmap dataSlot $
-                         findById thatWormId $
-                         wormHealths state
-      thisWormDied     = knockBackDamageAmount >= deconstructHealth thisWormHealth'
-      thatWormDied     = knockBackDamageAmount >= deconstructHealth thatWormHealth'
-      knockBackDamage' = mapDataSlot (mapHealth (+ (-knockBackDamageAmount)))
-      cleanUpThis      = withWormHealths (removeWormById thisWormId) .
-                         withWormPositions (removeWormById thisWormId)
-      cleanUpThat      = withWormHealths (removeWormById thatWormId) .
-                         withWormPositions (removeWormById thatWormId)
-      harmThisWorm     = if thisWormDied
-                         then cleanUpThis
-                         else withWormHealths $ mapWormById thisWormId knockBackDamage'
-      harmThatWorm     = if thatWormDied
-                         then cleanUpThat
-                         else withWormHealths $ mapWormById thatWormId knockBackDamage'
-  in harmThisWorm $ harmThatWorm state
+          wormDied     = knockBackDamageAmount >= deconstructHealth wormsHealth'
+          cleanUp      = withWormHealths (removeWormById wormId') .
+                         withWormPositions (removeWormById wormId')
+      in if wormDied
+         then cleanUp
+         else withWormHealths $ mapWormById wormId' knockBackDamage'
 
 moveThisWorm :: Coord -> ModifyState
 moveThisWorm newCoord' state =
