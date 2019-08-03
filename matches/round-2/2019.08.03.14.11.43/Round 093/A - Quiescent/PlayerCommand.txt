@@ -1,0 +1,3 @@
+Command: shoot NW
+Execution time: 910ms
+Exception: null
