@@ -1614,7 +1614,7 @@ treeAfterAlottedTime treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then return searchTree -- (logStdErr $ show searchTree) >> return searchTree
+        then (logStdErr $ show searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -1720,11 +1720,11 @@ join' joinString strings =
   in take ((length withExtra) - (length joinString)) withExtra
 
 instance Show SearchTree where
-  show (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
+  show (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
     "Searched: " ++ "\n" ++
     "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves) ++ "\n" ++
-    "Transitions: " ++ show transitions
+    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves) -- ++ "\n" ++
+    -- "Transitions: " ++ show transitions
   show (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched: " ++ "\n" ++
     "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
