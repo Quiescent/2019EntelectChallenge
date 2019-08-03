@@ -15,13 +15,6 @@ import Data.Maybe
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
--- DEBUG
-import Debug.Trace
-
-probe :: Show a => String -> a -> a
-probe message x =
-  Debug.Trace.trace (message ++ ": " ++ show x) x
-
 getIntFromCoord :: Coord -> Int
 getIntFromCoord (Coord xy) = xy
 
@@ -54,7 +47,7 @@ spec = do
   describe "parseLastCommand" $ do
     it "should be able to parse all of the opponents moves from a state" $
       let opponentsMoves          = opponentsMovesFrom aState
-          opponentsMovesAsStrings = probe "Opponents moves as stings" $ map (prettyPrintThatMove aState) opponentsMoves
+          opponentsMovesAsStrings = map (prettyPrintThatMove aState) opponentsMoves
       in (map (parseLastCommand aState . Just) opponentsMovesAsStrings) `shouldBe` opponentsMoves
   describe "diffMax" $ do
     it "should produce a very high payoff when the score which I got was very high" $ do
