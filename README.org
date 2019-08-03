@@ -697,6 +697,7 @@ friendly.
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
    :END:
+** TODO Fine tune the search time
 ** TODO Penalise selects because they can be wasteful
 ** TODO Test that banana bombing space does not cause a blast
 ** TODO Only throw bananas when they'll be good
