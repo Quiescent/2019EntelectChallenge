@@ -1211,20 +1211,17 @@ idSlot (AListEntry id' _) = id'
 dataSlot :: AListEntry a -> a
 dataSlot (AListEntry _ data') = data'
 
+targetOfMove :: (State -> WormId) -> Move -> State -> Maybe Coord
+targetOfMove wormsId dir state =
+  let wormId'   = wormsId state
+      position' = fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormPositions state
+  in position' >>= (flip displaceCoordByMove) dir
+
 targetOfThisMove :: Move -> State -> Maybe Coord
-targetOfThisMove dir state =
-  let thisWormId = thisPlayersCurrentWormId state
-      position'  = fmap dataSlot $ aListFind ((== thisWormId) . idSlot) $ wormPositions state
-  in position' >>= targetOfMove dir
+targetOfThisMove = targetOfMove thisPlayersCurrentWormId
 
 targetOfThatMove :: Move -> State -> Maybe Coord
-targetOfThatMove dir state =
-  let thatWormId = thatPlayersCurrentWormId state
-      position'   = fmap dataSlot $ aListFind ((== thatWormId) . idSlot) $ wormPositions state
-  in position' >>= targetOfMove dir
-
-targetOfMove :: Move -> Coord -> Maybe Coord
-targetOfMove = flip displaceCoordByMove
+targetOfThatMove = targetOfMove thatPlayersCurrentWormId
 
 mapThisPlayer :: ModifyPlayer -> ModifyState
 mapThisPlayer f state@(State { myPlayer = player' }) =
