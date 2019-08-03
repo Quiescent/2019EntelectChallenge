@@ -669,6 +669,7 @@ friendly.
    :LOGBOOK:
    - CLOSING NOTE [2019-08-03 Sat 09:00]
    :END:
+** TODO Normalise the points by the number of points you would get if you dug every turn
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
 ** TODO BUG: Find out why sub trees aren't being found
 ** TODO Make the Search Faster
