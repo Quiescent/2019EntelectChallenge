@@ -563,6 +563,11 @@ coordDeltasInRange =
                 isOOB $
                 let (x', y') = fromCoord xy
                 in (x' + dx, y' + dy))
+  bananaXDisplacements
+  bananaYDisplacements
+
+bananaXDisplacements :: [Int]
+bananaXDisplacements =
   [                    0,
            -3, -2, -1, 0, 1, 2, 3,
        -4, -3, -2, -1, 0, 1, 2, 3, 4,
@@ -574,6 +579,9 @@ coordDeltasInRange =
        -4, -3, -2, -1, 0, 1, 2, 3, 4,
            -3, -2, -1, 0, 1, 2, 3,
                        0]
+
+bananaYDisplacements :: [Int]
+bananaYDisplacements =
   [                    -5,
            -4, -4, -4, -4, -4, -4, -4,
        -3, -3, -3, -3, -3, -3, -3, -3, -3,
