@@ -696,25 +696,22 @@ toMoves (CombinedMove moves) =
    Move $ (moves .&. (playerMoveMask `shiftL` playersMoveShift)) `shiftR` playersMoveShift)
 
 makeMove :: Bool -> CombinedMove -> ModifyState
-makeMove swapping moves =
+makeMove swapping moves state =
   let (myMove,  opponentsMove)  = toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
-  in setOpponentsLastMove  opponentsMove'           .
-     advanceWormSelections                          .
-     makeShootMoves          myMove' opponentsMove' .
-     makeBananaMoves         myMove' opponentsMove' .
-     makeDigMoves            myMove' opponentsMove' .
-     makeMoveMoves  swapping myMove' opponentsMove' .
-     makeSelections          myMove  opponentsMove
+  in setOpponentsLastMove    state   opponentsMove  $
+     advanceWormSelections                          $
+     makeShootMoves          myMove' opponentsMove' $
+     makeBananaMoves         myMove' opponentsMove' $
+     makeDigMoves            myMove' opponentsMove' $
+     makeMoveMoves  swapping myMove' opponentsMove' $
+     makeSelections          myMove  opponentsMove state
 
 -- TODO I shouldn't even be doing this at all.
-setOpponentsLastMove :: Move -> State -> State
-setOpponentsLastMove move' state =
-    -- TODO fromJust?
-  let wormId' = thatPlayersCurrentWormId state
-      coord'  = dataSlot $ fromJust $ aListFind ((== wormId') . idSlot) $ wormPositions state
-  in state { opponentsLastCommand = Just $ formatMove move' coord' state }
+setOpponentsLastMove :: State -> Move -> State -> State
+setOpponentsLastMove stateWhenMoveWasMade move' state =
+  state { opponentsLastCommand = Just $ prettyPrintThatMove stateWhenMoveWasMade move' }
 
 decrementSelections :: Selections -> Selections
 decrementSelections (Selections x) = Selections $ x - 1
