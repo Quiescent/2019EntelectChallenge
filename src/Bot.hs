@@ -801,8 +801,11 @@ makeSelections this that state =
                            else id
   in selectThis $ selectThat state
 
+findById :: WormId -> AList a -> Maybe (AListEntry a)
+findById wormId' = aListFind ((== wormId') . idSlot)
+
 wormExists :: WormId -> State -> Bool
-wormExists wormId' = isJust . aListFind ((== wormId') . idSlot) . wormPositions
+wormExists wormId' = isJust . findById wormId' . wormPositions
 
 isABananaMove :: Move -> Bool
 isABananaMove (Move x) =
@@ -812,27 +815,29 @@ hasBananas :: Bananas -> Bool
 hasBananas (Bananas x) = x > 0
 
 thisWormHasBananasLeft :: State -> Bool
-thisWormHasBananasLeft state =
-  let wormId' = thisPlayersCurrentWormId state
-  in any (hasBananas . dataSlot) $ aListFind ((== wormId') . idSlot) $ wormBananas state
+thisWormHasBananasLeft = wormHasBananasLeft thisPlayersCurrentWormId
 
 thatWormHasBananasLeft :: State -> Bool
-thatWormHasBananasLeft state =
-  let wormId' = thatPlayersCurrentWormId state
-  in any (hasBananas . dataSlot) $ aListFind ((== wormId') . idSlot) $ wormBananas state
+thatWormHasBananasLeft = wormHasBananasLeft thatPlayersCurrentWormId
+
+wormHasBananasLeft :: (State -> WormId) -> State -> Bool
+wormHasBananasLeft wormsId state =
+  let wormId' = wormsId state
+  in any (hasBananas . dataSlot) $ findById wormId' $ wormBananas state
 
 decrementBananas :: Bananas -> Bananas
 decrementBananas (Bananas x) = Bananas $ x - 1
 
-decrementThisWormsBananas :: ModifyState
-decrementThisWormsBananas state =
-  let wormId' = thisPlayersCurrentWormId state
+decrementWormsBananas :: (State -> WormId) -> ModifyState
+decrementWormsBananas wormsId state =
+  let wormId' = wormsId state
   in withWormBananas (mapWormById wormId' (mapDataSlot decrementBananas)) state
 
+decrementThisWormsBananas :: ModifyState
+decrementThisWormsBananas = decrementWormsBananas thisPlayersCurrentWormId
+
 decrementThatWormsBananas :: ModifyState
-decrementThatWormsBananas state =
-  let wormId' = thatPlayersCurrentWormId state
-  in withWormBananas (mapWormById wormId' (mapDataSlot decrementBananas)) state
+decrementThatWormsBananas = decrementWormsBananas thatPlayersCurrentWormId
 
 withWormBananas :: WithWormFacts Bananas
 withWormBananas f state@(State { wormBananas = wormBananas' }) =
@@ -1167,11 +1172,11 @@ knockBackDamage state =
       -- because both worms must have moved for this to happen
       thisWormHealth'  = fromJust $
                          fmap dataSlot $
-                         aListFind ((== thisWormId) . idSlot) $
+                         findById thisWormId $
                          wormHealths state
       thatWormHealth'  = fromJust $
                          fmap dataSlot $
-                         aListFind ((== thatWormId) . idSlot) $
+                         findById thatWormId $
                          wormHealths state
       thisWormDied     = knockBackDamageAmount >= deconstructHealth thisWormHealth'
       thatWormDied     = knockBackDamageAmount >= deconstructHealth thatWormHealth'
