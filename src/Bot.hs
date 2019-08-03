@@ -204,6 +204,7 @@ removeHealthPoints idPredicate wormHealths' (Player score' wormId' selections') 
                     aListFilterById idPredicate wormHealths'
   in Player (score' - (totalHealth `div` wormCount)) wormId' selections'
 
+-- TODO: repitition!!!
 factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions, WormBananas)
 factsFromMyWorms (ScratchPlayer _ _ worms' _) =
   let healths   = aListFromList $
