@@ -669,7 +669,10 @@ friendly.
    :LOGBOOK:
    - CLOSING NOTE [2019-08-03 Sat 09:00]
    :END:
-** TODO Normalise the points by the number of points you would get if you dug every turn
+** IN_PROGRESS Normalise the points by the number of points you would get if you dug every turn
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 09:02]
+   :END:
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
 ** TODO BUG: Find out why sub trees aren't being found
 ** TODO Make the Search Faster
