@@ -270,7 +270,7 @@ readThatMove coord moveString =
     Just doNothing]
 
 readThatWorm :: String -> WormId
-readThatWorm = WormId . shiftL 2 . read
+readThatWorm = WormId . (flip shiftL) 2 . read
 
 readThisWorm :: String -> WormId
 readThisWorm = WormId . read
@@ -595,7 +595,15 @@ selectMoveMask :: Int
 selectMoveMask = shiftL 15 selectEncodingRange
 
 decodeSelection :: Move -> Int
-decodeSelection (Move x) = shiftR (x .&. selectMoveMask) selectEncodingRange
+decodeSelection (Move x) =
+  shiftR (x .&. selectMoveMask) selectEncodingRange
+
+decodeSelectionForFormatting :: Move -> Int
+decodeSelectionForFormatting move =
+  let shifted = decodeSelection move
+  in if shifted > 3
+     then shiftR shifted 2
+     else shifted
 
 moveMask :: Int
 moveMask = complement selectMoveMask
@@ -606,7 +614,7 @@ removeSelectionFromMove (Move x) =
 
 formatSelect :: Move -> State -> String
 formatSelect move state =
-  let selection = decodeSelection move
+  let selection = decodeSelectionForFormatting move
       move'     = removeSelectionFromMove move
   in "select " ++
      show selection ++
@@ -1586,8 +1594,8 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           when (tree'' == SearchFront) $
             logStdErr $
             "Not in search tree: " ++
-            "\n\tmy move: " ++ prettyPrintMove initialState myMove' ++
-            "\n\topponents move: " ++ prettyPrintMove initialState opponentsMove'
+            "\n\tmy move: " ++ prettyPrintThisMove initialState myMove' ++
+            "\n\topponents move: " ++ prettyPrintThatMove initialState opponentsMove'
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree'
     go gen' count' searchTree =
@@ -1613,24 +1621,36 @@ joinWith toString joinString strings =
   let withExtra = concat $ map ( \ x -> toString x ++ "\n\t") strings
   in take ((length withExtra) - (length joinString)) withExtra
 
-prettyPrintMove :: State -> Move -> String
-prettyPrintMove state move =
-  let coord' = (fromJust $ thisWormsCoord state)
+prettyPrintMove :: (State -> Maybe Coord) -> State -> Move -> String
+prettyPrintMove wormsCoord state move =
+  let coord' = (fromJust $ wormsCoord state)
   in formatMove move coord' state
 
-prettyPrintSuccessRecord :: State -> SuccessRecord -> String
-prettyPrintSuccessRecord state (SuccessRecord (Wins wins') (Played played') move') =
-    prettyPrintMove state move' ++ ": " ++ show wins' ++ "/" ++ show played'
+prettyPrintThisMove :: State -> Move -> String
+prettyPrintThisMove = prettyPrintMove thisWormsCoord
+
+prettyPrintThatMove :: State -> Move -> String
+prettyPrintThatMove = prettyPrintMove thatWormsCoord
+
+prettyPrintSuccessRecord :: (State -> Move -> String) -> State -> SuccessRecord -> String
+prettyPrintSuccessRecord printMove state (SuccessRecord (Wins wins') (Played played') move') =
+    printMove state move' ++ ": " ++ show wins' ++ "/" ++ show played'
+
+prettyPrintThisSuccessRecord :: State -> SuccessRecord -> String
+prettyPrintThisSuccessRecord = prettyPrintSuccessRecord prettyPrintThisMove
+
+prettyPrintThatSuccessRecord :: State -> SuccessRecord -> String
+prettyPrintThatSuccessRecord = prettyPrintSuccessRecord prettyPrintThatMove
 
 prettyPrintSearchTree :: State -> SearchTree -> String
 prettyPrintSearchTree state (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
     "Searched:\n" ++
-    "My moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" opponentsMoves)
+    "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
+    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves)
 prettyPrintSearchTree state (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched:\n" ++
-    "My moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" opponentsMoves)
+    "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
+    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves)
 prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
@@ -1681,9 +1701,8 @@ runRound roundNumber previousState myLastMove stateChannel treeChannel = do
 parseLastCommand :: State -> Maybe String -> Move
 parseLastCommand _             Nothing             = doNothing
 parseLastCommand previousState (Just lastCommand') =
-  -- TODO fromJust?
-  let wormId' = thatPlayersCurrentWormId previousState
-      coord'  = dataSlot $ fromJust $ aListFind ((== wormId') . idSlot) $ wormPositions previousState
+  let -- TODO fromJust?
+      coord'  = fromJust $ thatWormsCoord previousState
   in fromJust $ readThatMove coord' lastCommand'
 
 withoutCommandWord :: String -> Maybe String

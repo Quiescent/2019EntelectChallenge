@@ -34,12 +34,6 @@ isSearched :: SearchTree -> Bool
 isSearched (SearchedLevel myMoves opponentsMoves _) = allGamesPlayed myMoves opponentsMoves
 isSearched _                                        = False
 
--- isUnSearched :: SuccessRecord -> Bool
--- isUnSearched successRecord = played successRecord == Played 0
-
--- nextUnSearched :: [SuccessRecord] -> Maybe SuccessRecord
--- nextUnSearched successRecords = find isUnSearched successRecords
-
 countGames' :: SearchTree -> Int
 countGames' = gamesPlayedForRecords . myMovesFromTree
 
@@ -50,6 +44,11 @@ transitions SearchFront                        = []
 
 spec :: Spec
 spec = do
+  describe "parseLastCommand" $ do
+    it "should be able to parse all of the opponents moves from a state" $
+      let opponentsMoves          = opponentsMovesFrom aState
+          opponentsMovesAsStrings = map (prettyPrintThatMove aState) opponentsMoves
+      in (map (parseLastCommand aState . Just) opponentsMovesAsStrings) `shouldBe` opponentsMoves
   describe "diffMax" $ do
     it "should produce a very high payoff when the score which I got was very high" $ do
       diffMax [Reward (MyReward 100)  (OpponentsReward 1500),
