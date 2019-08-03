@@ -1185,30 +1185,31 @@ knockBackDamage state =
          then cleanUp
          else withWormHealths $ mapWormById wormId' knockBackDamage'
 
+setDataSlot :: a -> AListEntry a -> AListEntry a
+setDataSlot = mapDataSlot . always
+
+moveWorm :: (State -> WormId) -> Coord -> ModifyState
+moveWorm wormsId newCoord' state =
+  let thisWormId = wormsId state
+  in withWormPositions (mapWormById thisWormId (setDataSlot newCoord')) state
+
 moveThisWorm :: Coord -> ModifyState
-moveThisWorm newCoord' state =
-  let thisWormId = thisPlayersCurrentWormId state
-  in withWormPositions (mapWormById thisWormId (moveWorm newCoord')) state
+moveThisWorm = moveWorm thisPlayersCurrentWormId
 
-idSlot :: AListEntry a -> WormId
-idSlot (AListEntry id' _) = id'
-
-dataSlot :: AListEntry a -> a
-dataSlot (AListEntry _ data') = data'
-
-moveWorm :: Coord -> AListEntry Coord -> AListEntry Coord
-moveWorm position' = mapDataSlot (always position')
+-- TODO test
+moveThatWorm :: Coord -> ModifyState
+moveThatWorm = moveWorm thatPlayersCurrentWormId
 
 -- TODO test
 mapWormById :: WormId -> (AListEntry a -> AListEntry a) -> AList a -> AList a
 mapWormById wormId' f (AList xs) =
   AList $ map (\ x -> if idSlot x == wormId' then f x else x) xs
 
--- TODO test
-moveThatWorm :: Coord -> ModifyState
-moveThatWorm newCoord' state =
-  let thatWormId = thatPlayersCurrentWormId state
-  in withWormPositions (mapWormById thatWormId (moveWorm newCoord')) state
+idSlot :: AListEntry a -> WormId
+idSlot (AListEntry id' _) = id'
+
+dataSlot :: AListEntry a -> a
+dataSlot (AListEntry _ data') = data'
 
 targetOfThisMove :: Move -> State -> Maybe Coord
 targetOfThisMove dir state =
