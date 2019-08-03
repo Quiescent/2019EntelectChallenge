@@ -689,8 +689,10 @@ friendly.
    - CLOSING NOTE [2019-08-03 Sat 15:29]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 14:09]
    :END:
-** IN_PROGRESS BUG: Fix the end game winning state when worms die
+** DONE BUG: Fix the end game winning state when worms die
+   CLOSED: [2019-08-03 Sat 15:44]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-03 Sat 15:44]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:31]
    :END:
 ** TODO Make the Search Faster
