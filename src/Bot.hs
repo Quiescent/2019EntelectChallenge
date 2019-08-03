@@ -1551,7 +1551,7 @@ thisWormsCoord state =
   in  coordForWorm thisWormId $ wormPositions state
 
 coordForWorm :: WormId -> WormPositions -> Maybe Coord
-coordForWorm wormId' = fmap dataSlot . aListFind ((== wormId') . idSlot)
+coordForWorm wormId' = fmap dataSlot . findById wormId'
 
 -- Assume that that worm is never at an invalid position.
 --
@@ -2261,7 +2261,7 @@ shouldThisPlayerMakeMoveMove =
 shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> (State -> Maybe [Coord]) -> [Move] -> State -> Move -> Bool
 shouldMakeMoveMove targetOfMove' currentWormId' hitFunction moves state move =
   let wormId' = currentWormId' state
-      coord'  = fromJust $ fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormPositions state
+      coord'  = fromJust $ fmap dataSlot $ findById wormId' $ wormPositions state
   in isValidMoveMove targetOfMove' currentWormId' state move &&
      ((not $ any (isValidDigMove targetOfMove' state) moves) ||
       (any (elem coord') $ hitFunction state))
@@ -2280,6 +2280,7 @@ thoseHitCoords state =
       isMyWorm wormId' &&
       aligns  wormPosition opPosition' &&
       inRange wormPosition opPosition' weaponRange
+
 -- TODO bad repitition!
 theseHitCoords :: State -> Maybe [Coord]
 theseHitCoords state =
