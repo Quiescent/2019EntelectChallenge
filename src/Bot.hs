@@ -1910,7 +1910,7 @@ playRandomly g round' state moves rewards =
       in playRandomly g' (round' + 1) state' moves (reward':rewards)
 
 maxRound :: Int
-maxRound = 31
+maxRound = 4
 
 playerScore :: Player -> Int
 playerScore (Player score' _ _) = score'
@@ -1985,6 +1985,12 @@ opponentsTotalWormHealth state =
 diffMaxScale :: [Int]
 diffMaxScale = [-1, 3, 3, 3, 3, 7, 20, 20, 40, maxBound::Int]
 
+-- Normalisation factor is calculated as the relative worth of each
+-- round summed together.
+normalisationFactor :: Double
+normalisationFactor =
+  sum $ map (1.0 /) $ take maxRound [1..]
+
 data OpponentsPayoff = OpponentsPayoff Int
   deriving (Eq, Show)
 
@@ -2005,7 +2011,8 @@ diffMax :: Rewards -> Payoff
 diffMax rewards =
   -- This function linearly decreases the value of points gained by
   -- making a move.  The rewards are in reverse order here
-  let (myScore', opponentsScore') = (\ (accX', accY') -> (round accX', round accY')) accumulated
+  let (myScore', opponentsScore') = (\ (accX', accY') -> (round $ accX' / normalisationFactor,
+                                                          round $ accY' / normalisationFactor)) accumulated
       accumulated :: (Double, Double)
       accumulated                 = foldl' (\ (accX', accY') (x', y') -> (x' + accX', y' + accY')) (0, 0) $
                                     withDecreasingReward

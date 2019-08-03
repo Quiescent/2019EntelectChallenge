@@ -52,12 +52,18 @@ spec :: Spec
 spec = do
   describe "diffMax" $ do
     it "should produce a very high payoff when the score which I got was very high" $ do
-      diffMax [Reward (MyReward 100)  (OpponentsReward 1500)] `shouldBe` (Payoff (MyPayoff 9) (OpponentsPayoff 9))
+      diffMax [Reward (MyReward 100)  (OpponentsReward 1500),
+               Reward (MyReward 100)  (OpponentsReward 1500),
+               Reward (MyReward 100)  (OpponentsReward 1500),
+               Reward (MyReward 100)  (OpponentsReward 1500)] `shouldBe` (Payoff (MyPayoff 9) (OpponentsPayoff 9))
     it "should decrease with every move down the chain" $
-      diffMax [Reward (MyReward 0) (OpponentsReward 9),
-               Reward (MyReward 0) (OpponentsReward 10),
-               Reward (MyReward 0) (OpponentsReward 10)] `shouldBe`
-      (Payoff (MyPayoff 1) (OpponentsPayoff $ fromJust $ findIndex (>= (10 + 5 + 3)) diffMaxScale))
+      let value' :: Double
+          value' = (7 + 7 / 2 + 7 / 3 + 7 / 4) / normalisationFactor
+      in diffMax [Reward (MyReward 0) (OpponentsReward 7),
+                  Reward (MyReward 0) (OpponentsReward 7),
+                  Reward (MyReward 0) (OpponentsReward 7),
+                  Reward (MyReward 0) (OpponentsReward 7)] `shouldBe`
+         (Payoff (MyPayoff 1) (OpponentsPayoff $ fromJust $ findIndex (>= (round value')) diffMaxScale))
     prop "should never be 10 or 0" $ \ (x, y) ->
       let inRange' = (> 0) .&&. (< maxScore)
       in diffMax [Reward (MyReward $ abs x) (OpponentsReward $ abs y)] `shouldSatisfy`
