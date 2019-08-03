@@ -675,11 +675,14 @@ friendly.
    - CLOSING NOTE [2019-08-03 Sat 09:32]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 09:02]
    :END:
-** IN_PROGRESS BUG: Find the bug where I'm not inserting moves into sub trees!
+** IN_PROGRESS BUG: Find out why sub trees aren't being found
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 14:00]
+   :END:
+** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
    :END:
-** TODO BUG: Find out why sub trees aren't being found
 ** TODO Make the Search Faster
 *** TODO Pass down whether there is a dig move
 *** TODO Improve aList
