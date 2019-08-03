@@ -1693,8 +1693,8 @@ runRound roundNumber previousState stateChannel treeChannel = do
   roundNumber'         <- readRound
   state                <- readGameState roundNumber'
   -- TODO fromJust?
-  let state'            = fromJust state
-  let opponentsLastMove = parseLastCommand previousState $ opponentsLastCommand state'
+  state'               <- evaluate $ fromJust state
+  opponentsLastMove    <- evaluate $ parseLastCommand previousState $ opponentsLastCommand state'
   -- TODO!!!!!  I shouldn't be reading this state in the searcher.
   -- All I care about is the opponents move...
   writeComms stateChannel $ (fromMoves move opponentsLastMove, state')
