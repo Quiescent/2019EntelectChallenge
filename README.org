@@ -687,6 +687,7 @@ friendly.
 *** TODO Implement Text Parser
 *** TODO Use bitwise logic in make moves instead of Maybe
 ** TODO Simulate a game with Banana Bombs in it
+** TODO Penalise selects because they can be wasteful
 ** TODO Test that banana bombing space does not cause a blast
 ** TODO Only throw bananas when they'll be good
 ** TODO Debug the test which should be failing
