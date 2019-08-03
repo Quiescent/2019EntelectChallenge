@@ -1825,33 +1825,38 @@ search :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchRes
 search g round' state SearchFront                moves rewards =
   case gameOver state round' rewards of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult   ->
+    NoResult        ->
       let availableMoves = filteredMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
           reward'        = reward state state'
       in playRandomly g' (round' + 1) state' (move:moves) (reward':rewards)
 search g round' state tree@(SearchedLevel _ _ _) moves rewards =
-  searchSearchedLevel g round' state tree moves rewards
+  case gameOver state round' rewards of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
+    NoResult        -> searchSearchedLevel g round' state tree moves rewards
 search g
        round'
        state
        (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves))
        moves
        rewards =
-  let (myRecord,        g')  = pickOneAtRandom g  myMoves
-      (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
-      myMove                 = successRecordMove myRecord
-      opponentsMove          = successRecordMove opponentsRecord
-      combinedMove           = fromMoves myMove opponentsMove
-      state'                 = makeMove False combinedMove state
-      reward'                = reward state state'
-  in search g''
-            (round' + 1)
-            state'
-            SearchFront
-            (combinedMove:moves)
-            (reward':rewards)
+  case gameOver state round' rewards of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
+    NoResult        ->
+      let (myRecord,        g')  = pickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
+          myMove                 = successRecordMove myRecord
+          opponentsMove          = successRecordMove opponentsRecord
+          combinedMove           = fromMoves myMove opponentsMove
+          state'                 = makeMove False combinedMove state
+          reward'                = reward state state'
+      in search g''
+                (round' + 1)
+                state'
+                SearchFront
+                (combinedMove:moves)
+                (reward':rewards)
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
 findSubTree combinedMove stateTransitions =
@@ -1953,13 +1958,13 @@ gameOver state round' rewards =
                           filter (isOpponentWorm . idSlot) $
                           aListToList $
                           wormHealths state
-  in if round' >= maxRound || myWormCount == 0 && opponentWormCount == 0
-     then if myWormCount == 0
-          then GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
-          else if opponentWormCount == 0
-               then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
+  in if myWormCount == 0
+     then GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
+     else if opponentWormCount == 0
+          then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
+          else if round' >= maxRound
+               then GameOver $ diffMax rewards
                else NoResult
-     else GameOver $ diffMax rewards
 
 myTotalWormHealth :: State -> Int
 myTotalWormHealth state =
