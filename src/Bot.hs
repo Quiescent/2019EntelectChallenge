@@ -1596,8 +1596,9 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           when (tree'' == SearchFront) $
             logStdErr $
             "Not in search tree: " ++
-            "\n\tmy move: " ++ prettyPrintThisMove initialState myMove' ++
-            "\n\topponents move: " ++ prettyPrintThatMove initialState opponentsMove'
+            "\n\tCombined: " ++ show move' ++
+            "\n\tMy move: " ++ prettyPrintThisMove initialState myMove' ++
+            "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree'
     go gen' count' searchTree =
@@ -1645,10 +1646,11 @@ prettyPrintThatSuccessRecord :: State -> SuccessRecord -> String
 prettyPrintThatSuccessRecord = prettyPrintSuccessRecord prettyPrintThatMove
 
 prettyPrintSearchTree :: State -> SearchTree -> String
-prettyPrintSearchTree state (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
+prettyPrintSearchTree state (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions') =
     "Searched:\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves)
+    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves) ++ "\n" ++
+    "Transitions:\n\t" ++ (join' ", " $ map (\ (StateTransition move' _) -> move') transitions')
 prettyPrintSearchTree state (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched:\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
@@ -1657,7 +1659,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> CommsChannel SearchTree -> IO SearchTree
-treeAfterAlottedTime state treeChannel = do
+treeAfterAlottedTime _ treeChannel = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -1667,7 +1669,7 @@ treeAfterAlottedTime state treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
+        then return searchTree -- (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of

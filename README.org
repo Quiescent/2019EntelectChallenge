@@ -675,13 +675,17 @@ friendly.
    - CLOSING NOTE [2019-08-03 Sat 09:32]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 09:02]
    :END:
-** IN_PROGRESS BUG: Find out why sub trees aren't being found
+** DONE BUG: Find out why sub trees aren't being found
+   CLOSED: [2019-08-03 Sat 14:09]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-03 Sat 14:09] \\
+     It wasn't a bug.  The transition wasn't explored because the
+     combinations of transitions were too many for it to searh.
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 14:00]
    :END:
-** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
+** IN_PROGRESS Simulate a game with Banana Bombs in it
    :LOGBOOK:
-   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
+   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 14:09]
    :END:
 ** TODO Make the Search Faster
 *** TODO Pass down whether there is a dig move
@@ -689,7 +693,10 @@ friendly.
 *** TODO Use a bit packed map instead of a HashMap
 *** TODO Implement Text Parser
 *** TODO Use bitwise logic in make moves instead of Maybe
-** TODO Simulate a game with Banana Bombs in it
+** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
+   :END:
 ** TODO Penalise selects because they can be wasteful
 ** TODO Test that banana bombing space does not cause a blast
 ** TODO Only throw bananas when they'll be good
