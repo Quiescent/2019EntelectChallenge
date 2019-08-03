@@ -209,7 +209,7 @@ factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
                   V.toList $
                   V.map ( \ (OpponentWorm { opWormId = wormId', profession = profession' }) ->
                             if profession' == "Agent"
-                            then Just (AListEntry (WormId wormId')
+                            then Just (AListEntry (WormId (shift wormId' 2))
                                                   (Bananas 3))
                             else Nothing)
                   worms'
