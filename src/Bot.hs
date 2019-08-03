@@ -2047,20 +2047,38 @@ computeOpponentsScore = computeScore opponentsTotalWormHealth opponent
 -- TODO simplified score calculation to save time here...
 gameOver :: State -> Int -> Rewards -> GameOver
 gameOver state round' rewards =
-  let myWormCount       = length $
-                          filter (isMyWorm . idSlot) $
-                          aListToList $
-                          wormHealths state
-      opponentWormCount = length $
-                          filter (isOpponentWorm . idSlot) $
-                          aListToList $
-                          wormHealths state
+  let myWormCount            = length $
+                               filter (isMyWorm . idSlot) $
+                               aListToList $
+                               wormHealths state
+      myAverageHealth :: Double
+      myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral wormCount
+      myScore'               = (playerScore $ myPlayer state) + round myAverageHealth
+      opponentWormCount      = length $
+                               filter (isOpponentWorm . idSlot) $
+                               aListToList $
+                               wormHealths state
+      opponentsAverageHealth :: Double
+      opponentsAverageHealth = (fromIntegral $ opponentsTotalWormHealth state) / fromIntegral wormCount
+      opponentsScore'        = (playerScore $ opponent state) + round opponentsAverageHealth
+      myScoreIsHigher        = myScore' > opponentsScore'
   in if myWormCount == 0
-     then GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
+     then if opponentWormCount == 0
+          -- We died on the same round
+          then if myScoreIsHigher
+               -- I won because of points when both players are dead
+               then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
+               -- I lost because of points when both players are dead
+               else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
+          -- I Killed his worms and he didn't kill mine
+          else GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
      else if opponentWormCount == 0
-          then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
+          -- The opponent killed all my worms and I didn't kill his
+          then GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
           else if round' >= maxRound
+               -- Simulation was terminated early.  Decide based on how valuable the moves were
                then GameOver $ diffMax rewards
+               -- Simulation isn't over yet
                else NoResult
 
 myTotalWormHealth :: State -> Int
