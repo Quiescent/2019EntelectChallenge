@@ -804,6 +804,12 @@ makeSelections this that state =
 findById :: WormId -> AList a -> Maybe (AListEntry a)
 findById wormId' = aListFind ((== wormId') . idSlot)
 
+findByData :: Eq a => a -> AList a -> Maybe (AListEntry a)
+findByData x = aListFind ((== x) . dataSlot)
+
+aListFind :: (AListEntry a -> Bool) -> AList a -> Maybe (AListEntry a)
+aListFind p (AList xs) = find p xs
+
 wormExists :: WormId -> State -> Bool
 wormExists wormId' = isJust . findById wormId' . wormPositions
 
@@ -1214,7 +1220,7 @@ dataSlot (AListEntry _ data') = data'
 targetOfMove :: (State -> WormId) -> Move -> State -> Maybe Coord
 targetOfMove wormsId dir state =
   let wormId'   = wormsId state
-      position' = fmap dataSlot $ aListFind ((== wormId') . idSlot) $ wormPositions state
+      position' = fmap dataSlot $ findById wormId' $ wormPositions state
   in position' >>= (flip displaceCoordByMove) dir
 
 targetOfThisMove :: Move -> State -> Maybe Coord
@@ -1411,12 +1417,12 @@ harmWorm shootingWormId'
          coord =
   let wormId'       = fromJust $
                       fmap idSlot $
-                      aListFind ((== coord) . dataSlot) $
+                      findByData coord $
                       wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormHealth'   = fromJust $
                       fmap dataSlot $
-                      aListFind ((== wormId') . idSlot) $
+                      findById wormId' $
                       wormHealths originalState
       wormDied      = (deconstructHealth wormHealth') <= damage'
       awardPoints   = if wormDied then (awardPlayer . awardPlayerForKill) else awardPlayer
@@ -1486,12 +1492,9 @@ firstWormHit gameMap' worms' HitNothing      coord' =
   then HitObstacle
   else isAPositionOfAWorm coord' worms'
 
-aListFind :: (AListEntry a -> Bool) -> AList a -> Maybe (AListEntry a)
-aListFind p (AList xs) = find p xs
-
 isAPositionOfAWorm :: Coord -> WormPositions -> Hit
 isAPositionOfAWorm coord' wormPositions' =
-  case aListFind (\ (AListEntry _ position') -> coord' == position') wormPositions' of
+  case findByData coord' wormPositions' of
     Just (AListEntry _ position') -> HitWorm position'
     Nothing                       -> HitNothing
 
