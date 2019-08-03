@@ -1680,8 +1680,8 @@ searchForAlottedTime :: State -> CommsChannel SearchTree -> IO Move
 searchForAlottedTime state =
   fmap (successRecordMove . chooseBestMove . myMovesFromTree) . (treeAfterAlottedTime state)
 
-runRound :: Int -> State -> Move -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
-runRound roundNumber previousState myLastMove stateChannel treeChannel = do
+runRound :: Int -> State -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
+runRound roundNumber previousState stateChannel treeChannel = do
   move                 <- liftIO $ searchForAlottedTime previousState treeChannel
   liftIO $
     putStrLn $
@@ -1697,8 +1697,8 @@ runRound roundNumber previousState myLastMove stateChannel treeChannel = do
   let opponentsLastMove = parseLastCommand previousState $ opponentsLastCommand state'
   -- TODO!!!!!  I shouldn't be reading this state in the searcher.
   -- All I care about is the opponents move...
-  writeComms stateChannel $ (fromMoves myLastMove opponentsLastMove, state')
-  runRound roundNumber' state' move stateChannel treeChannel
+  writeComms stateChannel $ (fromMoves move opponentsLastMove, state')
+  runRound roundNumber' state' stateChannel treeChannel
 
 parseLastCommand :: State -> Maybe String -> Move
 parseLastCommand _             Nothing             = doNothing
@@ -1718,7 +1718,7 @@ startBot g = do
   initialRound' <- liftIO $ readRound
   initialState  <- liftIO $ fmap fromJust $ readGameState initialRound'
   _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeChannel)
-  liftIO $ runRound initialRound' initialState doNothing stateChannel treeChannel
+  liftIO $ runRound initialRound' initialState stateChannel treeChannel
 
 data Wins = Wins Int
   deriving (Eq)
