@@ -664,7 +664,11 @@ friendly.
    - CLOSING NOTE [2019-08-03 Sat 08:10]
    - State "IN_PROGRESS" from "TODO"       [2019-08-01 Thu 17:19]
    :END:
-** TODO BUG: Check whether the game is over when searching!!!
+** DONE BUG: Check whether the game is over when searching!!!
+   CLOSED: [2019-08-03 Sat 09:00]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-08-03 Sat 09:00]
+   :END:
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
 ** TODO BUG: Find out why sub trees aren't being found
 ** TODO Make the Search Faster
