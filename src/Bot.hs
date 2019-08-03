@@ -267,6 +267,7 @@ readThatMove state coord moveString =
     matchMoveCommand      coord moveString,
     matchDirectionCommand moveString,
     matchDigCommand       coord moveString,
+    matchBananaMove       coord moveString,
     Just doNothing]
 
 readThatWorm :: String -> WormId
@@ -333,6 +334,30 @@ matchDigCommand origCoord original = do
   yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
   let destCoord = toCoord xValue yValue
   return $ digFrom origCoord destCoord
+
+matchBananaMove :: Coord -> String -> Maybe Move
+matchBananaMove origCoord original = do
+  let tokens    = words original
+  firstToken   <- headMaybe tokens
+  guard (firstToken == "banana")
+  coords       <- tailMaybe tokens
+  xValue       <- fmap toInt $ headMaybe coords
+  yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
+  let destCoord = toCoord xValue yValue
+  return $ bananaFrom origCoord destCoord
+
+bananaFrom :: Coord -> Coord -> Move
+bananaFrom from to' =
+  let (x',  y')  = fromCoord from
+      (x'', y'') = fromCoord to'
+      xDiff      = x'' - x'
+      yDiff      = y'' - y'
+  -- TODO: fromJust?
+  in Move $
+     (+ 24) $
+     fromJust $
+     findIndex (\ (deltaX, deltaY) -> deltaX == xDiff && deltaY == yDiff) $
+     zip bananaXDisplacements bananaYDisplacements
 
 data Ternary = NegOne
              | Zero
@@ -813,6 +838,12 @@ withWormBananas :: WithWormFacts Bananas
 withWormBananas f state@(State { wormBananas = wormBananas' }) =
   state { wormBananas = f wormBananas' }
 
+blockTypeAt :: Cell -> Coord -> GameMap -> Bool
+blockTypeAt cell coord' = any (== cell) . lookupCoord coord'
+
+deepSpaceAt ::  Coord -> GameMap -> Bool
+deepSpaceAt = blockTypeAt DEEP_SPACE
+
 makeBananaMoves :: Move -> Move -> ModifyState
 makeBananaMoves this that state =
   let thisBananaMove       = if isABananaMove this then Just this else Nothing
@@ -823,6 +854,7 @@ makeBananaMoves this that state =
         ( \ thisMove -> bananaMoveDestination thisWormHasBananasLeft thisWormsCoord thisMove state)
       thatDestinationBlock = thatBananaMove >>=
         ( \ thatMove -> bananaMoveDestination thatWormHasBananasLeft thatWormsCoord thatMove state)
+      -- TODO: this looks very similar to L:2286
       thisIsValid          = isJust thisDestinationBlock
       thatIsValid          = isJust thatDestinationBlock
       thisTarget           = fromJust thisDestinationBlock
@@ -833,6 +865,7 @@ makeBananaMoves this that state =
                                               awardPointsToThisPlayerForDigging
                                               awardPointsToThisPlayerForDamage
                                               penaliseThisPlayerForDamage
+                                              awardPointsToThisPlayerForMissing
                                               awardPointsToThisPlayerForKillingAnEnemy
                                               state
                                               thisTarget
@@ -843,6 +876,7 @@ makeBananaMoves this that state =
                                               awardPointsToThatPlayerForDigging
                                               awardPointsToThatPlayerForDamage
                                               penaliseThatPlayerForDamage
+                                              awardPointsToThatPlayerForMissing
                                               awardPointsToThatPlayerForKillingAnEnemy
                                               state
                                               thatTarget
@@ -919,44 +953,48 @@ damageTemplate =
     squareAbsFloating :: Int -> Double
     squareAbsFloating x = fromIntegral $ abs x * abs x
 
-bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> State -> Coord -> ModifyState
+bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> State -> Coord -> ModifyState
 bananaBlast wormId'
             awardPointsForDigging'
             awardPointsForDamage'
             penaliseForDamage'
+            awardPointsForMissing'
             rewardKill
             originalState
             targetCoord
             state =
-  let potentialHits    = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
+  let gameMap'          = gameMap originalState
+      targetIsDeepSpace = deepSpaceAt targetCoord gameMap'
+      potentialHits     = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
       -- Compute the things to hit off of the original state
-      wormHits         = filter ((flip containsAnyWorm)     originalState  . snd) potentialHits
-      dirtHits         = filter ((flip dirtAt)     (gameMap originalState) . snd) potentialHits
-      packHits         = filter ((flip medipackAt) (gameMap originalState) . snd) potentialHits
+      wormHits          = filter ((flip containsAnyWorm)     originalState  . snd) potentialHits
+      dirtHits          = filter ((flip dirtAt)     gameMap' . snd) potentialHits
+      packHits          = filter ((flip medipackAt) gameMap' . snd) potentialHits
       -- Effect the current state (could have changed as a result of
       -- the other worm blasting too)
-      withWormsDamaged = foldl' (\ state' (damage', nextWormHit) ->
-                                   harmWorm wormId'
-                                            state
-                                            damage'
-                                            (penaliseForDamage'    damage')
-                                            (awardPointsForDamage' damage')
-                                            rewardKill
-                                            nextWormHit
-                                            state')
-                         state
-                         wormHits
-      withDirtRemoved  = foldl' (\ state' (_, dirtHit) ->
-                                   awardPointsForDigging' $ removeDirtFromMapAt dirtHit state')
-                         withWormsDamaged dirtHits
-  in foldl' (\ state' (_, packHit) -> removeMedipack packHit state')
-                         withDirtRemoved packHits
+      withWormsDamaged  = foldl' (\ state' (damage', nextWormHit) ->
+                                    harmWorm wormId'
+                                             state
+                                             damage'
+                                             (penaliseForDamage'    damage')
+                                             (awardPointsForDamage' damage')
+                                             rewardKill
+                                             nextWormHit
+                                             state')
+                          state
+                          wormHits
+      withDirtRemoved   = foldl' (\ state' (_, dirtHit) ->
+                                    awardPointsForDigging' $ removeDirtFromMapAt dirtHit state')
+                          withWormsDamaged dirtHits
+  in if targetIsDeepSpace then awardPointsForMissing' state
+     else foldl' (\ state' (_, packHit) -> removeMedipack packHit state')
+          withDirtRemoved packHits
 
 dirtAt :: Coord -> GameMap -> Bool
-dirtAt coord' = any (== DIRT) . lookupCoord coord'
+dirtAt = blockTypeAt DIRT
 
 medipackAt :: Coord -> GameMap -> Bool
-medipackAt coord' = any (== MEDIPACK) . lookupCoord coord'
+medipackAt = blockTypeAt MEDIPACK
 
 bananaCentreDamage :: Int
 bananaCentreDamage = 20
@@ -2243,7 +2281,8 @@ theseHitCoords state =
 
 shouldMakeBananaMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 shouldMakeBananaMove destination state move =
-  isJust $ destination move state
+  let destination' = destination move state
+  in isJust destination' && (not $ any ((flip deepSpaceAt) $ gameMap state) destination')
 
 isThatMoveValid :: State -> Move -> Bool
 isThatMoveValid state move

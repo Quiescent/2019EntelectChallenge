@@ -90,6 +90,7 @@ readThisMove state coord moveString =
     matchMoveCommand      coord moveString,
     matchDirectionCommand moveString,
     matchDigCommand       coord moveString,
+    matchBananaMove       coord moveString,
     Just doNothing]
 
 matchThisSelectMove :: State -> String -> Maybe Move
