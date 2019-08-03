@@ -2354,13 +2354,13 @@ isValidDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 isValidDigMove targetOfMove' state move =
   (targetOfDigMove targetOfMove' state move >>= mapAtCoord state) == Just DIRT
 
-theseHits :: State -> Maybe [Move]
-theseHits state =
+hits :: (State -> Maybe Coord) -> State -> Maybe [Move]
+hits wormsCoord state =
   fmap ( \ wormPosition -> map (directionFrom wormPosition . dataSlot) $
          aListToList $
          aListFilter (hits' wormPosition) $
          wormPositions state) $
-  thisWormsCoord state
+  wormsCoord state
   where
     hits' :: Coord -> AListEntry Coord -> Bool
     hits' wormPosition (AListEntry wormId' opPosition') =
@@ -2368,22 +2368,14 @@ theseHits state =
       aligns  wormPosition opPosition' &&
       inRange wormPosition opPosition' weaponRange
 
-weaponRange :: Int
-weaponRange = 4
+theseHits :: State -> Maybe [Move]
+theseHits = hits thisWormsCoord
 
 thoseHits :: State -> Maybe [Move]
-thoseHits state =
-  fmap ( \ wormPosition -> map (directionFrom wormPosition . dataSlot) $
-         aListToList $
-         aListFilter (hits' wormPosition) $
-         wormPositions state) $
-  thatWormsCoord state
-  where
-    hits' :: Coord -> AListEntry Coord -> Bool
-    hits' wormPosition (AListEntry wormId' opPosition') =
-      isMyWorm wormId' &&
-      aligns  wormPosition opPosition' &&
-      inRange wormPosition opPosition' weaponRange
+thoseHits = hits thatWormsCoord
+
+weaponRange :: Int
+weaponRange = 4
 
 directionFrom :: Coord -> Coord -> Move
 directionFrom xy' xy'' =
