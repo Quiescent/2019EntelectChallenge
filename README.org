@@ -689,6 +689,7 @@ friendly.
    - CLOSING NOTE [2019-08-03 Sat 15:29]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 14:09]
    :END:
+** TODO BUG: Fix the end game winning state when worms die
 ** TODO Make the Search Faster
 *** TODO Pass down whether there is a dig move
 *** TODO Improve aList
