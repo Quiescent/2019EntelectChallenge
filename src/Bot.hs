@@ -1582,7 +1582,12 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           -- between, when the runner hasn't yet told me to move because it's
           -- 900ms from that point that I communicate back.
           let tree'' = makeMoveInTree move' searchTree
-          when (tree'' == SearchFront) $ logStdErr $ "Move combination " ++ show (toMoves move') ++ " not in search tree!"
+          let (myMove', opponentsMove') = (toMoves move')
+          when (tree'' == SearchFront) $
+            logStdErr $
+            "Not in search tree: " ++
+            "\n\tmy move: " ++ prettyPrintMove initialState myMove' ++
+            "\n\topponents move: " ++ prettyPrintMove initialState opponentsMove'
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree'
     go gen' count' searchTree =
@@ -1603,8 +1608,34 @@ maxSearchTime = 900000000
 pollInterval :: Int
 pollInterval = 5000
 
-treeAfterAlottedTime :: CommsChannel SearchTree -> IO SearchTree
-treeAfterAlottedTime treeChannel = do
+joinWith :: (a -> String) -> String -> [a] -> String
+joinWith toString joinString strings =
+  let withExtra = concat $ map ( \ x -> toString x ++ "\n\t") strings
+  in take ((length withExtra) - (length joinString)) withExtra
+
+prettyPrintMove :: State -> Move -> String
+prettyPrintMove state move =
+  let coord' = (fromJust $ thisWormsCoord state)
+  in formatMove move coord' state
+
+prettyPrintSuccessRecord :: State -> SuccessRecord -> String
+prettyPrintSuccessRecord state (SuccessRecord (Wins wins') (Played played') move') =
+    prettyPrintMove state move' ++ ": " ++ show wins' ++ "/" ++ show played'
+
+prettyPrintSearchTree :: State -> SearchTree -> String
+prettyPrintSearchTree state (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
+    "Searched:\n" ++
+    "My moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
+    "Opponents moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" opponentsMoves)
+prettyPrintSearchTree state (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
+    "UnSearched:\n" ++
+    "My moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
+    "Opponents moves:\n\t" ++ (joinWith (prettyPrintSuccessRecord state) "\n\t" opponentsMoves)
+prettyPrintSearchTree _     SearchFront =
+    "SearchFront"
+
+treeAfterAlottedTime :: State -> CommsChannel SearchTree -> IO SearchTree
+treeAfterAlottedTime state treeChannel = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -1614,7 +1645,7 @@ treeAfterAlottedTime treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then (logStdErr $ show searchTree) >> return searchTree
+        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -1623,13 +1654,13 @@ treeAfterAlottedTime treeChannel = do
           Control.Concurrent.threadDelay pollInterval
           go searchTree' startingTime
 
-searchForAlottedTime :: CommsChannel SearchTree -> IO Move
-searchForAlottedTime =
-  fmap (successRecordMove . chooseBestMove . myMovesFromTree) . treeAfterAlottedTime
+searchForAlottedTime :: State -> CommsChannel SearchTree -> IO Move
+searchForAlottedTime state =
+  fmap (successRecordMove . chooseBestMove . myMovesFromTree) . (treeAfterAlottedTime state)
 
 runRound :: Int -> State -> Move -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
 runRound roundNumber previousState myLastMove stateChannel treeChannel = do
-  move                 <- liftIO $ searchForAlottedTime treeChannel
+  move                 <- liftIO $ searchForAlottedTime previousState treeChannel
   liftIO $
     putStrLn $
     -- Assume: that the worm is on a valid square to begin with

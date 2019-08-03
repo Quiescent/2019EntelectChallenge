@@ -36,7 +36,7 @@ runSearchForEachRound (directory:directories) = do
   mapM_ (\ directory' -> do
             liftIO $ logStdErr $ "Profiling directory: " ++ directory'
             state' <- fmap fromJust $ loadStateForRound directory'
-            _      <- liftIO $ searchForAlottedTime treeChannel
+            _      <- liftIO $ searchForAlottedTime state treeChannel
             -- Simulate the worst case scenario.  Both players do
             -- nothing and we don't have it in the tree.
             liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), state'))
