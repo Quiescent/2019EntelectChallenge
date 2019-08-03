@@ -695,7 +695,10 @@ friendly.
    - CLOSING NOTE [2019-08-03 Sat 15:44]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:31]
    :END:
-** TODO Make the Search Faster
+** IN_PROGRESS Make the Search Faster
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
+   :END:
 *** TODO Pass down whether there is a dig move
 *** TODO Improve aList
 *** TODO Use a bit packed map instead of a HashMap
