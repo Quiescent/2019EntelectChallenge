@@ -47,8 +47,8 @@ simulateAndCheckRounds dirs@(directory:_) = do
       let thisWormsCoord'    = thisWormsCoord currentState
       let thatWormsCoord'    = thatWormsCoord currentState
       -- Assume: that there are valid initial worm positions
-      thisMove              <- loadThisPlayersCommand (fromJust thisWormsCoord') path
-      thatMove              <- loadThatPlayersCommand (fromJust thatWormsCoord') path
+      thisMove              <- loadThisPlayersCommand currentState (fromJust thisWormsCoord') path
+      thatMove              <- loadThatPlayersCommand currentState (fromJust thatWormsCoord') path
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
@@ -70,38 +70,38 @@ diff this that = do
   liftIO $ Process.callCommand "diff diff_1 diff_2 || echo '' > diff_output"
   liftIO $ IO.readFile "diff_output"
 
-loadCommandFromSubfolder :: (Coord -> String -> Maybe Move) -> ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
-loadCommandFromSubfolder readMove choosePath coord directoryPath = do
+loadCommandFromSubfolder :: (State -> Coord -> String -> Maybe Move) -> ([FilePath] -> Maybe FilePath) -> State -> Coord -> FilePath -> RIO App (Maybe Move)
+loadCommandFromSubfolder readMove choosePath state coord directoryPath = do
   playerPaths     <- listDirectory directoryPath
   let aPlayersPath = choosePath playerPaths
   if isJust aPlayersPath
   then liftIO $
-       fmap (withoutCommandWord >=> readMove coord) $
+       fmap (withoutCommandWord >=> readMove state coord) $
        IO.readFile (directoryPath ++ "/" ++ (fromJust aPlayersPath) ++ "/PlayerCommand.txt")
   else return Nothing
 
-loadThisCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
+loadThisCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> State -> Coord -> FilePath -> RIO App (Maybe Move)
 loadThisCommandFromSubfolder = loadCommandFromSubfolder readThisMove
 
-readThisMove :: Coord -> String -> Maybe Move
-readThisMove coord moveString =
+readThisMove :: State -> Coord -> String -> Maybe Move
+readThisMove state coord moveString =
   msum [
-    matchThisSelectMove   coord moveString,
+    matchThisSelectMove   state moveString,
     matchMoveCommand      coord moveString,
     matchDirectionCommand moveString,
     matchDigCommand       coord moveString,
     Just doNothing]
 
-matchThisSelectMove :: Coord -> String -> Maybe Move
+matchThisSelectMove :: State -> String -> Maybe Move
 matchThisSelectMove = matchSelectMove readThisWorm
 
-loadThatCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> Coord -> FilePath -> RIO App (Maybe Move)
+loadThatCommandFromSubfolder :: ([FilePath] -> Maybe FilePath) -> State -> Coord -> FilePath -> RIO App (Maybe Move)
 loadThatCommandFromSubfolder = loadCommandFromSubfolder readThatMove
 
-loadThisPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
+loadThisPlayersCommand :: State -> Coord -> FilePath -> RIO App (Maybe Move)
 loadThisPlayersCommand = loadThisCommandFromSubfolder (headMaybe . L.sort)
 
-loadThatPlayersCommand :: Coord -> FilePath -> RIO App (Maybe Move)
+loadThatPlayersCommand :: State -> Coord -> FilePath -> RIO App (Maybe Move)
 loadThatPlayersCommand = loadThatCommandFromSubfolder ((tailMaybe >=> headMaybe) . L.sort)
 
 tickState :: Move -> Move -> State -> State

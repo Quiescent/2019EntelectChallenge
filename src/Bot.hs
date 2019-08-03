@@ -260,10 +260,10 @@ toOpponent opponentsLastCommand' score' currentWormId' worms' remainingWormSelec
            worms'
            remainingWormSelections'
 
-readThatMove :: Coord -> String -> Maybe Move
-readThatMove coord moveString =
+readThatMove :: State -> Coord -> String -> Maybe Move
+readThatMove state coord moveString =
   msum [
-    matchThatSelectMove   coord moveString,
+    matchThatSelectMove   state moveString,
     matchMoveCommand      coord moveString,
     matchDirectionCommand moveString,
     matchDigCommand       coord moveString,
@@ -275,11 +275,11 @@ readThatWorm = WormId . (flip shiftL) 2 . read
 readThisWorm :: String -> WormId
 readThisWorm = WormId . read
 
-matchThatSelectMove :: Coord -> String -> Maybe Move
+matchThatSelectMove :: State -> String -> Maybe Move
 matchThatSelectMove = matchSelectMove readThatWorm
 
-matchSelectMove :: (String -> WormId) -> Coord -> String -> Maybe Move
-matchSelectMove readWorm coord' move' = do
+matchSelectMove :: (String -> WormId) -> State -> String -> Maybe Move
+matchSelectMove readWorm state move' = do
   guard (any (== ';') move')
   let moves        = span (/= ';') move'
   let selectTokens = words (fst moves)
@@ -287,7 +287,9 @@ matchSelectMove readWorm coord' move' = do
   guard (firstToken == "select")
   let selectedWorm = readWorm $ last selectTokens
   otherTokens     <- tailMaybe $ snd moves
-  otherMove       <- readThatMove coord' otherTokens
+  -- TODO fromJust?
+  let coord''      = fromJust $ coordForWorm selectedWorm $ wormPositions state
+  otherMove       <- readThatMove state coord'' otherTokens
   return $ withSelection selectedWorm otherMove
 
 matchDirectionCommand :: String -> Maybe Move
@@ -1703,7 +1705,7 @@ parseLastCommand _             Nothing             = doNothing
 parseLastCommand previousState (Just lastCommand') =
   let -- TODO fromJust?
       coord'  = fromJust $ thatWormsCoord previousState
-  in fromJust $ readThatMove coord' lastCommand'
+  in fromJust $ readThatMove previousState coord' lastCommand'
 
 withoutCommandWord :: String -> Maybe String
 withoutCommandWord = tailMaybe . dropWhile (/= ' ')
