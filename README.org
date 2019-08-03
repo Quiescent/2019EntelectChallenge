@@ -669,7 +669,7 @@ friendly.
    :LOGBOOK:
    - CLOSING NOTE [2019-08-03 Sat 09:00]
    :END:
-** DONE Normalise the points by the number of points you would get if you dug every turn
+** DONE Normalise the points by the relative contribution of each round summed
    CLOSED: [2019-08-03 Sat 09:32]
    :LOGBOOK:
    - CLOSING NOTE [2019-08-03 Sat 09:32]
