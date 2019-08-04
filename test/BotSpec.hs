@@ -15,9 +15,6 @@ import Data.Maybe
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
-getIntFromCoord :: Coord -> Int
-getIntFromCoord (Coord xy) = xy
-
 countMyWins :: SearchTree -> Int
 countMyWins = sum . map ( (\ (Wins x) -> x) . wins) . myMovesFromTree
 
@@ -238,7 +235,7 @@ spec = do
           y'     = 2 + (abs j `mod` (mapDim - 4))
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
-      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . map getIntFromCoord . map snd . snd)
+      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . map snd . snd)
   describe "coordDeltasInRange" $ do
     prop "should always produce a coord within range of 5 (banana bomb range)" $  \ (i, j) ->
       let x'     = abs i `mod` mapDim
@@ -253,7 +250,7 @@ spec = do
           y'     = 5 + (abs j `mod` (mapDim - 10))
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') coordDeltasInRange
-      in (coord', coords) `shouldSatisfy` ((== 81) . S.size . S.fromList . map getIntFromCoord . snd)
+      in (coord', coords) `shouldSatisfy` ((== 81) . S.size . S.fromList . snd)
   describe "displaceCoordByMove" $ do
     it "N  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 8)  `shouldBe` Just (toCoord 1 0)
     it "NE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 9)  `shouldBe` Just (toCoord 2 0)
@@ -337,7 +334,9 @@ spec = do
     prop "creates a map of with worm 4 and 8 at distinct coordinates given two random distinct coordinates" $ \ (i, j) ->
       let thisCoord = generateInBoundsCoordinate i j
           thatCoord = generateInBoundsCoordinate (i + 20) (j + 20) -- Ensure distinct coordinates
-      in (countWorms ((\ (WormId x) -> x == 4 || x == 8) . idSlot) $
+      in (length $
+          filter (\ (WormId x, _) -> x == 4 || x == 8) $
+          aListToList $
           wormHealths $
           takeBothWorms (WormId 4) (WormId 8) thisCoord thatCoord aStateWithoutWorms) `shouldBe` 2
   describe "generateInBoundsCoordinate" $ do
@@ -424,27 +423,27 @@ spec = do
       oneWormHarmed 20 emptyWormHealths `shouldBe` False
     context "given a collection of one unharmed worm" $
       it "should produce false" $
-      oneWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 20)]) `shouldBe` False
+      oneWormHarmed 20 (aListFromList [(1, 20)]) `shouldBe` False
     context "given a collection with two harmed worms" $
       it "should produce false" $
-      oneWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 10), AListEntry (WormId 2) (WormHealth 10)]) `shouldBe`
+      oneWormHarmed 20 (aListFromList [(1, 10), (2, 10)]) `shouldBe`
       False
     context "given a collection with one worm harmed" $
       it "should produce true" $
-      oneWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 10), AListEntry (WormId 2) (WormHealth 20)])
+      oneWormHarmed 20 (aListFromList [(1, 10), (2, 20)])
   describe "noWormHarmed" $ do
     context "given an empty collection" $
       it "should produce true" $
       noWormHarmed 20 emptyWormHealths
     context "given a collection of one unharmed worm" $
       it "should produce true" $
-      noWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 20)])
+      noWormHarmed 20 (aListFromList [(1, 20)])
     context "given a collection of more than one unharmed worms" $
       it "should produce true" $
-      noWormHarmed 20 (AList [AListEntry (WormId 1) (WormHealth 20), AListEntry (WormId 2) (WormHealth 20)])
+      noWormHarmed 20 (aListFromList [(1, 20), (2, 20)])
     context "given a collection with a harmed worm" $
       it "should produce false" $
-      noWormHarmed 20 (AList [AListEntry (WormId 1) startingHealth, AListEntry (WormId 2) (WormHealth 20)]) `shouldBe`
+      noWormHarmed 20 (aListFromList [(1, startingHealth), (2, 20)]) `shouldBe`
       False
   describe "makeMove" $ do
     -- TODO make this a property test...?
@@ -479,11 +478,13 @@ spec = do
     it "moving to the same square should swap the worms if true and damage both worms" $
       makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (setOpponentsLastMove aStateWithImpendingCollision moveWest         $
-       selectNextWormsDefault                $
-       awardPointsToThatPlayerForMovingToAir $
-       awardPointsToThisPlayerForMovingToAir $
-       moveThisWorm (toCoord 17 31)          $
-       moveThatWorm (toCoord 15 31)          $
+       selectNextWormsDefault                         $
+       withWormPositions (removeWormById (WormId 1))  $
+       withWormPositions (removeWormById (WormId 4))  $
+       awardPointsToThatPlayerForMovingToAir          $
+       awardPointsToThisPlayerForMovingToAir          $
+       moveThisWorm (toCoord 17 31)                   $
+       moveThatWorm (toCoord 15 31)                   $
        harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 17 31) $
        harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 15 31)
        aStateWithImpendingCollision)
@@ -698,23 +699,14 @@ spec = do
        mapGameMap aStateWithBothWormsNearTheSameDirtBlock (removeDirtAt (toCoord 11 2)))
     -- Bananas!
     let aStateWithOposingWormsNextToEachother =
-          withWormPositions (always $ AList [
-                                AListEntry (WormId 1)  (toCoord 15 31),
-                                AListEntry (WormId 2)  (toCoord 1 31),
-                                AListEntry (WormId 3)  (toCoord 1 30),
-                                AListEntry (WormId 4)  (toCoord 16 31),
-                                AListEntry (WormId 8)  (toCoord 19 1),
-                                AListEntry (WormId 12) (toCoord 20 1)]) $
-          withWormHealths (always $ AList [
-                              AListEntry (WormId 1)  (WormHealth 20),
-                              AListEntry (WormId 2)  (WormHealth 20),
-                              AListEntry (WormId 3)  (WormHealth 20),
-                              AListEntry (WormId 4)  (WormHealth 20),
-                              AListEntry (WormId 8)  (WormHealth 20),
-                              AListEntry (WormId 12) (WormHealth 20)]) $
-          withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 3),
-                              AListEntry (WormId 4)  (Bananas 3)])
+          withWormPositions (always (AList (toCoord 15 31)
+                                           (toCoord 1 31)
+                                           (toCoord 1 30)
+                                           (toCoord 16 31)
+                                           (toCoord 19 1)
+                                           (toCoord 20 1))) $
+          withWormHealths (always (AList 20 20 20 20 20 20)) $
+          withWormBananas (always $ aListFromList [(1, 3), (4, 3)])
           aState
     context "when I'm throwing the bomb" $ do
       it "should cause maximum damage to the worm which it lands on" $
@@ -723,9 +715,7 @@ spec = do
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 2),
-                              AListEntry (WormId 4)  (Bananas 3)]) $
+         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
          awardPointsToThisPlayerForKillingAnEnemy $
          awardPointsToThisPlayerForDamage 20      $
@@ -748,9 +738,7 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                             AListEntry (WormId 1)  (Bananas 2),
-                             AListEntry (WormId 4)  (Bananas 3)]) $
+         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage      13 $
          awardPointsToThisPlayerForDamage 13 $
@@ -772,9 +760,7 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 18 31) $
          harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 2),
-                              AListEntry (WormId 4)  (Bananas 3)]) $
+         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage     13 $
          awardPointsToThisPlayerForDamage 7 $
@@ -795,9 +781,7 @@ spec = do
         (selectNextWormsDefault $
          harmWorm (WormId 1) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 2),
-                              AListEntry (WormId 4)  (Bananas 3)]) $
+         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage    13 $
          awardPointsToThisPlayerForDigging $
@@ -812,16 +796,12 @@ spec = do
                       addAirAt (toCoord 15 30) .
                       addAirAt (toCoord 17 30))))
       let aStateWithBananasLeftForWorms1And4 =
-            withWormBananas (always $ AList [
-                                AListEntry (WormId 1)  (Bananas 3),
-                                AListEntry (WormId 4)  (Bananas 3)]) aState
+            withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) aState
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aStateWithBananasLeftForWorms1And4 `shouldBe`
         (selectNextWormsDefault $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 2),
-                              AListEntry (WormId 4)  (Bananas 3)]) $
+         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the 13 squares
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
@@ -855,17 +835,13 @@ spec = do
                              addAirAt (toCoord 16 25) .
                              addAirAt (toCoord 14 27) .
                              addAirAt (toCoord 16 27))))
-      let aStateWithAMedipackInTheDirt = withWormBananas (always $ AList [
-                                                             AListEntry (WormId 1)  (Bananas 3),
-                                                             AListEntry (WormId 4)  (Bananas 3)]) $
+      let aStateWithAMedipackInTheDirt = withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) $
                                          mapGameMap aState (addMedipackAt (toCoord 16 26))
       it "should destroy medipacks" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aStateWithAMedipackInTheDirt `shouldBe`
         (selectNextWormsDefault $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 2),
-                              AListEntry (WormId 4)  (Bananas 3)]) $
+         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the 12 squares (one is a medipack)
          awardPointsToThisPlayerForDigging $
          awardPointsToThisPlayerForDigging $
@@ -909,7 +885,7 @@ spec = do
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ aListFromList [(4, 2)]) $
          -- Points for the four squares
          awardPointsToThatPlayerForKillingAnEnemy $
          awardPointsToThatPlayerForDamage 20      $
@@ -933,9 +909,7 @@ spec = do
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 14 31) $
          harmWorm (WormId 4) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 3),
-                              AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
          penaliseThatPlayerForDamage      13 $
          awardPointsToThatPlayerForDamage 13 $
@@ -958,9 +932,7 @@ spec = do
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre  7 id id id (toCoord 13 31) $
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 3),
-                              AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
          penaliseThatPlayerForDamage     13 $
          awardPointsToThatPlayerForDamage 7 $
@@ -982,9 +954,7 @@ spec = do
          selectNextWormsDefault $
          harmWorm (WormId 4) stateWithEnemyThreeSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 3),
-                              AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
          penaliseThatPlayerForDamage    13 $
          awardPointsToThatPlayerForDigging $
@@ -999,17 +969,13 @@ spec = do
                       addAirAt (toCoord 14 30) .
                       addAirAt (toCoord 16 30))))
       let aStateWithBananasLeftForWorms1And4 =
-            withWormBananas (always $ AList [
-                                AListEntry (WormId 1)  (Bananas 3),
-                                AListEntry (WormId 4)  (Bananas 3)]) aState
+            withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) aState
       it "should destroy all 13 squares of dirt in range fo the epicentre" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithBananasLeftForWorms1And4 `shouldBe`
         (setOpponentsLastMove aStateWithBananasLeftForWorms1And4 bananaIntoDirtFromHim $
          selectNextWormsDefault $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 3),
-                              AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the 13 squares
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
@@ -1043,18 +1009,14 @@ spec = do
                              addAirAt (toCoord 17 5) .
                              addAirAt (toCoord 15 7) .
                              addAirAt (toCoord 17 7))))
-      let aStateWithAMedipackInTheDirt = withWormBananas (always $ AList [
-                                                             AListEntry (WormId 1)  (Bananas 3),
-                                                             AListEntry (WormId 4)  (Bananas 3)]) $
+      let aStateWithAMedipackInTheDirt = withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) $
                                          mapGameMap aState (addMedipackAt (toCoord 16 7))
       it "should destroy medipacks" $
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aStateWithAMedipackInTheDirt `shouldBe`
         (setOpponentsLastMove aStateWithAMedipackInTheDirt bananaIntoDirtFromHim $
          selectNextWormsDefault $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 3),
-                              AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the 12 squares (one is a medipack)
          awardPointsToThatPlayerForDigging $
          awardPointsToThatPlayerForDigging $
@@ -1093,23 +1055,15 @@ spec = do
          selectNextWormsDefault aState)
     context "when both the opponent and I throw the bomb" $ do
       let aStateWithLowHealthOposingWormsNextToEachother =
-            withWormPositions (always $ AList [
-                                  AListEntry (WormId 1)  (toCoord 15 31),
-                                  AListEntry (WormId 2)  (toCoord 1 31),
-                                  AListEntry (WormId 3)  (toCoord 1 30),
-                                  AListEntry (WormId 4)  (toCoord 16 31),
-                                  AListEntry (WormId 8)  (toCoord 19 1),
-                                  AListEntry (WormId 12) (toCoord 20 1)]) $
-            withWormHealths (always $ AList [
-                                AListEntry (WormId 1)  (WormHealth 10),
-                                AListEntry (WormId 2)  (WormHealth 10),
-                                AListEntry (WormId 3)  (WormHealth 10),
-                                AListEntry (WormId 4)  (WormHealth 10),
-                                AListEntry (WormId 8)  (WormHealth 10),
-                                AListEntry (WormId 12) (WormHealth 10)]) $
-            withWormBananas (always $ AList [
-                                AListEntry (WormId 1)  (Bananas 3),
-                                AListEntry (WormId 4)  (Bananas 3)])
+            withWormPositions (always $ AList
+                                  (toCoord 15 31)
+                                  (toCoord 1 31)
+                                  (toCoord 1 30)
+                                  (toCoord 16 31)
+                                  (toCoord 19 1)
+                                  (toCoord 20 1)) $
+            withWormHealths (always $ AList 10 10 10 10 10 10) $
+            withWormBananas (always $ aListFromList [(1, 3), (4, 3)])
             aState
       it "should kill the worms which are next to each other" $
         makeMove False
@@ -1120,7 +1074,7 @@ spec = do
          harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList []) $
+         withWormBananas (always $ AList (-1) (-1) (-1) (-1) (-1) (-1)) $
          -- Points for the four squares
          awardPointsToThisPlayerForKillingAnEnemy $
          awardPointsToThisPlayerForDamage 20      $
@@ -1150,9 +1104,7 @@ spec = do
         (setOpponentsLastMove aStateWithOposingWormsNextToEachother bananaIntoDirtFromMe $
          selectNextWormsDefault $         
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 2),
-                              AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ aListFromList [(1, 2), (4, 2)]) $
          -- Points for the 13 squares
          -- For him
          awardPointsToThatPlayerForDigging $
@@ -1510,7 +1462,7 @@ spec = do
                                                     inBoundsWithNoPadding)
                            (generateCoordDisplacer  nonDiagonalDelta addDelta ignoreDelta)
                            (generateShotSwitch      shootEast shootWest)
-                           (takeBothWormsWithHealth (WormHealth 100) (WormId 1) (WormId 4))
+                           (takeBothWormsWithHealth 100 (WormId 1) (WormId 4))
                            (i, j, k)
        in makeMove True (fromMoves shot doNothing) state `shouldBe`
           (selectNextWorms (WormId 1) (WormId 4) $
@@ -1522,7 +1474,7 @@ spec = do
                                                     inBoundsWithNoPadding)
                            (generateCoordDisplacer  nonDiagonalDelta addDelta ignoreDelta)
                            (generateShotSwitch      shootWest shootEast)
-                           (takeBothWormsWithHealth (WormHealth 100) (WormId 1) (WormId 4))
+                           (takeBothWormsWithHealth 100 (WormId 1) (WormId 4))
                            (i, j, k)
        in makeMove True (fromMoves doNothing shot) state `shouldBe`
           (setOpponentsLastMove state shot $
@@ -1531,20 +1483,14 @@ spec = do
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
     context "when selecting a worm" $ do
       let aStateWithWormsOn20Health =
-            withWormHealths (always $ AList [
-                                AListEntry (WormId 1)  (WormHealth 20),
-                                AListEntry (WormId 2)  (WormHealth 20),
-                                AListEntry (WormId 3)  (WormHealth 20),
-                                AListEntry (WormId 4)  (WormHealth 20),
-                                AListEntry (WormId 8)  (WormHealth 20),
-                                AListEntry (WormId 12) (WormHealth 20)]) $
-            withWormPositions (always $ AList [
-                                  AListEntry (WormId 1)  (toCoord 1  1),
-                                  AListEntry (WormId 2)  (toCoord 1  5),
-                                  AListEntry (WormId 3)  (toCoord 1  10),
-                                  AListEntry (WormId 4)  (toCoord 31 1),
-                                  AListEntry (WormId 8)  (toCoord 31 5),
-                                  AListEntry (WormId 12) (toCoord 31 10)]) aStateWithOnlyAirOnMap
+            withWormHealths (always $ AList 20 20 20 20 20 20) $
+            withWormPositions (always $ AList
+                                  (toCoord 1  1)
+                                  (toCoord 1  5)
+                                  (toCoord 1  10)
+                                  (toCoord 31 1)
+                                  (toCoord 31 5)
+                                  (toCoord 31 10)) aStateWithOnlyAirOnMap
       prop "the worm after the selected worm should be next" $ \ (i, j, k, l) ->
         let thisSelection  = oneIfZero $ abs i `mod` 4
             thisMove       = withSelection (WormId thisSelection) $
@@ -1575,15 +1521,11 @@ spec = do
            \ (_, state) ->
              (not $
               isAHit $
-              isAPositionOfAWorm (dataSlot $
-                                  fromJust $
-                                  aListFind ((== thisSelection) . idSlot) positions)
+              isAPositionOfAWorm (fromJust $ findDataById thisSelection positions)
                                  (wormPositions state)) &&
              (not $
               isAHit $
-              isAPositionOfAWorm (dataSlot $
-                                  fromJust $
-                                  aListFind ((== thatSelection) . idSlot) positions)
+              isAPositionOfAWorm (fromJust $ findDataById thatSelection positions)
                                  (wormPositions state))
       prop "should decrement the number of selections left" $ \ (i, j, k, l) ->
         let thisSelection  = WormId $ oneIfZero $ abs i `mod` 4
@@ -1616,14 +1558,12 @@ spec = do
              makeMove False (fromMoves thisMove thatMove) aStateWithNoSelections) `shouldSatisfy`
            \ (_, state) ->
              (isAHit $
-              isAPositionOfAWorm (dataSlot $
-                                  fromJust $
-                                  aListFind ((== thisSelection) . idSlot) positions)
+              isAPositionOfAWorm (fromJust $
+                                  findDataById thisSelection positions)
                                  (wormPositions state)) &&
              (isAHit $
-              isAPositionOfAWorm (dataSlot $
-                                  fromJust $
-                                  aListFind ((== thatSelection) . idSlot) positions)
+              isAPositionOfAWorm (fromJust $
+                                  findDataById thatSelection positions)
                                  (wormPositions state))
 
 withSelections :: (Selections -> Selections) -> ModifyPlayer
@@ -1703,9 +1643,9 @@ hasScore score' (Player score'' _ _) = score' == score''
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)
 
-emptyWormHealths = AList []
+emptyWormHealths = AList (-1) (-1) (-1) (-1) (-1) (-1)
 
-emptyWormPositions = AList []
+emptyWormPositions = AList (-1) (-1) (-1) (-1) (-1) (-1)
 
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (.&&.) p1 p2 x =
@@ -1713,23 +1653,15 @@ emptyWormPositions = AList []
 
 oneWormHarmed :: Int -> WormHealths -> Bool
 oneWormHarmed originalHealth =
-  (== 1) . countWorms ((/= originalHealth) . deconstructHealth . dataSlot)
-
--- TODO test
-allWormFacts :: (WormId -> a -> Bool) -> AList a -> Bool
-allWormFacts f = aListFoldl' ( \ acc (AListEntry wormId' x) -> acc && f wormId' x) True
+  (== 1) . length . filter (/= originalHealth) . map snd . aListToList
 
 noWormHarmed :: Int -> WormHealths -> Bool
 noWormHarmed originalHealth =
-  allWormFacts (\ _ health -> (== originalHealth) $ deconstructHealth health)
+  all (== originalHealth) . map snd . aListToList
 
 containsWormOfId :: WormId -> State -> Bool
-containsWormOfId wormId' state =
-  (isJust $ aListFind ((== wormId') . idSlot) $ wormHealths state) &&
-  (isJust $ aListFind ((== wormId') . idSlot) $ wormHealths state)
-
-countWorms :: (AListEntry a -> Bool) -> AList a -> Int
-countWorms f = aListFoldl' ( \ acc worm -> acc + if f worm then 1 else 0) 0
+containsWormOfId wormId' =
+  any ((== wormId') . fst) . aListToList . wormHealths
 
 putDirtOrSpaceBetweenWorms :: Int -> ModifyMap
 putDirtOrSpaceBetweenWorms x =
@@ -1770,33 +1702,38 @@ generateShotSwitch a b x =
 generateInBoundsCoordinate :: Int -> Int -> Coord
 generateInBoundsCoordinate = generateCoordGenerator inBoundsWithNoPadding inBoundsWithNoPadding
 
-startingHealth = WormHealth 8
+startingHealth = 8
+
+unWormIds :: [(WormId, Int)] -> [(Int, Int)]
+unWormIds = map (\ ((WormId x), y) -> (x, y))
+
+aListConcat :: AList -> AList -> AList
+aListConcat xs ys =
+  aListFromList $ (unWormIds $ aListToList xs) ++ (unWormIds $ aListToList ys)
 
 takeBothWormsWithHealth :: WormHealth ->  WormId -> WormId -> AddToWormFacts
-takeBothWormsWithHealth startingHealth' thisWormId thatWormId thisCoord thatCoord state =
+takeBothWormsWithHealth startingHealth' (WormId thisWormId) (WormId thatWormId) thisCoord thatCoord state =
   state { wormHealths   =
             aListConcat (
-              AList [
-                  AListEntry thisWormId startingHealth',
-                  AListEntry thatWormId startingHealth'])
+              aListFromList [(thisWormId, startingHealth'),
+                             (thatWormId, startingHealth')])
               (wormHealths   state),
           wormPositions =
             aListConcat (
-              AList [
-                  AListEntry thisWormId thisCoord,
-                  AListEntry thatWormId thatCoord])
+              aListFromList [(thisWormId, thisCoord),
+                             (thatWormId, thatCoord)])
               (wormPositions state) }
 
 
 takeBothWorms :: WormId -> WormId -> AddToWormFacts
-takeBothWorms thisWormId thatWormId thisCoord thatCoord state =
+takeBothWorms (WormId thisWormId) (WormId thatWormId) thisCoord thatCoord state =
   state { wormHealths   =
             aListConcat someWormHealths (wormHealths state),
           wormPositions =
             aListConcat (
-              withAllOtherWormsOffMap $ AList [
-                  AListEntry thisWormId thisCoord,
-                  AListEntry thatWormId thatCoord])
+              withAllOtherWormsOffMap $ aListFromList [
+                  (thisWormId, thisCoord),
+                  (thatWormId, thatCoord)])
               (wormPositions state) }
 
 allWormIds :: [WormId]
@@ -1810,30 +1747,29 @@ allWormIds = [
 
 withAllOtherWormsOffMap :: WormPositions -> WormPositions
 withAllOtherWormsOffMap positions =
-  let existingIds  = aListFoldl' (flip ((:) . idSlot)) [] positions
-      remainingIds = filter (not . (flip elem) existingIds) allWormIds
+  let existingIds  = aListMyIds positions ++ aListOpponentIds positions
+      remainingIds = map (\ (WormId wormId') -> wormId') $ filter (not . (flip elem) existingIds) allWormIds
   in aListConcat positions
-                 (AList $
-                  map (uncurry AListEntry) $
+                 (aListFromList $
                   -- Put the remaining worms all off the map
                   zip remainingIds (repeat (toCoord (4 * mapDim) (4 * mapDim))))
 
 -- TODO: test
 takeBothWormsAndPutAnotherInbetween :: WormId -> WormId -> WormId -> AddToWormFacts
-takeBothWormsAndPutAnotherInbetween inbetweenId thisWormId thatWormId thisCoord thatCoord state =
+takeBothWormsAndPutAnotherInbetween (WormId inbetweenId) (WormId thisWormId) (WormId thatWormId) thisCoord thatCoord state =
   state { wormHealths   =
             aListConcat (
-              AList [
-                  AListEntry thisWormId startingHealth,
-                  AListEntry inbetweenId startingHealth,
-                  AListEntry thatWormId startingHealth])
+              aListFromList [
+                  (thisWormId,  startingHealth),
+                  (inbetweenId, startingHealth),
+                  (thatWormId,  startingHealth)])
               (wormHealths   state),
           wormPositions =
             aListConcat (
-              AList [
-                  AListEntry thisWormId thisCoord,
-                  AListEntry inbetweenId (coordBetween thisCoord thatCoord),
-                  AListEntry thatWormId thatCoord])
+              aListFromList [
+                  (thisWormId,  thisCoord),
+                  (inbetweenId, (coordBetween thisCoord thatCoord)),
+                  (thatWormId,  thatCoord)])
               (wormPositions state) }
 
 addDelta :: Int -> Int -> Int
@@ -1965,7 +1901,7 @@ moveEast = Move 10
 
 moveWest = Move 14
 
-emptyBananaBombs = AList []
+emptyBananaBombs = AList (-1) (-1) (-1) (-1) (-1) (-1)
 
 aStateWithoutWorms = State justNothing
                            emptyWormHealths
@@ -1984,16 +1920,16 @@ aState = State justNothing
                aGameMap
 
 thisPlayersHealths = [
-  AListEntry (WormId 1)  startingHealth,
-  AListEntry (WormId 2)  startingHealth,
-  AListEntry (WormId 3)  (WormHealth 20)]
+  (1, startingHealth),
+  (2, startingHealth),
+  (3, 20)]
 
 thatPlayersHealths = [
-  AListEntry (WormId 4)  startingHealth,
-  AListEntry (WormId 8)  startingHealth,
-  AListEntry (WormId 12) (WormHealth 20)]
+  (4,  startingHealth),
+  (8,  startingHealth),
+  (12, 20)]
 
-someWormHealths = AList $ thisPlayersHealths ++ thatPlayersHealths
+someWormHealths = aListFromList $ thisPlayersHealths ++ thatPlayersHealths
 
 selectNextWorms :: WormId -> WormId -> ModifyState
 selectNextWorms thisWormId thatWormId state@(State { myPlayer = myPlayer', opponent = opponent' }) =
@@ -2003,13 +1939,12 @@ selectNextWorms thisWormId thatWormId state@(State { myPlayer = myPlayer', oppon
 selectNextWormsDefault :: ModifyState
 selectNextWormsDefault = selectNextWorms (WormId 2) (WormId 8)
 
-someWormPositions = AList [
-  AListEntry (WormId 1)  (toCoord 15 31),
-  AListEntry (WormId 2)  (toCoord 1 31),
-  AListEntry (WormId 3)  (toCoord 1 30),
-  AListEntry (WormId 4)  (toCoord 16 1),
-  AListEntry (WormId 8)  (toCoord 19 1),
-  AListEntry (WormId 12) (toCoord 20 1)]
+someWormPositions = AList (toCoord 15 31)
+                          (toCoord 1 31)
+                          (toCoord 1 30)
+                          (toCoord 16 1)
+                          (toCoord 19 1)
+                          (toCoord 20 1)
 
 aStateWithOpponentBeneathDirt =
   moveThatWorm (toCoord 14 31) aState
@@ -2167,80 +2102,80 @@ aStateWithImpendingCollision = aState {
 
 anOpponent = Player 300 (WormId 4) startingSelections
 
-wormPositionsWithImpendingCollision = AList [
-  AListEntry (WormId 1) (toCoord 15 31),
-  AListEntry (WormId 2) (toCoord 0 0),
-  AListEntry (WormId 4) (toCoord 17 31),
-  AListEntry (WormId 8) (toCoord 1 1)]
+wormPositionsWithImpendingCollision = aListFromList [
+  (1, (toCoord 15 31)),
+  (2, (toCoord 0 0)),
+  (4, (toCoord 17 31)),
+  (8, (toCoord 1 1))]
 
-wormHealthsForOneAndFive = AList [
-  AListEntry (WormId 1) startingHealth,
-  AListEntry (WormId 2) startingHealth,
-  AListEntry (WormId 4) startingHealth,
-  AListEntry (WormId 8) startingHealth ]
+wormHealthsForOneAndFive = aListFromList [
+  (1, startingHealth),
+  (2, startingHealth),
+  (4, startingHealth),
+  (8, startingHealth) ]
 
-wormPositionsWithHisNextToMine = AList [
-  AListEntry (WormId 1) (toCoord 15 31),
-  AListEntry (WormId 2)  (toCoord 1 31),
-  AListEntry (WormId 3)  (toCoord 1 30),
-  AListEntry (WormId 4) (toCoord 16 31),
-  AListEntry (WormId 8)  (toCoord 19 1),
-  AListEntry (WormId 12) (toCoord 20 1)]
+wormPositionsWithHisNextToMine = AList
+  (toCoord 15 31)
+  (toCoord 1 31)
+  (toCoord 1 30)
+  (toCoord 16 31)
+  (toCoord 19 1)
+  (toCoord 20 1)
 
-wormPositionsWithHisNextToHis = AList [
-  AListEntry (WormId 4) (toCoord 15 31),
-  AListEntry (WormId 8) (toCoord 16 31)]
+wormPositionsWithHisNextToHis = aListFromList [
+  (4, (toCoord 15 31)),
+  (8, (toCoord 16 31))]
 
-wormPositionsWithOpponentNextToMedipack = AList [
-  AListEntry (WormId 4) (toCoord 31 30),
-  AListEntry (WormId 8)  (toCoord 19 1),
-  AListEntry (WormId 12) (toCoord 20 1)]
+wormPositionsWithOpponentNextToMedipack = aListFromList [
+  (4,  (toCoord 31 30)),
+  (8,  (toCoord 19 1)),
+  (12, (toCoord 20 1))]
 
-wormPositionsWithOpponentOnTheMedipack = AList [
-  AListEntry (WormId 4) (toCoord 31 31),
-  AListEntry (WormId 8)  (toCoord 19 1),
-  AListEntry (WormId 12) (toCoord 20 1)]
+wormPositionsWithOpponentOnTheMedipack = aListFromList [
+  (4, (toCoord 31 31)),
+  (8,  (toCoord 19 1)),
+  (12, (toCoord 20 1))]
 
-wormHealthsWithOpponentHavingReceivedTheMedipack = AList [
-  AListEntry (WormId 1)  startingHealth,
-  AListEntry (WormId 2)  startingHealth,
-  AListEntry (WormId 3)  (WormHealth 20),
-  AListEntry (WormId 4)  (WormHealth 18),
-  AListEntry (WormId 8)  startingHealth,
-  AListEntry (WormId 12) (WormHealth 20)]
+wormHealthsWithOpponentHavingReceivedTheMedipack = AList
+  startingHealth
+  startingHealth
+  20
+  18
+  startingHealth
+  20
 
-wormPositionsWithOpponentAtTop = AList [
-  AListEntry (WormId 1)  (toCoord 15 31),
-  AListEntry (WormId 2)  (toCoord 1 31),
-  AListEntry (WormId 3)  (toCoord 1 30),
-  AListEntry (WormId 4)  (toCoord 15 0),
-  AListEntry (WormId 8)  (toCoord 19 1),
-  AListEntry (WormId 12) (toCoord 20 1)]
+wormPositionsWithOpponentAtTop = AList
+  (toCoord 15 31)
+  (toCoord 1 31)
+  (toCoord 1 30)
+  (toCoord 15 0)
+  (toCoord 19 1)
+  (toCoord 20 1)
 
-wormPositionsWithMyWormsNextToEachother = AList [
-  AListEntry (WormId 1) (toCoord 15 31),
-  AListEntry (WormId 2) (toCoord 16 31)]
+wormPositionsWithMyWormsNextToEachother = aListFromList [
+  (1, (toCoord 15 31)),
+  (2, (toCoord 16 31))]
 
-wormPositionsWithMyWormNextToMedipack = AList [
-  AListEntry (WormId 1) (toCoord 30 31),
-  AListEntry (WormId 2)  (toCoord 1 31),
-  AListEntry (WormId 3)  (toCoord 1 30)]
+wormPositionsWithMyWormNextToMedipack = aListFromList [
+  (1, (toCoord 30 31)),
+  (2, (toCoord 1 31)),
+  (3, (toCoord 1 30))]
 
-wormPositionsWithMyWormOnTheMedipack = AList [
-  AListEntry (WormId 1) (toCoord 31 31),
-  AListEntry (WormId 2)  (toCoord 1 31),
-  AListEntry (WormId 3)  (toCoord 1 30)]
+wormPositionsWithMyWormOnTheMedipack = aListFromList [
+  (1, (toCoord 31 31)),
+  (2, (toCoord 1 31)),
+  (3, (toCoord 1 30))]
 
-wormHealthsWithMyWormHavingReceivedTheMedipack = AList [
-  AListEntry (WormId 1)  (WormHealth 18),
-  AListEntry (WormId 2)  startingHealth,
-  AListEntry (WormId 3)  (WormHealth 20),
-  AListEntry (WormId 4)  startingHealth,
-  AListEntry (WormId 8)  startingHealth,
-  AListEntry (WormId 12) (WormHealth 20)]
+wormHealthsWithMyWormHavingReceivedTheMedipack = AList
+  18
+  startingHealth
+  20
+  startingHealth
+  startingHealth
+  20
 
-wormPositionsWithMyWormAtTop = AList [
-  AListEntry (WormId 1) (toCoord 15 0)]
+wormPositionsWithMyWormAtTop = aListFromList [
+  (1, (toCoord 15 0))]
 
 startingSelections = (Selections 3)
 
