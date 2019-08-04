@@ -748,9 +748,7 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 2),
-                              AListEntry (WormId 4)  (Bananas 3)]) $
+         withWormBananas (always $ AList [AListEntry (WormId 1)  (Bananas 2)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage      13 $
          awardPointsToThisPlayerForDamage 13 $
@@ -909,9 +907,7 @@ spec = do
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [
-                              AListEntry (WormId 1)  (Bananas 3),
-                              AListEntry (WormId 4)  (Bananas 2)]) $
+         withWormBananas (always $ AList [AListEntry (WormId 4)  (Bananas 2)]) $
          -- Points for the four squares
          awardPointsToThatPlayerForKillingAnEnemy $
          awardPointsToThatPlayerForDamage 20      $
@@ -1094,6 +1090,52 @@ spec = do
         (setOpponentsLastMove aState bananaIntoDirtFromHim $
          selectNextWormsDefault aState)
     context "when both the opponent and I throw the bomb" $ do
+      let aStateWithLowHealthOposingWormsNextToEachother =
+            withWormPositions (always $ AList [
+                                  AListEntry (WormId 1)  (toCoord 15 31),
+                                  AListEntry (WormId 2)  (toCoord 1 31),
+                                  AListEntry (WormId 3)  (toCoord 1 30),
+                                  AListEntry (WormId 4)  (toCoord 16 31),
+                                  AListEntry (WormId 8)  (toCoord 19 1),
+                                  AListEntry (WormId 12) (toCoord 20 1)]) $
+            withWormHealths (always $ AList [
+                                AListEntry (WormId 1)  (WormHealth 10),
+                                AListEntry (WormId 2)  (WormHealth 10),
+                                AListEntry (WormId 3)  (WormHealth 10),
+                                AListEntry (WormId 4)  (WormHealth 10),
+                                AListEntry (WormId 8)  (WormHealth 10),
+                                AListEntry (WormId 12) (WormHealth 10)]) $
+            withWormBananas (always $ AList [
+                                AListEntry (WormId 1)  (Bananas 3),
+                                AListEntry (WormId 4)  (Bananas 3)])
+            aState
+      it "should kill the worms which are next to each other" $
+        makeMove False
+                 (fromMoves bananaOneToRight bananaOneToLeft)
+                 aStateWithLowHealthOposingWormsNextToEachother `shouldBe`
+        (selectNextWormsDefault $
+         harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
+         harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ AList []) $
+         -- Points for the four squares
+         awardPointsToThisPlayerForKillingAnEnemy $
+         awardPointsToThisPlayerForDamage 20      $
+         penaliseThisPlayerForDamage 13           $
+         awardPointsToThatPlayerForKillingAnEnemy $
+         awardPointsToThatPlayerForDamage 20      $
+         penaliseThatPlayerForDamage 13           $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         mapGameMap aStateWithLowHealthOposingWormsNextToEachother
+                    ((-- Up
+                      addAirAt (toCoord 16 30) .
+                      addAirAt (toCoord 16 29) .
+                      -- Remaining
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 17 30))))
       it "should give us both points for the squares which we both hit" $
         makeMove False (fromMoves bananaIntoDirtFromMe bananaIntoDirtFromMe) aStateWithOposingWormsNextToEachother `shouldBe`
         (setOpponentsLastMove aStateWithOposingWormsNextToEachother bananaIntoDirtFromMe $
