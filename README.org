@@ -695,6 +695,7 @@ friendly.
    - CLOSING NOTE [2019-08-03 Sat 15:44]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:31]
    :END:
+** TODO BUG: When both worms blow themselves up then the engine blows up
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
