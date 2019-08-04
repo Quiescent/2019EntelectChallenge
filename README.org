@@ -707,6 +707,8 @@ friendly.
 *** TODO Use a bit packed map instead of a HashMap
 *** TODO Implement Text Parser
 *** TODO Use bitwise logic in make moves instead of Maybe
+*** TODO Use the compiler!
+https://wiki.haskell.org/Performance/GHC
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
