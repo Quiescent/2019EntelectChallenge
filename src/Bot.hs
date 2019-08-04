@@ -1223,11 +1223,16 @@ knockBackDamage state =
                          findDataById wormId' $
                          wormHealths state
           wormDied     = knockBackDamageAmount >= deconstructHealth wormsHealth'
-          cleanUp      = withWormHealths (removeWormById wormId') .
-                         withWormPositions (removeWormById wormId')
+          cleanUp      = cleanUpDeadWorm wormId'
       in if wormDied
          then cleanUp
          else withWormHealths $ mapWormById wormId' knockBackDamage'
+
+cleanUpDeadWorm :: WormId -> ModifyState
+cleanUpDeadWorm wormId' =
+  withWormHealths   (removeWormById wormId') .
+  withWormPositions (removeWormById wormId') .
+  withWormBananas   (removeWormById wormId')
 
 moveWorm :: (State -> WormId) -> Coord -> ModifyState
 moveWorm wormsId newCoord' state =
@@ -1444,8 +1449,7 @@ harmWorm shootingWormId'
       dishOutPoints = if samePlayer
                       then penalisePlayer
                       else awardPoints
-      cleanUp       = withWormHealths (removeWormById wormId') .
-                      withWormPositions (removeWormById wormId')
+      cleanUp       = cleanUpDeadWorm wormId'
       harm          = withWormHealths (harmWormById damage' wormId')
       go            = dishOutPoints . if wormDied then cleanUp else harm
   in go

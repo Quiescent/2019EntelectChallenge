@@ -748,7 +748,9 @@ spec = do
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 17 31) $
          harmWorm (WormId 1) stateWithEnemyOneSquareFromEpicentre 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList [AListEntry (WormId 1)  (Bananas 2)]) $
+         withWormBananas (always $ AList [
+                             AListEntry (WormId 1)  (Bananas 2),
+                             AListEntry (WormId 4)  (Bananas 3)]) $
          -- Points for the four squares
          penaliseThisPlayerForDamage      13 $
          awardPointsToThisPlayerForDamage 13 $
@@ -1113,7 +1115,8 @@ spec = do
         makeMove False
                  (fromMoves bananaOneToRight bananaOneToLeft)
                  aStateWithLowHealthOposingWormsNextToEachother `shouldBe`
-        (selectNextWormsDefault $
+        (setOpponentsLastMove aStateWithOposingWormsNextToEachother bananaOneToLeft $
+         selectNextWormsDefault $
          harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
@@ -1122,19 +1125,25 @@ spec = do
          awardPointsToThisPlayerForKillingAnEnemy $
          awardPointsToThisPlayerForDamage 20      $
          penaliseThisPlayerForDamage 13           $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
          awardPointsToThatPlayerForKillingAnEnemy $
          awardPointsToThatPlayerForDamage 20      $
          penaliseThatPlayerForDamage 13           $
-         awardPointsToThisPlayerForDigging        $
-         awardPointsToThisPlayerForDigging        $
-         awardPointsToThisPlayerForDigging        $
-         awardPointsToThisPlayerForDigging        $
+         awardPointsToThatPlayerForDigging        $
+         awardPointsToThatPlayerForDigging        $
+         awardPointsToThatPlayerForDigging        $
+         awardPointsToThatPlayerForDigging        $
          mapGameMap aStateWithLowHealthOposingWormsNextToEachother
                     ((-- Up
-                      addAirAt (toCoord 16 30) .
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 15 29) .
                       addAirAt (toCoord 16 29) .
                       -- Remaining
-                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 14 30) .
+                      addAirAt (toCoord 16 30) .
                       addAirAt (toCoord 17 30))))
       it "should give us both points for the squares which we both hit" $
         makeMove False (fromMoves bananaIntoDirtFromMe bananaIntoDirtFromMe) aStateWithOposingWormsNextToEachother `shouldBe`
