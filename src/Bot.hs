@@ -887,6 +887,7 @@ blockTypeAt cell coord' = any (== cell) . lookupCoord coord'
 deepSpaceAt ::  Coord -> GameMap -> Bool
 deepSpaceAt = blockTypeAt DEEP_SPACE
 
+-- TODO: Repitition!!!
 makeBananaMoves :: Move -> Move -> ModifyState
 makeBananaMoves this that state =
   let thisBananaMove       = if isABananaMove this then Just this else Nothing
