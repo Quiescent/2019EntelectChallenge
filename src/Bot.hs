@@ -1032,14 +1032,14 @@ bananaBlast wormId'
       targetIsDeepSpace = deepSpaceAt targetCoord gameMap'
       potentialHits     = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
       -- Compute the things to hit off of the original state
-      wormHits          = filter ((flip containsAnyWorm) originalState  . snd) potentialHits
-      dirtHits          = filter ((flip dirtAt)     gameMap' . snd) potentialHits
-      packHits          = filter ((flip medipackAt) gameMap' . snd) potentialHits
+      wormHits          = filter ((flip containsAnyWorm) originalState . snd) potentialHits
+      dirtHits          = filter ((flip dirtAt)          gameMap'      . snd) potentialHits
+      packHits          = filter ((flip medipackAt)      gameMap'      . snd) potentialHits
       -- Effect the current state (could have changed as a result of
       -- the other worm blasting too)
       withWormsDamaged  = foldl' (\ state' (damage', nextWormHit) ->
                                     harmWorm wormId'
-                                             state
+                                             originalState
                                              damage'
                                              (penaliseForDamage'    damage')
                                              (awardPointsForDamage' damage')
