@@ -14,7 +14,7 @@ stack install --profile --local-bin-path bin
 echo "======================================================================"
 echo "==========================Start of Profiling=========================="
 echo "======================================================================"
-./bin/Profile-exe "matches/round-2/2019.07.21.22.42.46" +RTS -p -N2
+./bin/Profile-exe "matches/round-2/2019.07.21.22.42.46" +RTS -p -N2 -xc
 
 CURRENT_COMMIT=$(git log --oneline | head -1 | cut -d' ' -f1)
 CURRENT_MACHINE=$(uname)
