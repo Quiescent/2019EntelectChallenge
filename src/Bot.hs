@@ -61,6 +61,8 @@ type WormPositions = AList Coord
 
 type WormBananas = AList Bananas
 
+type ModifyFacts a = AList a -> AList a
+
 data Bananas = Bananas Int
   deriving (Eq, Show)
 
@@ -95,8 +97,17 @@ idSlot (AListEntry id' _) = id'
 findById :: WormId -> AList a -> Maybe (AListEntry a)
 findById wormId' = aListFind ((== wormId') . idSlot)
 
+findDataById :: WormId -> AList a -> Maybe a
+findDataById wormId' = fmap dataSlot . findById wormId'
+
 findByData :: Eq a => a -> AList a -> Maybe (AListEntry a)
 findByData x = aListFind ((== x) . dataSlot)
+
+findDataByData :: Eq a => a -> AList a -> Maybe a
+findDataByData x = fmap dataSlot . findByData x
+
+findIdByData :: Eq a => a -> AList a -> Maybe WormId
+findIdByData x = fmap idSlot . findByData x
 
 aListFind :: (AListEntry a -> Bool) -> AList a -> Maybe (AListEntry a)
 aListFind p (AList xs) = find p xs
@@ -111,12 +122,8 @@ aListIds :: AList a -> [WormId]
 aListIds (AList xs) = map idSlot xs
 
 -- TODO test
-allWormFacts :: (AListEntry a -> Bool) -> AList a -> Bool
-allWormFacts f = aListFoldl' ( \ acc worm -> acc && f worm) True
-
--- TODO test
-anyWormFacts :: (AListEntry a -> Bool) -> AList a -> Bool
-anyWormFacts f = aListFoldl' ( \ acc worm -> acc || f worm) False
+anyWormFacts :: (WormId -> a -> Bool) -> AList a -> Bool
+anyWormFacts f = aListFoldl' ( \ acc (AListEntry wormId' x) -> acc || f wormId' x) False
 
 -- TODO test
 aListFoldl' :: (b -> AListEntry a -> b) -> b -> AList a -> b
@@ -136,6 +143,18 @@ aListToList = map (\ (AListEntry wormId' x) -> (wormId', x)) . aListFoldl' (flip
 
 aListLength :: AList a -> Int
 aListLength (AList xs) = length xs
+
+setDataSlot :: a -> AListEntry a -> AListEntry a
+setDataSlot = mapDataSlot . always
+
+-- TODO test
+mapWormById :: WormId -> (AListEntry a -> AListEntry a) -> AList a -> AList a
+mapWormById wormId' f (AList xs) =
+  AList $ map (\ x -> if idSlot x == wormId' then f x else x) xs
+
+-- TODO Test
+removeWormById :: WormId -> AList a -> AList a
+removeWormById wormId' = aListFilterById (/= wormId')
 
 -- No references to AList or dataSlot or idSlot beyond this point...
 
@@ -842,6 +861,8 @@ makeSelections this that state =
                            else id
   in selectThis $ selectThat state
 
+-- It's fine to use `findById' here because we don't care whether it's
+-- an AListEntry or w/e.
 wormExists :: WormId -> State -> Bool
 wormExists wormId' = isJust . findById wormId' . wormPositions
 
@@ -861,7 +882,7 @@ thatWormHasBananasLeft = wormHasBananasLeft thatPlayersCurrentWormId
 wormHasBananasLeft :: (State -> WormId) -> State -> Bool
 wormHasBananasLeft wormsId state =
   let wormId' = wormsId state
-  in any (hasBananas . dataSlot) $ findById wormId' $ wormBananas state
+  in any hasBananas $ findDataById wormId' $ wormBananas state
 
 decrementBananas :: Bananas -> Bananas
 decrementBananas (Bananas x) = Bananas $ x - 1
@@ -970,7 +991,7 @@ blastCoordDeltasInRange =
             2]
 
 containsAnyWorm :: Coord -> State -> Bool
-containsAnyWorm coord' = anyWormFacts ((== coord') . dataSlot) . wormPositions
+containsAnyWorm coord' = anyWormFacts (\ _ x -> x == coord') . wormPositions
 
 bananaBlastRadius :: Int
 bananaBlastRadius = 2
@@ -1171,10 +1192,9 @@ mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
 mapSquareAt (Coord coord) f (GameMap xs) =
   GameMap $ M.adjust f coord xs
 
--- Start with AList refactor from here...
 containsAnyWormExcept :: State -> WormId -> Coord -> Bool
 containsAnyWormExcept State { wormPositions = wormPositions' } wormId' coord' =
-  anyWormFacts (\ (AListEntry wormId'' coord'') -> coord' == coord'' && wormId' /= wormId'') wormPositions'
+  anyWormFacts (\ wormId'' coord'' -> coord' == coord'' && wormId' /= wormId'') wormPositions'
 
 isAMoveMove :: Move -> Bool
 isAMoveMove (Move x) = x >= 8 && x < 16
@@ -1200,8 +1220,7 @@ knockBackDamage state =
     knockBackDamageToOne wormsId =
       let wormId'      = wormsId state
           wormsHealth' = fromJust $
-                         fmap dataSlot $
-                         findById wormId' $
+                         findDataById wormId' $
                          wormHealths state
           wormDied     = knockBackDamageAmount >= deconstructHealth wormsHealth'
           cleanUp      = withWormHealths (removeWormById wormId') .
@@ -1209,9 +1228,6 @@ knockBackDamage state =
       in if wormDied
          then cleanUp
          else withWormHealths $ mapWormById wormId' knockBackDamage'
-
-setDataSlot :: a -> AListEntry a -> AListEntry a
-setDataSlot = mapDataSlot . always
 
 moveWorm :: (State -> WormId) -> Coord -> ModifyState
 moveWorm wormsId newCoord' state =
@@ -1225,15 +1241,10 @@ moveThisWorm = moveWorm thisPlayersCurrentWormId
 moveThatWorm :: Coord -> ModifyState
 moveThatWorm = moveWorm thatPlayersCurrentWormId
 
--- TODO test
-mapWormById :: WormId -> (AListEntry a -> AListEntry a) -> AList a -> AList a
-mapWormById wormId' f (AList xs) =
-  AList $ map (\ x -> if idSlot x == wormId' then f x else x) xs
-
 targetOfMove :: (State -> WormId) -> Move -> State -> Maybe Coord
 targetOfMove wormsId dir state =
   let wormId'   = wormsId state
-      position' = fmap dataSlot $ findById wormId' $ wormPositions state
+      position' = findDataById wormId' $ wormPositions state
   in position' >>= (flip displaceCoordByMove) dir
 
 targetOfThisMove :: Move -> State -> Maybe Coord
@@ -1412,10 +1423,6 @@ harmWormWithRocket wormId'
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
 harmWormById damage' wormId' = mapWormById wormId' (mapDataSlot (mapWormHealth (+ (-damage'))))
 
--- TODO Test
-removeWormById :: WormId -> AList a -> AList a
-removeWormById wormId' = aListFilterById (/= wormId')
-
 -- Assume: that the given coord maps to a worm
 harmWorm :: WormId -> State -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 harmWorm shootingWormId'
@@ -1426,13 +1433,11 @@ harmWorm shootingWormId'
          awardPlayerForKill
          coord =
   let wormId'       = fromJust $
-                      fmap idSlot $
-                      findByData coord $
+                      findIdByData coord $
                       wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormHealth'   = fromJust $
-                      fmap dataSlot $
-                      findById wormId' $
+                      findDataById wormId' $
                       wormHealths originalState
       wormDied      = (deconstructHealth wormHealth') <= damage'
       awardPoints   = if wormDied then (awardPlayer . awardPlayerForKill) else awardPlayer
@@ -1463,8 +1468,6 @@ type ModifyState = State -> State
 type ModifyPlayer = Player -> Player
 
 type GetPlayer = State -> Player
-
-type ModifyFacts a = AList a -> AList a
 
 type WithWormFacts a = ModifyFacts a -> ModifyState
 
@@ -1504,9 +1507,9 @@ firstWormHit gameMap' worms' HitNothing      coord' =
 
 isAPositionOfAWorm :: Coord -> WormPositions -> Hit
 isAPositionOfAWorm coord' wormPositions' =
-  case findByData coord' wormPositions' of
-    Just (AListEntry _ position') -> HitWorm position'
-    Nothing                       -> HitNothing
+  case findDataByData coord' wormPositions' of
+    Just position' -> HitWorm position'
+    Nothing        -> HitNothing
 
 obstacleAt :: Coord -> GameMap -> Bool
 obstacleAt coord' =
@@ -1561,7 +1564,7 @@ thisWormsCoord state =
   in  coordForWorm thisWormId $ wormPositions state
 
 coordForWorm :: WormId -> WormPositions -> Maybe Coord
-coordForWorm wormId' = fmap dataSlot . findById wormId'
+coordForWorm = findDataById
 
 -- Assume that that worm is never at an invalid position.
 --
@@ -2258,7 +2261,7 @@ shouldThisPlayerMakeMoveMove =
 shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> (State -> Maybe [Coord]) -> [Move] -> State -> Move -> Bool
 shouldMakeMoveMove targetOfMove' currentWormId' hitFunction moves state move =
   let wormId' = currentWormId' state
-      coord'  = fromJust $ fmap dataSlot $ findById wormId' $ wormPositions state
+      coord'  = fromJust $ findDataById wormId' $ wormPositions state
   in isValidMoveMove targetOfMove' currentWormId' state move &&
      ((not $ any (isValidDigMove targetOfMove' state) moves) ||
       (any (elem coord') $ hitFunction state))

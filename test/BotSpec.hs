@@ -1664,9 +1664,13 @@ oneWormHarmed :: Int -> WormHealths -> Bool
 oneWormHarmed originalHealth =
   (== 1) . countWorms ((/= originalHealth) . deconstructHealth . dataSlot)
 
+-- TODO test
+allWormFacts :: (WormId -> a -> Bool) -> AList a -> Bool
+allWormFacts f = aListFoldl' ( \ acc (AListEntry wormId' x) -> acc && f wormId' x) True
+
 noWormHarmed :: Int -> WormHealths -> Bool
 noWormHarmed originalHealth =
-  allWormFacts ((== originalHealth) . deconstructHealth . dataSlot)
+  allWormFacts (\ _ health -> (== originalHealth) $ deconstructHealth health)
 
 containsWormOfId :: WormId -> State -> Bool
 containsWormOfId wormId' state =
