@@ -84,26 +84,26 @@ instance Show AList where
 data WormId = WormId Int
   deriving (Eq, Show, Ord)
 
-findById :: WormId -> AList -> Maybe Int
-findById (WormId 1)  (AList (-1)    _    _     _    _     _) = Nothing
-findById (WormId 1)  (AList  x      _    _     _    _     _) = Just x
-findById (WormId 2)  (AList  _   (-1)    _     _    _     _) = Nothing
-findById (WormId 2)  (AList  _      x    _     _    _     _) = Just x
-findById (WormId 3)  (AList  _      _ (-1)     _    _     _) = Nothing
-findById (WormId 3)  (AList  _      _    x     _    _     _) = Just x
-findById (WormId 4)  (AList  _      _    _  (-1)    _     _) = Nothing
-findById (WormId 4)  (AList  _      _    _     x    _     _) = Just x
-findById (WormId 8)  (AList  _      _    _     _ (-1)     _) = Nothing
-findById (WormId 8)  (AList  _      _    _     _    x     _) = Just x
-findById (WormId 12) (AList  _      _    _     _    _  (-1)) = Nothing
-findById (WormId 12) (AList  _      _    _     _    _     x) = Just x
-findById wormId'     _                                       = error $ "findById: " ++ show wormId'
+aListFindById :: WormId -> AList -> Maybe Int
+aListFindById (WormId 1)  (AList (-1)    _    _     _    _     _) = Nothing
+aListFindById (WormId 1)  (AList  x      _    _     _    _     _) = Just x
+aListFindById (WormId 2)  (AList  _   (-1)    _     _    _     _) = Nothing
+aListFindById (WormId 2)  (AList  _      x    _     _    _     _) = Just x
+aListFindById (WormId 3)  (AList  _      _ (-1)     _    _     _) = Nothing
+aListFindById (WormId 3)  (AList  _      _    x     _    _     _) = Just x
+aListFindById (WormId 4)  (AList  _      _    _  (-1)    _     _) = Nothing
+aListFindById (WormId 4)  (AList  _      _    _     x    _     _) = Just x
+aListFindById (WormId 8)  (AList  _      _    _     _ (-1)     _) = Nothing
+aListFindById (WormId 8)  (AList  _      _    _     _    x     _) = Just x
+aListFindById (WormId 12) (AList  _      _    _     _    _  (-1)) = Nothing
+aListFindById (WormId 12) (AList  _      _    _     _    _     x) = Just x
+aListFindById wormId'     _                                       = error $ "aListFindById: " ++ show wormId'
 
-findDataById :: WormId -> AList -> Maybe Int
-findDataById = findById
+aListFindDataById :: WormId -> AList -> Maybe Int
+aListFindDataById = aListFindById
 
-findDataByData :: Int -> AList -> Maybe Int
-findDataByData x (AList a b c d e f) =
+aListFindDataByData :: Int -> AList -> Maybe Int
+aListFindDataByData x (AList a b c d e f) =
   case (x == a, x == b, x == c, x == d, x == e, x == f) of
     (True,    _,    _,    _,    _,    _) -> Just x
     (   _, True,    _,    _,    _,    _) -> Just x
@@ -113,8 +113,8 @@ findDataByData x (AList a b c d e f) =
     (   _,    _,    _,    _,    _, True) -> Just x
     _                                    -> Nothing
 
-findIdByData :: Int -> AList -> Maybe WormId
-findIdByData x (AList a b c d e f) =
+aListFindIdByData :: Int -> AList -> Maybe WormId
+aListFindIdByData x (AList a b c d e f) =
   case (x == a, x == b, x == c, x == d, x == e, x == f) of
     (True,    _,    _,    _,    _,    _) -> Just $ WormId 1
     (   _, True,    _,    _,    _,    _) -> Just $ WormId 2
@@ -243,24 +243,24 @@ aListToList (AList a b c d e f) =
              if f /= -1 then Just (WormId 12, f) else Nothing]
 
 -- TODO test
-mapWormById :: WormId -> (Int -> Int) -> AList -> AList
-mapWormById (WormId 1)  f' (AList a b c d e f) = AList (f' a)      b      c      d      e      f
-mapWormById (WormId 2)  f' (AList a b c d e f) = AList      a (f' b)      c      d      e      f
-mapWormById (WormId 3)  f' (AList a b c d e f) = AList      a      b (f' c)      d      e      f
-mapWormById (WormId 4)  f' (AList a b c d e f) = AList      a      b      c (f' d)      e      f
-mapWormById (WormId 8)  f' (AList a b c d e f) = AList      a      b      c      d (f' e)      f
-mapWormById (WormId 12) f' (AList a b c d e f) = AList      a      b      c      d      e (f' f)
-mapWormById wormId'     _  _                   = error $ "mapWormById with wormId: " ++ show wormId'
+aListMapWormById :: WormId -> (Int -> Int) -> AList -> AList
+aListMapWormById (WormId 1)  f' (AList a b c d e f) = AList (f' a)      b      c      d      e      f
+aListMapWormById (WormId 2)  f' (AList a b c d e f) = AList      a (f' b)      c      d      e      f
+aListMapWormById (WormId 3)  f' (AList a b c d e f) = AList      a      b (f' c)      d      e      f
+aListMapWormById (WormId 4)  f' (AList a b c d e f) = AList      a      b      c (f' d)      e      f
+aListMapWormById (WormId 8)  f' (AList a b c d e f) = AList      a      b      c      d (f' e)      f
+aListMapWormById (WormId 12) f' (AList a b c d e f) = AList      a      b      c      d      e (f' f)
+aListMapWormById wormId'     _  _                   = error $ "aListMapWormById with wormId: " ++ show wormId'
 
 -- TODO Test
-removeWormById :: WormId -> AList -> AList
-removeWormById (WormId 1)  (AList _ b c d e f) = AList (-1)    b    c    d    e    f
-removeWormById (WormId 2)  (AList a _ c d e f) = AList    a (-1)    c    d    e    f
-removeWormById (WormId 3)  (AList a b _ d e f) = AList    a    b (-1)    d    e    f
-removeWormById (WormId 4)  (AList a b c _ e f) = AList    a    b    c (-1)    e    f
-removeWormById (WormId 8)  (AList a b c d _ f) = AList    a    b    c    d (-1)    f
-removeWormById (WormId 12) (AList a b c d e _) = AList    a    b    c    d    e (-1)
-removeWormById wormId'     _                   = error $ "Can't remove worm with id: " ++ show wormId'
+aListRemoveWormById :: WormId -> AList -> AList
+aListRemoveWormById (WormId 1)  (AList _ b c d e f) = AList (-1)    b    c    d    e    f
+aListRemoveWormById (WormId 2)  (AList a _ c d e f) = AList    a (-1)    c    d    e    f
+aListRemoveWormById (WormId 3)  (AList a b _ d e f) = AList    a    b (-1)    d    e    f
+aListRemoveWormById (WormId 4)  (AList a b c _ e f) = AList    a    b    c (-1)    e    f
+aListRemoveWormById (WormId 8)  (AList a b c d _ f) = AList    a    b    c    d (-1)    f
+aListRemoveWormById (WormId 12) (AList a b c d e _) = AList    a    b    c    d    e (-1)
+aListRemoveWormById wormId'     _                   = error $ "Can't remove worm with id: " ++ show wormId'
 
 showPositions :: AList -> String
 showPositions aList =
@@ -999,7 +999,7 @@ makeSelections this that state =
 -- It's fine to use `findById' here because we don't care whether it's
 -- an AListEntry or w/e.
 wormExists :: WormId -> State -> Bool
-wormExists wormId' = isJust . findById wormId' . wormPositions
+wormExists wormId' = isJust . aListFindById wormId' . wormPositions
 
 isABananaMove :: Move -> Bool
 isABananaMove (Move x) =
@@ -1017,7 +1017,7 @@ thatWormHasBananasLeft = wormHasBananasLeft thatPlayersCurrentWormId
 wormHasBananasLeft :: (State -> WormId) -> State -> Bool
 wormHasBananasLeft wormsId state =
   let wormId' = wormsId state
-  in any hasBananas $ findDataById wormId' $ wormBananas state
+  in any hasBananas $ aListFindDataById wormId' $ wormBananas state
 
 decrementBananas :: Bananas -> Bananas
 decrementBananas (-1) = (-1)
@@ -1026,7 +1026,7 @@ decrementBananas x    = x - 1
 decrementWormsBananas :: (State -> WormId) -> ModifyState
 decrementWormsBananas wormsId state =
   let wormId' = wormsId state
-  in withWormBananas (mapWormById wormId' decrementBananas) state
+  in withWormBananas (aListMapWormById wormId' decrementBananas) state
 
 decrementThisWormsBananas :: ModifyState
 decrementThisWormsBananas = decrementWormsBananas thisPlayersCurrentWormId
@@ -1293,12 +1293,12 @@ targetOfThatMoveIsDirt move state =
 giveMedipackToThisWorm :: ModifyState
 giveMedipackToThisWorm state =
   let thisWormId = thisPlayersCurrentWormId state
-  in withWormHealths (mapWormById thisWormId increaseHealth) state
+  in withWormHealths (aListMapWormById thisWormId increaseHealth) state
 
 giveMedipackToThatWorm :: ModifyState
 giveMedipackToThatWorm state =
   let thatWormId = thatPlayersCurrentWormId state
-  in withWormHealths (mapWormById thatWormId increaseHealth) state
+  in withWormHealths (aListMapWormById thatWormId increaseHealth) state
 
 increaseHealth :: WormHealth -> WormHealth
 increaseHealth = mapHealth (+ healthPackHealth)
@@ -1356,24 +1356,24 @@ knockBackDamage state =
     knockBackDamageToOne wormsId =
       let wormId'      = wormsId state
           wormsHealth' = fromJust $
-                         findDataById wormId' $
+                         aListFindDataById wormId' $
                          wormHealths state
           wormDied     = knockBackDamageAmount >= wormsHealth'
           cleanUp      = cleanUpDeadWorm wormId'
       in if wormDied
          then cleanUp
-         else withWormHealths $ mapWormById wormId' knockBackDamage'
+         else withWormHealths $ aListMapWormById wormId' knockBackDamage'
 
 cleanUpDeadWorm :: WormId -> ModifyState
 cleanUpDeadWorm wormId' =
-  withWormHealths   (removeWormById wormId') .
-  withWormPositions (removeWormById wormId') .
-  withWormBananas   (removeWormById wormId')
+  withWormHealths   (aListRemoveWormById wormId') .
+  withWormPositions (aListRemoveWormById wormId') .
+  withWormBananas   (aListRemoveWormById wormId')
 
 moveWorm :: (State -> WormId) -> Coord -> ModifyState
 moveWorm wormsId newCoord' state =
   let thisWormId = wormsId state
-  in withWormPositions (mapWormById thisWormId (always newCoord')) state
+  in withWormPositions (aListMapWormById thisWormId (always newCoord')) state
 
 moveThisWorm :: Coord -> ModifyState
 moveThisWorm = moveWorm thisPlayersCurrentWormId
@@ -1385,7 +1385,7 @@ moveThatWorm = moveWorm thatPlayersCurrentWormId
 targetOfMove :: (State -> WormId) -> Move -> State -> Maybe Coord
 targetOfMove wormsId dir state =
   let wormId'   = wormsId state
-      position' = findDataById wormId' $ wormPositions state
+      position' = aListFindDataById wormId' $ wormPositions state
   in position' >>= (flip displaceCoordByMove) dir
 
 targetOfThisMove :: Move -> State -> Maybe Coord
@@ -1559,7 +1559,7 @@ harmWormWithRocket wormId'
            awardPlayerForKill
 
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
-harmWormById damage' wormId' = mapWormById wormId' (+ (-damage'))
+harmWormById damage' wormId' = aListMapWormById wormId' (+ (-damage'))
 
 -- ASSUME: that the given coord maps to a worm
 harmWorm :: WormId -> State -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
@@ -1571,11 +1571,11 @@ harmWorm shootingWormId'
          awardPlayerForKill
          coord =
   let wormId'       = fromJust $
-                      findIdByData coord $
+                      aListFindIdByData coord $
                       wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormHealth'   = fromJust $
-                      findDataById wormId' $
+                      aListFindDataById wormId' $
                       wormHealths originalState
       wormDied      = wormHealth' <= damage'
       awardPoints   = if wormDied then (awardPlayer . awardPlayerForKill) else awardPlayer
@@ -1641,7 +1641,7 @@ firstWormHit gameMap' worms' HitNothing      coord' =
 
 isAPositionOfAWorm :: Coord -> WormPositions -> Hit
 isAPositionOfAWorm coord' wormPositions' =
-  case findDataByData coord' wormPositions' of
+  case aListFindDataByData coord' wormPositions' of
     Just position' -> HitWorm position'
     Nothing        -> HitNothing
 
@@ -1698,7 +1698,7 @@ thisWormsCoord state =
   in  coordForWorm thisWormId $ wormPositions state
 
 coordForWorm :: WormId -> WormPositions -> Maybe Coord
-coordForWorm = findDataById
+coordForWorm = aListFindDataById
 
 -- ASSUME: that that worm is never at an invalid position.
 --
@@ -2380,7 +2380,7 @@ shouldThisPlayerMakeMoveMove =
 shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> (State -> Maybe [Coord]) -> [Move] -> State -> Move -> Bool
 shouldMakeMoveMove targetOfMove' currentWormId' hitFunction moves state move =
   let wormId' = currentWormId' state
-      coord'  = fromJust $ findDataById wormId' $ wormPositions state
+      coord'  = fromJust $ aListFindDataById wormId' $ wormPositions state
   in isValidMoveMove targetOfMove' currentWormId' state move &&
      ((not $ any (isValidDigMove targetOfMove' state) moves) ||
       (any (elem coord') $ hitFunction state))
