@@ -798,6 +798,29 @@ spec = do
                       -- Remaining
                       addAirAt (toCoord 15 30) .
                       addAirAt (toCoord 17 30))))
+      it "should not cause damage to the opponent if its worm moved out of the blast radius" $
+        makeMove False (fromMoves bananaOneToRight moveEast) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
+        (selectNextWormsDefault $
+         harmWorm (WormId 1) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 15 31) $
+         -- Move that worm
+         setOpponentsLastMove stateWithEnemyTwoSquaresFromEpicentre moveEast $
+         awardPointsToThatPlayerForMovingToAir $
+         moveThatWorm (fromJust $ displaceCoordByMove (fromJust $ thatWormsCoord stateWithEnemyTwoSquaresFromEpicentre) moveEast) $
+         -- Decrement banana bombs
+         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
+         -- Points for the four squares
+         penaliseThisPlayerForDamage     13 $
+         awardPointsToThisPlayerForDigging  $
+         awardPointsToThisPlayerForDigging  $
+         awardPointsToThisPlayerForDigging  $
+         awardPointsToThisPlayerForDigging  $
+         mapGameMap stateWithEnemyTwoSquaresFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 16 30) .
+                      addAirAt (toCoord 16 29) .
+                      -- Remaining
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 17 30))))
       let stateWithEnemyThreeSquaresFromEpicentre = moveThatWorm (toCoord 19 31) aStateWithOposingWormsNextToEachother
       it "should not cause damage to the worms outside of the blast radius" $
         makeMove False (fromMoves bananaOneToRight doNothing) stateWithEnemyThreeSquaresFromEpicentre `shouldBe`
@@ -959,6 +982,29 @@ spec = do
          -- Points for the four squares
          penaliseThatPlayerForDamage     13 $
          awardPointsToThatPlayerForDamage 7 $
+         awardPointsToThatPlayerForDigging  $
+         awardPointsToThatPlayerForDigging  $
+         awardPointsToThatPlayerForDigging  $
+         awardPointsToThatPlayerForDigging  $
+         mapGameMap stateWithEnemyTwoSquaresFromEpicentre
+                    ((-- Up
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 15 29) .
+                      -- Remaining
+                      addAirAt (toCoord 14 30) .
+                      addAirAt (toCoord 16 30))))
+      it "should not cause damage to the opponent if its worm moved out of the blast radius" $
+        makeMove False (fromMoves moveWest bananaOneToLeft) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
+        (setOpponentsLastMove stateWithEnemyTwoSquaresFromEpicentre bananaOneToLeft $
+         selectNextWormsDefault $
+         harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
+         -- Move this worm
+         awardPointsToThisPlayerForMovingToAir $
+         moveThisWorm (fromJust $ displaceCoordByMove (fromJust $ thisWormsCoord stateWithEnemyTwoSquaresFromEpicentre) moveWest) $
+         -- Decrement banana bombs
+         withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
+         -- Points for the four squares
+         penaliseThatPlayerForDamage     13 $
          awardPointsToThatPlayerForDigging  $
          awardPointsToThatPlayerForDigging  $
          awardPointsToThatPlayerForDigging  $
