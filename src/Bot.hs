@@ -928,7 +928,7 @@ makeMove swapping moves state =
   let (myMove,  opponentsMove)  = toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
-  in assertValidState state  myMove' opponentsMove' $
+  in assertValidState state  myMove  opponentsMove  $
      setOpponentsLastMove    state   opponentsMove  $
      advanceWormSelections                          $
      makeShootMoves          myMove' opponentsMove' $
@@ -937,19 +937,25 @@ makeMove swapping moves state =
      makeMoveMoves  swapping myMove' opponentsMove' $
      makeSelections          myMove  opponentsMove state
 
+-- DEBUG: This is for debugging.  I should comment out the line above
+-- when I'm done using it...
 assertValidState :: State -> Move -> Move -> ModifyState
 assertValidState previousState myMove opponentsMove state =
-  let wormHealths'   = map snd $ aListToList $ wormHealths   state
-      wormPositions' = map snd $ aListToList $ wormPositions state
-  in if length wormHealths' /= length wormPositions' ||
-        any (< 0) wormHealths' ||
-        (any (not . isJust . isOOB) $ map fromCoord wormPositions')
-     then state
-     else error ("My move:        " ++ (prettyPrintThisMove previousState myMove) ++ "\n" ++
-                 "Opponents Move: " ++ (prettyPrintThatMove previousState opponentsMove) ++ "\n" ++
-                 "Led to a bad state transition\n" ++
-                 "Moving from:\n" ++ show previousState ++
+  let wormHealths'       = map snd $ aListToList $ wormHealths   state
+      wormPositions'     = map snd $ aListToList $ wormPositions state
+      lengthMismatch     = length wormHealths' /= length wormPositions'
+      invalidWormHealths = any (< (-1)) wormHealths'
+      coordinatesOOB     = any (not . isJust . isOOB) $ map fromCoord wormPositions'
+  in if lengthMismatch || invalidWormHealths || coordinatesOOB
+     then error ("\nMy move:        " ++ prettyPrintThisMove previousState myMove ++ "(" ++ show myMove ++ ")"++ "\n" ++
+                 "Opponents Move: " ++ prettyPrintThatMove previousState opponentsMove ++ "(" ++ show opponentsMove ++ ")" ++ "\n" ++
+                 "Led to a bad state transition: " ++
+                 "lengthMismatch: " ++ show lengthMismatch ++
+                 ", invalidWormHealths: " ++ show invalidWormHealths ++
+                 ", coordinatesOOB: " ++ show coordinatesOOB ++ ".\n" ++
+                 "Moving from:\n" ++ show previousState ++ "\n" ++
                  "To:\n" ++ show state)
+     else state
 
 -- TODO I shouldn't even be doing this at all.
 setOpponentsLastMove :: State -> Move -> State -> State
@@ -1247,7 +1253,9 @@ advanceWormSelectionByWorms :: (AList -> [WormId]) -> (State -> WormId) -> (Modi
 advanceWormSelectionByWorms playersWormIds playersWormId mapPlayer state@(State { wormHealths = wormHealths' }) =
   let myWormIds      = sort $ playersWormIds wormHealths'
       currentWormId' = playersWormId state
-  in mapPlayer (withCurrentWormId (nextWormId currentWormId' myWormIds)) state
+  in if myWormIds == []
+     then state
+     else mapPlayer (withCurrentWormId (nextWormId currentWormId' myWormIds)) state
 
 playerCurrentWormId :: Player -> WormId
 playerCurrentWormId (Player _ wormId' _) = wormId'
@@ -1573,6 +1581,8 @@ harmWormWithRocket wormId'
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
 harmWormById damage' wormId' = aListMapWormById wormId' (+ (-damage'))
 
+-- DEBUG: This is for debugging.  I should comment out the lines
+-- bellow when I'm done using it...
 errorWithMessageIfJust :: String -> Maybe a -> Maybe a
 errorWithMessageIfJust message Nothing = error message
 errorWithMessageIfJust _       x       = x

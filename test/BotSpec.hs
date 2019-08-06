@@ -1289,7 +1289,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves shot moveNorth) state `shouldBe`
          (setOpponentsLastMove state moveNorth $
-          selectNextWormsDefault $
           moveThatWorm (fromJust $ displaceCoordByMove (fromJust $ thatWormsCoord state) moveNorth) $
           awardPointsToThatPlayerForMovingToAir $
           awardPointsToThisPlayerForMissing state)
@@ -1303,7 +1302,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves moveNorth shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           moveThisWorm (fromJust $ displaceCoordByMove (fromJust $ thisWormsCoord state) moveNorth) $
           awardPointsToThisPlayerForMovingToAir $
           awardPointsToThatPlayerForMissing state)
@@ -1316,8 +1314,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWormsDefault $
-          awardPointsToThisPlayerForKillingAnEnemy $
+         (awardPointsToThisPlayerForKillingAnEnemy $
           awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 4) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 4) $ wormPositions state })
@@ -1330,8 +1327,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWorms (WormId 3) (WormId 8) $
-          penaliseThisPlayerForHittingHisFriendlyWorm $
+         (penaliseThisPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 2) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first vertical target in range when it's an opponent worm" $ \ (i, j, k) ->
@@ -1343,8 +1339,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWormsDefault $
-          awardPointsToThisPlayerForKillingAnEnemy $
+         (awardPointsToThisPlayerForKillingAnEnemy $
           awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 4) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 4) $ wormPositions state })
@@ -1357,8 +1352,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWorms (WormId 3) (WormId 8) $
-          penaliseThisPlayerForHittingHisFriendlyWorm $
+         (penaliseThisPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 2) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first NW-SE diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
@@ -1370,8 +1364,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWormsDefault $
-          awardPointsToThisPlayerForKillingAnEnemy $
+         (awardPointsToThisPlayerForKillingAnEnemy $
           awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 4) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 4) $ wormPositions state })
@@ -1384,8 +1377,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 2))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWorms (WormId 3) (WormId 8) $
-          penaliseThisPlayerForHittingHisFriendlyWorm $
+         (penaliseThisPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 2) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 2) $ wormPositions state })
     prop "should hit this players first NE-SW diagonal target in range when it's an opponent worm" $ \ (i, j, k) ->
@@ -1397,8 +1389,7 @@ spec = do
                           (takeBothWorms          (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWormsDefault $
-          awardPointsToThisPlayerForKillingAnEnemy $
+         (awardPointsToThisPlayerForKillingAnEnemy $
           awardPointsToThisPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 4) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 4) $ wormPositions state })
@@ -1412,7 +1403,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 1) $ wormHealths state,
@@ -1427,7 +1417,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 8) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 8) $ wormPositions state })
@@ -1441,7 +1430,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 1) $ wormHealths state,
@@ -1456,7 +1444,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 8) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 8) $ wormPositions state })
@@ -1470,7 +1457,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 1) $ wormHealths state,
@@ -1485,7 +1471,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWorms (WormId 2) (WormId 12) $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 8) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 8) $ wormPositions state })
@@ -1499,7 +1484,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForKillingAnEnemy $
           awardPointsToThatPlayerForHittingAnEnemy $
           state { wormHealths = aListRemoveWormById (WormId 1) $ wormHealths state,
@@ -1514,8 +1498,7 @@ spec = do
                           (putDirtOrSpaceBetweenWorms l)
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
-         (selectNextWormsDefault $
-          awardPointsToThisPlayerForMissing state)
+         (awardPointsToThisPlayerForMissing state)
     prop "should not hit this players first horizontal target in range when there's a friendly worm in the way" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator              inBoundsWithNonDiagonalPadding
@@ -1538,7 +1521,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     prop "should not hit that players first vertical target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -1550,7 +1532,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     prop "should not hit that players first NE-SW target when it's not in range" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
@@ -1562,7 +1543,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     -- TODO this test is broken and that's worrying.  To reproduce
     -- this problem set the generated delta for out of range to one
@@ -1577,7 +1557,6 @@ spec = do
                           (i, j, k)
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
-          selectNextWormsDefault $
           awardPointsToThatPlayerForMissing state)
     context "when both worms shoot at eachother simultaneously and they're both in range of eachother" $
       prop "both worms should be harmed" $ \ (i, j, k) ->
@@ -1590,7 +1569,6 @@ spec = do
                             (i, j, k)
         in makeMove True (fromMoves shot (oppositeShot shot)) state `shouldBe`
            (setOpponentsLastMove state (oppositeShot shot) $
-            selectNextWormsDefault $
             awardPointsToThatPlayerForKillingAnEnemy $
             awardPointsToThatPlayerForHittingAnEnemy $
             awardPointsToThisPlayerForKillingAnEnemy $
@@ -1612,8 +1590,7 @@ spec = do
                            (takeBothWormsWithHealth 100 (WormId 1) (WormId 4))
                            (i, j, k)
        in makeMove True (fromMoves shot doNothing) state `shouldBe`
-          (selectNextWorms (WormId 1) (WormId 4) $
-           awardPointsToThisPlayerForHittingAnEnemy $
+          (awardPointsToThisPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 4) $ wormHealths state })
     prop "should hit that players first horizontal target in range when it's my worm without killing it" $ \ (i, j, k) ->
        let (state, shot) = generateShotScenario
@@ -1625,7 +1602,6 @@ spec = do
                            (i, j, k)
        in makeMove True (fromMoves doNothing shot) state `shouldBe`
           (setOpponentsLastMove state shot $
-           selectNextWorms (WormId 1) (WormId 4) $
            awardPointsToThatPlayerForHittingAnEnemy $
            state { wormHealths = harmWormById rocketDamage (WormId 1)  $ wormHealths state })
     context "when selecting a worm" $ do
@@ -1876,31 +1852,15 @@ takeBothWormsWithHealth startingHealth' (WormId thisWormId) (WormId thatWormId) 
 takeBothWorms :: WormId -> WormId -> AddToWormFacts
 takeBothWorms (WormId thisWormId) (WormId thatWormId) thisCoord thatCoord state =
   state { wormHealths   =
-            aListConcat someWormHealths (wormHealths state),
+            aListConcat
+              (aListFromList [(thisWormId, startingHealth), (thatWormId, startingHealth)])
+              (wormHealths state),
           wormPositions =
-            aListConcat (
-              withAllOtherWormsOffMap $ aListFromList [
+            aListConcat
+              (aListFromList [
                   (thisWormId, thisCoord),
                   (thatWormId, thatCoord)])
               (wormPositions state) }
-
-allWormIds :: [WormId]
-allWormIds = [
-  (WormId 1),
-  (WormId 2),
-  (WormId 3),
-  (WormId 4),
-  (WormId 8),
-  (WormId 12)]
-
-withAllOtherWormsOffMap :: WormPositions -> WormPositions
-withAllOtherWormsOffMap positions =
-  let existingIds  = aListMyIds positions ++ aListOpponentIds positions
-      remainingIds = map (\ (WormId wormId') -> wormId') $ filter (not . (flip elem) existingIds) allWormIds
-  in aListConcat positions
-                 (aListFromList $
-                  -- Put the remaining worms all off the map
-                  zip remainingIds (repeat (toCoord (4 * mapDim) (4 * mapDim))))
 
 -- TODO: test
 takeBothWormsAndPutAnotherInbetween :: WormId -> WormId -> WormId -> AddToWormFacts
@@ -1976,19 +1936,13 @@ generateShotScenario generateCoord displace switchShot addFacts (i, j, k) =
 identityMapModification :: ModifyMap
 identityMapModification _ _ = id
 
--- TODO test
 nonDiagonalDeltaOutOfRange :: Int -> Int
 nonDiagonalDeltaOutOfRange x =
-  if abs x <= horizontalRocketRange
-  then ((horizontalRocketRange + 1) * if x < 0 then -1 else 1)
-  else x
+  (horizontalRocketRange + 1) * if x < 0 then -1 else 1
 
--- TODO test
 diagonalDeltaOutOfRange :: Int -> Int
 diagonalDeltaOutOfRange x =
-  if abs x <= diagonalRocketRange
-  then ((diagonalRocketRange + 1) * if x < 0 then -1 else 1)
-  else x
+  (diagonalRocketRange + 1) * if x < 0 then -1 else 1
 
 nonDiagonalDelta :: Int -> Int
 nonDiagonalDelta x =
@@ -2011,9 +1965,9 @@ diagonalDelta x =
   let y = (x `mod` 5) - 2
   in if y == 0 then -1 else y
 
-inBoundsWithNonDiagonalPadding x = 3 + (x `mod` (mapDim - 6))
+inBoundsWithNonDiagonalPadding x = 5 + (x `mod` (mapDim - 10))
 
-inBoundsWithDiagonalPadding x = 2 + (x `mod` (mapDim - 4))
+inBoundsWithDiagonalPadding x = 4 + (x `mod` (mapDim - 8))
 
 inBoundsWithNoPadding x = x `mod` mapDim
 
@@ -2174,7 +2128,7 @@ aStateWithMyWormOnLeftEdge =
   moveThisWorm (toCoord 0 15) aStateWithOnlyAirOnMap
 
 aStateWithMyWormOnTop = aStateWithOnlyAirOnMap {
-  wormPositions = wormPositionsWithMyWormAtTop }
+  wormPositions = aListConcat wormPositionsWithMyWormAtTop opponentWormsAllAtTopLeft }
 
 aStateWithMyWormOnTopMovedRight =
   moveThisWorm (toCoord 16 0) aStateWithMyWormOnTop
@@ -2223,19 +2177,19 @@ aStateWithBothWormsNextToTheMedipack = aState {
   gameMap       = aGameMapWithAMedipack }
 
 aStateWithOpponentsWormNextToTheMedipack = aState {
-  wormPositions = wormPositionsWithOpponentNextToMedipack,
+  wormPositions = aListConcat wormPositionsWithOpponentNextToMedipack myWormsAllAtTopLeft,
   gameMap       = aGameMapWithAMedipack }
 
 aStateWithOpponentsWormOnTheMedipack = aState {
-  wormPositions = wormPositionsWithOpponentOnTheMedipack,
+  wormPositions = aListConcat wormPositionsWithOpponentOnTheMedipack myWormsAllAtTopLeft,
   wormHealths   = wormHealthsWithOpponentHavingReceivedTheMedipack }
 
 aStateWithMyWormNextToTheMedipack = aState {
-  wormPositions = wormPositionsWithMyWormNextToMedipack,
+  wormPositions = aListConcat wormPositionsWithMyWormNextToMedipack opponentWormsAllAtTopLeft,
   gameMap       = aGameMapWithAMedipack }
 
 aStateWithMyWormOnTheMedipack = aState {
-  wormPositions = wormPositionsWithMyWormOnTheMedipack,
+  wormPositions = aListConcat wormPositionsWithMyWormOnTheMedipack opponentWormsAllAtTopLeft,
   wormHealths   = wormHealthsWithMyWormHavingReceivedTheMedipack }
 
 aStateWithEnemyWormsNextToEachother = aState { wormPositions = wormPositionsWithHisNextToHis }
@@ -2253,14 +2207,18 @@ anOpponent = Player 300 (WormId 4) startingSelections
 wormPositionsWithImpendingCollision = aListFromList [
   (1, (toCoord 15 31)),
   (2, (toCoord 0 0)),
+  (3, (toCoord 31 31)),
   (4, (toCoord 17 31)),
-  (8, (toCoord 1 1))]
+  (8, (toCoord 1 1)),
+  (12, (toCoord 20 20))]
 
 wormHealthsForOneAndFive = aListFromList [
-  (1, startingHealth),
-  (2, startingHealth),
-  (4, startingHealth),
-  (8, startingHealth) ]
+  (1,  startingHealth),
+  (2,  startingHealth),
+  (3,  startingHealth),
+  (4,  startingHealth),
+  (8,  startingHealth),
+  (12, startingHealth)]
 
 wormPositionsWithHisNextToMine = AList
   (toCoord 15 31)
@@ -2271,13 +2229,27 @@ wormPositionsWithHisNextToMine = AList
   (toCoord 20 1)
 
 wormPositionsWithHisNextToHis = aListFromList [
+  (1, (toCoord 20 31)),
+  (2, (toCoord 0 0)),
+  (3, (toCoord 31 31)),
   (4, (toCoord 15 31)),
-  (8, (toCoord 16 31))]
+  (8, (toCoord 16 31)),
+  (12, (toCoord 20 1))]
 
 wormPositionsWithOpponentNextToMedipack = aListFromList [
   (4,  (toCoord 31 30)),
   (8,  (toCoord 19 1)),
   (12, (toCoord 20 1))]
+
+myWormsAllAtTopLeft = aListFromList [
+  (1, (toCoord 0 0)),
+  (2, (toCoord 0 1)),
+  (3, (toCoord 0 2))]
+
+opponentWormsAllAtTopLeft = aListFromList [
+  (4,  (toCoord 0 0)),
+  (8,  (toCoord 0 1)),
+  (12, (toCoord 0 2))]
 
 wormPositionsWithOpponentOnTheMedipack = aListFromList [
   (4, (toCoord 31 31)),
@@ -2302,7 +2274,11 @@ wormPositionsWithOpponentAtTop = AList
 
 wormPositionsWithMyWormsNextToEachother = aListFromList [
   (1, (toCoord 15 31)),
-  (2, (toCoord 16 31))]
+  (2, (toCoord 16 31)),
+  (3, (toCoord 10 31)),
+  (4, (toCoord 31 31)),
+  (8,  (toCoord 19 1)),
+  (12, (toCoord 20 1))]
 
 wormPositionsWithMyWormNextToMedipack = aListFromList [
   (1, (toCoord 30 31)),
@@ -2323,7 +2299,9 @@ wormHealthsWithMyWormHavingReceivedTheMedipack = AList
   20
 
 wormPositionsWithMyWormAtTop = aListFromList [
-  (1, (toCoord 15 0))]
+  (1, (toCoord 15 0)),
+  (2, (toCoord 18 0)),
+  (3, (toCoord 19 0))]
 
 startingSelections = (Selections 3)
 
