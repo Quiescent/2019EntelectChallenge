@@ -34,7 +34,7 @@ runSearchForEachRound startFrom directories  =
         if isJust startFrom
         then dropWhile (not . isInfixOf (fromJust startFrom)) directories
         else directories
-  in if (length directories' > 1)
+  in if (length directories' < 1)
      then (liftIO (putStrLn ("User error: specified directory has less than 1 rounds after starting from: " ++
                              case startFrom of
                                Just x -> x

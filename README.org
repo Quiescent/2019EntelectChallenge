@@ -701,7 +701,10 @@ friendly.
    - CLOSING NOTE [2019-08-04 Sun 14:29]
    - State "IN_PROGRESS" from "TODO"       [2019-08-04 Sun 13:49]
    :END:
-** TODO BUG: Game sometimes bombs out when shooting a worm
+** IN_PROGRESS BUG: Game sometimes bombs out when shooting a worm
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-06 Tue 08:36]
+   :END:
 #+BEGIN_SRC eshell
 Welcome to the Emacs shell
 
