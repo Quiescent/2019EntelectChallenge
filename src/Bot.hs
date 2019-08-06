@@ -1301,7 +1301,7 @@ giveMedipackToThatWorm state =
   in withWormHealths (aListMapWormById thatWormId increaseHealth) state
 
 increaseHealth :: WormHealth -> WormHealth
-increaseHealth = mapHealth (+ healthPackHealth)
+increaseHealth = (+) healthPackHealth
 
 removeMedipack :: Coord -> ModifyState
 removeMedipack position' =
@@ -1342,15 +1342,12 @@ mapAtCoord State { gameMap = gameMap' } target = (\(GameMap xs) -> M.lookup targ
 knockBackDamageAmount :: Int
 knockBackDamageAmount = 20
 
-mapHealth :: (Int -> Int) -> WormHealth -> WormHealth
-mapHealth f x = f x
-
 knockBackDamage :: ModifyState
 knockBackDamage state =
   knockBackDamageToOne thisPlayersCurrentWormId $
   knockBackDamageToOne thatPlayersCurrentWormId state
   where
-    knockBackDamage' = mapHealth (+ (-knockBackDamageAmount))
+    knockBackDamage' = (+) (-knockBackDamageAmount)
     -- ASSUME: that there is a worm to apply knockback damage to
     -- because both worms must have moved for this to happen
     knockBackDamageToOne wormsId =
