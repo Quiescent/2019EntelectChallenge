@@ -23,4 +23,4 @@ mkdir -p $OUTPUT_DIRECTORY
 MATCH_ARG_STRING=$(echo "$*" | grep -o "[0-9][0-9][0-9][0-9].*" | sed -e 's/ /-/g')
 mv Profile-exe.prof "$OUTPUT_DIRECTORY/$CURRENT_COMMIT-$MATCH_ARG_STRING.prof"
 
-echo "Done.  You can find the results in $OUTPUT_DIRECTORY/$CURRENT_COMMIT.prof"
+echo "Done.  You can find the results in $OUTPUT_DIRECTORY/$CURRENT_COMMIT-$MATCH_ARG_STRING.prof"
