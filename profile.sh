@@ -14,12 +14,13 @@ stack install --profile --local-bin-path bin
 echo "======================================================================"
 echo "==========================Start of Profiling=========================="
 echo "======================================================================"
-./bin/Profile-exe "matches/round-2/2019.07.21.22.42.46" +RTS -p -N2 -xc
+./bin/Profile-exe $* +RTS -p -N2 -xc
 
 CURRENT_COMMIT=$(git log --oneline | head -1 | cut -d' ' -f1)
 CURRENT_MACHINE=$(uname)
 OUTPUT_DIRECTORY="profiling/$CURRENT_MACHINE"
 mkdir -p $OUTPUT_DIRECTORY
-mv Profile-exe.prof "$OUTPUT_DIRECTORY/$CURRENT_COMMIT.prof"
+MATCH_ARG_STRING=$(echo "$*" | grep -o "[0-9][0-9][0-9][0-9].*" | sed -e 's/ /-/g')
+mv Profile-exe.prof "$OUTPUT_DIRECTORY/$CURRENT_COMMIT-$MATCH_ARG_STRING.prof"
 
 echo "Done.  You can find the results in $OUTPUT_DIRECTORY/$CURRENT_COMMIT.prof"

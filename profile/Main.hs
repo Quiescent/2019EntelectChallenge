@@ -20,6 +20,8 @@ main = do
   guard (length args >= 1)
   let dataSetDirectory = head args
   let startFrom = headMaybe $ tail args
+  when (isJust startFrom) $
+    liftIO $ putStrLn ("Starting search from: " ++ show (fromJust startFrom))
   runRIO app $ runDataSet dataSetDirectory startFrom
 
 runDataSet :: FilePath -> Maybe String -> RIO App ()
