@@ -2257,11 +2257,11 @@ gameOver state round' rewards =
                then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
                -- I lost because of points when both players are dead
                else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
-          -- I Killed his worms and he didn't kill mine
-          else GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
-     else if opponentWormCount == 0
           -- The opponent killed all my worms and I didn't kill his
-          then GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
+          else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
+     else if opponentWormCount == 0
+          -- I Killed his worms and he didn't kill mine
+          then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
           else if round' >= maxRound
                -- Simulation was terminated early.  Decide based on how valuable the moves were
                then GameOver $ diffMax rewards
