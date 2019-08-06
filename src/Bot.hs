@@ -629,7 +629,7 @@ instance FromJSON OpponentWorm where
 type Coord = Int
 
 data JSONCoord = JSONCoord Int
-  deriving (Generic, Eq) 
+  deriving (Generic, Eq)
 
 instance Show JSONCoord where
   show (JSONCoord xy) = case fromCoord xy of
@@ -928,13 +928,28 @@ makeMove swapping moves state =
   let (myMove,  opponentsMove)  = toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
-  in setOpponentsLastMove    state   opponentsMove  $
+  in assertValidState state  myMove' opponentsMove' $
+     setOpponentsLastMove    state   opponentsMove  $
      advanceWormSelections                          $
      makeShootMoves          myMove' opponentsMove' $
      makeBananaMoves         myMove' opponentsMove' $
      makeDigMoves            myMove' opponentsMove' $
      makeMoveMoves  swapping myMove' opponentsMove' $
      makeSelections          myMove  opponentsMove state
+
+assertValidState :: State -> Move -> Move -> ModifyState
+assertValidState previousState myMove opponentsMove state =
+  let wormHealths'   = map snd $ aListToList $ wormHealths   state
+      wormPositions' = map snd $ aListToList $ wormPositions state
+  in if length wormHealths' /= length wormPositions' ||
+        any (< 0) wormHealths' ||
+        (any (not . isJust . isOOB) $ map fromCoord wormPositions')
+     then state
+     else error ("My move:        " ++ (prettyPrintThisMove previousState myMove) ++ "\n" ++
+                 "Opponents Move: " ++ (prettyPrintThatMove previousState opponentsMove) ++ "\n" ++
+                 "Led to a bad state transition\n" ++
+                 "Moving from:\n" ++ show previousState ++
+                 "To:\n" ++ show state)
 
 -- TODO I shouldn't even be doing this at all.
 setOpponentsLastMove :: State -> Move -> State -> State
@@ -1558,6 +1573,10 @@ harmWormWithRocket wormId'
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
 harmWormById damage' wormId' = aListMapWormById wormId' (+ (-damage'))
 
+errorWithMessageIfJust :: String -> Maybe a -> Maybe a
+errorWithMessageIfJust message Nothing = error message
+errorWithMessageIfJust _       x       = x
+
 -- ASSUME: that the given coord maps to a worm
 harmWorm :: WormId -> State -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 harmWorm shootingWormId'
@@ -1568,10 +1587,12 @@ harmWorm shootingWormId'
          awardPlayerForKill
          coord =
   let wormId'       = fromJust $
+                      errorWithMessageIfJust ("Couldn't find worm with position: " ++ showCoord coord ++ "\nState: " ++ show originalState) $
                       aListFindIdByData coord $
                       wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormHealth'   = fromJust $
+                      errorWithMessageIfJust ("Couldn't find health of worm with id: " ++ show wormId' ++ "\nState: " ++ show originalState) $
                       aListFindDataById wormId' $
                       wormHealths originalState
       wormDied      = wormHealth' <= damage'
