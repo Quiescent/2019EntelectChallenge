@@ -211,7 +211,7 @@ spec = do
       let x'            = abs x `mod` 108
           y'            = shiftL (abs y `mod` 4) 7
           move'         = x' .|. y'
-          formattedMove = formatMove (Move move') (toCoord 6 6) aState
+          formattedMove = formatMove thisWormsCoord makeThisSelection (Move move') (toCoord 6 6) aState
       in if move' < 8
          then formattedMove `shouldStartWith` "shoot"
          else if move' < 16
@@ -1173,6 +1173,46 @@ spec = do
         (setOpponentsLastMove aState bananaIntoDirtFromHim $
          selectNextWormsDefault aState)
     context "when both the opponent and I throw the bomb" $ do
+      let aStateWhichIFoundFailing =
+            withWormHealths (always $ aListFromList
+                              [(2, 134),
+                               (3, 28),
+                               (4, 33),
+                               (8, 20),
+                               (12, 95)]) $
+            withWormPositions (always $ aListFromList
+                                [(2,  toCoord 26 5),
+                                 (3,  toCoord 28 5),
+                                 (4,  toCoord 27 7),
+                                 (8,  toCoord 29 7),
+                                 (12, toCoord 27 9)]) $
+            withWormBananas (always $ aListFromList
+                              [(3,  2),
+                               (12, 1)]) $
+            mapThisPlayer (always $ Player 1318 (WormId 3) (Selections 0)) $
+            mapThatPlayer (always $ Player 1230 (WormId 4) (Selections 2)) $
+            aStateWithOnlyAirOnMap
+      it "should damage the worms correctly and not leave us in a broken state" $
+        makeMove False
+                 -- My move:        banana 28 7
+                 -- Opponents move: select 3;banana 27 8
+                 (fromMoves (Move 83) (Move 1590))
+                 aStateWhichIFoundFailing `shouldBe`
+        (withLastMove (Just $ prettyPrintThatMove aStateWhichIFoundFailing (Move 1590)) $
+         mapThatPlayer (withSelections (always (Selections 1))) $
+         selectNextWorms (WormId 2) (WormId 4) $
+         -- His bombs damage
+         harmWorm (WormId 12) aStateWhichIFoundFailing 13 id id id (toCoord 27 7) $
+         harmWorm (WormId 12) aStateWhichIFoundFailing 13 id id id (toCoord 27 9) $
+         penaliseThatPlayerForDamage 26 $
+         -- My bombs damage
+         harmWorm (WormId 3) aStateWhichIFoundFailing 13 id id id (toCoord 27 7) $
+         harmWorm (WormId 3) aStateWhichIFoundFailing 7  id id id (toCoord 28 5) $
+         harmWorm (WormId 3) aStateWhichIFoundFailing 13 id id id (toCoord 29 7) $
+         awardPointsToThisPlayerForDamage 26 $
+         penaliseThisPlayerForDamage 7       $
+         withWormBananas (always $ aListFromList [(3,  1)]) $
+         aStateWhichIFoundFailing)
       let aStateWithLowHealthOposingWormsNextToEachother =
             withWormPositions (always $ AList
                                   (toCoord 15 31)
@@ -1192,6 +1232,8 @@ spec = do
          selectNextWormsDefault $
          harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithLowHealthOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
+         harmWorm (WormId 4) aStateWithLowHealthOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
+         harmWorm (WormId 4) aStateWithLowHealthOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          -- Decrement banana bombs
          withWormBananas (always $ AList (-1) (-1) (-1) (-1) (-1) (-1)) $
          -- Points for the four squares
@@ -2333,3 +2375,7 @@ airRow = take mapDim $ repeat AIR
 
 aGameMapWithOnlyAir = vectorGameMapToHashGameMap $ V.fromList $
   foldl' (++) [] (take mapDim $ repeat airRow)
+
+withLastMove :: Maybe String -> State -> State
+withLastMove move' state =
+  state { opponentsLastCommand = move' }

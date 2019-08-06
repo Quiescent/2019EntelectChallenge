@@ -738,11 +738,11 @@ showCoord xy = case fromCoord xy of
     (x', y') -> show x' ++ " " ++ show y'
 
 
-formatMove :: Move -> Coord -> State -> String
+formatMove :: (State -> Maybe Coord) -> (Move -> ModifyState) -> Move -> Coord -> State -> String
 -- Shoot
-formatMove dir@(Move x) xy state
+formatMove wormsCoord makeSelections' dir@(Move x) xy state
   -- Select: Calls back into this function without the select
-  | hasASelection dir = formatSelect dir state
+  | hasASelection dir = formatSelect wormsCoord makeSelections' dir state
   -- Shoot
   | isAShootMove  dir = formatShootMove dir
   -- Move
@@ -758,7 +758,7 @@ formatMove dir@(Move x) xy state
                         fmap (\ newCoord -> "banana " ++ showCoord newCoord) $
                         displaceToBananaDestination dir xy
 -- Nothing
-formatMove _ _ _ = "nothing"
+formatMove _ _ _ _ _ = "nothing"
 
 -- For reference.  Here's how to visualise the encoding of banana bomb
 -- destinations:
@@ -842,17 +842,25 @@ removeSelectionFromMove :: Move -> Move
 removeSelectionFromMove (Move x) =
   Move $ x .&. moveMask
 
-formatSelect :: Move -> State -> String
-formatSelect move state =
+formatSelect :: (State -> Maybe Coord) -> (Move -> ModifyState) -> Move -> State -> String
+formatSelect wormsCoord makeSelections' move state =
   let selection = decodeSelectionForFormatting move
       move'     = removeSelectionFromMove move
   in "select " ++
      show selection ++
      ";" ++
-     formatMove move'
+     formatMove wormsCoord
+                makeSelections'
+                move'
                 -- ASSUME: that we're selecting a worm at a valid coord
-                (fromJust $ thisWormsCoord $ makeSelections move doNothing state)
+                (fromJust $ wormsCoord $ makeSelections' move state)
                 state
+
+makeThisSelection :: Move -> ModifyState
+makeThisSelection move = makeSelections move doNothing
+
+makeThatSelection :: Move -> ModifyState
+makeThatSelection move = makeSelections doNothing move
 
 formatShootMove :: Move -> String
 formatShootMove (Move 0) = "shoot N"
@@ -969,11 +977,11 @@ decrementPlayerSelections :: ModifyPlayer
 decrementPlayerSelections (Player points' wormId' selections') =
   Player points' wormId' $ decrementSelections selections'
 
-decrementThisPlayersSelecetions :: ModifyState
-decrementThisPlayersSelecetions = mapThisPlayer decrementPlayerSelections
+decrementThisPlayersSelections :: ModifyState
+decrementThisPlayersSelections = mapThisPlayer decrementPlayerSelections
 
-decrementThatPlayersSelecetions :: ModifyState
-decrementThatPlayersSelecetions = mapThatPlayer decrementPlayerSelections
+decrementThatPlayersSelections :: ModifyState
+decrementThatPlayersSelections = mapThatPlayer decrementPlayerSelections
 
 hasSelectionsLeft :: Player -> Bool
 hasSelectionsLeft (Player _ _ (Selections x)) = x > 0
@@ -989,33 +997,29 @@ hasASelection (Move x) = x >= 128
 
 makeSelections :: Move -> Move -> ModifyState
 makeSelections this that state =
-  let thisSelection      = if hasASelection this
-                           then Just (WormId $ decodeSelection this)
+  (makeSelection this
+                 thisPlayerHasSelectionsLeft
+                 decrementThisPlayersSelections
+                 mapThisPlayer) $
+  (makeSelection that
+                 thatPlayerHasSelectionsLeft
+                 decrementThatPlayersSelections
+                 mapThatPlayer) state
+  where
+    makeSelection :: Move -> (State -> Bool) -> ModifyState -> (ModifyPlayer -> ModifyState) -> ModifyState
+    makeSelection move' playerHasSelectionsLeft' decrementPlayersSelections' mapPlayer =
+      let selection      = if hasASelection move'
+                           then Just (WormId $ decodeSelection move')
                            else Nothing
-      thatSelection      = if hasASelection that
-                           then Just (WormId $ decodeSelection that)
-                           else Nothing
-      thisValidSelection = thisSelection >>= (\ selection -> if wormExists selection state &&
-                                                                thisPlayerHasSelectionsLeft state
-                                                             then Just selection
-                                                             else Nothing)
-      thatValidSelection = thatSelection >>= (\ selection -> if wormExists selection state &&
-                                                                thatPlayerHasSelectionsLeft state
-                                                             then Just selection
-                                                             else Nothing)
-      thisIsValid        = isJust thisValidSelection
-      thatIsValid        = isJust thatValidSelection
-      thisWormId         = fromJust thisValidSelection
-      thatWormId         = fromJust thatValidSelection
-      selectThis         = if thisIsValid
-                           then decrementThisPlayersSelecetions .
-                                mapThisPlayer (withCurrentWormId thisWormId)
-                           else id
-      selectThat         = if thatIsValid
-                           then decrementThatPlayersSelecetions .
-                                mapThatPlayer (withCurrentWormId thatWormId)
-                           else id
-  in selectThis $ selectThat state
+          validSelection = selection >>= (\ selection' -> if wormExists selection' state &&
+                                                             playerHasSelectionsLeft' state
+                                                          then Just selection'
+                                                          else Nothing)
+          isValid        = isJust validSelection
+          wormId'        = fromJust validSelection
+      in if isValid
+         then decrementPlayersSelections' . mapPlayer (withCurrentWormId wormId')
+         else id
 
 -- It's fine to use `findById' here because we don't care whether it's
 -- an AListEntry or w/e.
@@ -1042,6 +1046,7 @@ wormHasBananasLeft wormsId state =
 
 decrementBananas :: Bananas -> Bananas
 decrementBananas (-1) = (-1)
+decrementBananas 1    = (-1)
 decrementBananas x    = x - 1
 
 decrementWormsBananas :: (State -> WormId) -> ModifyState
@@ -1068,42 +1073,56 @@ deepSpaceAt = blockTypeAt DEEP_SPACE
 -- TODO: Repitition!!!
 makeBananaMoves :: Move -> Move -> ModifyState
 makeBananaMoves this that state =
-  let thisBananaMove       = if isABananaMove this then Just this else Nothing
-      thatBananaMove       = if isABananaMove that then Just that else Nothing
-      thisWormsId          = thisPlayersCurrentWormId state
-      thatWormsId          = thatPlayersCurrentWormId state
-      thisDestinationBlock = thisBananaMove >>=
-        ( \ thisMove -> bananaMoveDestination thisWormHasBananasLeft thisWormsCoord thisMove state)
-      thatDestinationBlock = thatBananaMove >>=
-        ( \ thatMove -> bananaMoveDestination thatWormHasBananasLeft thatWormsCoord thatMove state)
-      -- TODO: this looks very similar to L:2286
-      thisIsValid          = isJust thisDestinationBlock
-      thatIsValid          = isJust thatDestinationBlock
-      thisTarget           = fromJust thisDestinationBlock
-      thatTarget           = fromJust thatDestinationBlock
-      thisBlast            = if thisIsValid
-                             then decrementThisWormsBananas .
-                                  bananaBlast thisWormsId
-                                              awardPointsToThisPlayerForDigging
-                                              awardPointsToThisPlayerForDamage
-                                              penaliseThisPlayerForDamage
-                                              awardPointsToThisPlayerForMissing
-                                              awardPointsToThisPlayerForKillingAnEnemy
-                                              state
-                                              thisTarget
-                             else id
-      thatBlast            = if thatIsValid
-                             then decrementThatWormsBananas .
-                                  bananaBlast thatWormsId
-                                              awardPointsToThatPlayerForDigging
-                                              awardPointsToThatPlayerForDamage
-                                              penaliseThatPlayerForDamage
-                                              awardPointsToThatPlayerForMissing
-                                              awardPointsToThatPlayerForKillingAnEnemy
-                                              state
-                                              thatTarget
-                             else id
-  in thisBlast $ thatBlast state
+  (throwBanana this
+               thisPlayersCurrentWormId
+               thisWormsCoord
+               thisWormHasBananasLeft
+               decrementThisWormsBananas
+               awardPointsToThisPlayerForDigging
+               awardPointsToThisPlayerForDamage
+               penaliseThisPlayerForDamage
+               awardPointsToThisPlayerForMissing
+               awardPointsToThisPlayerForKillingAnEnemy) $
+  (throwBanana that
+               thatPlayersCurrentWormId
+               thatWormsCoord
+               thatWormHasBananasLeft
+               decrementThatWormsBananas
+               awardPointsToThatPlayerForDigging
+               awardPointsToThatPlayerForDamage
+               penaliseThatPlayerForDamage
+               awardPointsToThatPlayerForMissing
+               awardPointsToThatPlayerForKillingAnEnemy) state
+  where
+    throwBanana :: Move -> (State -> WormId) -> (State -> Maybe Coord) -> (State -> Bool) -> ModifyState -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> ModifyState
+    throwBanana move'
+                playersCurrentWormId'
+                wormsCoord'
+                wormHasBananasLeft'
+                decrementWormsBananas'
+                awardPointsToPlayerForDigging'
+                awardPointsToPlayerForDamage'
+                penalisePlayerForDamage'
+                awardPointsToPlayerForMissing'
+                awardPointsToPlayerForKillingAnEnemy' =
+      let bananaMove       = if isABananaMove move' then Just move' else Nothing
+          wormsId'         = playersCurrentWormId' state
+          destinationBlock = bananaMove >>=
+            ( \ bananaMove' -> bananaMoveDestination wormHasBananasLeft' wormsCoord' bananaMove' state)
+          -- TODO: looks very similar to L:2286
+          isValid          = isJust destinationBlock
+          target           = fromJust destinationBlock
+      in if isValid
+         then decrementWormsBananas' .
+              bananaBlast wormsId'
+                          awardPointsToPlayerForDigging'
+                          awardPointsToPlayerForDamage'
+                          penalisePlayerForDamage'
+                          awardPointsToPlayerForMissing'
+                          awardPointsToPlayerForKillingAnEnemy'
+                          state
+                          target
+         else id
 
 bananaMoveDestination :: (State -> Bool) -> (State -> Maybe Coord) -> Move -> State -> Maybe Coord
 bananaMoveDestination currentWormHasBananasLeft
@@ -1595,17 +1614,16 @@ harmWorm shootingWormId'
          penalisePlayer
          awardPlayer
          awardPlayerForKill
-         coord =
+         coord
+         state =
   let wormId'       = fromJust $
                       errorWithMessageIfJust ("Couldn't find worm with position: " ++ showCoord coord ++ "\nState: " ++ show originalState) $
                       aListFindIdByData coord $
                       wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
-      wormHealth'   = fromJust $
-                      errorWithMessageIfJust ("Couldn't find health of worm with id: " ++ show wormId' ++ "\nState: " ++ show originalState) $
-                      aListFindDataById wormId' $
-                      wormHealths originalState
-      wormDied      = wormHealth' <= damage'
+      wormHealth'   = aListFindDataById wormId' $
+                      wormHealths state
+      wormDied      = (not $ isJust wormHealth') || (fromJust wormHealth') <= damage'
       awardPoints   = if wormDied then (awardPlayer . awardPlayerForKill) else awardPlayer
       dishOutPoints = if samePlayer
                       then penalisePlayer
@@ -1613,7 +1631,7 @@ harmWorm shootingWormId'
       cleanUp       = cleanUpDeadWorm wormId'
       harm          = withWormHealths (harmWormById damage' wormId')
       go            = dishOutPoints . if wormDied then cleanUp else harm
-  in go
+  in go state
 
 penaliseThisPlayerForHittingHisFriendlyWorm :: ModifyState
 penaliseThisPlayerForHittingHisFriendlyWorm = mapThisPlayer penaliseForHittingFriendlyWorm
@@ -1840,16 +1858,16 @@ joinWith toString joinString strings =
   let withExtra = concat $ map ( \ x -> toString x ++ "\n\t") strings
   in take ((length withExtra) - (length joinString)) withExtra
 
-prettyPrintMove :: (State -> Maybe Coord) -> State -> Move -> String
-prettyPrintMove wormsCoord state move =
+prettyPrintMove :: (State -> Maybe Coord) -> (Move -> ModifyState) -> State -> Move -> String
+prettyPrintMove wormsCoord makeSelections' state move =
   let coord' = (fromJust $ wormsCoord state)
-  in formatMove move coord' state
+  in formatMove wormsCoord makeSelections' move coord' state
 
 prettyPrintThisMove :: State -> Move -> String
-prettyPrintThisMove = prettyPrintMove thisWormsCoord
+prettyPrintThisMove = prettyPrintMove thisWormsCoord makeThisSelection
 
 prettyPrintThatMove :: State -> Move -> String
-prettyPrintThatMove = prettyPrintMove thatWormsCoord
+prettyPrintThatMove = prettyPrintMove thatWormsCoord makeThatSelection
 
 prettyPrintSuccessRecord :: (State -> Move -> String) -> State -> SuccessRecord -> String
 prettyPrintSuccessRecord printMove state (SuccessRecord (Wins wins') (Played played') move') =
@@ -1907,7 +1925,7 @@ runRound roundNumber previousState stateChannel treeChannel = do
     "C;" ++
     show roundNumber ++
     ";" ++
-    formatMove move (fromJust $ thisWormsCoord previousState) previousState ++ "\n"
+    formatMove thisWormsCoord makeThisSelection move (fromJust $ thisWormsCoord previousState) previousState ++ "\n"
   roundNumber'         <- readRound
   state                <- readGameState roundNumber'
   -- TODO fromJust?
