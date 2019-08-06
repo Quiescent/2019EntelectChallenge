@@ -1183,6 +1183,34 @@ spec = do
                       addAirAt (toCoord 16 27) .
                       addAirAt (toCoord 17 27))))
     -- Shooting
+    prop "should not hit this players first horizontal target in range when it moves out of the way" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNonDiagonalPadding)
+                          (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
+                          (generateShotSwitch     shootEast shootWest)
+                          (takeBothWorms          (WormId 1) (WormId 4))
+                          (i, j, k)
+      in makeMove True (fromMoves shot moveNorth) state `shouldBe`
+         (setOpponentsLastMove state moveNorth $
+          selectNextWormsDefault $
+          moveThatWorm (fromJust $ displaceCoordByMove (fromJust $ thatWormsCoord state) moveNorth) $
+          awardPointsToThatPlayerForMovingToAir $
+          awardPointsToThisPlayerForMissing state)
+    prop "should not hit that players first horizontal target in range when it moves out of the way" $ \ (i, j, k) ->
+      let (state, shot) = generateShotScenario
+                          (generateCoordGenerator inBoundsWithNonDiagonalPadding
+                                                  inBoundsWithNonDiagonalPadding)
+                          (generateCoordDisplacer nonDiagonalDelta addDelta ignoreDelta)
+                          (generateShotSwitch     shootWest shootEast)
+                          (takeBothWorms          (WormId 1) (WormId 4))
+                          (i, j, k)
+      in makeMove True (fromMoves moveNorth shot) state `shouldBe`
+         (setOpponentsLastMove state shot $
+          selectNextWormsDefault $
+          moveThisWorm (fromJust $ displaceCoordByMove (fromJust $ thisWormsCoord state) moveNorth) $
+          awardPointsToThisPlayerForMovingToAir $
+          awardPointsToThatPlayerForMissing state)
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
       let (state, shot) = generateShotScenario
                           (generateCoordGenerator inBoundsWithNonDiagonalPadding
