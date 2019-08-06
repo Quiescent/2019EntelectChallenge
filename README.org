@@ -719,6 +719,8 @@ https://wiki.haskell.org/Playing_by_the_rules
 ** TODO Modify state rather than parsing it the whole time
 There are a couple of things that can only be inferred on the first
 round.  Like who has the bananas and how many he/she has.
+** TODO BUG: Sometimes filtering leaves no moves available causing the bot to do nothing in the random search
+I should never do nothing unless that leads to death.
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]

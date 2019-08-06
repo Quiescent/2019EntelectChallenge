@@ -2145,10 +2145,12 @@ playRandomly g round' state moves rewards =
   case gameOver state round' rewards of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
-      let availableMoves = filteredMovesFrom state
-          (move, g')     = pickOneAtRandom g availableMoves
-          state'         = makeMove False move state
-          reward'        = reward state state'
+      let availableMoves  = filteredMovesFrom state
+          (move, g')      = if availableMoves == []
+                            then (fromMoves doNothing doNothing, g)
+                            else pickOneAtRandom g availableMoves
+          state'          = makeMove False move state
+          reward'         = reward state state'
       in playRandomly g' (round' + 1) state' moves (reward':rewards)
 
 maxRound :: Int
