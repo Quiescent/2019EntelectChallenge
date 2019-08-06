@@ -709,13 +709,36 @@ spec = do
           withWormBananas (always $ aListFromList [(1, 3), (4, 3)])
           aState
     context "when I'm throwing the bomb" $ do
+      let aStateWithBananasOnWormOneAndTwo =
+            withWormHealths (always (AList 20 20 20 20 20 20)) $
+            withWormBananas (always $ aListFromList [(1, 3), (4, 3)])
+            aState
+      it "should kill myself when I throw it at myself and no one else" $
+        makeMove False (fromMoves bananaRightOnMe doNothing) aStateWithBananasOnWormOneAndTwo `shouldBe`
+        (selectNextWormsDefault $
+         harmWorm (WormId 1) aStateWithBananasOnWormOneAndTwo 20 id id id (toCoord 15 31) $
+         -- Decrement banana bombs
+         withWormBananas (always $ aListFromList [(4, 3)]) $
+         -- Points for the four squares
+         penaliseThisPlayerForDamage 20           $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         awardPointsToThisPlayerForDigging        $
+         mapGameMap aStateWithBananasOnWormOneAndTwo
+                    ((-- Up
+                      addAirAt (toCoord 15 30) .
+                      addAirAt (toCoord 15 29) .
+                      -- Remaining
+                      addAirAt (toCoord 14 30) .
+                      addAirAt (toCoord 16 30))))
       it "should cause maximum damage to the worm which it lands on" $
         makeMove False (fromMoves bananaOneToRight doNothing) aStateWithOposingWormsNextToEachother `shouldBe`
         (selectNextWormsDefault $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 20 id id id (toCoord 16 31) $
          harmWorm (WormId 1) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
+         withWormBananas (always $ aListFromList [(1, 2)]) $
          -- Points for the four squares
          awardPointsToThisPlayerForKillingAnEnemy $
          awardPointsToThisPlayerForDamage 20      $
@@ -1632,6 +1655,7 @@ fourIfZero x = x
 
 -- For how to come up with this value take a look at the function
 -- `coordDeltasInRange' and the accompanying doc string.
+bananaRightOnMe       = Move 64
 bananaOneToRight      = Move 65
 bananaOneToLeft       = Move 63
 bananaIntoDirtFromMe  = Move 24
