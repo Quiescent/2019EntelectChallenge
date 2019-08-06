@@ -936,7 +936,7 @@ makeMove swapping moves state =
   let (myMove,  opponentsMove)  = toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
-  in assertValidState state  myMove  opponentsMove  $
+  in -- assertValidState state  myMove  opponentsMove  $
      setOpponentsLastMove    state   opponentsMove  $
      advanceWormSelections                          $
      makeShootMoves          myMove' opponentsMove' $
@@ -1617,7 +1617,7 @@ harmWorm shootingWormId'
          coord
          state =
   let wormId'       = fromJust $
-                      errorWithMessageIfJust ("Couldn't find worm with position: " ++ showCoord coord ++ "\nState: " ++ show originalState) $
+                      -- errorWithMessageIfJust ("Couldn't find worm with position: " ++ showCoord coord ++ "\nState: " ++ show originalState) $
                       aListFindIdByData coord $
                       wormPositions originalState
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
