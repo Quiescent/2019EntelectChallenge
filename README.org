@@ -2741,8 +2741,11 @@ Profile-exe: thread blocked indefinitely in an MVar operation
     - CLOSING NOTE [2019-08-07 Wed 06:19]
     - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 17:15]
     :END:
+*** IN_PROGRESS Use a bit packed map instead of a HashMap
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-08-07 Wed 06:19]
+    :END:
 *** TODO Pass down whether there is a dig move
-*** TODO Use a bit packed map instead of a HashMap
 *** TODO Implement Text Parser
 *** TODO Use bitwise logic in make moves instead of Maybe
 *** TODO Use the compiler!
