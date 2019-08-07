@@ -10,7 +10,6 @@ module Bot
 import Import
 
 import qualified RIO.Vector.Boxed as V
-import qualified RIO.HashMap as M
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import RIO.List
@@ -272,7 +271,7 @@ instance Show State where
 
 -- BEGIN: MAP
 
-data GameMap = GameMap (M.HashMap Int Cell)
+data GameMap = GameMap Integer Integer Integer Integer
   deriving (Generic, Eq)
 
 instance Show GameMap where
@@ -284,42 +283,36 @@ showRows xs =
   (foldr (\ nextRow gameMap' -> gameMap' ++ "|" ++ (foldr (++) "" $ fmap show nextRow) ++ "|\n") "" xs) ++
   "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|"
 
-mapAtCoord :: State -> Coord -> Maybe Cell
-mapAtCoord State { gameMap = gameMap' } target = (\(GameMap xs) -> M.lookup target xs) gameMap'
+splitGameMap :: GameMap -> [[Cell]]
+splitGameMap = undefined
+
+mapAt :: Int -> GameMap -> Cell
+mapAt = undefined
+
+modifyMapCellAt :: Int -> (Cell -> Cell) -> GameMap -> GameMap
+modifyMapCellAt = undefined
+
+mapAtCoord :: State -> Coord -> Cell
+mapAtCoord State { gameMap = gameMap' } target = mapAt target gameMap'
 
 mapDim :: Int
 mapDim = 33
 
 cellTo :: Coord -> Cell -> GameMap -> GameMap
-cellTo position' newCell (GameMap xs) =
-  GameMap $ M.adjust (always newCell) position' xs
+cellTo position' newCell gameMap' =
+  modifyMapCellAt position' (always newCell) gameMap'
 
 removeDirtAt :: Coord -> GameMap -> GameMap
-removeDirtAt = (flip mapSquareAt) (always AIR)
+removeDirtAt = (flip cellTo) AIR
 
 removeDirtFromMapAt :: Coord -> ModifyState
 removeDirtFromMapAt coord = (flip mapGameMap) (removeDirtAt coord)
 
-mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
-mapSquareAt coord f (GameMap xs) =
-  GameMap $ M.adjust f coord xs
-
-splitGameMap :: GameMap -> [[Cell]]
-splitGameMap (GameMap xs) =
-  reverse $ iter $ map snd $ sortOn fst $ M.toList xs
-  where
-    iter []  = []
-    iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
-
-vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
-vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
-
-lookupCoord :: Coord -> GameMap -> Maybe Cell
-lookupCoord xy' (GameMap xs) =
-  M.lookup xy' xs
+vectorGameMapGameMap :: V.Vector Cell -> GameMap
+vectorGameMapGameMap = undefined
 
 blockTypeAt :: Cell -> Coord -> GameMap -> Bool
-blockTypeAt cell coord' = any (== cell) . lookupCoord coord'
+blockTypeAt cell coord' = (== cell) . mapAt coord'
 
 deepSpaceAt ::  Coord -> GameMap -> Bool
 deepSpaceAt = blockTypeAt DEEP_SPACE
@@ -332,8 +325,7 @@ medipackAt = blockTypeAt MEDIPACK
 
 obstacleAt :: Coord -> GameMap -> Bool
 obstacleAt coord' =
-   any (\ square -> square == DIRT || square == DEEP_SPACE) .
-   lookupCoord coord'
+   (\ square -> square == DIRT || square == DEEP_SPACE) . mapAt coord'
 
 -- END: MAP
 
@@ -369,7 +361,7 @@ toState myPlayer' opponents' gameMap' =
             wormBananas'
             (removeHealthPoints aListSumThisPlayersValues wormHealths' $ toPlayer myPlayer')
             (removeHealthPoints aListSumThatPlayersValues wormHealths' $ opponentToPlayer opponent')
-            (vectorGameMapToHashGameMap $ V.concat $ V.toList gameMap')
+            (vectorGameMapGameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
 
 wormCount :: Int
@@ -1322,11 +1314,11 @@ makeMoveMoves swapping this that state =
       thisWormsPosition     = fromJust $ thisWormsCoord state
       thatWormsPosition     = fromJust $ thatWormsCoord state
       thisWormId            = thisPlayersCurrentWormId state
-      thisTargetIsValid     = ((thisTarget >>= mapAtCoord state) == Just AIR || (thisTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWormExcept state thisWormId) thisTarget) == Just False
-      thisTargetIsAMedipack = (thisTarget >>= mapAtCoord state) == Just MEDIPACK
+      thisTargetIsValid     = ((fmap (mapAtCoord state) thisTarget) == Just AIR || (fmap (mapAtCoord state) thisTarget) == Just MEDIPACK) && (fmap (containsAnyWormExcept state thisWormId) thisTarget) == Just False
+      thisTargetIsAMedipack = (fmap (mapAtCoord state) thisTarget) == Just MEDIPACK
       thatWormId            = thatPlayersCurrentWormId state
-      thatTargetIsValid     = ((thatTarget >>= mapAtCoord state) == Just AIR || (thatTarget >>= mapAtCoord state) == Just MEDIPACK) && (fmap (containsAnyWormExcept state thatWormId) thatTarget) == Just False
-      thatTargetIsAMedipack = (thatTarget >>= mapAtCoord state) == Just MEDIPACK
+      thatTargetIsValid     = ((fmap (mapAtCoord state) thatTarget) == Just AIR || (fmap (mapAtCoord state) thatTarget) == Just MEDIPACK) && (fmap (containsAnyWormExcept state thatWormId) thatTarget) == Just False
+      thatTargetIsAMedipack = (fmap (mapAtCoord state) thatTarget) == Just MEDIPACK
       -- fromJust is valid because we test whether it's Just on the above two lines
       validThisTarget       = fromJust thisTarget
       validThatTarget       = fromJust thatTarget
@@ -1351,11 +1343,11 @@ makeMoveMoves swapping this that state =
 
 targetOfThisMoveIsDirt :: Move -> State -> Bool
 targetOfThisMoveIsDirt move state =
-  (targetOfThisMove move state >>= mapAtCoord state) == Just DIRT
+  (fmap (mapAtCoord state) $ targetOfThisMove move state) == Just DIRT
 
 targetOfThatMoveIsDirt :: Move -> State -> Bool
 targetOfThatMoveIsDirt move state =
-  (targetOfThatMove move state >>= mapAtCoord state) == Just DIRT
+  (fmap (mapAtCoord state) $ targetOfThatMove move state) == Just DIRT
 
 giveMedipackToThisWorm :: ModifyState
 giveMedipackToThisWorm state =
@@ -2500,7 +2492,7 @@ targetOfMoveMove targetOfMove' state move =
 isValidMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> State -> Move -> Bool
 isValidMoveMove targetOfMove' currentWormId' state move =
   let targetCoord = targetOfMoveMove targetOfMove' state move
-      target      = (targetCoord >>= mapAtCoord state)
+      target      = (fmap (mapAtCoord state) $ targetCoord)
       wormId'     = currentWormId' state
   in (target == Just AIR || target == Just MEDIPACK) &&
      (fmap (containsAnyWormExcept state wormId') targetCoord) == Just False
@@ -2512,7 +2504,7 @@ targetOfDigMove targetOfMove' state move =
 
 isValidDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 isValidDigMove targetOfMove' state move =
-  (targetOfDigMove targetOfMove' state move >>= mapAtCoord state) == Just DIRT
+  (fmap (mapAtCoord state) $ targetOfDigMove targetOfMove' state move) == Just DIRT
 
 hits :: (AList -> [Int]) -> (State -> Maybe Coord) -> State -> Maybe [Move]
 hits wormData wormsCoord state = do
