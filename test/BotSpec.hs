@@ -57,6 +57,12 @@ spec = do
     prop "it should always produce MEDIPACK for a map with only medipack on it" $ \ x ->
       let coord' = (abs x) `mod` (mapDim * mapDim)
       in mapAt coord' medipackOnlyGameMap `shouldBe` MEDIPACK
+  describe "modifyMapCellAt" $ do
+    context "supplied with the all AIR map" $ do
+      prop "it should produce the desired square at the desired coordinate when changed to that type" $ \ (x, y) ->
+        let coord = (abs x) `mod` (mapDim * mapDim)
+            cell  = [AIR, DIRT, DEEP_SPACE, MEDIPACK] L.!! ((abs y) `mod` 4)
+        in (mapAt coord $ modifyMapCellAt coord (always cell) airOnlyGameMap) `shouldBe` cell
   describe "parseLastCommand" $ do
     it "should be able to parse all of the opponents moves from a state" $
       let opponentsMoves          = opponentsMovesFrom aState

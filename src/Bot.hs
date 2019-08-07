@@ -302,8 +302,18 @@ type BitMask = Integer
 coordToBitMask :: Coord -> BitMask
 coordToBitMask = shiftL 1
 
+clearCellAt :: Coord -> Cell -> GameMap -> GameMap
+clearCellAt _ _ _ = undefined
+
+setCellAt :: Coord -> Cell -> GameMap -> GameMap
+setCellAt _ _ _ = undefined
+
 modifyMapCellAt :: Int -> (Cell -> Cell) -> GameMap -> GameMap
-modifyMapCellAt = undefined
+modifyMapCellAt coord' f gameMap' =
+  let cell                 = mapAt coord' gameMap'
+      gameMapWithoutCell = clearCellAt coord' cell gameMap'
+      cell'                = f cell
+  in setCellAt coord' cell' gameMapWithoutCell
 
 vectorGameMapToGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToGameMap = undefined
