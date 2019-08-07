@@ -269,8 +269,6 @@ instance Show State where
     show gameMap' ++
     "}"
 
--- BEGIN: MAP
-
 data GameMap = GameMap Integer Integer Integer Integer
   deriving (Generic, Eq)
 
@@ -326,8 +324,6 @@ medipackAt = blockTypeAt MEDIPACK
 obstacleAt :: Coord -> GameMap -> Bool
 obstacleAt coord' =
    (\ square -> square == DIRT || square == DEEP_SPACE) . mapAt coord'
-
--- END: MAP
 
 instance FromJSON State where
   parseJSON = withObject "State" $ \ v ->

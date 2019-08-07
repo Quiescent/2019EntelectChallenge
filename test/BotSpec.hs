@@ -1731,8 +1731,6 @@ spec = do
                                   aListFindDataById thatSelection positions)
                                  (wormPositions state))
 
--- BEGIN: MAP
-
 spaceBetween :: ModifyMap
 spaceBetween thisCoord thatCoord=
   addSpaceAt (coordBetween thisCoord thatCoord)
@@ -1775,8 +1773,6 @@ airRow = take mapDim $ repeat AIR
 
 aGameMapWithOnlyAir = vectorGameMapToGameMap $ V.fromList $
   foldl' (++) [] (take mapDim $ repeat airRow)
-
--- END: MAP
 
 withSelections :: (Selections -> Selections) -> ModifyPlayer
 withSelections f (Player points' wormId' selections') =
