@@ -27,25 +27,6 @@ import Control.Concurrent
 -- TODO: think long and hard about this...
 import Prelude (read)
 
-data GameMap = GameMap (M.HashMap Int Cell)
-  deriving (Generic, Eq)
-
-instance Show GameMap where
-  show = showRows . splitGameMap
-
-showRows :: [[Cell]] -> String
-showRows xs =
-  "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|\n" ++
-  (foldr (\ nextRow gameMap' -> gameMap' ++ "|" ++ (foldr (++) "" $ fmap show nextRow) ++ "|\n") "" xs) ++
-  "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|"
-
-splitGameMap :: GameMap -> [[Cell]]
-splitGameMap (GameMap xs) =
-  reverse $ iter $ map snd $ sortOn fst $ M.toList xs
-  where
-    iter []  = []
-    iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
-
 data State = State { opponentsLastCommand :: Maybe String,
                      wormHealths          :: WormHealths,
                      wormPositions        :: WormPositions,
@@ -289,6 +270,73 @@ instance Show State where
     show gameMap' ++
     "}"
 
+-- BEGIN: MAP
+
+data GameMap = GameMap (M.HashMap Int Cell)
+  deriving (Generic, Eq)
+
+instance Show GameMap where
+  show = showRows . splitGameMap
+
+showRows :: [[Cell]] -> String
+showRows xs =
+  "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|\n" ++
+  (foldr (\ nextRow gameMap' -> gameMap' ++ "|" ++ (foldr (++) "" $ fmap show nextRow) ++ "|\n") "" xs) ++
+  "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|"
+
+mapAtCoord :: State -> Coord -> Maybe Cell
+mapAtCoord State { gameMap = gameMap' } target = (\(GameMap xs) -> M.lookup target xs) gameMap'
+
+mapDim :: Int
+mapDim = 33
+
+cellTo :: Coord -> Cell -> GameMap -> GameMap
+cellTo position' newCell (GameMap xs) =
+  GameMap $ M.adjust (always newCell) position' xs
+
+removeDirtAt :: Coord -> GameMap -> GameMap
+removeDirtAt = (flip mapSquareAt) (always AIR)
+
+removeDirtFromMapAt :: Coord -> ModifyState
+removeDirtFromMapAt coord = (flip mapGameMap) (removeDirtAt coord)
+
+mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
+mapSquareAt coord f (GameMap xs) =
+  GameMap $ M.adjust f coord xs
+
+splitGameMap :: GameMap -> [[Cell]]
+splitGameMap (GameMap xs) =
+  reverse $ iter $ map snd $ sortOn fst $ M.toList xs
+  where
+    iter []  = []
+    iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
+
+vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
+vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
+
+lookupCoord :: Coord -> GameMap -> Maybe Cell
+lookupCoord xy' (GameMap xs) =
+  M.lookup xy' xs
+
+blockTypeAt :: Cell -> Coord -> GameMap -> Bool
+blockTypeAt cell coord' = any (== cell) . lookupCoord coord'
+
+deepSpaceAt ::  Coord -> GameMap -> Bool
+deepSpaceAt = blockTypeAt DEEP_SPACE
+
+dirtAt :: Coord -> GameMap -> Bool
+dirtAt = blockTypeAt DIRT
+
+medipackAt :: Coord -> GameMap -> Bool
+medipackAt = blockTypeAt MEDIPACK
+
+obstacleAt :: Coord -> GameMap -> Bool
+obstacleAt coord' =
+   any (\ square -> square == DIRT || square == DEEP_SPACE) .
+   lookupCoord coord'
+
+-- END: MAP
+
 instance FromJSON State where
   parseJSON = withObject "State" $ \ v ->
     toState <$> v .: "myPlayer"
@@ -398,9 +446,6 @@ factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
                             else Nothing)
                   worms'
   in (healths, positions, bananas)
-
-vectorGameMapToHashGameMap :: V.Vector Cell -> GameMap
-vectorGameMapToHashGameMap = GameMap . M.fromList . zip [0..] . V.toList
 
 opponentToPlayer :: Opponent -> Player
 opponentToPlayer (Opponent _ score' currentWormId' _ selections') =
@@ -646,9 +691,6 @@ instance FromJSON JSONCoord where
     toJSONCoord <$> v .: "x"
                 <*> v .: "y"
 
-mapDim :: Int
-mapDim = 33
-
 healthPackHealth :: Int
 healthPackHealth = 10
 
@@ -877,10 +919,6 @@ moveFromMaybe :: IsString p => Maybe p -> p
 moveFromMaybe (Just move) = move
 moveFromMaybe Nothing     = "nothing"
 
-lookupCoord :: Coord -> GameMap -> Maybe Cell
-lookupCoord xy' (GameMap xs) =
-  M.lookup xy' xs
-
 displaceCoordByMove :: Coord -> Move -> Maybe Coord
 displaceCoordByMove xy moveDir@(Move dir) =
   fmap (uncurry toCoord) $ isOOB $
@@ -1064,13 +1102,6 @@ withWormBananas :: WithWormFacts
 withWormBananas f state@(State { wormBananas = wormBananas' }) =
   state { wormBananas = f wormBananas' }
 
-blockTypeAt :: Cell -> Coord -> GameMap -> Bool
-blockTypeAt cell coord' = any (== cell) . lookupCoord coord'
-
-deepSpaceAt ::  Coord -> GameMap -> Bool
-deepSpaceAt = blockTypeAt DEEP_SPACE
-
--- TODO: Repitition!!!
 makeBananaMoves :: Move -> Move -> ModifyState
 makeBananaMoves this that state =
   (throwBanana this
@@ -1231,12 +1262,6 @@ bananaBlast wormId'
      else foldl' (\ state' (_, packHit) -> removeMedipack packHit state')
           withDirtRemoved packHits
 
-dirtAt :: Coord -> GameMap -> Bool
-dirtAt = blockTypeAt DIRT
-
-medipackAt :: Coord -> GameMap -> Bool
-medipackAt = blockTypeAt MEDIPACK
-
 bananaCentreDamage :: Int
 bananaCentreDamage = 20
 
@@ -1352,23 +1377,9 @@ removeMedipack position' =
 always :: a -> b -> a
 always x _ = x
 
-cellTo :: Coord -> Cell -> GameMap -> GameMap
-cellTo position' newCell (GameMap xs) =
-  GameMap $ M.adjust (always newCell) position' xs
-
 mapGameMap :: State -> (GameMap -> GameMap) -> State
 mapGameMap state@(State { gameMap = gameMap' }) f =
   state { gameMap = f gameMap' }
-
-removeDirtAt :: Coord -> GameMap -> GameMap
-removeDirtAt = (flip mapSquareAt) (always AIR)
-
-removeDirtFromMapAt :: Coord -> ModifyState
-removeDirtFromMapAt coord = (flip mapGameMap) (removeDirtAt coord)
-
-mapSquareAt :: Coord -> (Cell -> Cell) -> GameMap -> GameMap
-mapSquareAt coord f (GameMap xs) =
-  GameMap $ M.adjust f coord xs
 
 containsAnyWormExcept :: State -> WormId -> Coord -> Bool
 containsAnyWormExcept State { wormPositions = wormPositions' } wormId' coord' =
@@ -1376,9 +1387,6 @@ containsAnyWormExcept State { wormPositions = wormPositions' } wormId' coord' =
 
 isAMoveMove :: Move -> Bool
 isAMoveMove (Move x) = x >= 8 && x < 16
-
-mapAtCoord :: State -> Coord -> Maybe Cell
-mapAtCoord State { gameMap = gameMap' } target = (\(GameMap xs) -> M.lookup target xs) gameMap'
 
 -- TODO: get actual amount of damage
 knockBackDamageAmount :: Int
@@ -1690,11 +1698,6 @@ isAPositionOfAWorm coord' wormPositions' =
   case aListFindDataByData coord' wormPositions' of
     Just position' -> HitWorm position'
     Nothing        -> HitNothing
-
-obstacleAt :: Coord -> GameMap -> Bool
-obstacleAt coord' =
-   any (\ square -> square == DIRT || square == DEEP_SPACE) .
-   lookupCoord coord'
 
 possibleHitCoordinates :: Coord -> Direction -> [Coord]
 possibleHitCoordinates coord W  = iterateHorizontally coord (-)

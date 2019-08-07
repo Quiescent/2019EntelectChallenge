@@ -1731,6 +1731,53 @@ spec = do
                                   aListFindDataById thatSelection positions)
                                  (wormPositions state))
 
+-- BEGIN: MAP
+
+addDirtAt :: Coord -> GameMap -> GameMap
+addDirtAt = (flip mapSquareAt) (always DIRT)
+
+spaceBetween :: ModifyMap
+spaceBetween thisCoord thatCoord=
+  addSpaceAt (coordBetween thisCoord thatCoord)
+
+addSpaceAt :: Coord -> GameMap -> GameMap
+addSpaceAt = (flip mapSquareAt) (always DEEP_SPACE)
+
+addAirAt :: Coord -> GameMap -> GameMap
+addAirAt = (flip mapSquareAt) (always AIR)
+
+addMedipackAt :: Coord -> GameMap -> GameMap
+addMedipackAt = (flip mapSquareAt) (always MEDIPACK)
+
+-- Medipack is at 31 31
+aGameMapWithAMedipack = vectorGameMapToHashGameMap $ V.fromList $
+  spaceRow ++
+  dirtRow ++
+  foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
+  dirtRowWithMedipack ++
+  spaceRow
+
+dirtRowWithMedipack = [DEEP_SPACE] ++ (take (mapDim - 3) $ repeat AIR) ++ [MEDIPACK, DEEP_SPACE]
+dirtRow = [DEEP_SPACE] ++ (take (mapDim - 2) $ repeat AIR) ++ [DEEP_SPACE]
+spaceRow = take mapDim $ repeat DEEP_SPACE
+middleRow = [DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]
+  where tenAir = (take 10 $ repeat AIR)
+someDirt = (take (mapDim - 22) $ repeat DIRT)
+
+aGameMap = vectorGameMapToHashGameMap $ V.fromList $
+  spaceRow ++
+  dirtRow ++
+  foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
+  dirtRow ++
+  spaceRow
+
+airRow = take mapDim $ repeat AIR
+
+aGameMapWithOnlyAir = vectorGameMapToHashGameMap $ V.fromList $
+  foldl' (++) [] (take mapDim $ repeat airRow)
+
+-- END: MAP
+
 withSelections :: (Selections -> Selections) -> ModifyPlayer
 withSelections f (Player points' wormId' selections') =
   Player points' wormId' $ f selections'
@@ -1844,22 +1891,6 @@ coordBetween xy ij =
   let (x', y') = fromCoord xy
       (i,  j)  = fromCoord ij
   in toCoord ((x' + i) `div` 2) ((y' + j) `div` 2)
-
-addDirtAt :: Coord -> GameMap -> GameMap
-addDirtAt = (flip mapSquareAt) (always DIRT)
-
-spaceBetween :: ModifyMap
-spaceBetween thisCoord thatCoord=
-  addSpaceAt (coordBetween thisCoord thatCoord)
-
-addSpaceAt :: Coord -> GameMap -> GameMap
-addSpaceAt = (flip mapSquareAt) (always DEEP_SPACE)
-
-addAirAt :: Coord -> GameMap -> GameMap
-addAirAt = (flip mapSquareAt) (always AIR)
-
-addMedipackAt :: Coord -> GameMap -> GameMap
-addMedipackAt = (flip mapSquareAt) (always MEDIPACK)
 
 generateShotSwitch :: Move -> Move -> ShotSwitch
 generateShotSwitch a b x =
@@ -2348,33 +2379,6 @@ wormPositionsWithMyWormAtTop = aListFromList [
 startingSelections = (Selections 3)
 
 aPlayer = Player 300 (WormId 1) startingSelections
-
--- Medipack is at 31 31
-aGameMapWithAMedipack = vectorGameMapToHashGameMap $ V.fromList $
-  spaceRow ++
-  dirtRow ++
-  foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
-  dirtRowWithMedipack ++
-  spaceRow
-
-dirtRowWithMedipack = [DEEP_SPACE] ++ (take (mapDim - 3) $ repeat AIR) ++ [MEDIPACK, DEEP_SPACE]
-dirtRow = [DEEP_SPACE] ++ (take (mapDim - 2) $ repeat AIR) ++ [DEEP_SPACE]
-spaceRow = take mapDim $ repeat DEEP_SPACE
-middleRow = [DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]
-  where tenAir = (take 10 $ repeat AIR)
-someDirt = (take (mapDim - 22) $ repeat DIRT)
-
-aGameMap = vectorGameMapToHashGameMap $ V.fromList $
-  spaceRow ++
-  dirtRow ++
-  foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
-  dirtRow ++
-  spaceRow
-
-airRow = take mapDim $ repeat AIR
-
-aGameMapWithOnlyAir = vectorGameMapToHashGameMap $ V.fromList $
-  foldl' (++) [] (take mapDim $ repeat airRow)
 
 withLastMove :: Maybe String -> State -> State
 withLastMove move' state =
