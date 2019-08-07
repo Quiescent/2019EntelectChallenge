@@ -41,6 +41,13 @@ transitions SearchFront                        = []
 
 spec :: Spec
 spec = do
+  describe "mapAt" $ do
+    prop "it should produce an error for any coordinate when the map is empty" $ \ x ->
+      let coord' = (abs x) `mod` (mapDim * mapDim)
+      in evaluate (mapAt coord' emptyGameMap) `shouldThrow` anyException
+    prop "it should always produce AIR for a map with only air on it" $ \ x ->
+      let coord' = (abs x) `mod` (mapDim * mapDim)
+      in mapAt coord' airOnlyGameMap `shouldBe` AIR
   describe "parseLastCommand" $ do
     it "should be able to parse all of the opponents moves from a state" $
       let opponentsMoves          = opponentsMovesFrom aState
@@ -1730,6 +1737,15 @@ spec = do
               isAPositionOfAWorm (fromJust $
                                   aListFindDataById thatSelection positions)
                                  (wormPositions state))
+
+emptyGameMap :: GameMap
+emptyGameMap = GameMap 0 0 0 0
+
+fullOfStuff :: Integer
+fullOfStuff = ((shiftL 1 (mapDim * mapDim)) - 1)
+
+airOnlyGameMap :: GameMap
+airOnlyGameMap = GameMap fullOfStuff 0 0 0
 
 spaceBetween :: ModifyMap
 spaceBetween thisCoord thatCoord=
