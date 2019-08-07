@@ -2735,8 +2735,10 @@ Profile-exe: thread blocked indefinitely in an MVar operation
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
    :END:
-*** IN_PROGRESS Improve aList
+*** DONE Improve aList
+    CLOSED: [2019-08-07 Wed 06:19]
     :LOGBOOK:
+    - CLOSING NOTE [2019-08-07 Wed 06:19]
     - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 17:15]
     :END:
 *** TODO Pass down whether there is a dig move
