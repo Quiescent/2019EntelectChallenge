@@ -1733,24 +1733,24 @@ spec = do
 
 -- BEGIN: MAP
 
-addDirtAt :: Coord -> GameMap -> GameMap
-addDirtAt = (flip mapSquareAt) (always DIRT)
-
 spaceBetween :: ModifyMap
 spaceBetween thisCoord thatCoord=
   addSpaceAt (coordBetween thisCoord thatCoord)
 
+addDirtAt :: Coord -> GameMap -> GameMap
+addDirtAt = (flip cellTo) DIRT
+
 addSpaceAt :: Coord -> GameMap -> GameMap
-addSpaceAt = (flip mapSquareAt) (always DEEP_SPACE)
+addSpaceAt = (flip cellTo) DEEP_SPACE
 
 addAirAt :: Coord -> GameMap -> GameMap
-addAirAt = (flip mapSquareAt) (always AIR)
+addAirAt = (flip cellTo) AIR
 
 addMedipackAt :: Coord -> GameMap -> GameMap
-addMedipackAt = (flip mapSquareAt) (always MEDIPACK)
+addMedipackAt = (flip cellTo) MEDIPACK
 
 -- Medipack is at 31 31
-aGameMapWithAMedipack = vectorGameMapToHashGameMap $ V.fromList $
+aGameMapWithAMedipack = vectorGameMapToGameMap $ V.fromList $
   spaceRow ++
   dirtRow ++
   foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
@@ -1764,7 +1764,7 @@ middleRow = [DEEP_SPACE] ++ tenAir ++ someDirt ++ tenAir ++ [DEEP_SPACE]
   where tenAir = (take 10 $ repeat AIR)
 someDirt = (take (mapDim - 22) $ repeat DIRT)
 
-aGameMap = vectorGameMapToHashGameMap $ V.fromList $
+aGameMap = vectorGameMapToGameMap $ V.fromList $
   spaceRow ++
   dirtRow ++
   foldl' (++) [] (take (mapDim - 4) $ repeat middleRow) ++
@@ -1773,7 +1773,7 @@ aGameMap = vectorGameMapToHashGameMap $ V.fromList $
 
 airRow = take mapDim $ repeat AIR
 
-aGameMapWithOnlyAir = vectorGameMapToHashGameMap $ V.fromList $
+aGameMapWithOnlyAir = vectorGameMapToGameMap $ V.fromList $
   foldl' (++) [] (take mapDim $ repeat airRow)
 
 -- END: MAP

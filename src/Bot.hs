@@ -308,8 +308,8 @@ removeDirtAt = (flip cellTo) AIR
 removeDirtFromMapAt :: Coord -> ModifyState
 removeDirtFromMapAt coord = (flip mapGameMap) (removeDirtAt coord)
 
-vectorGameMapGameMap :: V.Vector Cell -> GameMap
-vectorGameMapGameMap = undefined
+vectorGameMapToGameMap :: V.Vector Cell -> GameMap
+vectorGameMapToGameMap = undefined
 
 blockTypeAt :: Cell -> Coord -> GameMap -> Bool
 blockTypeAt cell coord' = (== cell) . mapAt coord'
@@ -361,7 +361,7 @@ toState myPlayer' opponents' gameMap' =
             wormBananas'
             (removeHealthPoints aListSumThisPlayersValues wormHealths' $ toPlayer myPlayer')
             (removeHealthPoints aListSumThatPlayersValues wormHealths' $ opponentToPlayer opponent')
-            (vectorGameMapGameMap $ V.concat $ V.toList gameMap')
+            (vectorGameMapToGameMap $ V.concat $ V.toList gameMap')
     Nothing -> error "There was no opponent to play against..."
 
 wormCount :: Int
