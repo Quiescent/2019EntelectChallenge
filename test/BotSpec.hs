@@ -48,6 +48,15 @@ spec = do
     prop "it should always produce AIR for a map with only air on it" $ \ x ->
       let coord' = (abs x) `mod` (mapDim * mapDim)
       in mapAt coord' airOnlyGameMap `shouldBe` AIR
+    prop "it should always produce DIRT for a map with only dirt on it" $ \ x ->
+      let coord' = (abs x) `mod` (mapDim * mapDim)
+      in mapAt coord' dirtOnlyGameMap `shouldBe` DIRT
+    prop "it should always produce DEEP_SPACE for a map with only deep_space on it" $ \ x ->
+      let coord' = (abs x) `mod` (mapDim * mapDim)
+      in mapAt coord' deepSpaceOnlyGameMap `shouldBe` DEEP_SPACE
+    prop "it should always produce MEDIPACK for a map with only medipack on it" $ \ x ->
+      let coord' = (abs x) `mod` (mapDim * mapDim)
+      in mapAt coord' medipackOnlyGameMap `shouldBe` MEDIPACK
   describe "parseLastCommand" $ do
     it "should be able to parse all of the opponents moves from a state" $
       let opponentsMoves          = opponentsMovesFrom aState
@@ -1746,6 +1755,15 @@ fullOfStuff = ((shiftL 1 (mapDim * mapDim)) - 1)
 
 airOnlyGameMap :: GameMap
 airOnlyGameMap = GameMap fullOfStuff 0 0 0
+
+dirtOnlyGameMap :: GameMap
+dirtOnlyGameMap = GameMap 0 fullOfStuff 0 0
+
+deepSpaceOnlyGameMap :: GameMap
+deepSpaceOnlyGameMap = GameMap 0 0 fullOfStuff 0
+
+medipackOnlyGameMap :: GameMap
+medipackOnlyGameMap = GameMap 0 0 0 fullOfStuff
 
 spaceBetween :: ModifyMap
 spaceBetween thisCoord thatCoord=
