@@ -285,10 +285,28 @@ splitGameMap :: GameMap -> [[Cell]]
 splitGameMap = undefined
 
 mapAt :: Int -> GameMap -> Cell
-mapAt = undefined
+mapAt coord' map'@(GameMap air dirt space medipacks) =
+  let mask' = coordToBitMask coord'
+  in if mask' .&. air > 0
+     then AIR
+     else if mask' .&. dirt > 0
+          then DIRT
+          else if mask' .&. space > 0
+               then DEEP_SPACE
+               else if mask' .&. medipacks > 0
+                    then MEDIPACK
+                    else error $ "Invalid game map: " ++ show map'
+
+type BitMask = Integer
+
+coordToBitMask :: Coord -> BitMask
+coordToBitMask = shiftL 1
 
 modifyMapCellAt :: Int -> (Cell -> Cell) -> GameMap -> GameMap
 modifyMapCellAt = undefined
+
+vectorGameMapToGameMap :: V.Vector Cell -> GameMap
+vectorGameMapToGameMap = undefined
 
 mapAtCoord :: State -> Coord -> Cell
 mapAtCoord State { gameMap = gameMap' } target = mapAt target gameMap'
@@ -305,9 +323,6 @@ removeDirtAt = (flip cellTo) AIR
 
 removeDirtFromMapAt :: Coord -> ModifyState
 removeDirtFromMapAt coord = (flip mapGameMap) (removeDirtAt coord)
-
-vectorGameMapToGameMap :: V.Vector Cell -> GameMap
-vectorGameMapToGameMap = undefined
 
 blockTypeAt :: Cell -> Coord -> GameMap -> Bool
 blockTypeAt cell coord' = (== cell) . mapAt coord'
