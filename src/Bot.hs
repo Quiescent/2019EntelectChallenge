@@ -282,7 +282,13 @@ showRows xs =
   "|" ++ (foldr (++) "" $ take mapDim $ repeat "-") ++ "|"
 
 splitGameMap :: GameMap -> [[Cell]]
-splitGameMap = undefined
+splitGameMap gameMap' =
+  let cells = zip [(1::Int)..]
+                  (foldl' (\ acc coord' -> mapAt coord' gameMap' : acc) []
+                   [0..((mapDim * mapDim) - 1)])
+      iter []  = []
+      iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
+  in reverse $ iter $ map snd $ sortOn fst $ cells
 
 mapAt :: Int -> GameMap -> Cell
 mapAt coord' map'@(GameMap air dirt space medipacks) =
