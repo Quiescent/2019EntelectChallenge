@@ -1273,7 +1273,7 @@ spec = do
          harmWorm (WormId 4) aStateWithLowHealthOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
          harmWorm (WormId 4) aStateWithLowHealthOposingWormsNextToEachother 20 id id id (toCoord 15 31) $
          -- Decrement banana bombs
-         withWormBananas (always $ AList (-1) (-1) (-1) (-1) (-1) (-1)) $
+         withWormBananas (always $ emptyAList) $
          -- Points for the four squares
          awardPointsToThisPlayerForKillingAnEnemy $
          awardPointsToThisPlayerForDamage 20      $
@@ -1905,9 +1905,13 @@ hasScore score' (Player score'' _ _) = score' == score''
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)
 
-emptyWormHealths = AList (-1) (-1) (-1) (-1) (-1) (-1)
+emptyWormHealths = emptyAList
 
-emptyWormPositions = AList (-1) (-1) (-1) (-1) (-1) (-1)
+emptyWormPositions = emptyAList
+
+emptyWormSnowballs = emptyAList
+
+emptyWormFrozenDurations = emptyAList
 
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (.&&.) p1 p2 x =
@@ -2037,9 +2041,12 @@ generateShotScenarioWithMapModifications generateCoord displace switchShot addFa
       shot                    = switchShot    delta
       modifiedMap             = modifyMap originatingCoord displacedCoord aGameMapWithOnlyAir
       state                   = State justNothing
+                                      0
                                       emptyWormHealths
                                       emptyWormPositions
                                       emptyBananaBombs
+                                      emptyWormSnowballs
+                                      emptyWormFrozenDurations
                                       (Player 300 (WormId 1) startingSelections)
                                       (Player 300 (WormId 4) startingSelections)
                                       modifiedMap
@@ -2125,20 +2132,26 @@ moveEast = Move 10
 
 moveWest = Move 14
 
-emptyBananaBombs = AList (-1) (-1) (-1) (-1) (-1) (-1)
+emptyBananaBombs = emptyAList
 
 aStateWithoutWorms = State justNothing
+                           0
                            emptyWormHealths
                            emptyWormPositions
                            emptyBananaBombs
+                           emptyWormSnowballs
+                           emptyWormFrozenDurations
                            aPlayer
                            anOpponent
                            aGameMap
 
 aState = State justNothing
+               0
                someWormHealths
                someWormPositions
                emptyBananaBombs
+               emptyWormSnowballs
+               emptyWormFrozenDurations
                aPlayer
                anOpponent
                aGameMap

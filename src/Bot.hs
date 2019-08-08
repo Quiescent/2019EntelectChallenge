@@ -27,13 +27,20 @@ import Control.Concurrent
 import Prelude (read)
 
 data State = State { opponentsLastCommand :: Maybe String,
+                     currentRound         :: Int,
                      wormHealths          :: WormHealths,
                      wormPositions        :: WormPositions,
                      wormBananas          :: WormBananas,
+                     wormSnowballs        :: WormSnowballs,
+                     frozenDurations      :: WormFrozenDurations,
                      myPlayer             :: Player,
                      opponent             :: Player,
                      gameMap              :: GameMap }
              deriving (Generic, Eq)
+
+type WormFrozenDurations = AList
+
+type WormSnowballs = AList
 
 type WormHealths = AList
 
@@ -250,19 +257,28 @@ showPositions aList =
     (foldr (++) "" $ map (\ (wormId', coord') -> "    " ++ show wormId' ++ " -> " ++ showCoord coord' ++ ",\n") xs) ++
     "]"
 
+emptyAList :: AList
+emptyAList = AList (-1) (-1) (-1) (-1) (-1) (-1)
+
 instance Show State where
   show (State opponentsLastCommand'
+              currentRound'
               wormsHealth'
               wormPositions'
               wormBananas'
+              wormSnowballs'
+              wormFrozenDurations'
               myPlayer'
               opponent'
               gameMap') =
     "State {\n" ++
     "  opponentsLastCommand = " ++ show opponentsLastCommand'   ++ "\n" ++
+    "  currentRound         = " ++ show currentRound'           ++ "\n" ++
     "  wormHealths          = " ++ show wormsHealth'            ++ "\n" ++
     "  wormPositions        = " ++ showPositions wormPositions' ++ "\n" ++
     "  wormBananas          = " ++ show wormBananas'            ++ "\n" ++
+    "  wormSnowballs        = " ++ show wormSnowballs'          ++ "\n" ++
+    "  wormFrozenDurations' = " ++ show wormFrozenDurations'    ++ "\n" ++
     "  myPlayer             = " ++ show myPlayer'               ++ "\n" ++
     "  opponent             = " ++ show opponent'               ++ "\n" ++
     "  gameMap:\n" ++
@@ -374,6 +390,7 @@ instance FromJSON State where
     toState <$> v .: "myPlayer"
             <*> v .: "opponents"
             <*> v .: "map"
+            <*> v .: "currentRound"
 
 data Selections = Selections Int
   deriving (Eq, Show)
@@ -383,22 +400,45 @@ data Player = Player Int WormId Selections
   deriving (Show, Generic, Eq)
 
 -- TODO: If there is no opponent then I'll bail out here :/
-toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> State
-toState myPlayer' opponents' gameMap' =
+toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> Int -> State
+toState myPlayer' opponents' gameMap' currentRound' =
   let state = do
-        opponent'                               <- opponents' V.!? 0
-        let (healths',  positions',  bananas')   = factsFromMyWorms myPlayer'
-        let (healths'', positions'', bananas'')  = factsFromOpponentsWorms opponent'
-        let wormHealths'                         = aListAddMineAndHis healths'   healths''
-        let wormPositions'                       = aListAddMineAndHis positions' positions''
-        let wormBananas'                         = aListAddMineAndHis bananas'   bananas''
-        return (opponent', wormHealths', wormPositions', wormBananas')
+        opponent' <- opponents' V.!? 0
+        let (healths',
+             positions',
+             bananas',
+             snowballs',
+             frozenDurations') = factsFromMyWorms myPlayer'
+        let (healths'',
+             positions'',
+             bananas'',
+             snowballs'',
+             frozenDurations'') = factsFromOpponentsWorms opponent'
+        let wormHealths'         = aListAddMineAndHis healths'         healths''
+        let wormPositions'       = aListAddMineAndHis positions'       positions''
+        let wormBananas'         = aListAddMineAndHis bananas'         bananas''
+        let wormSnowballs'       = aListAddMineAndHis snowballs'       snowballs''
+        let wormFrozenDurations' = aListAddMineAndHis frozenDurations' frozenDurations''
+        return (opponent',
+                wormHealths',
+                wormPositions',
+                wormBananas',
+                wormSnowballs',
+                wormFrozenDurations')
   in case state of
-    Just (opponent', wormHealths', wormPositions', wormBananas') ->
+    Just (opponent',
+          wormHealths',
+          wormPositions',
+          wormBananas',
+          wormSnowballs',
+          wormFrozenDurations') ->
       State (lastCommand opponent')
+            currentRound'
             wormHealths'
             wormPositions'
             wormBananas'
+            wormSnowballs'
+            wormFrozenDurations'
             (removeHealthPoints aListSumThisPlayersValues wormHealths' $ toPlayer myPlayer')
             (removeHealthPoints aListSumThatPlayersValues wormHealths' $ opponentToPlayer opponent')
             (vectorGameMapToGameMap $ V.concat $ V.toList gameMap')
@@ -413,7 +453,7 @@ removeHealthPoints summingFunction wormHealths' (Player score' wormId' selection
   in Player (score' - (totalHealth `div` wormCount)) wormId' selections'
 
 -- TODO: repitition!!!  (What differs is the type of worm :/)
-factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions, WormBananas)
+factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions, WormBananas, WormSnowballs, WormFrozenDurations)
 factsFromMyWorms (ScratchPlayer _ _ worms' _) =
   let deadIds   = V.toList $
                   V.map fst $
@@ -443,9 +483,9 @@ factsFromMyWorms (ScratchPlayer _ _ worms' _) =
                             fmap ( \ (BananaBomb count') -> (wormId', count') )
                             bananas')
                   worms'
-  in (healths, positions, bananas)
+  in (healths, positions, bananas, emptyAList, emptyAList)
 
-factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions, WormBananas)
+factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions, WormBananas, WormSnowballs, WormFrozenDurations)
 factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
   let deadIds   = V.toList $
                   V.map fst $
@@ -477,7 +517,7 @@ factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
                             then Just (((shift wormId' 2), 3))
                             else Nothing)
                   worms'
-  in (healths, positions, bananas)
+  in (healths, positions, bananas, emptyAList, emptyAList)
 
 opponentToPlayer :: Opponent -> Player
 opponentToPlayer (Opponent _ score' currentWormId' _ selections') =
@@ -668,7 +708,8 @@ data ScratchWorm = ScratchWorm { wormId        :: Int,
                                  weapon        :: Weapon,
                                  diggingRange  :: Int,
                                  movementRange :: Int,
-                                 bananaBombs   :: Maybe BananaBomb }
+                                 bananaBombs   :: Maybe BananaBomb,
+                                 snowballs     :: Maybe Snowball }
             deriving (Show, Generic, Eq)
 
 instance FromJSON ScratchWorm where
@@ -680,6 +721,14 @@ instance FromJSON ScratchWorm where
                 <*> v .:  "diggingRange"
                 <*> v .:  "movementRange"
                 <*> v .:? "bananaBombs"
+                <*> v .:? "snowballs"
+
+data Snowball = Snowball { snowballCount :: Int }
+  deriving (Show, Generic, Eq)
+
+instance FromJSON Snowball where
+  parseJSON = withObject "Snowball" $ \ v ->
+    Snowball <$> v .: "count"
 
 data BananaBomb = BananaBomb { count :: Int }
                 deriving (Show, Generic, Eq)
