@@ -690,6 +690,9 @@ spec = do
        selectNextWormsDefault        $
        awardPointsToThatPlayerForMovingToAir aStateWithOpponentWormMovedLeftFromTheRightEdge)
     -- Digging
+    it "should not dig off of the edge of the map" $
+      makeMove True (fromMoves digEast doNothing) aStateWithMyWormOnTheRightEdge `shouldBe`
+      (selectNextWormsDefault $ penaliseThisPlayerForAnInvalidCommand aStateWithMyWormOnTheRightEdge)
     it "should remove dirt when my player digs a dirt block" $
       makeMove True (fromMoves digNorth doNothing) aState `shouldBe`
       (selectNextWormsDefault $ awardPointsToThisPlayerForDigging aStateWithDirtMissingAboveMyWorm)
@@ -731,6 +734,19 @@ spec = do
           withWormBananas (always $ aListFromList [(1, 3), (4, 3)])
           aState
     context "when I'm throwing the bomb" $ do
+      let aStateWithMyWormOnTheRightEdgeOfTheMap =
+            withWormHealths (always (AList 20 20 20 20 20 20)) $
+            withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) $
+            withWormPositions (always (AList (toCoord 32 20)
+                                             (toCoord 1 31)
+                                             (toCoord 1 30)
+                                             (toCoord 16 31)
+                                             (toCoord 19 1)
+                                             (toCoord 20 1)))
+            aStateWithOnlyAirOnMap
+      it "should do nothing when thrown off of the map" $
+        makeMove False (fromMoves bananaOneToRight doNothing) aStateWithMyWormOnTheRightEdgeOfTheMap `shouldBe`
+        (selectNextWormsDefault aStateWithMyWormOnTheRightEdgeOfTheMap)
       let aStateWithBananasOnWormOneAndTwo =
             withWormHealths (always (AList 20 20 20 20 20 20)) $
             withWormBananas (always $ aListFromList [(1, 3), (4, 3)])

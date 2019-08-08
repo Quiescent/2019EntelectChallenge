@@ -287,8 +287,8 @@ splitGameMap gameMap' =
                   (foldl' (\ acc coord' -> mapAt coord' gameMap' : acc) []
                    [0..((mapDim * mapDim) - 1)])
       iter []  = []
-      iter xs' = take mapDim xs' : (iter $ drop mapDim xs')
-  in reverse $ iter $ map snd $ sortOn fst $ cells
+      iter xs' = (reverse $ take mapDim xs') : (iter $ drop mapDim xs')
+  in iter $ map snd $ sortOn fst $ cells
 
 mapAt :: Int -> GameMap -> Cell
 mapAt coord' map'@(GameMap air dirt space medipacks) =
@@ -301,7 +301,7 @@ mapAt coord' map'@(GameMap air dirt space medipacks) =
                then DEEP_SPACE
                else if mask' .&. medipacks > 0
                     then MEDIPACK
-                    else error $ "Invalid game map: " ++ show map'
+                    else error $ "Invalid game map for coord (" ++ show (fromCoord coord') ++ "):\n" ++ show map'
 
 type BitMask = Integer
 
@@ -1772,9 +1772,12 @@ iterateHorizontally coord fX = iterateCoordinate coord horizontalRocketRange fX 
 
 iterateCoordinate :: Coord -> Int -> Operator -> Operator -> [Coord]
 iterateCoordinate coord depth fX fY =
-  let (x', y') = fromCoord coord
-  in zipWith
-     toCoord
+  let (x', y')     = fromCoord coord
+      curriedIsOOB = curry isOOB
+  in catMaybes $
+     zipWith
+     -- I don't know why I can't simplify this expression but W/E
+     (\ x'' y'' -> fmap (uncurry toCoord) $ curriedIsOOB x'' y'')
      (zipWith fX (repeat x') (take depth [1..]))
      (zipWith fY (repeat y') (take depth [1..]))
 
