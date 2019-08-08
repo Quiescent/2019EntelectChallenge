@@ -338,8 +338,13 @@ modifyMapCellAt coord' f gameMap' =
       cell'              = f cell
   in setCellAt coord' cell' gameMapWithoutCell
 
+emptyGameMap :: GameMap
+emptyGameMap = GameMap 0 0 0 0
+
 vectorGameMapToGameMap :: V.Vector Cell -> GameMap
-vectorGameMapToGameMap = undefined
+vectorGameMapToGameMap =
+  V.foldl' (\ gameMap' (coord', cell) -> setCellAt coord' cell gameMap') emptyGameMap .
+  V.zip (V.fromList [0..(mapDim * mapDim) - 1])
 
 mapAtCoord :: State -> Coord -> Cell
 mapAtCoord State { gameMap = gameMap' } target = mapAt target gameMap'

@@ -1753,9 +1753,6 @@ spec = do
                                   aListFindDataById thatSelection positions)
                                  (wormPositions state))
 
-emptyGameMap :: GameMap
-emptyGameMap = GameMap 0 0 0 0
-
 fullOfStuff :: Integer
 fullOfStuff = ((shiftL 1 (mapDim * mapDim)) - 1)
 
