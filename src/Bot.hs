@@ -292,16 +292,15 @@ splitGameMap gameMap' =
 
 mapAt :: Int -> GameMap -> Cell
 mapAt coord' map'@(GameMap air dirt space medipacks) =
-  let mask' = coordToBitMask coord'
-  in if mask' .&. air > 0
-     then AIR
-     else if mask' .&. dirt > 0
-          then DIRT
-          else if mask' .&. space > 0
-               then DEEP_SPACE
-               else if mask' .&. medipacks > 0
-                    then MEDIPACK
-                    else error $ "Invalid game map for coord (" ++ show (fromCoord coord') ++ "):\n" ++ show map'
+  if testBit air coord'
+  then AIR
+  else if testBit dirt coord'
+       then DIRT
+       else if testBit space coord'
+            then DEEP_SPACE
+            else if testBit medipacks coord'
+                 then MEDIPACK
+                 else error $ "Invalid game map for coord (" ++ show (fromCoord coord') ++ "):\n" ++ show map'
 
 type BitMask = Integer
 
