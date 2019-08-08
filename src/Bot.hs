@@ -278,7 +278,7 @@ instance Show State where
     "  wormPositions        = " ++ showPositions wormPositions' ++ "\n" ++
     "  wormBananas          = " ++ show wormBananas'            ++ "\n" ++
     "  wormSnowballs        = " ++ show wormSnowballs'          ++ "\n" ++
-    "  wormFrozenDurations' = " ++ show wormFrozenDurations'    ++ "\n" ++
+    "  wormFrozenDurations  = " ++ show wormFrozenDurations'    ++ "\n" ++
     "  myPlayer             = " ++ show myPlayer'               ++ "\n" ++
     "  opponent             = " ++ show opponent'               ++ "\n" ++
     "  gameMap:\n" ++
@@ -820,6 +820,8 @@ instance FromJSON Cell where
 toCell :: String -> Maybe Powerup -> Cell
 toCell "DIRT"       _              = DIRT
 toCell "DEEP_SPACE" _              = DEEP_SPACE
+-- We've hard coded the lava states so don't bother parsing them
+toCell "LAVA"       _              = AIR
 toCell "AIR"        Nothing        = AIR
 toCell "AIR"        (Just powerup) =
   if (powerupType powerup == "HEALTH_PACK")
@@ -1056,6 +1058,7 @@ makeMove swapping moves state =
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
   in -- assertValidState state  myMove  opponentsMove  $
+     incrementRound                                 $
      setOpponentsLastMove    state   opponentsMove  $
      advanceWormSelections                          $
      makeShootMoves          myMove' opponentsMove' $
@@ -1063,6 +1066,10 @@ makeMove swapping moves state =
      makeDigMoves            myMove' opponentsMove' $
      makeMoveMoves  swapping myMove' opponentsMove' $
      makeSelections          myMove  opponentsMove state
+
+incrementRound :: ModifyState
+incrementRound state =
+  state { currentRound = currentRound state + 1 }
 
 -- DEBUG: This is for debugging.  I should comment out the line above
 -- when I'm done using it...
@@ -1087,7 +1094,10 @@ assertValidState previousState myMove opponentsMove state =
 -- TODO I shouldn't even be doing this at all.
 setOpponentsLastMove :: State -> Move -> State -> State
 setOpponentsLastMove stateWhenMoveWasMade move' state =
-  state { opponentsLastCommand = Just $ prettyPrintThatMove stateWhenMoveWasMade move' }
+  state { opponentsLastCommand =
+          Just $ if move' == doNothing
+                 then "nothing \"Player chose to do nothing\""
+                 else prettyPrintThatMove stateWhenMoveWasMade move' }
 
 decrementSelections :: Selections -> Selections
 decrementSelections (Selections x) = Selections $ x - 1
