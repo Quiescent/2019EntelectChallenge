@@ -2731,7 +2731,10 @@ Profile-exe: thread blocked indefinitely in an MVar operation
 ┌─[edward@quiescent]──[08:27]──[/home/edward/wip/2019EntelectChallenge/src]──[master]
 └-> $ 
 #+END_SRC
-** TODO Implement Snow Balls
+** IN_PROGRESS Implement Snow Balls
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-08 Thu 17:19]
+   :END:
 ** TODO Implement Lava
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
