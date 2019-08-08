@@ -302,33 +302,25 @@ mapAt coord' map'@(GameMap air dirt space medipacks) =
                  then MEDIPACK
                  else error $ "Invalid game map for coord (" ++ show (fromCoord coord') ++ "):\n" ++ show map'
 
-type BitMask = Integer
-
-coordToBitMask :: Coord -> BitMask
-coordToBitMask = shiftL 1
-
-inverseBitMask :: BitMask -> BitMask
-inverseBitMask = complement
-
 clearCellAt :: Coord -> Cell -> GameMap -> GameMap
 clearCellAt coord' AIR        (GameMap air dirt space medipacks) =
-  GameMap (air .&. (inverseBitMask $ coordToBitMask coord')) dirt space medipacks
+  GameMap (clearBit air coord') dirt space medipacks
 clearCellAt coord' DIRT       (GameMap air dirt space medipacks) =
-  GameMap air (dirt .&. (inverseBitMask $ coordToBitMask coord')) space medipacks
+  GameMap air (clearBit dirt coord') space medipacks
 clearCellAt coord' DEEP_SPACE (GameMap air dirt space medipacks) =
-  GameMap air dirt (space .&. (inverseBitMask $ coordToBitMask coord')) medipacks
+  GameMap air dirt (clearBit space coord') medipacks
 clearCellAt coord' MEDIPACK   (GameMap air dirt space medipacks) =
-  GameMap air dirt space (medipacks .&. (inverseBitMask $ coordToBitMask coord'))
+  GameMap air dirt space (clearBit medipacks coord')
 
 setCellAt :: Coord -> Cell -> GameMap -> GameMap
 setCellAt coord' AIR        (GameMap air dirt space medipacks) =
-  GameMap (air .|. (coordToBitMask coord')) dirt space medipacks
+  GameMap (setBit air coord') dirt space medipacks
 setCellAt coord' DIRT       (GameMap air dirt space medipacks) =
-  GameMap air (dirt .|. (coordToBitMask coord')) space medipacks
+  GameMap air (setBit dirt coord') space medipacks
 setCellAt coord' DEEP_SPACE (GameMap air dirt space medipacks) =
-  GameMap air dirt (space .|. (coordToBitMask coord')) medipacks
+  GameMap air dirt (setBit space coord') medipacks
 setCellAt coord' MEDIPACK   (GameMap air dirt space medipacks) =
-  GameMap air dirt space (medipacks .|. (coordToBitMask coord'))
+  GameMap air dirt space (setBit medipacks coord')
 
 modifyMapCellAt :: Int -> (Cell -> Cell) -> GameMap -> GameMap
 modifyMapCellAt coord' f gameMap' =
