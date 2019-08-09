@@ -2754,6 +2754,7 @@ Profile-exe: thread blocked indefinitely in an MVar operation
     - CLOSING NOTE [2019-08-09 Fri 13:26]
     - State "IN_PROGRESS" from "TODO"       [2019-08-09 Fri 13:25]
     :END:
+*** TODO Freeze worm and tick down at the start of each turn
 *** TODO Add snowballs to search
 ** TODO Implement "Minigames" strategy
 The Minigame strategy aims to make the game less complicated so that
