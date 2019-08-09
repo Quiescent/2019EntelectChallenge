@@ -2669,7 +2669,7 @@ filteredMovesFrom state = do
 
 myMovesFrom :: State -> [Move]
 myMovesFrom state = do
-  let moves  = map Move [0..104]
+  let moves  = map Move [0..185]
   let moves' = addThisPlayersSelects state moves
   myMove <- moves'
   guard (isThisMoveValid state myMove)
@@ -2702,7 +2702,7 @@ withSelection  (WormId id') (Move x) =
 
 opponentsMovesFrom :: State -> [Move]
 opponentsMovesFrom state = do
-  let moves  = map Move [0..104]
+  let moves  = map Move [0..185]
   let moves' = addThatPlayersSelects state moves
   opponentsMove <- moves'
   guard (isThatMoveValid state opponentsMove)
@@ -2718,31 +2718,39 @@ doNothing = Move 187
 
 isThisMoveValid :: State -> Move -> Bool
 isThisMoveValid state move
-  | isADigMove move    = isValidDigMove targetOfThisMove state move
-  | isAMoveMove move   = isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
-  | isAShootMove move  = True
-  | isABananaMove move = shouldMakeBananaMove
-                         (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
-                         state
-                         move
-  | hasASelection move = thisPlayerHasSelectionsLeft state &&
-                         (isThisMoveValid (makeSelections move doNothing state) $
-                          removeSelectionFromMove move)
-  | otherwise          = True
+  | isADigMove move      = isValidDigMove targetOfThisMove state move
+  | isAMoveMove move     = isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
+  | isAShootMove move    = True
+  | isABananaMove move   = shouldMakeBananaMove
+                           (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
+                           state
+                           move
+  | isASnowballMove move = shouldMakeBananaMove
+                           (bananaMoveDestination thisWormHasSnowballsLeft thisWormsCoord)
+                           state
+                           (snowballMoveToBananaRange move)
+  | hasASelection move   = thisPlayerHasSelectionsLeft state &&
+                           (isThisMoveValid (makeSelections move doNothing state) $
+                            removeSelectionFromMove move)
+  | otherwise            = True
 
 shouldMakeThisMove :: State -> [Move] -> Move -> Bool
 shouldMakeThisMove state moves move
-  | isADigMove move    = isValidDigMove targetOfThisMove state move
-  | isAMoveMove move   = shouldThisPlayerMakeMoveMove moves state move
-  | isAShootMove move  = any (elem move) $ theseHits state
-  | isABananaMove move = shouldMakeBananaMove
-                         (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
-                         state
-                         move
-  | hasASelection move = thisPlayerHasSelectionsLeft state &&
-                         (shouldMakeThisMove (makeSelections move doNothing state) moves $
-                          removeSelectionFromMove move)
-  | otherwise          = True
+  | isADigMove move      = isValidDigMove targetOfThisMove state move
+  | isAMoveMove move     = shouldThisPlayerMakeMoveMove moves state move
+  | isAShootMove move    = any (elem move) $ theseHits state
+  | isABananaMove move   = shouldMakeBananaMove
+                           (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
+                           state
+                           move
+  | isASnowballMove move = shouldMakeBananaMove
+                           (bananaMoveDestination thisWormHasSnowballsLeft thisWormsCoord)
+                           state
+                           (snowballMoveToBananaRange move)
+  | hasASelection move   = thisPlayerHasSelectionsLeft state &&
+                           (shouldMakeThisMove (makeSelections move doNothing state) moves $
+                            removeSelectionFromMove move)
+  | otherwise            = True
 
 shouldThisPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
 shouldThisPlayerMakeMoveMove =
@@ -2782,31 +2790,39 @@ shouldMakeBananaMove destination state move =
 -- TODO bad repitition!
 isThatMoveValid :: State -> Move -> Bool
 isThatMoveValid state move
-  | isADigMove    move = isValidDigMove targetOfThatMove state move
-  | isAMoveMove   move = isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
-  | isAShootMove  move = True
-  | isABananaMove move = shouldMakeBananaMove
-                         (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
-                         state
-                         move
-  | hasASelection move = thatPlayerHasSelectionsLeft state &&
-                         (isThatMoveValid (makeSelections doNothing move state) $
-                          removeSelectionFromMove move)
-  | otherwise          = True
+  | isADigMove    move   = isValidDigMove targetOfThatMove state move
+  | isAMoveMove   move   = isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
+  | isAShootMove  move   = True
+  | isABananaMove move   = shouldMakeBananaMove
+                           (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
+                           state
+                           move
+  | isASnowballMove move = shouldMakeBananaMove
+                           (bananaMoveDestination thatWormHasSnowballsLeft thatWormsCoord)
+                           state
+                           (snowballMoveToBananaRange move)
+  | hasASelection move   = thatPlayerHasSelectionsLeft state &&
+                           (isThatMoveValid (makeSelections doNothing move state) $
+                            removeSelectionFromMove move)
+  | otherwise            = True
 
 shouldMakeThatMove :: State -> [Move] -> Move -> Bool
 shouldMakeThatMove state moves move
-  | isADigMove    move = isValidDigMove targetOfThatMove state move
-  | isAMoveMove   move = shouldThatPlayerMakeMoveMove moves state move
-  | isAShootMove  move = any (elem move) $ thoseHits state
-  | isABananaMove move = shouldMakeBananaMove
-                         (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
-                         state
-                         move
-  | hasASelection move = thatPlayerHasSelectionsLeft state &&
-                         (shouldMakeThatMove (makeSelections doNothing move state) moves $
-                          removeSelectionFromMove move)
-  | otherwise          = True
+  | isADigMove    move   = isValidDigMove targetOfThatMove state move
+  | isAMoveMove   move   = shouldThatPlayerMakeMoveMove moves state move
+  | isAShootMove  move   = any (elem move) $ thoseHits state
+  | isABananaMove move   = shouldMakeBananaMove
+                           (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
+                           state
+                           move
+  | isASnowballMove move = shouldMakeBananaMove
+                           (bananaMoveDestination thisWormHasSnowballsLeft thisWormsCoord)
+                           state
+                           (snowballMoveToBananaRange move)
+  | hasASelection move   = thatPlayerHasSelectionsLeft state &&
+                           (shouldMakeThatMove (makeSelections doNothing move state) moves $
+                            removeSelectionFromMove move)
+  | otherwise            = True
 
 shouldThatPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
 shouldThatPlayerMakeMoveMove =
