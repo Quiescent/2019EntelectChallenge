@@ -863,15 +863,16 @@ readGameState r = do
 
 -- ==========Move Encoding==========
 -- Integer encoded move representation
--- 0  -> 8
--- 9  -> 16
--- 17 -> 24
--- 81 -> 106
+-- 0   -> 7
+-- 8   -> 15
+-- 16  -> 23
+-- 24  -> 104
+-- 105 -> 185
 
 -- Bit packing of move:
--- 0000000 0000 000000000000000000000
---    ^     ^
---    |     |
+-- 00000000 0000 000000000000000000000
+--    ^      ^
+--    |      |
 -- Moves Selects.  Mine then his because his worm id's are always left
 -- shifted by 3
 -- Range of moves: 0 -> 127
@@ -894,23 +895,31 @@ formatMove :: (State -> Maybe Coord) -> (Move -> ModifyState) -> Move -> Coord -
 -- Shoot
 formatMove wormsCoord makeSelections' dir@(Move x) xy state
   -- Select: Calls back into this function without the select
-  | hasASelection dir = formatSelect wormsCoord makeSelections' dir state
+  | hasASelection dir   = formatSelect wormsCoord makeSelections' dir state
   -- Shoot
-  | isAShootMove  dir = formatShootMove dir
+  | isAShootMove  dir   = formatShootMove dir
   -- Move
-  | isAMoveMove   dir = moveFromMaybe $
-                        fmap (\ newCoord -> "move "   ++ showCoord newCoord) $
-                        displaceCoordByMove xy dir
+  | isAMoveMove   dir   = moveFromMaybe $
+                          fmap (\ newCoord -> "move "   ++ showCoord newCoord) $
+                          displaceCoordByMove xy dir
   -- Dig
-  | isADigMove    dir = moveFromMaybe $
-                        fmap (\ newCoord -> "dig "    ++ showCoord newCoord) $
-                        displaceCoordByMove xy (Move (x - 8))
+  | isADigMove    dir   = moveFromMaybe $
+                          fmap (\ newCoord -> "dig "    ++ showCoord newCoord) $
+                          displaceCoordByMove xy (Move (x - 8))
   -- Throwing the bomb
-  | isABananaMove dir = moveFromMaybe $
-                        fmap (\ newCoord -> "banana " ++ showCoord newCoord) $
-                        displaceToBananaDestination dir xy
+  | isABananaMove dir   = moveFromMaybe $
+                          fmap (\ newCoord -> "banana " ++ showCoord newCoord) $
+                          displaceToBananaDestination dir xy
+  -- Throwing a snowball
+  | isASnowballMove dir = moveFromMaybe $
+                          fmap (\ newCoord -> "snowball " ++ showCoord newCoord) $
+                          displaceToBananaDestination (Move $ x - 81) xy
 -- Nothing
 formatMove _ _ _ _ _ = "nothing"
+
+isASnowballMove :: Move -> Bool
+isASnowballMove (Move x') =
+  x' >= 105 && x' < 186
 
 -- For reference.  Here's how to visualise the encoding of banana bomb
 -- destinations:
@@ -971,7 +980,7 @@ displaceToBananaDestination (Move dir) coord' =
   (coordDeltasInRange !! (dir - 24)) coord'
 
 selectEncodingRange :: Int
-selectEncodingRange = 7
+selectEncodingRange = 8
 
 selectMoveMask :: Int
 selectMoveMask = shiftL 15 selectEncodingRange
@@ -1149,7 +1158,7 @@ thatPlayerHasSelectionsLeft :: State -> Bool
 thatPlayerHasSelectionsLeft = hasSelectionsLeft . opponent
 
 hasASelection :: Move -> Bool
-hasASelection (Move x) = x >= 128
+hasASelection (Move x) = x >= 256
 
 makeSelections :: Move -> Move -> ModifyState
 makeSelections this that state =
@@ -2515,7 +2524,7 @@ opponentsFilteredMovesFrom state =
   in filter (shouldMakeThatMove state moves') moves'
 
 doNothing :: Move
-doNothing = Move 106
+doNothing = Move 187
 
 isThisMoveValid :: State -> Move -> Bool
 isThisMoveValid state move

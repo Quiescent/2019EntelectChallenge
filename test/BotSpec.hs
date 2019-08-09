@@ -230,8 +230,8 @@ spec = do
          makeMoveInTree (fromMoves thisMove thatMove) . snd
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
-      let x'            = abs x `mod` 108
-          y'            = shiftL (abs y `mod` 4) 7
+      let x'            = abs x `mod` 186
+          y'            = shiftL (abs y `mod` 4) selectEncodingRange
           move'         = x' .|. y'
           formattedMove = formatMove thisWormsCoord makeThisSelection (Move move') (toCoord 6 6) aState
       in if move' < 8
@@ -240,9 +240,11 @@ spec = do
               then formattedMove `shouldStartWith` "move"
               else if move' < 24
                    then formattedMove `shouldStartWith` "dig"
-                   else if move' < 107
+                   else if move' < 105
                         then formattedMove `shouldStartWith` "banana"
-                        else formattedMove `shouldStartWith` "select"
+                        else if move' < 187
+                             then formattedMove `shouldStartWith` "snowball"
+                             else formattedMove `shouldStartWith` "select"
   describe "blastCoordDeltasInRange" $ do
     prop "should always produce a coord within range of 2 (blast radius of banana bomb)" $ \ (i, j) ->
       let x'     = abs i `mod` mapDim
@@ -1345,9 +1347,9 @@ spec = do
         makeMove False
                  -- My move:        banana 28 7
                  -- Opponents move: select 3;banana 27 8
-                 (fromMoves (Move 83) (Move 1590))
+                 (fromMoves (Move 83) (Move 3126))
                  aStateWhichIFoundFailing `shouldBe`
-        (withLastMove (Just $ prettyPrintThatMove aStateWhichIFoundFailing (Move 1590)) $
+        (withLastMove (Just $ prettyPrintThatMove aStateWhichIFoundFailing (Move 3126)) $
          mapThatPlayer (withSelections (always (Selections 1))) $
          incrementRound $
          selectNextWorms (WormId 2) (WormId 4) $
