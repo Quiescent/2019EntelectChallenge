@@ -452,72 +452,95 @@ removeHealthPoints summingFunction wormHealths' (Player score' wormId' selection
   let totalHealth = summingFunction wormHealths'
   in Player (score' - (totalHealth `div` wormCount)) wormId' selections'
 
+vectorToAList :: V.Vector (Int, Int) -> AList
+vectorToAList = aListFromList . V.toList
+
+vectorMaybesToAList :: V.Vector (Maybe (Int, Int)) -> AList
+vectorMaybesToAList = aListFromList . catMaybes . V.toList
+
 -- TODO: repitition!!!  (What differs is the type of worm :/)
 factsFromMyWorms :: ScratchPlayer -> (WormHealths, WormPositions, WormBananas, WormSnowballs, WormFrozenDurations)
 factsFromMyWorms (ScratchPlayer _ _ worms' _) =
-  let deadIds   = V.toList $
-                  V.map fst $
-                  V.filter ((<= 0) . snd) $
-                  V.map (\ (ScratchWorm { wormId = wormId',
-                                          wormHealth = wormHealth' }) -> (wormId', wormHealth'))
-                  worms'
-      notDead   = \ wormId' -> not $ elem wormId' deadIds
-      healths   = aListFromList $
-                  V.toList $
-                  V.filter (notDead . fst) $
-                  V.map (\ (ScratchWorm { wormId = wormId',
-                                          wormHealth = wormHealth' }) -> (wormId', wormHealth'))
-                  worms'
-      positions = aListFromList $
-                  V.toList $
-                  V.filter (notDead . fst) $
-                  V.map (\ (ScratchWorm { wormId = wormId',
-                                          position = position' }) -> (wormId', coordToInt position'))
-                  worms'
-      bananas   = aListFromList $
-                  filter (notDead . fst) $
-                  catMaybes $
-                  V.toList $
-                  V.map ( \ (ScratchWorm { wormId      = wormId',
-                                           bananaBombs = bananas' }) ->
-                            fmap ( \ (BananaBomb count') -> (wormId', count') )
-                            bananas')
-                  worms'
-  in (healths, positions, bananas, emptyAList, emptyAList)
+  let deadIds          = V.toList $
+                         V.map fst $
+                         V.filter ((<= 0) . snd) $
+                         V.map (\ (ScratchWorm { wormId     = wormId',
+                                                 wormHealth = wormHealth' }) -> (wormId', wormHealth'))
+                         worms'
+      notDead          = \ (ScratchWorm { wormId = wormId' }) -> not $ elem wormId' deadIds
+      liveWorms        = V.filter notDead worms'
+      healths          = vectorToAList $
+                         V.map (\ (ScratchWorm { wormId     = wormId',
+                                                 wormHealth = wormHealth' }) -> (wormId', wormHealth'))
+                         liveWorms
+      positions        = vectorToAList $
+                         V.map (\ (ScratchWorm { wormId   = wormId',
+                                                 position = position' }) -> (wormId', coordToInt position'))
+                         liveWorms
+      bananas          = vectorMaybesToAList $
+                         V.map (\ (ScratchWorm { wormId       = wormId',
+                                                  bananaBombs = bananas' }) ->
+                                   fmap (\ (BananaBomb count') -> (wormId', count') )
+                                   bananas')
+                         liveWorms
+      snowballs'       = vectorMaybesToAList $
+                         V.map (\ (ScratchWorm { wormId    = wormId',
+                                                 snowballs = snowballs'' }) ->
+                                   fmap (\ (Snowball (count')) -> (wormId', count'))
+                                   snowballs'')
+                         liveWorms
+      frozenDurations' = vectorToAList $
+                         V.map (\ (ScratchWorm { wormId              = wormId',
+                                                 roundsUntilUnfrozen = roundsUntilUnfrozen' }) ->
+                                   (wormId', roundsUntilUnfrozen'))
+                         liveWorms
+  in (healths, positions, bananas, snowballs', frozenDurations')
+
+toThatWormId :: Int -> Int
+toThatWormId wormId' = shiftL wormId' 2
 
 factsFromOpponentsWorms :: Opponent -> (WormHealths, WormPositions, WormBananas, WormSnowballs, WormFrozenDurations)
 factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
-  let deadIds   = V.toList $
-                  V.map fst $
-                  V.filter ((<= 0) . snd) $
-                  V.map (\ (OpponentWorm { opWormId = wormId',
-                                           opWormHealth = wormHealth' }) -> (shift wormId' 2, wormHealth'))
-                  worms'
-      notDead   = \ wormId' -> not $ elem wormId' deadIds
-      healths   = aListFromList $
-                  V.toList $
-                  V.filter (notDead . fst) $
-                  V.map (\ (OpponentWorm { opWormId = wormId',
-                                           opWormHealth = wormHealth' }) -> ((shift wormId' 2), wormHealth'))
-                  worms'
-      positions = aListFromList $
-                  V.toList $
-                  V.filter (notDead . fst) $
-                  V.map (\ (OpponentWorm { opWormId = wormId',
-                                           opPosition = position' }) -> ((shift wormId' 2), coordToInt position'))
-                  worms'
-      -- TODO: This will parse the wrong count of bananas left.  If I
-      -- lose the state on the first round.
-      bananas   = aListFromList $
-                  filter (notDead . fst) $
-                  catMaybes $
-                  V.toList $
-                  V.map ( \ (OpponentWorm { opWormId = wormId', profession = profession' }) ->
-                            if profession' == "Agent"
-                            then Just (((shift wormId' 2), 3))
-                            else Nothing)
-                  worms'
-  in (healths, positions, bananas, emptyAList, emptyAList)
+  let deadIds          = V.toList $
+                         V.map fst $
+                         V.filter ((<= 0) . snd) $
+                         V.map (\ (OpponentWorm { opWormId     = wormId',
+                                                  opWormHealth = wormHealth' }) ->
+                                   (toThatWormId wormId', wormHealth'))
+                         worms'
+      notDead          = \ (OpponentWorm { opWormId = wormId' }) -> not $ elem wormId' deadIds
+      liveWorms        = V.filter notDead worms'
+      healths          = vectorToAList $
+                         V.map (\ (OpponentWorm { opWormId     = wormId',
+                                                  opWormHealth = wormHealth' }) ->
+                                   (toThatWormId wormId', wormHealth'))
+                         liveWorms
+      positions        = vectorToAList $
+                         V.map (\ (OpponentWorm { opWormId   = wormId',
+                                                  opPosition = position' }) ->
+                                   (toThatWormId wormId', coordToInt position'))
+                         liveWorms
+      frozenDurations' = vectorToAList $
+                         V.map (\ (OpponentWorm { opWormId              = wormId',
+                                                  opRoundsUntilUnfrozen = opRoundsUntilUnfrozen' }) ->
+                                   (toThatWormId wormId', opRoundsUntilUnfrozen'))
+                         liveWorms
+      -- TODO: These two will parse the wrong count of bananas left.
+      -- If I lose the state on the first round.
+      bananas          = vectorMaybesToAList $
+                         V.map (\ (OpponentWorm { opWormId = wormId', profession = profession' }) ->
+                                   if profession' == "Agent"
+                                   then Just (((toThatWormId wormId'), 3))
+                                   else Nothing)
+                         liveWorms
+      snowballs'       = vectorMaybesToAList $
+                         V.map (\ (OpponentWorm { opWormId   = wormId',
+                                                  profession = profession' }) ->
+                                   if profession' == "Technologist"
+                                   then Just (((toThatWormId wormId'), 5))
+                                   else Nothing)
+                         liveWorms
+  in (healths, positions, bananas, snowballs', frozenDurations')
 
 opponentToPlayer :: Opponent -> Player
 opponentToPlayer (Opponent _ score' currentWormId' _ selections') =
@@ -702,14 +725,15 @@ moveFrom from to' =
     (NegOne, NegOne) -> Move 15
     (Zero,   Zero)   -> Move 32
 
-data ScratchWorm = ScratchWorm { wormId        :: Int,
-                                 wormHealth    :: Int,
-                                 position      :: JSONCoord,
-                                 weapon        :: Weapon,
-                                 diggingRange  :: Int,
-                                 movementRange :: Int,
-                                 bananaBombs   :: Maybe BananaBomb,
-                                 snowballs     :: Maybe Snowball }
+data ScratchWorm = ScratchWorm { wormId              :: Int,
+                                 wormHealth          :: Int,
+                                 position            :: JSONCoord,
+                                 weapon              :: Weapon,
+                                 diggingRange        :: Int,
+                                 movementRange       :: Int,
+                                 roundsUntilUnfrozen :: Int,
+                                 bananaBombs         :: Maybe BananaBomb,
+                                 snowballs           :: Maybe Snowball }
             deriving (Show, Generic, Eq)
 
 instance FromJSON ScratchWorm where
@@ -720,6 +744,7 @@ instance FromJSON ScratchWorm where
                 <*> v .:  "weapon"
                 <*> v .:  "diggingRange"
                 <*> v .:  "movementRange"
+                <*> v .:  "roundsUntilUnfrozen"
                 <*> v .:? "bananaBombs"
                 <*> v .:? "snowballs"
 
@@ -735,12 +760,13 @@ data BananaBomb = BananaBomb { count :: Int }
 
 instance FromJSON BananaBomb
 
-data OpponentWorm = OpponentWorm { opWormId        :: Int,
-                                   opWormHealth    :: Int,
-                                   opPosition      :: JSONCoord,
-                                   opDiggingRange  :: Int,
-                                   opMovementRange :: Int,
-                                   profession      :: String }
+data OpponentWorm = OpponentWorm { opWormId              :: Int,
+                                   opWormHealth          :: Int,
+                                   opPosition            :: JSONCoord,
+                                   opDiggingRange        :: Int,
+                                   opMovementRange       :: Int,
+                                   opRoundsUntilUnfrozen :: Int,
+                                   profession            :: String }
             deriving (Show, Generic, Eq)
 
 instance FromJSON OpponentWorm where
@@ -750,6 +776,7 @@ instance FromJSON OpponentWorm where
                  <*> v .: "position"
                  <*> v .: "diggingRange"
                  <*> v .: "movementRange"
+                 <*> v .: "roundsUntilUnfrozen"
                  <*> v .: "profession"
 
 type Coord = Int
@@ -845,16 +872,16 @@ readGameState r = do
 -- 0000000 0000 000000000000000000000
 --    ^     ^
 --    |     |
--- Moves Selects (mine then his because his worm id's are always left
--- shifted by 3)
+-- Moves Selects.  Mine then his because his worm id's are always left
+-- shifted by 3
 -- Range of moves: 0 -> 127
 
 -- Process to extract:
--- 1) check for a select;
--- 2) mask out the select;
--- 3) shift the select;
--- 4) check the range of the remaining number;
--- 5) extract and shift according to the type of move;
+-- 1. check for a select;
+-- 2. mask out the select;
+-- 3. shift the select;
+-- 4. check the range of the remaining number;
+-- 5. extract and shift according to the type of move;
 data Move = Move Int
   deriving (Show, Eq)
 
@@ -902,7 +929,7 @@ formatMove _ _ _ _ _ = "nothing"
 -- TODO: Might want to consider never hurting myself too?
 coordDeltasInRange :: [(Coord -> Maybe Coord)]
 coordDeltasInRange =
-  zipWith ( \ dx dy ->
+  zipWith (\ dx dy ->
               \ xy ->
                 fmap (uncurry toCoord) $
                 isOOB $
@@ -1230,7 +1257,7 @@ makeBananaMoves this that state =
       let bananaMove       = if isABananaMove move' then Just move' else Nothing
           wormsId'         = playersCurrentWormId' state
           destinationBlock = bananaMove >>=
-            ( \ bananaMove' -> bananaMoveDestination wormHasBananasLeft' wormsCoord' bananaMove' state)
+            (\ bananaMove' -> bananaMoveDestination wormHasBananasLeft' wormsCoord' bananaMove' state)
           -- TODO: looks very similar to L:2286
           isValid          = isJust destinationBlock
           target           = fromJust destinationBlock
@@ -1269,9 +1296,9 @@ penaliseThatPlayerForDamage  damage' = mapThatPlayer (awardPointsForDamage (-dam
 
 blastCoordDeltasInRange :: [(Coord -> Maybe (Int, Coord))]
 blastCoordDeltasInRange =
-  zipWith ( \ (damage', dx) dy ->
+  zipWith (\ (damage', dx) dy ->
               \ xy ->
-                fmap ( \ x -> (damage', x)) $
+                fmap (\ x -> (damage', x)) $
                 fmap (uncurry toCoord) $
                 isOOB $
                 let (x', y') = fromCoord xy
@@ -1296,7 +1323,7 @@ bananaBlastRadius = 2
 
 damageTemplate :: [Int]
 damageTemplate =
-  zipWith ( \ dx dy ->
+  zipWith (\ dx dy ->
             let blastRadius' = bananaBlastRadius + 1
             in round $
                fromIntegral bananaCentreDamage *
@@ -1637,7 +1664,7 @@ makeShootMoves this that state =
           wormsPosition   = wormsCoord state
           shotsDir        = shootMove >>= directionOfShot
           coord           = wormsPosition >>=
-            ( \ position' -> shotsDir >>= ((flip (hitsWorm position' gameMap')))
+            (\ position' -> shotsDir >>= ((flip (hitsWorm position' gameMap')))
                              (wormPositions state))
           isHit           = isJust coord
           coord'          = fromJust coord
@@ -1952,7 +1979,7 @@ pollInterval = 5000
 
 joinWith :: (a -> String) -> String -> [a] -> String
 joinWith toString joinString strings =
-  let withExtra = concat $ map ( \ x -> toString x ++ "\n\t") strings
+  let withExtra = concat $ map (\ x -> toString x ++ "\n\t") strings
   in take ((length withExtra) - (length joinString)) withExtra
 
 prettyPrintMove :: (State -> Maybe Coord) -> (Move -> ModifyState) -> State -> Move -> String
@@ -2101,7 +2128,7 @@ data SearchTree = SearchedLevel   MyMoves OpponentsMoves StateTransitions
 
 join' :: Show a => String -> [a] -> String
 join' joinString strings =
-  let withExtra = concat $ map ( \ x -> show x ++ "\n\t") strings
+  let withExtra = concat $ map (\ x -> show x ++ "\n\t") strings
   in take ((length withExtra) - (length joinString)) withExtra
 
 instance Show SearchTree where
@@ -2406,7 +2433,7 @@ diffMax rewards =
       accumulated                 = foldl' (\ (accX', accY') (x', y') -> (x' + accX', y' + accY')) (0, 0) $
                                     withDecreasingReward
       withDecreasingReward :: [(Double, Double)]
-      withDecreasingReward        = zipWith ( \ (Reward (MyReward x') (OpponentsReward y')) i -> (fromIntegral x' / i, fromIntegral y' / i))
+      withDecreasingReward        = zipWith (\ (Reward (MyReward x') (OpponentsReward y')) i -> (fromIntegral x' / i, fromIntegral y' / i))
                                     (reverse rewards) [1..]
       myIndex                     = fromJust $ findIndex (>= myScore')        diffMaxScale
       opponentsIndex              = fromJust $ findIndex (>= opponentsScore') diffMaxScale
@@ -2417,7 +2444,7 @@ chooseBestMove successRecords =
   let totalGames = gamesPlayedForRecords successRecords
       computeConfidence (SuccessRecord (Wins wins')  (Played played') _) =
         confidence totalGames wins' played'
-  in maximumBy ( \ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
+  in maximumBy (\ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
 
 confidence :: Int -> Int -> Int -> Float
 confidence totalCount wins' played' =
@@ -2532,7 +2559,7 @@ shouldMakeMoveMove targetOfMove' currentWormId' hitFunction moves state move =
 
 hitCoords :: (AList -> [Int]) -> (State -> Maybe Coord) -> State -> Maybe [Coord]
 hitCoords wormData wormsCoord state =
-  fmap ( \ wormPosition -> wormData $
+  fmap (\ wormPosition -> wormData $
                            aListFilterByData (hits' wormPosition) $
                            wormPositions state) $
   wormsCoord state
