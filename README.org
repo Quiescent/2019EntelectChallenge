@@ -2735,6 +2735,7 @@ Profile-exe: thread blocked indefinitely in an MVar operation
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-08 Thu 17:19]
    :END:
+*** TODO Implement toState for snowballs
 ** TODO Implement Lava
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
