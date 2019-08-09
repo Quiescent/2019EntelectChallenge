@@ -2787,6 +2787,9 @@ more global.  I'm not sure what that strategy is yet.
 
 Part of it is to only use snowballs, bananas and missiles when enemies
 are in the minigame.
+*** TODO Implement a test for finding worms within a radius of my current worm
+*** TODO Implement a test for choosing the strategy based on the number of worms
+*** TODO Implement movesFrom for each strategy
 ** TODO Implement Lava
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
