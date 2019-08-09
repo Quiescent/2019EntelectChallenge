@@ -2732,8 +2732,10 @@ Profile-exe: thread blocked indefinitely in an MVar operation
 └-> $ 
 #+END_SRC
 
-** IN_PROGRESS Implement Snow Balls
+** DONE Implement Snow Balls
+   CLOSED: [2019-08-09 Fri 14:03]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-09 Fri 14:03]
    - State "IN_PROGRESS" from "TODO"       [2019-08-08 Thu 17:19]
    :END:
 *** DONE Implement toState for snowballs
@@ -2760,8 +2762,10 @@ Profile-exe: thread blocked indefinitely in an MVar operation
     - CLOSING NOTE [2019-08-09 Fri 13:38]
     - State "IN_PROGRESS" from "TODO"       [2019-08-09 Fri 13:27]
     :END:
-*** IN_PROGRESS Add snowballs to search
+*** DONE Add snowballs to search
+    CLOSED: [2019-08-09 Fri 14:03]
     :LOGBOOK:
+    - CLOSING NOTE [2019-08-09 Fri 14:03]
     - State "IN_PROGRESS" from "TODO"       [2019-08-09 Fri 13:38]
     :END:
 ** TODO Implement "Minigames" strategy
