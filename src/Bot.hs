@@ -52,6 +52,8 @@ type ModifyFacts = AList -> AList
 
 type Bananas = Int
 
+type Snowballs = Int
+
 type WormHealth = Int
 
 data AList = AList Int Int Int Int Int Int
@@ -913,9 +915,12 @@ formatMove wormsCoord makeSelections' dir@(Move x) xy state
   -- Throwing a snowball
   | isASnowballMove dir = moveFromMaybe $
                           fmap (\ newCoord -> "snowball " ++ showCoord newCoord) $
-                          displaceToBananaDestination (Move $ x - 81) xy
+                          displaceToBananaDestination (snowballMoveToBananaRange dir) xy
 -- Nothing
 formatMove _ _ _ _ _ = "nothing"
+
+snowballMoveToBananaRange :: Move -> Move
+snowballMoveToBananaRange (Move x) = (Move $ x - 81)
 
 isASnowballMove :: Move -> Bool
 isASnowballMove (Move x') =
@@ -1098,6 +1103,7 @@ makeMove swapping moves state =
      setOpponentsLastMove    state   opponentsMove  $
      advanceWormSelections                          $
      makeShootMoves          myMove' opponentsMove' $
+     makeSnowballMoves       myMove' opponentsMove' $
      makeBananaMoves         myMove' opponentsMove' $
      makeDigMoves            myMove' opponentsMove' $
      makeMoveMoves  swapping myMove' opponentsMove' $
@@ -1291,11 +1297,172 @@ bananaMoveDestination currentWormHasBananasLeft
       wormCoord = currentWormCoord state
   in wormCoord >>= (\ coord' -> move' >>= (flip displaceToBananaDestination) coord')
 
+makeSnowballMoves :: Move -> Move -> ModifyState
+makeSnowballMoves this that state =
+  (throwSnowball this
+                 thisPlayersCurrentWormId
+                 thisWormsCoord
+                 thisWormHasSnowballsLeft
+                 decrementThisWormsSnowballs
+                 awardThisPlayerForFreezingAWorm
+                 penaliseThisPlayerForFreezingAWorm
+                 awardPointsToThisPlayerForMissing) $
+  (throwSnowball that
+                 thatPlayersCurrentWormId
+                 thatWormsCoord
+                 thatWormHasSnowballsLeft
+                 decrementThatWormsSnowballs
+                 awardThatPlayerForFreezingAWorm
+                 penaliseThatPlayerForFreezingAWorm
+                 awardPointsToThatPlayerForMissing) state
+  where
+    throwSnowball :: Move -> (State -> WormId) -> (State -> Maybe Coord) -> (State -> Bool) -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState
+    throwSnowball move'
+                  playersCurrentWormId'
+                  wormsCoord'
+                  wormHasSnowballsLeft'
+                  decrementWormsSnowballs'
+                  awardPlayerForFreezingAWorm'
+                  penalisePlayerForFreezingAWorm'
+                  awardPointsToPlayerForMissing' =
+      let snowballMove       = if isASnowballMove move' then Just move' else Nothing
+          wormsId'         = playersCurrentWormId' state
+          destinationBlock = snowballMove >>=
+            (\ snowballMove' -> bananaMoveDestination wormHasSnowballsLeft'
+                                                      wormsCoord'
+                                                      (snowballMoveToBananaRange snowballMove')
+                                                      state)
+          -- TODO: looks very similar to L:2286
+          isValid          = isJust destinationBlock
+          target           = fromJust destinationBlock
+      in if isValid
+         then decrementWormsSnowballs' .
+              snowballBlast wormsId'
+                            awardPlayerForFreezingAWorm'
+                            penalisePlayerForFreezingAWorm'
+                            awardPointsToPlayerForMissing'
+                            target
+         else id
+
+snowballBlast :: WormId -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+snowballBlast wormId'
+              awardPlayerForFreezingAWorm'
+              penalisePlayerForFreezingAWorm'
+              awardPointsToPlayerForMissing'
+              targetCoord
+              state =
+  let gameMap'          = gameMap state
+      targetIsDeepSpace = deepSpaceAt targetCoord gameMap'
+      potentialHits     = catMaybes $ map ($ targetCoord) snowballBlastCoordDeltasInRange
+      wormHits          = filter ((flip containsAnyWorm) state) potentialHits
+  in if targetIsDeepSpace || wormHits == []
+     then awardPointsToPlayerForMissing' state
+     else foldl' (\ state' nextWormCoord ->
+                     freezeWorm wormId'
+                                awardPlayerForFreezingAWorm'
+                                penalisePlayerForFreezingAWorm'
+                                nextWormCoord
+                                state')
+          state
+          wormHits
+
+freezeWorm :: WormId -> ModifyState -> ModifyState -> Coord -> ModifyState
+freezeWorm throwingWormId'
+           awardPlayerForFreezingAWorm'
+           penalisePlayerForFreezingAWorm'
+           targetCoord
+           state' =
+  -- TODO: fromJust?
+  let wormId'       = fromJust $
+                      aListFindIdByData targetCoord $
+                      wormPositions state'
+      samePlayer    = wormsBelongToSamePlayer wormId' throwingWormId'
+      dishOutPoints = if samePlayer then penalisePlayerForFreezingAWorm' else awardPlayerForFreezingAWorm'
+      freezeWorm'   = withWormFrozenDurations $ freezeWormById wormId'
+  in freezeWorm' $ dishOutPoints state'
+
+freezeWormById :: WormId -> WormFrozenDurations -> WormFrozenDurations
+freezeWormById wormId' = aListMapWormById wormId' (always 5)
+
+withWormFrozenDurations :: WithWormFacts
+withWormFrozenDurations f state@(State { frozenDurations = frozenDurations' }) =
+  state { frozenDurations = f frozenDurations' }
+
+snowballBlastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
+snowballBlastCoordDeltasInRange =
+  zipWith (\ dx dy ->
+              \ xy ->
+                fmap (uncurry toCoord) $
+                isOOB $
+                let (x', y') = fromCoord xy
+                in (x' + dx, y' + dy))
+   [-1,  0,  1,
+    -1,  0,  1,
+    -1,  0,  1]
+   [-1, -1, -1,
+     0,  0,  0,
+     1,  1,  1]
+
 awardPointsToThisPlayerForDamage :: Int -> ModifyState
 awardPointsToThisPlayerForDamage damage' = mapThisPlayer (awardPointsForDamage damage')
 
 awardPointsToThatPlayerForDamage :: Int -> ModifyState
 awardPointsToThatPlayerForDamage damage' = mapThatPlayer (awardPointsForDamage damage')
+
+freezeScore :: Int 
+freezeScore = 17
+
+awardPointsForFreezing :: ModifyPlayer
+awardPointsForFreezing = modifyScore freezeScore
+
+penaliseForFreezing :: ModifyPlayer
+penaliseForFreezing = modifyScore (-freezeScore)
+
+awardThisPlayerForFreezingAWorm :: ModifyState
+awardThisPlayerForFreezingAWorm = mapThisPlayer awardPointsForFreezing
+
+penaliseThisPlayerForFreezingAWorm :: ModifyState
+penaliseThisPlayerForFreezingAWorm = mapThisPlayer penaliseForFreezing
+
+awardThatPlayerForFreezingAWorm :: ModifyState
+awardThatPlayerForFreezingAWorm = mapThatPlayer awardPointsForFreezing
+
+penaliseThatPlayerForFreezingAWorm :: ModifyState
+penaliseThatPlayerForFreezingAWorm = mapThatPlayer penaliseForFreezing
+
+hasSnowballs :: Snowballs -> Bool
+hasSnowballs x = x > 0
+
+thisWormHasSnowballsLeft :: State -> Bool
+thisWormHasSnowballsLeft = wormHasSnowballsLeft thisPlayersCurrentWormId
+
+thatWormHasSnowballsLeft :: State -> Bool
+thatWormHasSnowballsLeft = wormHasSnowballsLeft thatPlayersCurrentWormId
+
+wormHasSnowballsLeft :: (State -> WormId) -> State -> Bool
+wormHasSnowballsLeft wormsId state =
+  let wormId' = wormsId state
+  in any hasSnowballs $ aListFindDataById wormId' $ wormSnowballs state
+
+decrementSnowballs :: Snowballs -> Snowballs
+decrementSnowballs (-1) = (-1)
+decrementSnowballs 1    = (-1)
+decrementSnowballs x    = x - 1
+
+decrementWormsSnowballs :: (State -> WormId) -> ModifyState
+decrementWormsSnowballs wormsId state =
+  let wormId' = wormsId state
+  in withWormSnowballs (aListMapWormById wormId' decrementSnowballs) state
+
+decrementThisWormsSnowballs :: ModifyState
+decrementThisWormsSnowballs = decrementWormsSnowballs thisPlayersCurrentWormId
+
+decrementThatWormsSnowballs :: ModifyState
+decrementThatWormsSnowballs = decrementWormsSnowballs thatPlayersCurrentWormId
+
+withWormSnowballs :: WithWormFacts
+withWormSnowballs f state@(State { wormSnowballs = wormSnowballs' }) =
+  state { wormSnowballs = f wormSnowballs' }
 
 penaliseThisPlayerForDamage :: Int -> ModifyState
 penaliseThisPlayerForDamage  damage' = mapThisPlayer (awardPointsForDamage (-damage'))
@@ -1385,7 +1552,8 @@ bananaBlast wormId'
       withDirtRemoved   = foldl' (\ state' (_, dirtHit) ->
                                     awardPointsForDigging' $ removeDirtFromMapAt dirtHit state')
                           withWormsDamaged dirtHits
-  in if targetIsDeepSpace then awardPointsForMissing' state
+  in if targetIsDeepSpace || (wormHits == [] && dirtHits == [] && packHits == [])
+     then awardPointsForMissing' state
      else foldl' (\ state' (_, packHit) -> removeMedipack packHit state')
           withDirtRemoved packHits
 
@@ -1687,7 +1855,7 @@ makeShootMoves this that state =
                                  coord'
          else awardMissPoints
 
-awardPointsForMissing :: Player -> Player
+awardPointsForMissing :: ModifyPlayer
 awardPointsForMissing = modifyScore 2
 
 awardPointsToThisPlayerForMissing :: ModifyState
@@ -1696,10 +1864,10 @@ awardPointsToThisPlayerForMissing = mapThisPlayer awardPointsForMissing
 awardPointsToThatPlayerForMissing :: ModifyState
 awardPointsToThatPlayerForMissing = mapThatPlayer awardPointsForMissing
 
-awardPointsForDamage :: Int -> Player -> Player
+awardPointsForDamage :: Int -> ModifyPlayer
 awardPointsForDamage damage' = modifyScore (2 * damage')
 
-awardPointsForHittingAnEnemy :: Player -> Player
+awardPointsForHittingAnEnemy :: ModifyPlayer
 awardPointsForHittingAnEnemy = awardPointsForDamage rocketDamage
 
 awardPointsToThisPlayerForHittingAnEnemy :: ModifyState
@@ -1716,7 +1884,7 @@ awardPointsToThatPlayerForKillingAnEnemy :: ModifyState
 awardPointsToThatPlayerForKillingAnEnemy =
   mapThatPlayer awardPointsForKillingAnEnemy
 
-awardPointsForKillingAnEnemy :: Player -> Player
+awardPointsForKillingAnEnemy :: ModifyPlayer
 awardPointsForKillingAnEnemy = modifyScore 40
 
 harmWormWithRocket :: WormId -> State -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
