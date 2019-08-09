@@ -2754,8 +2754,10 @@ Profile-exe: thread blocked indefinitely in an MVar operation
     - CLOSING NOTE [2019-08-09 Fri 13:26]
     - State "IN_PROGRESS" from "TODO"       [2019-08-09 Fri 13:25]
     :END:
-*** IN_PROGRESS Freeze worm and tick down at the start of each turn
+*** DONE Freeze worm and tick down at the start of each turn
+    CLOSED: [2019-08-09 Fri 13:38]
     :LOGBOOK:
+    - CLOSING NOTE [2019-08-09 Fri 13:38]
     - State "IN_PROGRESS" from "TODO"       [2019-08-09 Fri 13:27]
     :END:
 *** TODO Add snowballs to search

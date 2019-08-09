@@ -241,6 +241,9 @@ aListMapWormById (WormId 8)  f' (AList a b c d e f) = AList      a      b      c
 aListMapWormById (WormId 12) f' (AList a b c d e f) = AList      a      b      c      d      e (f' f)
 aListMapWormById wormId'     _  _                   = error $ "aListMapWormById with wormId: " ++ show wormId'
 
+aListMap :: (Int -> Int) -> AList -> AList
+aListMap f' (AList a b c d e f) = AList (f' a) (f' b) (f' c) (f' d) (f' e) (f' f)
+
 -- TODO Test
 aListRemoveWormById :: WormId -> AList -> AList
 aListRemoveWormById (WormId 1)  (AList _ b c d e f) = AList (-1)    b    c    d    e    f
@@ -1095,7 +1098,7 @@ toMoves (CombinedMove moves) =
 
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove swapping moves state =
-  let (myMove,  opponentsMove)  = toMoves moves
+  let (myMove,  opponentsMove)  = freezeActions state $ toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
   in -- assertValidState state  myMove  opponentsMove  $
@@ -1107,7 +1110,26 @@ makeMove swapping moves state =
      makeBananaMoves         myMove' opponentsMove' $
      makeDigMoves            myMove' opponentsMove' $
      makeMoveMoves  swapping myMove' opponentsMove' $
-     makeSelections          myMove  opponentsMove state
+     makeSelections          myMove  opponentsMove  $
+     tickFreezeDurations state
+
+freezeActions :: State -> (Move, Move) -> (Move, Move)
+freezeActions state (myMove, opponentsMove) =
+  let frozenDurations' = frozenDurations state
+      freezeThisWorm   = any (> 0) $ aListFindDataById (thisPlayersCurrentWormId state) frozenDurations'
+      freezeThatWorm   = any (> 0) $ aListFindDataById (thatPlayersCurrentWormId state) frozenDurations'
+  in case (freezeThisWorm, freezeThatWorm) of
+    (True,  True)  -> (doNothing, doNothing)
+    (True,  False) -> (doNothing, opponentsMove)
+    (False, True)  -> (myMove,    doNothing)
+    (False, False) -> (myMove,    opponentsMove)
+
+tickFreezeDurations :: ModifyState
+tickFreezeDurations = withFrozenDurations (aListMap (\ x -> if x > 0 then x - 1 else x))
+
+withFrozenDurations :: WithWormFacts
+withFrozenDurations f state@(State { frozenDurations = frozenDurations' }) =
+  state { frozenDurations = f frozenDurations' }
 
 incrementRound :: ModifyState
 incrementRound state =
