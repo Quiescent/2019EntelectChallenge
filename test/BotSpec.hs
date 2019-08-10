@@ -39,8 +39,37 @@ transitions (SearchedLevel   _ _ transitions') = transitions'
 transitions (UnSearchedLevel _ _)              = []
 transitions SearchFront                        = []
 
+wormsNearMyCurrentWorm :: State -> AList
+wormsNearMyCurrentWorm _ = emptyAList
+
 spec :: Spec
 spec = do
+  describe "wormsNearMyCurrentWorm" $ do
+    context "when there are no worms nearby" $ do
+      let aStateWithNoWormsNearMyWorm =
+            withWormPositions (always $ AList (toCoord 15 31)
+                                              (toCoord 1 31)
+                                              (toCoord 1 30)
+                                              (toCoord 0 31)
+                                              (toCoord 0 1)
+                                              (toCoord 2 1))
+            aState
+      it "should produce just the current worm" $
+        wormsNearMyCurrentWorm aStateWithNoWormsNearMyWorm `shouldBe`
+        (aListFromList [(1, toCoord 15 31)])
+    context "when there is one of my worms nearby" $ do
+      let aStateWithOneOfMyWormsNearby =
+            withWormPositions (always $ AList (toCoord 15 31)
+                                              (toCoord 16 31)
+                                              (toCoord 1 30)
+                                              (toCoord 0 31)
+                                              (toCoord 0 1)
+                                              (toCoord 2 1))
+            aState
+      it "should produce just my two worms" $
+        wormsNearMyCurrentWorm aStateWithOneOfMyWormsNearby `shouldBe`
+        (aListFromList [(1, toCoord 15 31),
+                        (2, toCoord 16 31)])
   describe "mapAt" $ do
     prop "it should produce an error for any coordinate when the map is empty" $ \ x ->
       let coord' = (abs x) `mod` (mapDim * mapDim)
