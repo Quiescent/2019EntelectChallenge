@@ -76,6 +76,20 @@ spec = do
         wormsNearMyCurrentWorm aStateWithOneOfMyWormsNearby `shouldBe`
         (aListFromList [(1, toCoord 15 31),
                         (2, toCoord 16 31)])
+    context "when there is an enemy worm nearby" $ do
+      let aStateWithAnEnemyWormNearby =
+            withWormPositions (always $ AList (toCoord 15 31)
+                                              (toCoord 16 31)
+                                              (toCoord 1 30)
+                                              (toCoord 14 31)
+                                              (toCoord 0 1)
+                                              (toCoord 2 1))
+            aState
+      it "should produce the nearby enemy worm" $
+        wormsNearMyCurrentWorm aStateWithAnEnemyWormNearby `shouldBe`
+        (aListFromList [(1, toCoord 15 31),
+                        (2, toCoord 16 31),
+                        (4, toCoord 14 31)])
   describe "mapAt" $ do
     prop "it should produce an error for any coordinate when the map is empty" $ \ x ->
       let coord' = (abs x) `mod` (mapDim * mapDim)
