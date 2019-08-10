@@ -39,8 +39,14 @@ transitions (SearchedLevel   _ _ transitions') = transitions'
 transitions (UnSearchedLevel _ _)              = []
 transitions SearchFront                        = []
 
+rangeToConsiderInMinigame :: Int
+rangeToConsiderInMinigame = 7
+
 wormsNearMyCurrentWorm :: State -> AList
-wormsNearMyCurrentWorm _ = emptyAList
+wormsNearMyCurrentWorm state =
+  let coord' = thisWormsCoord state
+  in aListFilterByData (\ xy -> any (\ xy' -> inRange xy xy' rangeToConsiderInMinigame) coord') $
+     wormPositions state
 
 spec :: Spec
 spec = do
