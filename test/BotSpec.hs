@@ -129,7 +129,8 @@ spec = do
       diffMax [Reward (MyReward 100)  (OpponentsReward 1500),
                Reward (MyReward 100)  (OpponentsReward 1500),
                Reward (MyReward 100)  (OpponentsReward 1500),
-               Reward (MyReward 100)  (OpponentsReward 1500)] `shouldBe` (Payoff (MyPayoff 9) (OpponentsPayoff 9))
+               Reward (MyReward 100)  (OpponentsReward 1500)] `shouldBe`
+        (Payoff (MyPayoff 9) (OpponentsPayoff 9) digMaxScore)
     it "should decrease with every move down the chain" $
       let value' :: Double
           value' = (7 + 7 / 2 + 7 / 3 + 7 / 4) / normalisationFactor
@@ -137,18 +138,18 @@ spec = do
                   Reward (MyReward 0) (OpponentsReward 7),
                   Reward (MyReward 0) (OpponentsReward 7),
                   Reward (MyReward 0) (OpponentsReward 7)] `shouldBe`
-         (Payoff (MyPayoff 1) (OpponentsPayoff $ fromJust $ findIndex (>= (round value')) diffMaxScale))
+         (Payoff (MyPayoff 1) (OpponentsPayoff $ fromJust $ findIndex (>= (round value')) diffMaxScale) digMaxScore)
     prop "should never be 10 or 0" $ \ (x, y) ->
       let inRange' = (> 0) .&&. (< maxScore)
       in diffMax [Reward (MyReward $ abs x) (OpponentsReward $ abs y)] `shouldSatisfy`
-      (inRange' . (\ (Payoff _            (OpponentsPayoff x')) -> x')) .&&.
-      (inRange' . (\ (Payoff (MyPayoff x') _)                   -> x'))
+      (inRange' . (\ (Payoff _             (OpponentsPayoff x') _) -> x')) .&&.
+      (inRange' . (\ (Payoff (MyPayoff x') _                    _) -> x'))
   describe "updateCount" $ do
     prop "should produce the same number of records when updating a record regardless of whether it's there or not" $ \ (i, k) ->
       let myMoves      = myMovesFrom aState
           thisMove     = myMoves L.!! (i `mod` length myMoves)
           k'           = k `mod` (maxScore + 1)
-          updateCount' = incInc k'
+          updateCount' = incInc k' ((\ (MaxScore x) -> x) digMaxScore)
           oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
           newCounts    = updateCount updateCount' oldCounts thisMove
       in newCounts `shouldSatisfy` ((== (length oldCounts)) . length)
@@ -156,7 +157,7 @@ spec = do
       let myMoves      = myMovesFrom aState
           thisMove     = myMoves L.!! (i `mod` length myMoves)
           k'           = k `mod` (maxScore + 1)
-          updateCount' = incInc k'
+          updateCount' = incInc k' ((\ (MaxScore x) -> x) digMaxScore)
           oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
           newCounts    = updateCount updateCount' oldCounts thisMove
       in newCounts `shouldSatisfy` ((((== (Played $ 1 + maxScore)) . played) .&&.
@@ -182,19 +183,27 @@ spec = do
                             (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail opponentsMoves))
           newTree        = updateTree aState
                                       (SearchResult
-                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k'))
+                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
                                        [fromMoves thisMove thatMove])
                                       oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy` isSearched . snd
+    let aStateWithAnEnemyWormNearby =
+            withWormPositions (always $ AList (toCoord 15 31)
+                                              (toCoord 16 31)
+                                              (toCoord 1 30)
+                                              (toCoord 14 31)
+                                              (toCoord 0 1)
+                                              (toCoord 2 1))
+            aState
     prop "should produce a tree with one result on it when given a SearchFront" $ \ (i, j, k) ->
-      let myMoves        = myMovesFrom aState
+      let myMoves        = myMovesFrom aStateWithAnEnemyWormNearby
           thisMove       = myMoves L.!! (i `mod` length myMoves)
-          opponentsMoves = opponentsMovesFrom aState
+          opponentsMoves = opponentsMovesFrom aStateWithAnEnemyWormNearby
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
           k'             = k `mod` (maxScore + 1)
-          newTree        = updateTree aState
+          newTree        = updateTree aStateWithAnEnemyWormNearby
                                       (SearchResult
-                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k'))
+                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
                                        [fromMoves thisMove thatMove])
                                       SearchFront
       in newTree `shouldSatisfy` (((== (maxScore - k')) . countOpponentsWins) .&&.
@@ -211,7 +220,7 @@ spec = do
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
           newTree        = updateTree aState
                                       (SearchResult
-                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k'))
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
                                        [fromMoves thisMove thatMove])
                                       oldTree
       in newTree `shouldSatisfy` (((== (maxScore        + countGames' oldTree))        . countGames')         .&&.
@@ -229,25 +238,25 @@ spec = do
                            []
           newTree        = updateTree aState
                                       (SearchResult
-                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k'))
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
                                        [fromMoves thisMove thatMove])
                                       oldTree
       in newTree `shouldSatisfy` (((== (maxScore        + countGames' oldTree))        . countGames')         .&&.
                                   ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
                                   ((== (k'              + countMyWins        oldTree)) . countMyWins))
     prop "should add an unsearched level to the state transitions for this tree" $ \ (i, j, k) ->
-      let myMoves        = myMovesFrom aState
+      let myMoves        = myMovesFrom aStateWithAnEnemyWormNearby
           thisMove       = myMoves L.!! (i `mod` length myMoves)
-          opponentsMoves = opponentsMovesFrom aState
+          opponentsMoves = opponentsMovesFrom aStateWithAnEnemyWormNearby
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
           k'             = k `mod` (maxScore + 1)
           oldTree        = SearchedLevel
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree aState
+          newTree        = updateTree aStateWithAnEnemyWormNearby
                                       (SearchResult
-                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k'))
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
                                        [fromMoves thisMove thatMove, fromMoves thisMove thatMove])
                                       oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy`
@@ -259,10 +268,10 @@ spec = do
             ((== (Played $ 1 + maxScore))   . played)) .
            (fromJust . find ((== thatMove) . successRecordMove) . opponentsMovesFromTree))) . snd
     prop "should add an unsearched level to the state transitions for this tree" $ \ (i, j, k, l, m) ->
-      let myMoves        = myMovesFrom aState
+      let myMoves        = myMovesFrom aStateWithAnEnemyWormNearby
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           thisMove'      = myMoves L.!! (m `mod` length myMoves)
-          opponentsMoves = opponentsMovesFrom aState
+          opponentsMoves = opponentsMovesFrom aStateWithAnEnemyWormNearby
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
           thatMove'      = opponentsMoves L.!! (l `mod` length opponentsMoves)
           k'             = k `mod` (maxScore + 1)
@@ -270,9 +279,9 @@ spec = do
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree aState
+          newTree        = updateTree aStateWithAnEnemyWormNearby
                                       (SearchResult
-                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k'))
+                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
                                         [fromMoves thisMove thatMove,
                                          fromMoves thisMove' thatMove'])
                                       oldTree

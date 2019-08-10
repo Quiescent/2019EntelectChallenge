@@ -2357,12 +2357,9 @@ data SearchResult = SearchResult Payoff Moves
 inc :: Int -> Int -> Int
 inc x = (+x)
 
-dec :: Int -> Int -> Int
-dec x y = y - x
-
-incInc :: Int -> SuccessRecord -> SuccessRecord
-incInc x (SuccessRecord (Wins wins') (Played played') playerMove') =
-  SuccessRecord (Wins $ (inc x) wins') (Played $ (inc maxScore) played') playerMove'
+incInc :: Int -> Int -> SuccessRecord -> SuccessRecord
+incInc reward' maxScore' (SuccessRecord (Wins wins') (Played played') playerMove') =
+  SuccessRecord (Wins $ (inc reward') wins') (Played $ (inc maxScore') played') playerMove'
 
 gamesPlayedForRecords :: [SuccessRecord] -> Int
 gamesPlayedForRecords = sum . map ( (\ (Played x) -> x) . played)
@@ -2373,24 +2370,31 @@ countGames = (`div` maxScore) . gamesPlayedForRecords . myMovesFromTree
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
 updateTree state result SearchFront =
-  updateTree state result $
-  UnSearchedLevel
-  (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom        state)
-  (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom state)
+  let strategy            = determineStrategy $ wormsNearMyCurrentWorm state
+      myMovesFrom'        = case strategy of
+        Kill -> myMovesFrom
+        Dig  -> myDigMovesFrom
+      opponentsMovesFrom' = case strategy of
+        Kill -> opponentsMovesFrom
+        Dig  -> (always [doNothing])
+  in updateTree state result $
+     UnSearchedLevel
+     (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom'        state)
+     (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom' state)
 updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
   case result of
-    (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff)) (move':_)) ->
+    (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (incInc myPayoff)        myMoves        thisMove
-          opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff) opponentsMoves thatMove
+          myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
       in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves'
     _                           -> level
 updateTree state result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
-    (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff)) (move':_)) ->
+    (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (incInc myPayoff)        myMoves        thisMove
-          opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff) opponentsMoves thatMove
+          myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
+          opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
       in SearchedLevel myMoves' opponentsMoves' $ updateSubTree state result stateTransitions
     _                           -> level
 
@@ -2456,7 +2460,77 @@ search g state =
     Kill -> killSearch g (currentRound state) state SearchFront []
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
-digSearch = undefined
+-- The first iteration of play randomly is here because we need to use
+-- that move when we write the first entry in an unsearched level.
+digSearch g round' state SearchFront                moves rewards =
+  case digGameOver round' rewards of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
+    NoResult        ->
+      let availableMoves = digMovesFrom state
+          (move, g')     = pickOneAtRandom g availableMoves
+          state'         = makeMove False move state
+          reward'        = reward state state'
+      in digPlayRandomly g' (round' + 1) state' (move:moves) (reward':rewards)
+digSearch g round' state tree@(SearchedLevel _ _ _) moves rewards =
+  case digGameOver round' rewards of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
+    NoResult        -> digSearchSearchedLevel g round' state tree moves rewards
+digSearch g
+          round'
+          state
+          (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves))
+          moves
+          rewards =
+  case digGameOver round' rewards of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
+    NoResult        ->
+      let (myRecord,        g')  = pickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
+          myMove                 = successRecordMove myRecord
+          opponentsMove          = successRecordMove opponentsRecord
+          combinedMove           = fromMoves myMove opponentsMove
+          state'                 = makeMove False combinedMove state
+          reward'                = reward state state'
+      in digSearch g''
+                   (round' + 1)
+                   state'
+                   SearchFront
+                   (combinedMove:moves)
+                   (reward':rewards)
+
+digSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
+digSearchSearchedLevel _ _ _ SearchFront                   _ _ = error "searchSearchedLevel: SearchFront"
+digSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ )  _ _ = error $ "searchSearchedLevel: " ++ show level
+digSearchSearchedLevel g
+                    round'
+                    state
+                    (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
+                    moves
+                    rewards =
+  let myBestMove        = successRecordMove $ chooseBestMove myMoves
+      opponentsBestMove = successRecordMove $ chooseBestMove opponentsMoves
+      combinedMove      = fromMoves myBestMove opponentsBestMove
+      state'            = makeMove True combinedMove state
+      reward'           = reward state state'
+  in digSearch g
+               (round' + 1)
+               state'
+               (findSubTree combinedMove transitions)
+               (combinedMove:moves)
+               (reward':rewards)
+
+digPlayRandomly :: StdGen -> Int -> State -> Moves -> Rewards -> (SearchResult, StdGen)
+digPlayRandomly g round' state moves rewards =
+  case digGameOver round' rewards of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
+    NoResult        ->
+      let availableMoves  = digMovesFrom state
+          (move, g')      = if availableMoves == []
+                            then (fromMoves doNothing doNothing, g)
+                            else pickOneAtRandom g availableMoves
+          state'          = makeMove False move state
+          reward'         = reward state state'
+      in digPlayRandomly g' (round' + 1) state' moves (reward':rewards)
 
 killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
@@ -2542,8 +2616,8 @@ playRandomly g round' state moves =
           state'          = makeMove False move state
       in playRandomly g' (round' + 1) state' moves
 
-maxRound :: Int
-maxRound = 4
+maxDigRound :: Int
+maxDigRound = 31
 
 playerScore :: Player -> Int
 playerScore (Player score' _ _) = score'
@@ -2580,11 +2654,14 @@ computeMyScore = computeScore myTotalWormHealth myPlayer
 computeOpponentsScore :: State -> Int
 computeOpponentsScore = computeScore opponentsTotalWormHealth opponent
 
-gameOver :: State -> Int -> GameOver
-gameOver = undefined
+maxRound :: Int
+maxRound = 400
 
-digGameOver :: State -> Int -> Rewards -> GameOver
-digGameOver state round' rewards =
+killMaxScore :: MaxScore
+killMaxScore = MaxScore 1
+
+gameOver :: State -> Int -> GameOver
+gameOver state round' =
   let myWormCount            = aListCountMyEntries $ wormHealths state
       myAverageHealth :: Double
       myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral wormCount
@@ -2599,19 +2676,32 @@ digGameOver state round' rewards =
           -- We died on the same round
           then if myScoreIsHigher
                -- I won because of points when both players are dead
-               then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
+               then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
                -- I lost because of points when both players are dead
-               else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
+               else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
           -- The opponent killed all my worms and I didn't kill his
-          else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff maxScore)
+          else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
      else if opponentWormCount == 0
           -- I Killed his worms and he didn't kill mine
-          then GameOver $ Payoff (MyPayoff maxScore) (OpponentsPayoff 0)
+          then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
           else if round' >= maxRound
                -- Simulation was terminated early.  Decide based on how valuable the moves were
-               then GameOver $ diffMax rewards
+               then if myScoreIsHigher
+                    -- I won because of points when both players are dead
+                    then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
+                    -- I lost because of points when both players are dead
+                    else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
                -- Simulation isn't over yet
                else NoResult
+
+digMaxScore :: MaxScore
+digMaxScore = (MaxScore maxScore)
+
+digGameOver :: Int -> Rewards -> GameOver
+digGameOver round' rewards =
+  if round' > maxDigRound
+  then GameOver $ diffMax rewards
+  else NoResult
 
 myTotalWormHealth :: State -> Int
 myTotalWormHealth = aListSumMyEntries . wormHealths
@@ -2626,7 +2716,7 @@ diffMaxScale = [-1, 3, 3, 3, 3, 7, 20, 20, 40, maxBound::Int]
 -- round summed together.
 normalisationFactor :: Double
 normalisationFactor =
-  sum $ map (1.0 /) $ take maxRound [1..]
+  sum $ map (1.0 /) $ take maxDigRound [1..]
 
 data OpponentsPayoff = OpponentsPayoff Int
   deriving (Eq, Show)
@@ -2634,7 +2724,10 @@ data OpponentsPayoff = OpponentsPayoff Int
 data MyPayoff = MyPayoff Int
   deriving (Eq, Show)
 
-data Payoff = Payoff MyPayoff OpponentsPayoff
+data MaxScore = MaxScore Int
+  deriving (Eq, Show)
+
+data Payoff = Payoff MyPayoff OpponentsPayoff MaxScore
   deriving (Eq, Show)
 
 -- This is a sliding scale so low values have high resolution and it
@@ -2658,7 +2751,7 @@ diffMax rewards =
                                     (reverse rewards) [1..]
       myIndex                     = fromJust $ findIndex (>= myScore')        diffMaxScale
       opponentsIndex              = fromJust $ findIndex (>= opponentsScore') diffMaxScale
-  in Payoff (MyPayoff myIndex) (OpponentsPayoff opponentsIndex)
+  in Payoff (MyPayoff myIndex) (OpponentsPayoff opponentsIndex) digMaxScore
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =
@@ -2676,6 +2769,14 @@ confidence totalCount wins' played' =
     n_i     = fromIntegral played'
     w_i     = fromIntegral wins'
     c       = sqrt 2
+
+digMovesFrom :: State -> [CombinedMove]
+digMovesFrom = map ((flip fromMoves) doNothing) . myDigMovesFrom
+
+myDigMovesFrom :: State -> [Move]
+myDigMovesFrom state =
+  filter (isValidDigMove targetOfThisMove state) $
+  map Move [16..23]
 
 movesFrom :: State -> [CombinedMove]
 movesFrom state = do
