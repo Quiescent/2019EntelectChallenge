@@ -2802,7 +2802,10 @@ are in the minigame.
     - CLOSING NOTE [2019-08-10 Sat 10:20]
     - State "IN_PROGRESS" from "TODO"       [2019-08-10 Sat 10:20]
     :END:
-*** TODO Implement movesFrom for each strategy
+*** IN_PROGRESS Implement movesFrom for each strategy
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-08-10 Sat 10:21]
+    :END:
 ** TODO Implement Lava
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
