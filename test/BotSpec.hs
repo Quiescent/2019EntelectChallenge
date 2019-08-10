@@ -39,25 +39,6 @@ transitions (SearchedLevel   _ _ transitions') = transitions'
 transitions (UnSearchedLevel _ _)              = []
 transitions SearchFront                        = []
 
-rangeToConsiderInMinigame :: Int
-rangeToConsiderInMinigame = 7
-
-wormsNearMyCurrentWorm :: State -> AList
-wormsNearMyCurrentWorm state =
-  let coord' = thisWormsCoord state
-  in aListFilterByData (\ xy -> any (\ xy' -> inRange xy xy' rangeToConsiderInMinigame) coord') $
-     wormPositions state
-
-data Strategy = Dig
-              | Kill
-              deriving (Eq, Show)
-
-determineStrategy :: AList -> Strategy
-determineStrategy wormPositions' =
-  case (aListCountMyEntries wormPositions', aListCountOpponentsEntries wormPositions') of
-    (_, 0) -> Dig
-    (_, _) -> Kill
-
 spec :: Spec
 spec = do
   describe "wormsNearMyCurrentWorm" $ do
