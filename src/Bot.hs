@@ -20,7 +20,7 @@ import System.IO
 import System.Random
 import Data.Aeson (decode, withObject, (.:), (.:?), FromJSON, parseJSON)
 import System.Clock
-import qualified Control.Concurrent.MVar as MVar
+import qualified Control.Concurrent.MVar.Strict as MVar
 import Control.Concurrent
 import Control.DeepSeq
 
@@ -102,7 +102,7 @@ data WormId = WormId Int
   deriving (Eq, Show, Ord)
 
 instance NFData WormId where
-  rnf wormId' = wormId' `deepseq` ()
+  rnf (WormId wormId') = wormId' `deepseq` ()
 
 aListFindById :: WormId -> AList -> Maybe Int
 aListFindById (WormId 1)  (AList (-1)    _    _     _    _     _) = Nothing
@@ -436,7 +436,7 @@ data Selections = Selections Int
   deriving (Eq, Show)
 
 instance NFData Selections where
-  rnf selections = selections `deepseq` ()
+  rnf (Selections selections) = selections `deepseq` ()
 
 -- TODO: Change Int to PlayerScore for stronger types
 data Player = Player Int WormId Selections
@@ -584,7 +584,7 @@ factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
                          V.map (\ (OpponentWorm { opWormId   = wormId',
                                                   profession = profession' }) ->
                                    if profession' == "Technologist"
-                                   then Just (((toThatWormId wormId'), 5))
+                                   then Just (((toThatWormId wormId'), 3))
                                    else Nothing)
                          liveWorms
   in (healths, positions, bananas, snowballs', frozenDurations')
@@ -934,7 +934,7 @@ data Move = Move Int
   deriving (Show, Eq)
 
 instance NFData Move where
-  rnf move = move `deepseq` ()
+  rnf (Move move) = move `deepseq` ()
 
 showCoord :: Coord -> String
 showCoord xy = case fromCoord xy of
@@ -1124,7 +1124,7 @@ data CombinedMove = CombinedMove Int
   deriving (Eq, Show)
 
 instance NFData CombinedMove where
-  rnf combinedMove = combinedMove `deepseq` ()
+  rnf (CombinedMove combinedMove) = combinedMove `deepseq` ()
 
 playersMoveBits :: Int
 playersMoveBits = 11
@@ -2170,7 +2170,7 @@ pollComms = MVar.tryTakeMVar
 readComms :: CommsChannel a -> IO a
 readComms = MVar.takeMVar
 
-writeComms :: CommsChannel a -> a -> IO ()
+writeComms :: (NFData a) => CommsChannel a -> a -> IO ()
 writeComms = MVar.putMVar
 
 newComms :: IO (CommsChannel a)
@@ -2188,8 +2188,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
   where
     go :: StdGen -> Int -> SearchTree-> IO ()
     go gen' 0      searchTree = do
-      let searchTree' = force searchTree
-      writeComms treeChannel searchTree'
+      writeComms treeChannel searchTree
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
         Just (move', state') -> do
@@ -2205,7 +2204,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
             "\n\tMy move: " ++ prettyPrintThisMove initialState myMove' ++
             "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
-        Nothing -> go gen' iterationsBeforeComms searchTree'
+        Nothing -> go gen' iterationsBeforeComms searchTree
     go gen' count' searchTree =
       let (result, gen'') = search gen' initialState
           newTree         = updateTree initialState result searchTree
@@ -2264,7 +2263,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> CommsChannel SearchTree -> IO SearchTree
-treeAfterAlottedTime state treeChannel = do
+treeAfterAlottedTime _ treeChannel = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -2274,7 +2273,7 @@ treeAfterAlottedTime state treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
+        then return searchTree -- (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -2330,11 +2329,21 @@ startBot g = do
 data Wins = Wins Int
   deriving (Eq)
 
+instance NFData Wins where
+  rnf (Wins wins') = wins' `deepseq` ()
+
 data Played = Played Int
   deriving (Eq)
 
+instance NFData Played where
+  rnf (Played played') = played' `deepseq` ()
+
 data SuccessRecord = SuccessRecord Wins Played Move
   deriving (Eq)
+
+instance NFData SuccessRecord where
+  rnf (SuccessRecord wins' played' move) =
+    wins' `deepseq` played' `deepseq` move `deepseq` ()
 
 instance Show SuccessRecord where
   show (SuccessRecord (Wins wins') (Played played') move') =
@@ -2355,13 +2364,13 @@ data MyMoves = MyMoves SuccessRecords
   deriving (Eq)
 
 instance NFData MyMoves where
-  rnf myMoves = myMoves `deepseq` ()
+  rnf (MyMoves myMoves) = myMoves `deepseq` ()
 
 data OpponentsMoves = OpponentsMoves SuccessRecords
   deriving (Eq)
 
 instance NFData OpponentsMoves where
-  rnf opponentsMoves =  opponentsMoves `deepseq` ()
+  rnf (OpponentsMoves opponentsMoves) =  opponentsMoves `deepseq` ()
 
 data StateTransition = StateTransition CombinedMove SearchTree
   deriving (Eq, Show)
@@ -2388,7 +2397,7 @@ instance NFData SearchTree where
     myMoves `deepseq` opponentsMoves `deepseq` stateTransitions `deepseq` ()
   rnf (UnSearchedLevel myMoves opponentsMoves) =
     myMoves `deepseq` opponentsMoves `deepseq` ()
-  rnf SearchFront = ()
+  rnf x = x `deepseq` ()
 
 join' :: Show a => String -> [a] -> String
 join' joinString strings =
@@ -2419,6 +2428,9 @@ type Rewards = [Reward]
 data SearchResult = SearchResult Payoff Moves
                   deriving (Show)
 
+instance NFData SearchResult where
+  rnf (SearchResult payoff moves) = payoff `deepseq` moves `deepseq` ()
+
 inc :: Int -> Int -> Int
 inc x = (+x)
 
@@ -2435,7 +2447,7 @@ countGames = (`div` maxScore) . gamesPlayedForRecords . myMovesFromTree
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
 updateTree state result SearchFront =
-  let strategy            = determineStrategy $ wormsNearMyCurrentWorm state
+  let strategy            = determineStrategy $ wormsNearMyCurrentWorm $ state
       myMovesFrom'        = case strategy of
         Kill -> myMovesFrom
         Dig  -> myDigMovesFrom
@@ -2518,6 +2530,7 @@ determineStrategy wormPositions' =
     (_, 0) -> Dig
     (_, _) -> Kill
 
+-- BUG: Needs to be state with only the worms in the minigame!!!
 search :: StdGen -> State -> (SearchResult, StdGen)
 search g state =
   case determineStrategy $ wormsNearMyCurrentWorm state of
@@ -2786,14 +2799,27 @@ normalisationFactor =
 data OpponentsPayoff = OpponentsPayoff Int
   deriving (Eq, Show)
 
+instance NFData OpponentsPayoff where
+  rnf (OpponentsPayoff opponentsPayoff) = opponentsPayoff `deepseq` ()
+
 data MyPayoff = MyPayoff Int
   deriving (Eq, Show)
+
+instance NFData MyPayoff where
+  rnf (MyPayoff myPayoff) = myPayoff `deepseq` ()
 
 data MaxScore = MaxScore Int
   deriving (Eq, Show)
 
+instance NFData MaxScore where
+  rnf (MaxScore maxScore') = maxScore' `deepseq` ()
+
 data Payoff = Payoff MyPayoff OpponentsPayoff MaxScore
   deriving (Eq, Show)
+
+instance NFData Payoff where
+  rnf (Payoff myPayoff opponentsPayoff maxScore') =
+    myPayoff `deepseq` opponentsPayoff `deepseq` maxScore' `deepseq` ()
 
 -- This is a sliding scale so low values have high resolution and it
 -- begins to tail off with larger values.  Linear isn't a good idea
