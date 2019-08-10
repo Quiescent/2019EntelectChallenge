@@ -53,7 +53,10 @@ data Strategy = Dig
               deriving (Eq, Show)
 
 determineStrategy :: AList -> Strategy
-determineStrategy _ = Dig
+determineStrategy wormPositions' =
+  case (aListCountMyEntries wormPositions', aListCountOpponentsEntries wormPositions') of
+    (_, 0) -> Dig
+    (_, _) -> Kill
 
 spec :: Spec
 spec = do
@@ -99,30 +102,18 @@ spec = do
                         (4, toCoord 14 31)])
   describe "determineStrategy" $ do
     context "when no werms are nearby" $ do
-      let positionsWithNooneNearby = AList (toCoord 15 31)
-                                           (toCoord 1 31)
-                                           (toCoord 1 30)
-                                           (toCoord 0 31)
-                                           (toCoord 0 1)
-                                           (toCoord 2 1)
+      let positionsWithNooneNearby = aListFromList [(1, toCoord 15 31)]
       it "should produce a strategy of Dig" $
         determineStrategy positionsWithNooneNearby `shouldBe` Dig
     context "when there is another friendly worm nearby" $ do
-      let positionsWithOneOfMyWormsNearby = AList (toCoord 15 31)
-                                                  (toCoord 16 31)
-                                                  (toCoord 1 30)
-                                                  (toCoord 0 31)
-                                                  (toCoord 0 1)
-                                                  (toCoord 2 1)
+      let positionsWithOneOfMyWormsNearby = aListFromList [(1, toCoord 15 31),
+                                                           (2, toCoord 16 31)]
       it "should produce a strategy of Dig" $
         determineStrategy positionsWithOneOfMyWormsNearby `shouldBe` Dig
     context "when there is an enemy nearby" $ do
-      let positionsWithAnEnemyNearby = AList (toCoord 15 31)
-                                             (toCoord 16 31)
-                                             (toCoord 1 30)
-                                             (toCoord 14 31)
-                                             (toCoord 0 1)
-                                             (toCoord 2 1)
+      let positionsWithAnEnemyNearby = aListFromList [(1, toCoord 15 31),
+                                                      (2, toCoord 16 31),
+                                                      (4, toCoord 14 31)]
       it "should produce strategy of kill" $
         determineStrategy positionsWithAnEnemyNearby `shouldBe` Kill
   describe "mapAt" $ do
