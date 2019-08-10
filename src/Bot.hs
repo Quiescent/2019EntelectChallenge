@@ -22,6 +22,7 @@ import Data.Aeson (decode, withObject, (.:), (.:?), FromJSON, parseJSON)
 import System.Clock
 import qualified Control.Concurrent.MVar as MVar
 import Control.Concurrent
+import Control.DeepSeq
 
 -- TODO: think long and hard about this...
 import Prelude (read)
@@ -37,6 +38,29 @@ data State = State { opponentsLastCommand :: Maybe String,
                      opponent             :: Player,
                      gameMap              :: GameMap }
              deriving (Generic, Eq)
+
+instance NFData State where
+  rnf (State opponentsLastCommand'
+             currentRound'
+             wormHealths'
+             wormPositions'
+             wormBananas'
+             wormSnowballs'
+             frozenDurations'
+             myPlayer'
+             opponent'
+             gameMap') =
+    opponentsLastCommand' `deepseq`
+    currentRound' `deepseq`
+    wormHealths' `deepseq`
+    wormPositions' `deepseq`
+    wormBananas' `deepseq`
+    wormSnowballs' `deepseq`
+    frozenDurations' `deepseq`
+    myPlayer' `deepseq`
+    opponent' `deepseq`
+    gameMap' `deepseq`
+    ()
 
 type WormFrozenDurations = AList
 
@@ -59,6 +83,10 @@ type WormHealth = Int
 data AList = AList Int Int Int Int Int Int
   deriving (Eq)
 
+instance NFData AList where
+  rnf (AList a b c d e f) =
+    a `deepseq` b `deepseq` c `deepseq` d `deepseq` e `deepseq` f `deepseq` ()
+
 wormIds :: [WormId]
 wormIds = [WormId 1, WormId 2, WormId 3, WormId 4, WormId 8, WormId 12]
 
@@ -72,6 +100,9 @@ instance Show AList where
 
 data WormId = WormId Int
   deriving (Eq, Show, Ord)
+
+instance NFData WormId where
+  rnf wormId' = wormId' `deepseq` ()
 
 aListFindById :: WormId -> AList -> Maybe Int
 aListFindById (WormId 1)  (AList (-1)    _    _     _    _     _) = Nothing
@@ -293,6 +324,10 @@ instance Show State where
 data GameMap = GameMap Integer Integer Integer Integer
   deriving (Generic, Eq)
 
+instance NFData GameMap where
+  rnf (GameMap air dirt space medipacks) =
+    air `deepseq` dirt `deepseq` space `deepseq` medipacks `deepseq` ()
+
 instance Show GameMap where
   show = showRows . splitGameMap
 
@@ -400,9 +435,16 @@ instance FromJSON State where
 data Selections = Selections Int
   deriving (Eq, Show)
 
+instance NFData Selections where
+  rnf selections = selections `deepseq` ()
+
 -- TODO: Change Int to PlayerScore for stronger types
 data Player = Player Int WormId Selections
   deriving (Show, Generic, Eq)
+
+instance NFData Player where
+  rnf (Player score' wormId' selections') =
+    score' `deepseq` wormId' `deepseq` selections' `deepseq` ()
 
 -- TODO: If there is no opponent then I'll bail out here :/
 toState :: ScratchPlayer -> V.Vector Opponent -> V.Vector (V.Vector Cell) -> Int -> State
@@ -891,6 +933,9 @@ readGameState r = do
 data Move = Move Int
   deriving (Show, Eq)
 
+instance NFData Move where
+  rnf move = move `deepseq` ()
+
 showCoord :: Coord -> String
 showCoord xy = case fromCoord xy of
     (x', y') -> show x' ++ " " ++ show y'
@@ -1077,6 +1122,9 @@ isOOB (x', y')
 
 data CombinedMove = CombinedMove Int
   deriving (Eq, Show)
+
+instance NFData CombinedMove where
+  rnf combinedMove = combinedMove `deepseq` ()
 
 playersMoveBits :: Int
 playersMoveBits = 11
@@ -2140,7 +2188,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
   where
     go :: StdGen -> Int -> SearchTree-> IO ()
     go gen' 0      searchTree = do
-      searchTree'    <- evaluate searchTree
+      let searchTree' = force searchTree
       writeComms treeChannel searchTree'
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
@@ -2216,7 +2264,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> CommsChannel SearchTree -> IO SearchTree
-treeAfterAlottedTime _ treeChannel = do
+treeAfterAlottedTime state treeChannel = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -2226,7 +2274,7 @@ treeAfterAlottedTime _ treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then return searchTree -- (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
+        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -2252,8 +2300,8 @@ runRound roundNumber previousState stateChannel treeChannel = do
   roundNumber'         <- readRound
   state                <- readGameState roundNumber'
   -- TODO fromJust?
-  state'               <- evaluate $ fromJust state
-  opponentsLastMove    <- evaluate $ parseLastCommand previousState $ opponentsLastCommand state'
+  let state'            = force $ fromJust state
+  let opponentsLastMove = force $ parseLastCommand previousState $ opponentsLastCommand state'
   -- TODO!!!!!  I shouldn't be reading this state in the searcher.
   -- All I care about is the opponents move...
   writeComms stateChannel $ (fromMoves move opponentsLastMove, state')
@@ -2306,11 +2354,21 @@ played (SuccessRecord _ played' _) = played'
 data MyMoves = MyMoves SuccessRecords
   deriving (Eq)
 
+instance NFData MyMoves where
+  rnf myMoves = myMoves `deepseq` ()
+
 data OpponentsMoves = OpponentsMoves SuccessRecords
   deriving (Eq)
 
+instance NFData OpponentsMoves where
+  rnf opponentsMoves =  opponentsMoves `deepseq` ()
+
 data StateTransition = StateTransition CombinedMove SearchTree
   deriving (Eq, Show)
+
+instance NFData StateTransition where
+  rnf (StateTransition combinedMove searchTree) =
+    combinedMove `deepseq` searchTree `deepseq` ()
 
 hasMove :: CombinedMove -> StateTransition -> Bool
 hasMove move' (StateTransition move'' _) = move' == move''
@@ -2324,6 +2382,13 @@ data SearchTree = SearchedLevel   MyMoves OpponentsMoves StateTransitions
                 | UnSearchedLevel MyMoves OpponentsMoves
                 | SearchFront
                 deriving (Eq)
+
+instance NFData SearchTree where
+  rnf (SearchedLevel myMoves opponentsMoves stateTransitions) =
+    myMoves `deepseq` opponentsMoves `deepseq` stateTransitions `deepseq` ()
+  rnf (UnSearchedLevel myMoves opponentsMoves) =
+    myMoves `deepseq` opponentsMoves `deepseq` ()
+  rnf SearchFront = ()
 
 join' :: Show a => String -> [a] -> String
 join' joinString strings =
