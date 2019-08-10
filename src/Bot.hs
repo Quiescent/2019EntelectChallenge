@@ -2775,8 +2775,10 @@ digMovesFrom = map ((flip fromMoves) doNothing) . myDigMovesFrom
 
 myDigMovesFrom :: State -> [Move]
 myDigMovesFrom state =
-  filter (isValidDigMove targetOfThisMove state) $
-  map Move [16..23]
+  filter (\ move ->
+           isValidMoveMove targetOfThisMove thatPlayersCurrentWormId state move ||
+           isValidDigMove  targetOfThisMove                          state move) $
+  map Move [8..23]
 
 movesFrom :: State -> [CombinedMove]
 movesFrom state = do
