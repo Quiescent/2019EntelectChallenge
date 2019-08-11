@@ -2950,12 +2950,14 @@ opponentsMovesFrom state = do
 opponentsShootAndMoveMovesFrom :: State -> [Move]
 opponentsShootAndMoveMovesFrom = playersShootAndMoveMovesFrom targetOfThatMove thatPlayersCurrentWormId
 
+-- Includes dig moves incase someone is behind a barrier
 playersShootAndMoveMovesFrom :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> State -> [Move]
 playersShootAndMoveMovesFrom targetOfMove' playersWormId' state =
   filter (\ move ->
            isValidMoveMove targetOfMove' playersWormId' state move ||
-           isAShootMove move) $
-  map Move [0..15]
+           isAShootMove move ||
+           isADigMove move) $
+  map Move [0..23]
 
 doNothing :: Move
 doNothing = Move 187
