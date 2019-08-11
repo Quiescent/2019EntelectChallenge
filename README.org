@@ -2810,7 +2810,10 @@ are in the minigame.
     - CLOSING NOTE [2019-08-11 Sun 15:20]
     - State "IN_PROGRESS" from "TODO"       [2019-08-10 Sat 10:21]
     :END:
-** TODO Implement Lava
+** IN_PROGRESS Implement Lava
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-11 Sun 15:21]
+   :END:
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
