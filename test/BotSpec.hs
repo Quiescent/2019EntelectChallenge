@@ -2659,3 +2659,35 @@ withLastMove move' state =
   state { opponentsLastCommand = move' }
 
 setOpponentsLastMoveToDummy = setOpponentsLastMove aState doNothing
+
+-- For generating the lava map
+-- inRangeDouble :: Coord -> Coord -> Double -> Bool
+-- inRangeDouble xy' xy'' range' =
+--   let (x', y')   = fromCoord xy'
+--       (x'', y'') = fromCoord xy''
+--       dx         = (fromIntegral (x' - x''))
+--       dy         = (fromIntegral (y' - y''))
+--   in sqrt (((dx::Double) ** 2) + (dy ** 2)) <= range'
+
+-- generateLavaProgression =
+--   map lavaOn [0..400]
+--   where
+--     battleRoyaleStart :: Double
+--     battleRoyaleStart   = 0.25  * (fromIntegral maxRound)
+--     battleRoyaleEnd :: Double
+--     battleRoyaleEnd     = 0.875 * (fromIntegral maxRound)
+--     centreDim :: Int
+--     centreDim           = round $ (fromIntegral mapDim - 1.0) / (2.0::Double)
+--     mapCentre           = toCoord centreDim centreDim
+--     lavaOn currentRound' =
+--       (\ (GameMap air _ _ _) -> air) $
+--       vectorGameMapToGameMap $
+--       V.fromList $
+--       map ( \ coord -> if not $ inRangeDouble coord mapCentre (safeAreaRadius + 1)
+--                        then AIR
+--                        else DEEP_SPACE)
+--       [0..(mapDim * mapDim) - 1]
+--       where
+--         fullPercentageRange = (currentRound' - battleRoyaleStart) / (battleRoyaleEnd - battleRoyaleStart)
+--         currentProgress     = min 1.0 $ max fullPercentageRange 0.0
+--         safeAreaRadius      = ((fromIntegral mapDim) / 2.0) * (1 - currentProgress)

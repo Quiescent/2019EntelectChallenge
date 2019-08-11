@@ -8,6 +8,7 @@ module Bot
   where
 
 import Import
+import Lava()
 
 import qualified RIO.Vector.Boxed as V
 import GHC.Generics (Generic)
