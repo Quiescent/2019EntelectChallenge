@@ -4,8 +4,10 @@ module BotSpec (spec) where
 
 import Bot
 import Import
+import Lava
 
 import qualified RIO.Vector.Boxed as V
+import qualified RIO.Vector.Boxed.Partial as PV
 import qualified RIO.List.Partial as L
 import RIO.List
 import qualified RIO.HashSet as S
@@ -39,8 +41,21 @@ transitions (SearchedLevel   _ _ transitions') = transitions'
 transitions (UnSearchedLevel _ _)              = []
 transitions SearchFront                        = []
 
+isOnLavaForRound :: Int -> Coord -> Bool
+isOnLavaForRound currentRound' coord' =
+  testBit (lava PV.! currentRound') coord'
+
+lavaDamage :: Int
+lavaDamage = 3
+
 dealLavaDamage :: ModifyState
-dealLavaDamage = id
+dealLavaDamage state =
+  let currentRound' = currentRound state
+      hits'         = aListFilterByData (isOnLavaForRound currentRound') $ wormPositions state
+  in if not $ aListIsEmpty hits'
+     then foldl' (\ state' (wormId', _) -> withWormHealths (harmWormById lavaDamage wormId') state') state $
+          aListToList hits'
+     else state
 
 spec :: Spec
 spec = do
@@ -50,6 +65,34 @@ spec = do
       it "shouldn't deal any damage" $
         dealLavaDamage aStateWithRoundAtZero `shouldBe`
         aStateWithRoundAtZero
+    context "when the round is 105" $ do
+      let aStateWithRoundAtOneHundredAndFive =
+            withCurrentRound 105 $
+            withWormPositions (always $ AList (toCoord 11 0)
+                                              (toCoord 4  10)
+                                              (toCoord 5  20)
+                                              (toCoord 6  15)
+                                              (toCoord 7  20)
+                                              (toCoord 8  23)) $
+            withWormHealths (always (AList 17 20 20 20 20 20)) $
+            aState
+      it "should deal 3 damage to any worm at coord (11, 0)" $ do
+        dealLavaDamage aStateWithRoundAtOneHundredAndFive `shouldBe`
+          (withWormHealths (always (AList 17 20 20 20 20 20)) $
+           aStateWithRoundAtOneHundredAndFive)
+      let aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero =
+            withCurrentRound 105 $
+            withWormPositions (always $ AList (toCoord 12 0)
+                                              (toCoord 4  10)
+                                              (toCoord 5  20)
+                                              (toCoord 6  15)
+                                              (toCoord 7  20)
+                                              (toCoord 8  23)) $
+            withWormHealths (always (AList 17 20 20 20 20 20)) $
+            aState
+      it "should not deal 3 damage to any worm at coord (12, 0)" $ do
+        dealLavaDamage aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero `shouldBe`
+          aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero
   describe "wormsNearMyCurrentWorm" $ do
     context "when there are no worms nearby" $ do
       let aStateWithNoWormsNearMyWorm =
@@ -2696,7 +2739,7 @@ setOpponentsLastMoveToDummy = setOpponentsLastMove aState doNothing
 --       (\ (GameMap air _ _ _) -> air) $
 --       vectorGameMapToGameMap $
 --       V.fromList $
---       map ( \ coord -> if not $ inRangeDouble coord mapCentre (safeAreaRadius + 1)
+--       map ( \ coord -> if currentRound' > battleRoyaleStart && (not $ inRangeDouble coord mapCentre (safeAreaRadius + 1))
 --                        then AIR
 --                        else DEEP_SPACE)
 --       [0..(mapDim * mapDim) - 1]

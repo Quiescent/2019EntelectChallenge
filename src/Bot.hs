@@ -237,6 +237,10 @@ anyWormData p (AList a b c d e f) =
   p c ||
   p f
 
+aListIsEmpty :: AList -> Bool
+aListIsEmpty (AList (-1) (-1) (-1) (-1) (-1) (-1)) = True
+aListIsEmpty _                                     = False
+
 aListKeepWormsDefinedInFirst :: AList -> AList -> AList
 aListKeepWormsDefinedInFirst (AList a b c d e f) (AList a' b' c' d' e' f') =
   (AList (if a /= (-1) then a' else (-1))
