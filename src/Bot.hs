@@ -2556,11 +2556,11 @@ withOnlyWormsContainedIn toKeep =
      withWormSnowballs   keep .
      withFrozenDurations keep
 
-search :: StdGen -> Strategy -> State -> (SearchResult, StdGen)
-search g strategy minigameState =
+search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
+search g strategy minigameState searchTree =
   case strategy of
-    Dig  -> digSearch  g 0                            minigameState SearchFront [] []
-    Kill -> killSearch g (currentRound minigameState) minigameState SearchFront []
+    Dig  -> digSearch  g 0                            minigameState searchTree [] []
+    Kill -> killSearch g (currentRound minigameState) minigameState searchTree []
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
