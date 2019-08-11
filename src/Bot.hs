@@ -2293,7 +2293,8 @@ treeAfterAlottedTime _ treeChannel = do
 
 searchForAlottedTime :: State -> CommsChannel SearchTree -> IO Move
 searchForAlottedTime state =
-  fmap (successRecordMove . chooseBestMove . myMovesFromTree) . (treeAfterAlottedTime state)
+  let strategy = determineStrategy $ wormsNearMyCurrentWorm state
+  in fmap (successRecordMove . chooseBestMove strategy . myMovesFromTree) . (treeAfterAlottedTime state)
 
 runRound :: Int -> State -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
 runRound roundNumber previousState stateChannel treeChannel = do
@@ -2603,8 +2604,8 @@ digSearchSearchedLevel g
                     (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
                     moves
                     rewards =
-  let myBestMove        = successRecordMove $ chooseBestMove myMoves
-      opponentsBestMove = successRecordMove $ chooseBestMove opponentsMoves
+  let myBestMove        = successRecordMove $ chooseBestMove Dig myMoves
+      opponentsBestMove = successRecordMove $ chooseBestMove Dig opponentsMoves
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
       reward'           = reward state state'
@@ -2685,8 +2686,8 @@ searchSearchedLevel g
                     state
                     (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
                     moves =
-  let myBestMove        = successRecordMove $ chooseBestMove myMoves
-      opponentsBestMove = successRecordMove $ chooseBestMove opponentsMoves
+  let myBestMove        = successRecordMove $ chooseBestMove Kill myMoves
+      opponentsBestMove = successRecordMove $ chooseBestMove Kill opponentsMoves
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
   in killSearch g
@@ -2835,22 +2836,32 @@ diffMax rewards =
         rewards
   in Payoff (MyPayoff myScore') (OpponentsPayoff opponentsScore') digMaxScore
 
-chooseBestMove :: [SuccessRecord] -> SuccessRecord
-chooseBestMove successRecords =
+chooseBestMove :: Strategy -> [SuccessRecord] -> SuccessRecord
+chooseBestMove strategy successRecords =
   let totalGames = gamesPlayedForRecords successRecords
+      bestMove'  = case strategy of
+        Dig  -> rateDigMove
+        Kill -> confidence
       computeConfidence (SuccessRecord (Wins wins')  (Played played') _) =
-        confidence totalGames wins' played'
+        bestMove' totalGames wins' played'
   in maximumBy (\ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
 
 confidence :: Int -> Int -> Int -> Float
-confidence _ wins' played' =
-  (w_i / n_i) --  +
-  -- c * sqrt ((log count_i) / n_i)
+confidence totalCount wins' played' =
+  (w_i / n_i) +
+  c * sqrt ((log count_i) / n_i)
   where
-    -- count_i = fromIntegral totalCount
+    count_i = fromIntegral totalCount
     n_i     = fromIntegral played'
     w_i     = fromIntegral wins'
-    -- c       = sqrt 2
+    c       = sqrt 2
+
+rateDigMove :: Int -> Int -> Int -> Float
+rateDigMove _ wins' played' =
+  (w_i / n_i) --  +
+  where
+    n_i     = fromIntegral played'
+    w_i     = fromIntegral wins'
 
 digMovesFrom :: State -> [CombinedMove]
 digMovesFrom = map ((flip fromMoves) doNothing) . myDigMovesFrom
