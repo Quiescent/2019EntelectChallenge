@@ -2220,7 +2220,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
     go gen' count' searchTree =
       let (result, gen'') = search gen' strategy minigameState searchTree
           newTree         = updateTree strategy minigameState result searchTree
-      in (logStdErr $ "Result:" ++ show result) >> go gen'' (count' - 1) newTree
+      in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
 makeMoveInTree move' (SearchedLevel   _ _ transitions) = findSubTree move' transitions
@@ -2938,7 +2938,7 @@ playersShootAndMoveMovesFrom targetOfMove' playersWormId' state =
   filter (\ move ->
            isValidMoveMove targetOfMove' playersWormId' state move ||
            isAShootMove move) $
-  map Move [8..23]
+  map Move [0..15]
 
 doNothing :: Move
 doNothing = Move 187
