@@ -2195,6 +2195,9 @@ iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (Combi
 iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
   go gen iterationsBeforeComms tree
   where
+    nearbyWorms   = wormsNearMyCurrentWorm initialState
+    minigameState = withOnlyWormsContainedIn nearbyWorms initialState
+    strategy      = determineStrategy nearbyWorms
     go :: StdGen -> Int -> SearchTree-> IO ()
     go gen' 0      searchTree = do
       writeComms treeChannel searchTree
@@ -2215,12 +2218,9 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree
     go gen' count' searchTree =
-      let nearbyWorms     = wormsNearMyCurrentWorm initialState
-          minigameState   = withOnlyWormsContainedIn nearbyWorms initialState
-          strategy        = determineStrategy nearbyWorms
-          (result, gen'') = search gen' strategy minigameState
+      let (result, gen'') = search gen' strategy minigameState searchTree
           newTree         = updateTree strategy minigameState result searchTree
-      in go gen'' (count' - 1) newTree
+      in (logStdErr $ "Result:" ++ show result) >> go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
 makeMoveInTree move' (SearchedLevel   _ _ transitions) = findSubTree move' transitions
