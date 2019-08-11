@@ -39,8 +39,17 @@ transitions (SearchedLevel   _ _ transitions') = transitions'
 transitions (UnSearchedLevel _ _)              = []
 transitions SearchFront                        = []
 
+dealLavaDamage :: ModifyState
+dealLavaDamage = id
+
 spec :: Spec
 spec = do
+  describe "takeLavaDamage" $ do
+    context "when the current round is 0" $ do
+      let aStateWithRoundAtZero = withCurrentRound 0 aState
+      it "shouldn't deal any damage" $
+        dealLavaDamage aStateWithRoundAtZero `shouldBe`
+        aStateWithRoundAtZero
   describe "wormsNearMyCurrentWorm" $ do
     context "when there are no worms nearby" $ do
       let aStateWithNoWormsNearMyWorm =
@@ -2657,6 +2666,10 @@ aPlayer = Player 300 (WormId 1) startingSelections
 withLastMove :: Maybe String -> State -> State
 withLastMove move' state =
   state { opponentsLastCommand = move' }
+
+withCurrentRound :: Int -> State -> State
+withCurrentRound round' state =
+  state { currentRound = round' }
 
 setOpponentsLastMoveToDummy = setOpponentsLastMove aState doNothing
 
