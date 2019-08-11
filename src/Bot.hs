@@ -2266,7 +2266,7 @@ prettyPrintSearchTree state (SearchedLevel (MyMoves myMoves) (OpponentsMoves opp
     "Searched:\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
     "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves) ++ "\n" ++
-    "Transitions:\n\t" ++ (join' ", " $ map (\ (StateTransition move' _) -> move') transitions')
+    "Transitions:\n\t" ++ (join' ", " $ map (\ (StateTransition move' _) -> (toMoves move')) transitions')
 prettyPrintSearchTree state (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched:\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
