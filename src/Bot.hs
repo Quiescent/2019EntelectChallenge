@@ -8,9 +8,10 @@ module Bot
   where
 
 import Import
-import Lava()
+import Lava
 
 import qualified RIO.Vector.Boxed as V
+import qualified RIO.Vector.Boxed.Partial as PV
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import RIO.List
@@ -1173,7 +1174,24 @@ makeMove swapping moves state =
      makeDigMoves            myMove' opponentsMove' $
      makeMoveMoves  swapping myMove' opponentsMove' $
      makeSelections          myMove  opponentsMove  $
-     tickFreezeDurations state
+     tickFreezeDurations                            $
+     dealLavaDamage state
+
+isOnLavaForRound :: Int -> Coord -> Bool
+isOnLavaForRound currentRound' coord' =
+  testBit (lava PV.! currentRound') coord'
+
+lavaDamage :: Int
+lavaDamage = 3
+
+dealLavaDamage :: ModifyState
+dealLavaDamage state =
+  let currentRound' = currentRound state
+      hits'         = aListFilterByData (isOnLavaForRound currentRound') $ wormPositions state
+  in if not $ aListIsEmpty hits'
+     then foldl' (\ state' (wormId', _) -> withWormHealths (harmWormById lavaDamage wormId') state') state $
+          aListToList hits'
+     else state
 
 freezeActions :: State -> (Move, Move) -> (Move, Move)
 freezeActions state (myMove, opponentsMove) =

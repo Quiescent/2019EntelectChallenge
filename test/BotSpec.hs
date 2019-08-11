@@ -4,10 +4,8 @@ module BotSpec (spec) where
 
 import Bot
 import Import
-import Lava
 
 import qualified RIO.Vector.Boxed as V
-import qualified RIO.Vector.Boxed.Partial as PV
 import qualified RIO.List.Partial as L
 import RIO.List
 import qualified RIO.HashSet as S
@@ -40,22 +38,6 @@ transitions :: SearchTree -> StateTransitions
 transitions (SearchedLevel   _ _ transitions') = transitions'
 transitions (UnSearchedLevel _ _)              = []
 transitions SearchFront                        = []
-
-isOnLavaForRound :: Int -> Coord -> Bool
-isOnLavaForRound currentRound' coord' =
-  testBit (lava PV.! currentRound') coord'
-
-lavaDamage :: Int
-lavaDamage = 3
-
-dealLavaDamage :: ModifyState
-dealLavaDamage state =
-  let currentRound' = currentRound state
-      hits'         = aListFilterByData (isOnLavaForRound currentRound') $ wormPositions state
-  in if not $ aListIsEmpty hits'
-     then foldl' (\ state' (wormId', _) -> withWormHealths (harmWormById lavaDamage wormId') state') state $
-          aListToList hits'
-     else state
 
 spec :: Spec
 spec = do
