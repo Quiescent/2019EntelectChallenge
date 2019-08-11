@@ -2893,8 +2893,11 @@ shootAndMoveMovesFrom state = do
 
 myMovesFrom :: State -> [Move]
 myMovesFrom state = do
-  let moves  = map Move [0..185]
-  let moves' = addThisPlayersSelects state moves
+  let moves              = map Move [0..185]
+  let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
+  let moves'             = if hasMoreThanOneWorm
+                           then addThisPlayersSelects state moves
+                           else moves
   myMove <- moves'
   guard (isThisMoveValid state myMove)
   return myMove
@@ -2924,8 +2927,11 @@ withSelection  (WormId id') (Move x) =
 
 opponentsMovesFrom :: State -> [Move]
 opponentsMovesFrom state = do
-  let moves  = map Move [0..185]
-  let moves' = addThatPlayersSelects state moves
+  let moves              = map Move [0..185]
+  let hasMoreThanOneWorm = (aListCountOpponentsEntries $ wormPositions state) > 1
+  let moves'             = if hasMoreThanOneWorm
+                           then addThatPlayersSelects state moves
+                           else moves
   opponentsMove <- moves'
   guard (isThatMoveValid state opponentsMove)
   return $ opponentsMove
