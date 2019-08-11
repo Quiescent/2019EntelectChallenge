@@ -2792,7 +2792,7 @@ gameOver state startingRound round' =
      else if opponentWormCount == 0
           -- I Killed his worms and he didn't kill mine
           then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
-          else if round' >= maxRound || (round' - startingRound >= maxForecastedRound)
+          else if round' >= maxRound
                -- Simulation was terminated early.  Decide based on how valuable the moves were
                then if myScoreIsHigher
                     -- I won because of points when both players are dead
@@ -2800,7 +2800,10 @@ gameOver state startingRound round' =
                     -- I lost because of points when both players are dead
                     else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
                -- Simulation isn't over yet
-               else NoResult
+               else if round' - startingRound >= maxForecastedRound
+                    -- But I survived so give me the win!
+                    then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
+                    else NoResult
 
 digMaxScore :: MaxScore
 digMaxScore = (MaxScore 1)
