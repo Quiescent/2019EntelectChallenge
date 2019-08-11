@@ -2558,9 +2558,10 @@ withOnlyWormsContainedIn toKeep =
 
 search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
 search g strategy minigameState searchTree =
-  case strategy of
-    Dig  -> digSearch  g 0                            minigameState searchTree [] []
-    Kill -> killSearch g (currentRound minigameState) minigameState searchTree []
+  let round' = (currentRound minigameState)
+  in case strategy of
+       Dig  -> digSearch  g 0                            minigameState searchTree [] []
+       Kill -> killSearch g round' round' minigameState searchTree []
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
@@ -2635,27 +2636,28 @@ digPlayRandomly g round' state moves rewards =
           reward'         = reward state state'
       in digPlayRandomly g' (round' + 1) state' moves (reward':rewards)
 
-killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
+killSearch :: StdGen -> Int -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
-killSearch g round' state SearchFront                moves =
-  case gameOver state round' of
+killSearch g startingRound round' state SearchFront                moves =
+  case gameOver state startingRound round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves = shootAndMoveMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
-      in playRandomly g' (round' + 1) state' (move:moves)
-killSearch g round' state tree@(SearchedLevel _ _ _) moves =
-  case gameOver state round' of
+      in playRandomly g' startingRound (round' + 1) state' (move:moves)
+killSearch g startingRound round' state tree@(SearchedLevel _ _ _) moves =
+  case gameOver state startingRound round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        -> searchSearchedLevel g round' state tree moves
+    NoResult        -> searchSearchedLevel g startingRound round' state tree moves
 killSearch g
+           startingRound
            round'
            state
            (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves))
            moves =
-  case gameOver state round' of
+  case gameOver state startingRound round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let (myRecord,        g')  = pickOneAtRandom g  myMoves
@@ -2665,6 +2667,7 @@ killSearch g
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
       in killSearch g''
+                    startingRound
                     (round' + 1)
                     state'
                     SearchFront
@@ -2684,10 +2687,11 @@ pickOneAtRandom g xs =
 
 type Moves = [CombinedMove]
 
-searchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
-searchSearchedLevel _ _ _ SearchFront                   _ = error "searchSearchedLevel: SearchFront"
-searchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ )  _ = error $ "searchSearchedLevel: " ++ show level
+searchSearchedLevel :: StdGen -> Int -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
+searchSearchedLevel _ _ _ _ SearchFront                   _ = error "searchSearchedLevel: SearchFront"
+searchSearchedLevel _ _ _ _ level@(UnSearchedLevel _ _ )  _ = error $ "searchSearchedLevel: " ++ show level
 searchSearchedLevel g
+                    startingRound
                     round'
                     state
                     (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
@@ -2697,6 +2701,7 @@ searchSearchedLevel g
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
   in killSearch g
+                startingRound
                 (round' + 1)
                 state'
                 (findSubTree combinedMove transitions)
@@ -2707,9 +2712,9 @@ searchSearchedLevel g
 data GameOver = GameOver Payoff
               | NoResult
 
-playRandomly :: StdGen -> Int -> State -> Moves -> (SearchResult, StdGen)
-playRandomly g round' state moves =
-  case gameOver state round' of
+playRandomly :: StdGen -> Int -> Int -> State -> Moves -> (SearchResult, StdGen)
+playRandomly g startingRound round' state moves =
+  case gameOver state startingRound round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves  = shootAndMoveMovesFrom state
@@ -2717,7 +2722,7 @@ playRandomly g round' state moves =
                             then (fromMoves doNothing doNothing, g)
                             else pickOneAtRandom g availableMoves
           state'          = makeMove False move state
-      in playRandomly g' (round' + 1) state' moves
+      in playRandomly g' startingRound (round' + 1) state' moves
 
 maxDigRound :: Int
 maxDigRound = 20
@@ -2757,11 +2762,14 @@ computeOpponentsScore = computeScore opponentsTotalWormHealth opponent
 maxRound :: Int
 maxRound = 400
 
+maxForecastedRound :: Int
+maxForecastedRound = 50
+
 killMaxScore :: MaxScore
 killMaxScore = MaxScore 1
 
-gameOver :: State -> Int -> GameOver
-gameOver state round' =
+gameOver :: State -> Int -> Int -> GameOver
+gameOver state startingRound round' =
   let myWormCount            = aListCountMyEntries $ wormHealths state
       myAverageHealth :: Double
       myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral wormCount
@@ -2784,7 +2792,7 @@ gameOver state round' =
      else if opponentWormCount == 0
           -- I Killed his worms and he didn't kill mine
           then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
-          else if round' >= maxRound
+          else if round' >= maxRound || (round' - startingRound >= maxForecastedRound)
                -- Simulation was terminated early.  Decide based on how valuable the moves were
                then if myScoreIsHigher
                     -- I won because of points when both players are dead
