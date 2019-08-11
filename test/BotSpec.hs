@@ -175,7 +175,8 @@ spec = do
                            (OpponentsMoves $
                             (SuccessRecord (Wins 0) (Played 0) $ L.head opponentsMoves) :
                             (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail opponentsMoves))
-          newTree        = updateTree aState
+          newTree        = updateTree Dig
+                                      aState
                                       (SearchResult
                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
                                        [fromMoves thisMove thatMove])
@@ -195,7 +196,8 @@ spec = do
           opponentsMoves = opponentsMovesFrom aStateWithAnEnemyWormNearby
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
           k'             = k `mod` (maxScore + 1)
-          newTree        = updateTree aStateWithAnEnemyWormNearby
+          newTree        = updateTree Kill
+                                      aStateWithAnEnemyWormNearby
                                       (SearchResult
                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
                                        [fromMoves thisMove thatMove])
@@ -212,7 +214,8 @@ spec = do
           oldTree        = UnSearchedLevel
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
-          newTree        = updateTree aState
+          newTree        = updateTree Dig
+                                      aState
                                       (SearchResult
                                        (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
                                        [fromMoves thisMove thatMove])
@@ -230,7 +233,8 @@ spec = do
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree aState
+          newTree        = updateTree Dig
+                                      aState
                                       (SearchResult
                                        (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
                                        [fromMoves thisMove thatMove])
@@ -248,7 +252,8 @@ spec = do
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree aStateWithAnEnemyWormNearby
+          newTree        = updateTree Dig
+                                      aStateWithAnEnemyWormNearby
                                       (SearchResult
                                        (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
                                        [fromMoves thisMove thatMove, fromMoves thisMove thatMove])
@@ -273,7 +278,8 @@ spec = do
                            (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree aStateWithAnEnemyWormNearby
+          newTree        = updateTree Kill
+                                      aStateWithAnEnemyWormNearby
                                       (SearchResult
                                         (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
                                         [fromMoves thisMove thatMove,

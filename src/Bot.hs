@@ -2215,8 +2215,11 @@ iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
           iterativelyImproveSearch gen' state' tree'' stateChannel treeChannel
         Nothing -> go gen' iterationsBeforeComms searchTree
     go gen' count' searchTree =
-      let (result, gen'') = search gen' initialState
-          newTree         = updateTree initialState result searchTree
+      let nearbyWorms     = wormsNearMyCurrentWorm initialState
+          minigameState   = withOnlyWormsContainedIn nearbyWorms initialState
+          strategy        = determineStrategy nearbyWorms
+          (result, gen'') = search gen' strategy minigameState
+          newTree         = updateTree strategy minigameState result searchTree
       in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
@@ -2455,20 +2458,19 @@ countGames :: SearchTree -> Int
 countGames = gamesPlayedForRecords . myMovesFromTree
 
 -- TODO: doesn't go deep
-updateTree :: State -> SearchResult -> SearchTree -> SearchTree
-updateTree state result SearchFront =
-  let strategy            = determineStrategy $ wormsNearMyCurrentWorm $ state
-      myMovesFrom'        = case strategy of
+updateTree :: Strategy -> State-> SearchResult -> SearchTree -> SearchTree
+updateTree strategy minigameState result SearchFront =
+  let myMovesFrom'  = case strategy of
         Kill -> myMovesFrom
         Dig  -> myDigMovesFrom
       opponentsMovesFrom' = case strategy of
         Kill -> opponentsMovesFrom
         Dig  -> (always [doNothing])
-  in updateTree state result $
+  in updateTree strategy minigameState result $
      UnSearchedLevel
-     (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom'        state)
-     (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom' state)
-updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
+     (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom'        minigameState)
+     (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom' minigameState)
+updateTree _ _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
@@ -2476,27 +2478,29 @@ updateTree _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opp
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
       in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves'
     _                           -> level
-updateTree state result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
+updateTree strategy minigameState result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
           myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
-      in SearchedLevel myMoves' opponentsMoves' $ updateSubTree state result stateTransitions
+      in SearchedLevel myMoves' opponentsMoves' $ updateSubTree strategy minigameState result stateTransitions
     _                           -> level
 
 -- TODO: consider whether I should be treating the rewards like I do moves when transitioning down a tree..?
-updateSubTree :: State -> SearchResult -> StateTransitions -> StateTransitions
-updateSubTree state (SearchResult payoff (move':moves')) [] =
-  [StateTransition move' $ updateTree state (SearchResult payoff moves') SearchFront]
-updateSubTree _     (SearchResult _ [])                   transitions = transitions
-updateSubTree state
+updateSubTree :: Strategy -> State -> SearchResult -> StateTransitions -> StateTransitions
+updateSubTree strategy minigameState (SearchResult payoff (move':moves')) [] =
+  [StateTransition move' $ updateTree strategy minigameState (SearchResult payoff moves') SearchFront]
+updateSubTree _ _ (SearchResult _ []) transitions = transitions
+updateSubTree strategy
+              minigameState
               result@(SearchResult payoff (move':moves'))
               (transition@(StateTransition transitionMove' subTree'):transitions)
   | move' == transitionMove' = (StateTransition transitionMove' $
-                                updateTree (makeMove False transitionMove' state)
+                                updateTree strategy
+                                           (makeMove False transitionMove' minigameState)
                                            (SearchResult payoff moves') subTree') : transitions
-  | otherwise                = transition : updateSubTree state result transitions
+  | otherwise                = transition : updateSubTree strategy minigameState result transitions
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> SearchTree)
 transitionLevelType myMoves opponentsMoves =
@@ -2549,13 +2553,12 @@ withOnlyWormsContainedIn toKeep =
      withWormSnowballs   keep .
      withFrozenDurations keep
 
-search :: StdGen -> State -> (SearchResult, StdGen)
-search g state =
-  let nearbyWorms   = wormsNearMyCurrentWorm   state
-      minigameState = withOnlyWormsContainedIn nearbyWorms state
-  in case determineStrategy nearbyWorms of
-       Dig  -> digSearch  g 0                    minigameState SearchFront [] []
-       Kill -> killSearch g (currentRound state) minigameState SearchFront []
+search :: StdGen -> Strategy -> State -> (SearchResult, StdGen)
+search g strategy minigameState =
+  case strategy of
+    Dig  -> digSearch  g 0                            minigameState SearchFront [] []
+    Kill -> killSearch g (currentRound minigameState) minigameState SearchFront []
+
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
@@ -2636,7 +2639,7 @@ killSearch g round' state SearchFront                moves =
   case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
-      let availableMoves = filteredMovesFrom state
+      let availableMoves = shootAndMoveMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
       in playRandomly g' (round' + 1) state' (move:moves)
@@ -2706,7 +2709,7 @@ playRandomly g round' state moves =
   case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
-      let availableMoves  = filteredMovesFrom state
+      let availableMoves  = shootAndMoveMovesFrom state
           (move, g')      = if availableMoves == []
                             then (fromMoves doNothing doNothing, g)
                             else pickOneAtRandom g availableMoves
@@ -2879,10 +2882,10 @@ movesFrom state = do
   opponentsMove <- opponentsMovesFrom state
   return $ fromMoves myMove opponentsMove
 
-filteredMovesFrom :: State -> [CombinedMove]
-filteredMovesFrom state = do
-  myMove        <- myFilteredMovesFrom        state
-  opponentsMove <- opponentsFilteredMovesFrom state
+shootAndMoveMovesFrom :: State -> [CombinedMove]
+shootAndMoveMovesFrom state = do
+  myMove        <- myShootAndMoveMovesFrom        state
+  opponentsMove <- opponentsShootAndMoveMovesFrom state
   return $ fromMoves myMove opponentsMove
 
 myMovesFrom :: State -> [Move]
@@ -2893,10 +2896,8 @@ myMovesFrom state = do
   guard (isThisMoveValid state myMove)
   return myMove
 
-myFilteredMovesFrom :: State -> [Move]
-myFilteredMovesFrom state =
-  let moves' = myMovesFrom state
-  in filter (shouldMakeThisMove state moves') moves'
+myShootAndMoveMovesFrom :: State -> [Move]
+myShootAndMoveMovesFrom = playersShootAndMoveMovesFrom targetOfThisMove thisPlayersCurrentWormId
 
 addPlayersSelects :: (State -> Bool) -> (AList -> [WormId]) -> State -> [Move] -> [Move]
 addPlayersSelects playerHasSelectionsLeft playersWormIds state moves =
@@ -2926,10 +2927,15 @@ opponentsMovesFrom state = do
   guard (isThatMoveValid state opponentsMove)
   return $ opponentsMove
 
-opponentsFilteredMovesFrom :: State -> [Move]
-opponentsFilteredMovesFrom state =
-  let moves' = opponentsMovesFrom state
-  in filter (shouldMakeThatMove state moves') moves'
+opponentsShootAndMoveMovesFrom :: State -> [Move]
+opponentsShootAndMoveMovesFrom = playersShootAndMoveMovesFrom targetOfThatMove thatPlayersCurrentWormId
+
+playersShootAndMoveMovesFrom :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> State -> [Move]
+playersShootAndMoveMovesFrom targetOfMove' playersWormId' state =
+  filter (\ move ->
+           isValidMoveMove targetOfMove' playersWormId' state move ||
+           isAShootMove move) $
+  map Move [8..23]
 
 doNothing :: Move
 doNothing = Move 187
