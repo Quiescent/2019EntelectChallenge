@@ -236,6 +236,15 @@ anyWormData p (AList a b c d e f) =
   p c ||
   p f
 
+aListKeepWormsDefinedInFirst :: AList -> AList -> AList
+aListKeepWormsDefinedInFirst (AList a b c d e f) (AList a' b' c' d' e' f') =
+  (AList (if a /= (-1) then a' else (-1))
+         (if b /= (-1) then b' else (-1))
+         (if c /= (-1) then c' else (-1))
+         (if d /= (-1) then d' else (-1))
+         (if e /= (-1) then e' else (-1))
+         (if f /= (-1) then f' else (-1)))
+
 aListAddMineAndHis :: AList -> AList -> AList
 aListAddMineAndHis (AList a b c _ _ _) (AList _ _ _ d e f) =
   AList a b c d e f
@@ -1479,7 +1488,7 @@ awardPointsToThisPlayerForDamage damage' = mapThisPlayer (awardPointsForDamage d
 awardPointsToThatPlayerForDamage :: Int -> ModifyState
 awardPointsToThatPlayerForDamage damage' = mapThatPlayer (awardPointsForDamage damage')
 
-freezeScore :: Int 
+freezeScore :: Int
 freezeScore = 17
 
 awardPointsForFreezing :: ModifyPlayer
@@ -2442,7 +2451,7 @@ gamesPlayedForRecords :: [SuccessRecord] -> Int
 gamesPlayedForRecords = sum . map ( (\ (Played x) -> x) . played)
 
 countGames :: SearchTree -> Int
-countGames = (`div` maxScore) . gamesPlayedForRecords . myMovesFromTree
+countGames = gamesPlayedForRecords . myMovesFromTree
 
 -- TODO: doesn't go deep
 updateTree :: State -> SearchResult -> SearchTree -> SearchTree
@@ -2530,13 +2539,22 @@ determineStrategy wormPositions' =
     (_, 0) -> Dig
     (_, _) -> Kill
 
--- BUG: Needs to be state with only the worms in the minigame!!!
+withOnlyWormsContainedIn :: AList -> State -> State
+withOnlyWormsContainedIn toKeep =
+  let keep = aListKeepWormsDefinedInFirst toKeep
+  in withWormHealths     keep .
+     withWormPositions   keep .
+     withWormBananas     keep .
+     withWormSnowballs   keep .
+     withFrozenDurations keep
+
 search :: StdGen -> State -> (SearchResult, StdGen)
 search g state =
-  case determineStrategy $ wormsNearMyCurrentWorm state of
-    Dig  -> digSearch  g 0                    state SearchFront [] []
-    Kill -> killSearch g (currentRound state) state SearchFront []
-
+  let nearbyWorms   = wormsNearMyCurrentWorm   state
+      minigameState = withOnlyWormsContainedIn nearbyWorms state
+  in case determineStrategy nearbyWorms of
+       Dig  -> digSearch  g 0                    minigameState SearchFront [] []
+       Kill -> killSearch g (currentRound state) minigameState SearchFront []
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
@@ -2695,7 +2713,7 @@ playRandomly g round' state moves =
       in playRandomly g' (round' + 1) state' moves
 
 maxDigRound :: Int
-maxDigRound = 31
+maxDigRound = 20
 
 playerScore :: Player -> Int
 playerScore (Player score' _ _) = score'
@@ -2716,9 +2734,6 @@ playerScore (Player score' _ _) = score'
 -- points ahead or behind hte opponent.  i.e. 10 points for being 500
 -- or more points ahead and -10 for being as much behind (although the
 -- numbers here will always be positive.)
-
-maxScore :: Int
-maxScore = length diffMaxScale
 
 computeScore :: (State -> Int) -> (State -> Player) -> State -> Int
 computeScore totalWormHealth' player state =
@@ -2773,7 +2788,7 @@ gameOver state round' =
                else NoResult
 
 digMaxScore :: MaxScore
-digMaxScore = (MaxScore maxScore)
+digMaxScore = (MaxScore 1)
 
 digGameOver :: Int -> Rewards -> GameOver
 digGameOver round' rewards =
@@ -2786,15 +2801,6 @@ myTotalWormHealth = aListSumMyEntries . wormHealths
 
 opponentsTotalWormHealth :: State -> Int
 opponentsTotalWormHealth = aListSumOpponentsEntries . wormHealths
-
-diffMaxScale :: [Int]
-diffMaxScale = [-1, 3, 3, 3, 3, 7, 20, 20, 40, maxBound::Int]
-
--- Normalisation factor is calculated as the relative worth of each
--- round summed together.
-normalisationFactor :: Double
-normalisationFactor =
-  sum $ map (1.0 /) $ take maxDigRound [1..]
 
 data OpponentsPayoff = OpponentsPayoff Int
   deriving (Eq, Show)
@@ -2821,28 +2827,13 @@ instance NFData Payoff where
   rnf (Payoff myPayoff opponentsPayoff maxScore') =
     myPayoff `deepseq` opponentsPayoff `deepseq` maxScore' `deepseq` ()
 
--- This is a sliding scale so low values have high resolution and it
--- begins to tail off with larger values.  Linear isn't a good idea
--- because the bot loses incentive to get ahead.
---
--- This function expects the rewards to be reversed because that's
--- convenient for the search function (which conses them onto an
--- accumulator).
 diffMax :: Rewards -> Payoff
 diffMax rewards =
-  -- This function linearly decreases the value of points gained by
-  -- making a move.  The rewards are in reverse order here
-  let (myScore', opponentsScore') = (\ (accX', accY') -> (round $ accX' / normalisationFactor,
-                                                          round $ accY' / normalisationFactor)) accumulated
-      accumulated :: (Double, Double)
-      accumulated                 = foldl' (\ (accX', accY') (x', y') -> (x' + accX', y' + accY')) (0, 0) $
-                                    withDecreasingReward
-      withDecreasingReward :: [(Double, Double)]
-      withDecreasingReward        = zipWith (\ (Reward (MyReward x') (OpponentsReward y')) i -> (fromIntegral x' / i, fromIntegral y' / i))
-                                    (reverse rewards) [1..]
-      myIndex                     = fromJust $ findIndex (>= myScore')        diffMaxScale
-      opponentsIndex              = fromJust $ findIndex (>= opponentsScore') diffMaxScale
-  in Payoff (MyPayoff myIndex) (OpponentsPayoff opponentsIndex) digMaxScore
+  let (myScore', opponentsScore') =
+        foldl' (\ (accX', accY') (Reward (MyReward x') (OpponentsReward y')) -> (x' + accX', y' + accY'))
+        (0, 0)
+        rewards
+  in Payoff (MyPayoff myScore') (OpponentsPayoff opponentsScore') digMaxScore
 
 chooseBestMove :: [SuccessRecord] -> SuccessRecord
 chooseBestMove successRecords =
@@ -2852,14 +2843,14 @@ chooseBestMove successRecords =
   in maximumBy (\ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
 
 confidence :: Int -> Int -> Int -> Float
-confidence totalCount wins' played' =
-  (w_i / n_i) +
-  c * sqrt ((log count_i) / n_i)
+confidence _ wins' played' =
+  (w_i / n_i) --  +
+  -- c * sqrt ((log count_i) / n_i)
   where
-    count_i = fromIntegral totalCount
+    -- count_i = fromIntegral totalCount
     n_i     = fromIntegral played'
     w_i     = fromIntegral wins'
-    c       = sqrt 2
+    -- c       = sqrt 2
 
 digMovesFrom :: State -> [CombinedMove]
 digMovesFrom = map ((flip fromMoves) doNothing) . myDigMovesFrom
