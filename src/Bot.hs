@@ -1189,7 +1189,12 @@ dealLavaDamage state =
   let currentRound' = currentRound state
       hits'         = aListFilterByData (isOnLavaForRound currentRound') $ wormPositions state
   in if not $ aListIsEmpty hits'
-     then foldl' (\ state' (wormId', _) -> withWormHealths (harmWormById lavaDamage wormId') state') state $
+     then foldl' (\ state' (wormId', _) ->
+                    let wormHealth' = fromJust $ aListFindDataById wormId' $ wormHealths state'
+                        cleanUp     = if wormHealth' <= lavaDamage
+                                      then cleanUpDeadWorm wormId'
+                                      else id
+                    in cleanUp $ withWormHealths (harmWormById lavaDamage wormId') state') state $
           aListToList hits'
      else state
 
