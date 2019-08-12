@@ -83,6 +83,8 @@ spec = do
                                               (toCoord 7  20)
                                               (toCoord 30 30)) $
             withWormHealths (always (AList 3 20 20 20 20 1)) $
+            withWormSnowballs (always (AList (-1) (-1) 3 (-1) (-1) 3)) $
+            withWormFrozenDurations (always (AList 0 0 0 0 0 0))
             aState
       it "should kill any worms with low enough health, removing them fcom the state" $
         dealLavaDamage aStateWithLowHealthWormOnLava `shouldBe`

@@ -1815,9 +1815,11 @@ knockBackDamage state =
 
 cleanUpDeadWorm :: WormId -> ModifyState
 cleanUpDeadWorm wormId' =
-  withWormHealths   (aListRemoveWormById wormId') .
-  withWormPositions (aListRemoveWormById wormId') .
-  withWormBananas   (aListRemoveWormById wormId')
+  withWormHealths         (aListRemoveWormById wormId') .
+  withWormPositions       (aListRemoveWormById wormId') .
+  withWormBananas         (aListRemoveWormById wormId') .
+  withWormSnowballs       (aListRemoveWormById wormId') .
+  withWormFrozenDurations (aListRemoveWormById wormId')
 
 moveWorm :: (State -> WormId) -> Coord -> ModifyState
 moveWorm wormsId newCoord' state =
