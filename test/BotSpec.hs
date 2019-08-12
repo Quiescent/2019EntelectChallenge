@@ -56,7 +56,7 @@ spec = do
                                               (toCoord 6  15)
                                               (toCoord 7  20)
                                               (toCoord 8  23)) $
-            withWormHealths (always (AList 17 20 20 20 20 20)) $
+            withWormHealths (always (AList 20 20 20 20 20 20)) $
             aState
       it "should deal 3 damage to any worm at coord (11, 0)" $ do
         dealLavaDamage aStateWithRoundAtOneHundredAndFive `shouldBe`
@@ -2699,13 +2699,13 @@ withCurrentRound round' state =
 setOpponentsLastMoveToDummy = setOpponentsLastMove aState doNothing
 
 -- For generating the lava map
--- inRangeDouble :: Coord -> Coord -> Double -> Bool
--- inRangeDouble xy' xy'' range' =
+-- euclideanDistance :: Coord -> Coord -> Double
+-- euclideanDistance xy' xy'' =
 --   let (x', y')   = fromCoord xy'
 --       (x'', y'') = fromCoord xy''
 --       dx         = (fromIntegral (x' - x''))
 --       dy         = (fromIntegral (y' - y''))
---   in sqrt (((dx::Double) ** 2) + (dy ** 2)) <= range'
+--   in sqrt (((dx::Double) ** 2) + (dy ** 2))
 
 -- generateLavaProgression =
 --   map lavaOn [0..400]
@@ -2721,11 +2721,12 @@ setOpponentsLastMoveToDummy = setOpponentsLastMove aState doNothing
 --       (\ (GameMap air _ _ _) -> air) $
 --       vectorGameMapToGameMap $
 --       V.fromList $
---       map ( \ coord -> if currentRound' > battleRoyaleStart && (not $ inRangeDouble coord mapCentre (safeAreaRadius + 1))
+--       map ( \ coord -> if currentRound' >= (round battleRoyaleStart) && (euclideanDistance coord mapCentre > (safeAreaRadius + 1))
 --                        then AIR
 --                        else DEEP_SPACE)
 --       [0..(mapDim * mapDim) - 1]
 --       where
---         fullPercentageRange = (currentRound' - battleRoyaleStart) / (battleRoyaleEnd - battleRoyaleStart)
+--         fullPercentageRange = ((fromIntegral currentRound') - battleRoyaleStart) /
+--                               (battleRoyaleEnd - battleRoyaleStart)
 --         currentProgress     = min 1.0 $ max fullPercentageRange 0.0
---         safeAreaRadius      = ((fromIntegral mapDim) / 2.0) * (1 - currentProgress)
+--         safeAreaRadius      = (fromIntegral (mapDim `div` 2)) * (1 - currentProgress)
