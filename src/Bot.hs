@@ -568,7 +568,7 @@ factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
                          V.filter ((<= 0) . snd) $
                          V.map (\ (OpponentWorm { opWormId     = wormId',
                                                   opWormHealth = wormHealth' }) ->
-                                   (toThatWormId wormId', wormHealth'))
+                                   (wormId', wormHealth'))
                          worms'
       notDead          = \ (OpponentWorm { opWormId = wormId' }) -> not $ elem wormId' deadIds
       liveWorms        = V.filter notDead worms'
