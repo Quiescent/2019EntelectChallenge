@@ -206,6 +206,14 @@ aListOpponentIds (AList _ _ _ d e f) =
   if e /= -1 then Just (WormId 8)  else Nothing,
   if f /= -1 then Just (WormId 12) else Nothing]
 
+aListMyValuesChanged :: AList -> AList -> Bool
+aListMyValuesChanged (AList a b c _ _ _) (AList a' b' c' _ _ _) =
+  a /= a' || b /= b' || c /= c'
+
+aListOpponentsValuesChanged :: AList -> AList -> Bool
+aListOpponentsValuesChanged (AList _ _ _ d e f) (AList _ _ _ d' e' f') =
+  d /= d' || e /= e' || f /= f'
+
 aListMyData :: AList -> [Int]
 aListMyData (AList a b c _ _ _) =
   catMaybes [
@@ -2928,9 +2936,20 @@ movesFrom state = do
 
 shootAndMoveMovesFrom :: State -> [CombinedMove]
 shootAndMoveMovesFrom state = do
-  myMove        <- myShootAndMoveMovesFrom        state
+  myMove        <- myShootAndMoveMovesFrom state
   opponentsMove <- opponentsShootAndMoveMovesFrom state
-  return $ fromMoves myMove opponentsMove
+  let combinedMove = fromMoves myMove opponentsMove
+  guard (shootOrDigWouldHaveAPositiveImpactFor myMove opponentsMove combinedMove state)
+  return combinedMove
+
+shootOrDigWouldHaveAPositiveImpactFor :: Move -> Move -> CombinedMove -> State -> Bool
+shootOrDigWouldHaveAPositiveImpactFor myMove opponentsMove combinedMove state =
+  let wormHealthsBefore = wormHealths state
+      wormHealthsAfter  = wormHealths $ makeMove False combinedMove state
+      iHitOpponent      = aListOpponentsValuesChanged wormHealthsBefore wormHealthsAfter
+      opponentHitMe     = aListMyValuesChanged wormHealthsBefore wormHealthsAfter
+  in (isADigMove myMove        || isAMoveMove myMove        || iHitOpponent) &&
+     (isADigMove opponentsMove || isAMoveMove opponentsMove || opponentHitMe)
 
 myMovesFrom :: State -> [Move]
 myMovesFrom state = do
@@ -2940,8 +2959,33 @@ myMovesFrom state = do
                            then addThisPlayersSelects state moves
                            else moves
   myMove <- moves'
-  guard (isThisMoveValid state myMove)
+  guard (moveWouldBeValuableToMe state myMove)
   return myMove
+
+moveWouldBeValuableToMe :: State -> Move -> Bool
+moveWouldBeValuableToMe state move =
+  let wormHealthsBefore = wormHealths state
+      wormHealthsAfter  = wormHealths $ makeMove False (fromMoves move doNothing) state
+      iHitOpponent      = aListOpponentsValuesChanged wormHealthsBefore wormHealthsAfter
+  in (isAMoveMove move || isADigMove move || iHitOpponent)
+
+opponentsMovesFrom :: State -> [Move]
+opponentsMovesFrom state = do
+  let moves              = map Move [0..185]
+  let hasMoreThanOneWorm = (aListCountOpponentsEntries $ wormPositions state) > 1
+  let moves'             = if hasMoreThanOneWorm
+                           then addThatPlayersSelects state moves
+                           else moves
+  opponentsMove <- moves'
+  guard (moveWouldBeValuableToOpponent state opponentsMove)
+  return $ opponentsMove
+
+moveWouldBeValuableToOpponent :: State -> Move -> Bool
+moveWouldBeValuableToOpponent state move =
+  let wormHealthsBefore = wormHealths state
+      wormHealthsAfter  = wormHealths $ makeMove False (fromMoves doNothing move) state
+      opponentHitMe     = aListMyValuesChanged wormHealthsBefore wormHealthsAfter
+  in (isAMoveMove move || isADigMove move || opponentHitMe)
 
 myShootAndMoveMovesFrom :: State -> [Move]
 myShootAndMoveMovesFrom = playersShootAndMoveMovesFrom targetOfThisMove thisPlayersCurrentWormId
@@ -2961,21 +3005,9 @@ addThisPlayersSelects = addPlayersSelects thisPlayerHasSelectionsLeft aListMyIds
 addThatPlayersSelects :: State -> [Move] -> [Move]
 addThatPlayersSelects = addPlayersSelects thatPlayerHasSelectionsLeft aListOpponentIds
 
--- TODO: Lots of repitition
 withSelection :: WormId -> Move -> Move
 withSelection  (WormId id') (Move x) =
   Move $ x .|. (shiftL id' selectEncodingRange)
-
-opponentsMovesFrom :: State -> [Move]
-opponentsMovesFrom state = do
-  let moves              = map Move [0..185]
-  let hasMoreThanOneWorm = (aListCountOpponentsEntries $ wormPositions state) > 1
-  let moves'             = if hasMoreThanOneWorm
-                           then addThatPlayersSelects state moves
-                           else moves
-  opponentsMove <- moves'
-  guard (isThatMoveValid state opponentsMove)
-  return $ opponentsMove
 
 opponentsShootAndMoveMovesFrom :: State -> [Move]
 opponentsShootAndMoveMovesFrom = playersShootAndMoveMovesFrom targetOfThatMove thatPlayersCurrentWormId
@@ -2991,118 +3023,6 @@ playersShootAndMoveMovesFrom targetOfMove' playersWormId' state =
 
 doNothing :: Move
 doNothing = Move 187
-
-isThisMoveValid :: State -> Move -> Bool
-isThisMoveValid state move
-  | isADigMove move      = isValidDigMove targetOfThisMove state move
-  | isAMoveMove move     = isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move
-  | isAShootMove move    = True
-  | isABananaMove move   = shouldMakeBananaMove
-                           (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
-                           state
-                           move
-  | isASnowballMove move = shouldMakeBananaMove
-                           (bananaMoveDestination thisWormHasSnowballsLeft thisWormsCoord)
-                           state
-                           (snowballMoveToBananaRange move)
-  | hasASelection move   = thisPlayerHasSelectionsLeft state &&
-                           (isThisMoveValid (makeSelections move doNothing state) $
-                            removeSelectionFromMove move)
-  | otherwise            = True
-
-shouldMakeThisMove :: State -> [Move] -> Move -> Bool
-shouldMakeThisMove state moves move
-  | isADigMove move      = isValidDigMove targetOfThisMove state move
-  | isAMoveMove move     = shouldThisPlayerMakeMoveMove moves state move
-  | isAShootMove move    = any (elem move) $ theseHits state
-  | isABananaMove move   = shouldMakeBananaMove
-                           (bananaMoveDestination thisWormHasBananasLeft thisWormsCoord)
-                           state
-                           move
-  | isASnowballMove move = shouldMakeBananaMove
-                           (bananaMoveDestination thisWormHasSnowballsLeft thisWormsCoord)
-                           state
-                           (snowballMoveToBananaRange move)
-  | hasASelection move   = thisPlayerHasSelectionsLeft state &&
-                           (shouldMakeThisMove (makeSelections move doNothing state) moves $
-                            removeSelectionFromMove move)
-  | otherwise            = True
-
-shouldThisPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
-shouldThisPlayerMakeMoveMove =
-  shouldMakeMoveMove targetOfThisMove thisPlayersCurrentWormId thoseHitCoords
-
-shouldMakeMoveMove :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> (State -> Maybe [Coord]) -> [Move] -> State -> Move -> Bool
-shouldMakeMoveMove targetOfMove' currentWormId' hitFunction moves state move =
-  let wormId' = currentWormId' state
-      coord'  = fromJust $ aListFindDataById wormId' $ wormPositions state
-  in isValidMoveMove targetOfMove' currentWormId' state move &&
-     ((not $ any (isValidDigMove targetOfMove' state) moves) ||
-      (any (elem coord') $ hitFunction state))
-
-hitCoords :: (AList -> [Int]) -> (State -> Maybe Coord) -> State -> Maybe [Coord]
-hitCoords wormData wormsCoord state =
-  fmap (\ wormPosition -> wormData $
-                           aListFilterByData (hits' wormPosition) $
-                           wormPositions state) $
-  wormsCoord state
-  where
-    hits' :: Coord -> Coord -> Bool
-    hits' wormPosition opPosition' =
-      aligns  wormPosition opPosition' &&
-      inRange wormPosition opPosition' weaponRange
-
-thoseHitCoords :: State -> Maybe [Coord]
-thoseHitCoords = hitCoords aListMyData thatWormsCoord
-
-theseHitCoords :: State -> Maybe [Coord]
-theseHitCoords = hitCoords aListOpponentData thisWormsCoord
-
-shouldMakeBananaMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
-shouldMakeBananaMove destination state move =
-  let destination' = destination move state
-  in isJust destination' && (not $ any ((flip deepSpaceAt) $ gameMap state) destination')
-
--- TODO bad repitition!
-isThatMoveValid :: State -> Move -> Bool
-isThatMoveValid state move
-  | isADigMove    move   = isValidDigMove targetOfThatMove state move
-  | isAMoveMove   move   = isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move
-  | isAShootMove  move   = True
-  | isABananaMove move   = shouldMakeBananaMove
-                           (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
-                           state
-                           move
-  | isASnowballMove move = shouldMakeBananaMove
-                           (bananaMoveDestination thatWormHasSnowballsLeft thatWormsCoord)
-                           state
-                           (snowballMoveToBananaRange move)
-  | hasASelection move   = thatPlayerHasSelectionsLeft state &&
-                           (isThatMoveValid (makeSelections doNothing move state) $
-                            removeSelectionFromMove move)
-  | otherwise            = True
-
-shouldMakeThatMove :: State -> [Move] -> Move -> Bool
-shouldMakeThatMove state moves move
-  | isADigMove    move   = isValidDigMove targetOfThatMove state move
-  | isAMoveMove   move   = shouldThatPlayerMakeMoveMove moves state move
-  | isAShootMove  move   = any (elem move) $ thoseHits state
-  | isABananaMove move   = shouldMakeBananaMove
-                           (bananaMoveDestination thatWormHasBananasLeft thatWormsCoord)
-                           state
-                           move
-  | isASnowballMove move = shouldMakeBananaMove
-                           (bananaMoveDestination thisWormHasSnowballsLeft thisWormsCoord)
-                           state
-                           (snowballMoveToBananaRange move)
-  | hasASelection move   = thatPlayerHasSelectionsLeft state &&
-                           (shouldMakeThatMove (makeSelections doNothing move state) moves $
-                            removeSelectionFromMove move)
-  | otherwise            = True
-
-shouldThatPlayerMakeMoveMove :: [Move] -> State -> Move -> Bool
-shouldThatPlayerMakeMoveMove =
-  shouldMakeMoveMove targetOfThatMove thatPlayersCurrentWormId theseHitCoords
 
 targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
 targetOfMoveMove targetOfMove' state move =
@@ -3125,45 +3045,6 @@ targetOfDigMove targetOfMove' state move =
 isValidDigMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Bool
 isValidDigMove targetOfMove' state move =
   (fmap (mapAtCoord state) $ targetOfDigMove targetOfMove' state move) == Just DIRT
-
-hits :: (AList -> [Int]) -> (State -> Maybe Coord) -> State -> Maybe [Move]
-hits wormData wormsCoord state = do
-  hitCoords'   <- hitCoords wormData wormsCoord state
-  wormPosition <- wormsCoord state
-  return $ map (directionFrom wormPosition) hitCoords'
-
-theseHits :: State -> Maybe [Move]
-theseHits = hits aListOpponentData thisWormsCoord
-
-thoseHits :: State -> Maybe [Move]
-thoseHits = hits aListMyData thatWormsCoord
-
-weaponRange :: Int
-weaponRange = 4
-
-directionFrom :: Coord -> Coord -> Move
-directionFrom xy' xy'' =
-  let (x', y')   = fromCoord xy'
-      (x'', y'') = fromCoord xy''
-  in case (y' == y'', x' == x'', x' > x'', y' > y'') of
-       (True,  False, True,  False) -> Move 6
-       (True,  False, False, False) -> Move 2
-       (False, True,  False, True)  -> Move 0
-       (False, True,  False, False) -> Move 4
-       (False, False, True,  True)  -> Move 7
-       (False, False, False, True)  -> Move 1
-       (False, False, True,  False) -> Move 5
-       (False, False, False, False) -> Move 3
-       -- TODO
-       _                            -> error $ "Implement! " ++ show (y' == y'', x' == x'', x' > x'', y' > y'')
-
-aligns :: Coord -> Coord -> Bool
-aligns xy' xy'' =
-  let (x', y')   = fromCoord xy'
-      (x'', y'') = fromCoord xy''
-  in x' == x'' ||
-     y' == y'' ||
-     (abs (x' - x'')) == (abs (y' -y''))
 
 inRange :: Coord -> Coord -> Int -> Bool
 inRange xy' xy'' range' =
