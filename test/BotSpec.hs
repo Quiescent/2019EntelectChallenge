@@ -75,6 +75,18 @@ spec = do
       it "should not deal 3 damage to any worm at coord (12, 0)" $ do
         dealLavaDamage aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero `shouldBe`
           aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero
+      let aStateWithLowHealthWormOnLava = withCurrentRound 105 $
+            withWormPositions (always $ AList (toCoord 11 0)
+                                              (toCoord 4  10)
+                                              (toCoord 5  20)
+                                              (toCoord 6  15)
+                                              (toCoord 7  20)
+                                              (toCoord 30 30)) $
+            withWormHealths (always (AList 3 20 20 20 20 1)) $
+            aState
+      it "should kill any worms with low enough health, removing them fcom the state" $
+        dealLavaDamage aStateWithLowHealthWormOnLava `shouldBe`
+        (cleanUpDeadWorm (WormId 1) $ cleanUpDeadWorm (WormId 12) $ aStateWithLowHealthWormOnLava)
   describe "wormsNearMyCurrentWorm" $ do
     context "when there are no worms nearby" $ do
       let aStateWithNoWormsNearMyWorm =
