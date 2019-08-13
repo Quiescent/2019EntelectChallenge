@@ -2816,8 +2816,10 @@ are in the minigame.
    - CLOSING NOTE [2019-08-12 Mon 12:45]
    - State "IN_PROGRESS" from "TODO"       [2019-08-11 Sun 15:21]
    :END:
-** IN_PROGRESS Check that a shoot etc. move will have a positive effect in the kill strategy
+** DONE Check that a shoot etc. move will have a positive effect in the kill strategy
+   CLOSED: [2019-08-13 Tue 09:06]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-13 Tue 09:06]
    - State "IN_PROGRESS" from "TODO"       [2019-08-12 Mon 12:47]
    :END:
 ** IN_PROGRESS Make the Search Faster
@@ -2835,14 +2837,16 @@ are in the minigame.
     - State "IN_PROGRESS" from "TODO"       [2019-08-07 Wed 06:19]
     :END:
 *** TODO Pass down whether there is a dig move
+*** TODO Modify state rather than parsing it the whole time
+There are a couple of things that can only be inferred on the first
+round.  Like who has the bananas and how many he/she has.
 *** TODO Implement Text Parser
 *** TODO Use bitwise logic in make moves instead of Maybe
 *** TODO Use the compiler!
 https://wiki.haskell.org/Performance/GHC
 https://wiki.haskell.org/Playing_by_the_rules
-** TODO Modify state rather than parsing it the whole time
-There are a couple of things that can only be inferred on the first
-round.  Like who has the bananas and how many he/she has.
+** TODO Use a better scoring function during the kill search
+** TODO Use confidence in the dig search, but correct the formula for different maximums
 ** TODO BUG: Sometimes filtering leaves no moves available causing the bot to do nothing in the random search
 I should never do nothing unless that leads to death.
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
