@@ -2111,15 +2111,140 @@ data Hit = HitWorm Coord
 
 hitsWorm :: Coord -> GameMap -> Direction -> WormPositions -> Maybe Coord
 hitsWorm origin gameMap' direction worms' =
-  case (foldl' (firstWormHit gameMap' worms') HitNothing $
-        possibleHitCoordinates origin direction) of
+  case findFirstWormHit origin gameMap' direction worms' of
     HitWorm worm -> Just worm
     _            -> Nothing
 
-firstWormHit :: GameMap -> WormPositions -> Hit -> Coord -> Hit
-firstWormHit _        _      hit@(HitWorm _) _      = hit
-firstWormHit _        _      HitObstacle     _      = HitObstacle
-firstWormHit gameMap' worms' HitNothing      coord' =
+infixl |>
+(|>) :: (a -> b) -> (b -> c) -> a -> c
+(|>) = flip (.)
+
+findFirstWormHit ::  Coord -> GameMap -> Direction -> WormPositions -> Hit
+findFirstWormHit coord' gameMap' N  worms' =
+  let coord1 = coord' - mapDim
+      coord2 = coord' - 2 * mapDim
+      coord3 = coord' - 3 * mapDim
+      coord4 = coord' - 4 * mapDim
+  in (if isOnNorthernBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnNorthernBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnNorthernBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3 |>
+                       (if isOnNorthernBorder coord3
+                        then id
+                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+findFirstWormHit coord' gameMap' NE worms' =
+  let coord1 = coord' - mapDim + 1
+      coord2 = coord' - 2 * mapDim + 2
+      coord3 = coord' - 3 * mapDim + 3
+  in (if isOnNorthernBorder coord' || isOnEasternBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnNorthernBorder coord1 || isOnEasternBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnNorthernBorder coord2 || isOnEasternBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3))) HitNothing
+findFirstWormHit coord' gameMap' E  worms' =
+  let coord1 = coord' + 1
+      coord2 = coord' + 2
+      coord3 = coord' + 3
+      coord4 = coord' + 4
+  in (if isOnEasternBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnEasternBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnEasternBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3 |>
+                       (if isOnEasternBorder coord3
+                        then id
+                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+findFirstWormHit coord' gameMap' SE worms' =
+  let coord1 = coord' + mapDim + 1
+      coord2 = coord' + 2 * mapDim + 2
+      coord3 = coord' + 3 * mapDim + 3
+  in (if isOnSouthernBorder coord' || isOnEasternBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnSouthernBorder coord1 || isOnEasternBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnSouthernBorder coord2 || isOnEasternBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3))) HitNothing
+findFirstWormHit coord' gameMap' S  worms' =
+  let coord1 = coord' + mapDim
+      coord2 = coord' + 2 * mapDim
+      coord3 = coord' + 3 * mapDim
+      coord4 = coord' + 4 * mapDim
+  in (if isOnSouthernBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnSouthernBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnSouthernBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3 |>
+                       (if isOnSouthernBorder coord3
+                        then id
+                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+findFirstWormHit coord' gameMap' SW worms' =
+  let coord1 = coord' + mapDim - 1
+      coord2 = coord' + 2 * mapDim - 2
+      coord3 = coord' + 3 * mapDim - 3
+  in (if isOnSouthernBorder coord' || isOnWesternBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnSouthernBorder coord1 || isOnWesternBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnSouthernBorder coord2 || isOnWesternBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3))) HitNothing
+findFirstWormHit coord' gameMap' W  worms' =
+  let coord1 = coord' - 1
+      coord2 = coord' - 2
+      coord3 = coord' - 3
+      coord4 = coord' - 4
+  in (if isOnWesternBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnWesternBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnWesternBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3 |>
+                       (if isOnWesternBorder coord3
+                        then id
+                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+findFirstWormHit coord' gameMap' NW worms' =
+  let coord1 = coord' - mapDim - 1
+      coord2 = coord' - 2 * mapDim - 2
+      coord3 = coord' - 3 * mapDim - 3
+  in (if isOnNorthernBorder coord' || isOnWesternBorder coord'
+      then id
+      else firstWormHit gameMap' worms' coord1 |>
+           (if isOnNorthernBorder coord1 || isOnWesternBorder coord1
+            then id
+            else firstWormHit gameMap' worms' coord2 |>
+                 (if isOnNorthernBorder coord2 || isOnWesternBorder coord2
+                  then id
+                  else firstWormHit gameMap' worms' coord3))) HitNothing
+
+firstWormHit :: GameMap -> WormPositions -> Coord -> Hit -> Hit
+firstWormHit _        _      _      hit@(HitWorm _) = hit
+firstWormHit _        _      _      HitObstacle     = HitObstacle
+firstWormHit gameMap' worms' coord' HitNothing      =
   if obstacleAt coord' gameMap'
   then HitObstacle
   else isAPositionOfAWorm coord' worms'
@@ -2130,46 +2255,149 @@ isAPositionOfAWorm coord' wormPositions' =
     Just position' -> HitWorm position'
     Nothing        -> HitNothing
 
-possibleHitCoordinates :: Coord -> Direction -> [Coord]
-possibleHitCoordinates coord W  = iterateHorizontally coord (-)
-possibleHitCoordinates coord E  = iterateHorizontally coord (+)
-possibleHitCoordinates coord N  = iterateVertically   coord (-)
-possibleHitCoordinates coord S  = iterateVertically   coord (+)
-possibleHitCoordinates coord SE = iterateDiagonally   coord (+) (+)
-possibleHitCoordinates coord NW = iterateDiagonally   coord (-) (-)
-possibleHitCoordinates coord SW = iterateDiagonally   coord (-) (+)
-possibleHitCoordinates coord NE = iterateDiagonally   coord (+) (-)
+isOnNorthernBorder :: Coord -> Bool
+isOnNorthernBorder 0  = True
+isOnNorthernBorder 1  = True
+isOnNorthernBorder 2  = True
+isOnNorthernBorder 3  = True
+isOnNorthernBorder 4  = True
+isOnNorthernBorder 5  = True
+isOnNorthernBorder 6  = True
+isOnNorthernBorder 7  = True
+isOnNorthernBorder 8  = True
+isOnNorthernBorder 9  = True
+isOnNorthernBorder 10 = True
+isOnNorthernBorder 11 = True
+isOnNorthernBorder 12 = True
+isOnNorthernBorder 13 = True
+isOnNorthernBorder 14 = True
+isOnNorthernBorder 15 = True
+isOnNorthernBorder 16 = True
+isOnNorthernBorder 17 = True
+isOnNorthernBorder 18 = True
+isOnNorthernBorder 19 = True
+isOnNorthernBorder 20 = True
+isOnNorthernBorder 21 = True
+isOnNorthernBorder 22 = True
+isOnNorthernBorder 23 = True
+isOnNorthernBorder 24 = True
+isOnNorthernBorder 25 = True
+isOnNorthernBorder 26 = True
+isOnNorthernBorder 27 = True
+isOnNorthernBorder 28 = True
+isOnNorthernBorder 29 = True
+isOnNorthernBorder 30 = True
+isOnNorthernBorder 31 = True
+isOnNorthernBorder 32 = True
+isOnNorthernBorder _  = False
 
-type Operator = Int -> Int -> Int
+isOnEasternBorder :: Coord -> Bool
+isOnEasternBorder 32   = True
+isOnEasternBorder 65   = True
+isOnEasternBorder 98   = True
+isOnEasternBorder 131  = True
+isOnEasternBorder 164  = True
+isOnEasternBorder 197  = True
+isOnEasternBorder 230  = True
+isOnEasternBorder 263  = True
+isOnEasternBorder 296  = True
+isOnEasternBorder 329  = True
+isOnEasternBorder 362  = True
+isOnEasternBorder 395  = True
+isOnEasternBorder 428  = True
+isOnEasternBorder 461  = True
+isOnEasternBorder 494  = True
+isOnEasternBorder 527  = True
+isOnEasternBorder 560  = True
+isOnEasternBorder 593  = True
+isOnEasternBorder 626  = True
+isOnEasternBorder 659  = True
+isOnEasternBorder 692  = True
+isOnEasternBorder 725  = True
+isOnEasternBorder 758  = True
+isOnEasternBorder 791  = True
+isOnEasternBorder 824  = True
+isOnEasternBorder 857  = True
+isOnEasternBorder 890  = True
+isOnEasternBorder 923  = True
+isOnEasternBorder 956  = True
+isOnEasternBorder 989  = True
+isOnEasternBorder 1022 = True
+isOnEasternBorder 1055 = True
+isOnEasternBorder 1088 = True
+isOnEasternBorder _    = False
 
-idOperator :: Operator
-idOperator x _ = x
+isOnSouthernBorder :: Coord -> Bool
+isOnSouthernBorder 1056 = True
+isOnSouthernBorder 1057 = True
+isOnSouthernBorder 1058 = True
+isOnSouthernBorder 1059 = True
+isOnSouthernBorder 1060 = True
+isOnSouthernBorder 1061 = True
+isOnSouthernBorder 1062 = True
+isOnSouthernBorder 1063 = True
+isOnSouthernBorder 1064 = True
+isOnSouthernBorder 1065 = True
+isOnSouthernBorder 1066 = True
+isOnSouthernBorder 1067 = True
+isOnSouthernBorder 1068 = True
+isOnSouthernBorder 1069 = True
+isOnSouthernBorder 1070 = True
+isOnSouthernBorder 1071 = True
+isOnSouthernBorder 1072 = True
+isOnSouthernBorder 1073 = True
+isOnSouthernBorder 1074 = True
+isOnSouthernBorder 1075 = True
+isOnSouthernBorder 1076 = True
+isOnSouthernBorder 1077 = True
+isOnSouthernBorder 1078 = True
+isOnSouthernBorder 1079 = True
+isOnSouthernBorder 1080 = True
+isOnSouthernBorder 1081 = True
+isOnSouthernBorder 1082 = True
+isOnSouthernBorder 1083 = True
+isOnSouthernBorder 1084 = True
+isOnSouthernBorder 1085 = True
+isOnSouthernBorder 1086 = True
+isOnSouthernBorder 1087 = True
+isOnSouthernBorder 1088 = True
+isOnSouthernBorder _    = False
 
-diagonalRocketRange :: Int
-diagonalRocketRange = 3
-
-iterateDiagonally :: Coord -> Operator -> Operator -> [Coord]
-iterateDiagonally coord fX fY = iterateCoordinate coord diagonalRocketRange fX fY
-
-horizontalRocketRange :: Int
-horizontalRocketRange = 4
-
-iterateVertically :: Coord -> Operator -> [Coord]
-iterateVertically coord fY = iterateCoordinate coord horizontalRocketRange idOperator fY
-
-iterateHorizontally :: Coord -> Operator -> [Coord]
-iterateHorizontally coord fX = iterateCoordinate coord horizontalRocketRange fX idOperator
-
-iterateCoordinate :: Coord -> Int -> Operator -> Operator -> [Coord]
-iterateCoordinate coord depth fX fY =
-  let (x', y')     = fromCoord coord
-      curriedIsOOB = curry isOOB
-  in catMaybes $
-     zipWith
-     -- I don't know why I can't simplify this expression but W/E
-     (\ x'' y'' -> fmap (uncurry toCoord) $ curriedIsOOB x'' y'')
-     (zipWith fX (repeat x') (take depth [1..]))
-     (zipWith fY (repeat y') (take depth [1..]))
+isOnWesternBorder :: Coord -> Bool
+isOnWesternBorder 0    = True
+isOnWesternBorder 33   = True
+isOnWesternBorder 66   = True
+isOnWesternBorder 99   = True
+isOnWesternBorder 132  = True
+isOnWesternBorder 165  = True
+isOnWesternBorder 198  = True
+isOnWesternBorder 231  = True
+isOnWesternBorder 264  = True
+isOnWesternBorder 297  = True
+isOnWesternBorder 330  = True
+isOnWesternBorder 363  = True
+isOnWesternBorder 396  = True
+isOnWesternBorder 429  = True
+isOnWesternBorder 462  = True
+isOnWesternBorder 495  = True
+isOnWesternBorder 528  = True
+isOnWesternBorder 561  = True
+isOnWesternBorder 594  = True
+isOnWesternBorder 627  = True
+isOnWesternBorder 660  = True
+isOnWesternBorder 693  = True
+isOnWesternBorder 726  = True
+isOnWesternBorder 759  = True
+isOnWesternBorder 792  = True
+isOnWesternBorder 825  = True
+isOnWesternBorder 858  = True
+isOnWesternBorder 891  = True
+isOnWesternBorder 924  = True
+isOnWesternBorder 957  = True
+isOnWesternBorder 990  = True
+isOnWesternBorder 1023 = True
+isOnWesternBorder 1056 = True
+isOnWesternBorder _    = False
 
 -- ASSUME: that this worm is never at an invalid position.
 --

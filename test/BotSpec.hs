@@ -2029,6 +2029,12 @@ spec = do
                                   aListFindDataById thatSelection positions)
                                  (wormPositions state))
 
+diagonalRocketRange :: Int
+diagonalRocketRange = 3
+
+horizontalRocketRange :: Int
+horizontalRocketRange = 4
+
 fullOfStuff :: Integer
 fullOfStuff = ((shiftL 1 (mapDim * mapDim)) - 1)
 
