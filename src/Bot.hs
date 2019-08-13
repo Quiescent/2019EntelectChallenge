@@ -121,6 +121,21 @@ aListFindById (WormId 12) (AList  _      _    _     _    _  (-1)) = Nothing
 aListFindById (WormId 12) (AList  _      _    _     _    _     x) = Just x
 aListFindById wormId'     _                                       = error $ "aListFindById: " ++ show wormId'
 
+aListContainsId :: WormId -> AList -> Bool
+aListContainsId (WormId 1)  (AList (-1)    _    _     _    _     _) = False
+aListContainsId (WormId 1)  _                                       = True
+aListContainsId (WormId 2)  (AList  _   (-1)    _     _    _     _) = False
+aListContainsId (WormId 2)  _                                       = True
+aListContainsId (WormId 3)  (AList  _      _ (-1)     _    _     _) = False
+aListContainsId (WormId 3)  _                                       = True
+aListContainsId (WormId 4)  (AList  _      _    _  (-1)    _     _) = False
+aListContainsId (WormId 4)  _                                       = True
+aListContainsId (WormId 8)  (AList  _      _    _     _ (-1)     _) = False
+aListContainsId (WormId 8)  _                                       = True
+aListContainsId (WormId 12) (AList  _      _    _     _    _  (-1)) = False
+aListContainsId (WormId 12) _                                       = True
+aListContainsId wormId'     _                                       = error $ "aListContainsId: " ++ show wormId'
+
 aListFindDataById :: WormId -> AList -> Maybe Int
 aListFindDataById = aListFindById
 
@@ -353,6 +368,10 @@ instance NFData GameMap where
 
 instance Show GameMap where
   show = showRows . splitGameMap
+
+rawMapString :: GameMap -> String
+rawMapString (GameMap air dirt space medipacks) =
+  "GameMap\n\t" ++ show air ++ "\n\t" ++ show dirt ++ "\n\t" ++ show space ++ "\n\t" ++ show medipacks
 
 showRows :: [[Cell]] -> String
 showRows xs =
@@ -2313,7 +2332,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> CommsChannel SearchTree -> IO SearchTree
-treeAfterAlottedTime _ treeChannel = do
+treeAfterAlottedTime state treeChannel = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -2323,7 +2342,7 @@ treeAfterAlottedTime _ treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then return searchTree -- (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
+        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -2585,14 +2604,23 @@ determineStrategy wormPositions' =
     (_, 0) -> Dig
     (_, _) -> Kill
 
-withOnlyWormsContainedIn :: AList -> State -> State
+withOnlyWormsContainedIn :: AList -> ModifyState
 withOnlyWormsContainedIn toKeep =
   let keep = aListKeepWormsDefinedInFirst toKeep
-  in withWormHealths     keep .
+  in fixOpponentsCurrentWorm  .
+     withWormHealths     keep .
      withWormPositions   keep .
      withWormBananas     keep .
      withWormSnowballs   keep .
      withFrozenDurations keep
+
+fixOpponentsCurrentWorm :: ModifyState
+fixOpponentsCurrentWorm state =
+  let wormId'  = thatPlayersCurrentWormId state
+      isInGame = aListContainsId wormId' $ wormHealths state
+  in if isInGame
+     then state
+     else advanceThatWormSelection state
 
 search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
 search g strategy minigameState searchTree =
@@ -2924,19 +2952,13 @@ digMovesFrom = map ((flip fromMoves) doNothing) . myDigMovesFrom
 myDigMovesFrom :: State -> [Move]
 myDigMovesFrom state =
   filter (\ move ->
-           isValidMoveMove targetOfThisMove thatPlayersCurrentWormId state move ||
+           isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move ||
            isValidDigMove  targetOfThisMove                          state move) $
   map Move [8..23]
 
-movesFrom :: State -> [CombinedMove]
-movesFrom state = do
-  myMove        <- myMovesFrom        state
-  opponentsMove <- opponentsMovesFrom state
-  return $ fromMoves myMove opponentsMove
-
 shootAndMoveMovesFrom :: State -> [CombinedMove]
 shootAndMoveMovesFrom state = do
-  myMove        <- myShootAndMoveMovesFrom state
+  myMove        <- myShootAndMoveMovesFrom        state
   opponentsMove <- opponentsShootAndMoveMovesFrom state
   let combinedMove = fromMoves myMove opponentsMove
   guard (shootOrDigWouldHaveAPositiveImpactFor myMove opponentsMove combinedMove state)
@@ -2967,7 +2989,9 @@ moveWouldBeValuableToMe state move =
   let wormHealthsBefore = wormHealths state
       wormHealthsAfter  = wormHealths $ makeMove False (fromMoves move doNothing) state
       iHitOpponent      = aListOpponentsValuesChanged wormHealthsBefore wormHealthsAfter
-  in (isAMoveMove move || isADigMove move || iHitOpponent)
+  in (isAMoveMove move && isValidMoveMove targetOfThisMove thisPlayersCurrentWormId state move ||
+      isADigMove  move && isValidDigMove  targetOfThisMove                          state move ||
+      iHitOpponent)
 
 opponentsMovesFrom :: State -> [Move]
 opponentsMovesFrom state = do
@@ -2985,7 +3009,9 @@ moveWouldBeValuableToOpponent state move =
   let wormHealthsBefore = wormHealths state
       wormHealthsAfter  = wormHealths $ makeMove False (fromMoves doNothing move) state
       opponentHitMe     = aListMyValuesChanged wormHealthsBefore wormHealthsAfter
-  in (isAMoveMove move || isADigMove move || opponentHitMe)
+  in (isAMoveMove move && isValidMoveMove targetOfThatMove thatPlayersCurrentWormId state move ||
+      isADigMove  move && isValidDigMove  targetOfThatMove                          state move ||
+      opponentHitMe)
 
 myShootAndMoveMovesFrom :: State -> [Move]
 myShootAndMoveMovesFrom = playersShootAndMoveMovesFrom targetOfThisMove thisPlayersCurrentWormId
@@ -3016,9 +3042,9 @@ opponentsShootAndMoveMovesFrom = playersShootAndMoveMovesFrom targetOfThatMove t
 playersShootAndMoveMovesFrom :: (Move -> State -> Maybe Coord) -> (State -> WormId) -> State -> [Move]
 playersShootAndMoveMovesFrom targetOfMove' playersWormId' state =
   filter (\ move ->
-           isValidMoveMove targetOfMove' playersWormId' state move ||
+           isAMoveMove move && isValidMoveMove targetOfMove' playersWormId' state move ||
            isAShootMove move ||
-           isADigMove move) $
+           isADigMove move && isValidDigMove targetOfMove' state move) $
   map Move [0..23]
 
 doNothing :: Move
