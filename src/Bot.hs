@@ -1136,25 +1136,23 @@ moveFromMaybe Nothing     = "nothing"
 
 displaceCoordByMove :: Coord -> Move -> Maybe Coord
 displaceCoordByMove xy moveDir@(Move dir) =
-  fmap (uncurry toCoord) $ isOOB $
-  let (x', y') = fromCoord xy
-  in case dir of
+  case dir of
     -- N
-    8  -> (x', y' - 1)
+    8  -> if isOnNorthernBorder xy then Nothing else Just $ xy - mapDim
     -- NE
-    9  -> (x' + 1, y' - 1)
+    9  -> if isOnNorthernBorder xy || isOnEasternBorder xy then Nothing else Just $ xy + 1 - mapDim
     -- E
-    10 -> (x' + 1, y')
+    10 -> if isOnEasternBorder xy then Nothing else Just $ xy + 1
     -- SE
-    11 -> (x' + 1, y' + 1)
+    11 -> if isOnSouthernBorder xy || isOnEasternBorder xy then Nothing else Just $ xy + mapDim + 1
     -- S
-    12 -> (x', y' + 1)
+    12 -> if isOnSouthernBorder xy then Nothing else Just $ xy + mapDim
     -- SW
-    13 -> (x' - 1, y' + 1)
+    13 -> if isOnSouthernBorder xy || isOnWesternBorder xy then Nothing else Just $ xy + mapDim - 1
     -- W
-    14 -> (x' - 1, y')
+    14 -> if isOnWesternBorder xy then Nothing else Just $ xy - 1
     -- NW
-    15 -> (x' - 1, y' - 1)
+    15 -> if isOnNorthernBorder xy || isOnWesternBorder xy then Nothing else Just $ xy - mapDim - 1
     -- Invalid Move
     _  -> error $ "Attempted to move in invalid direction with " ++ show moveDir
 
