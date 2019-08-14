@@ -346,7 +346,7 @@ spec = do
       let x'            = abs x `mod` 186
           y'            = shiftL (abs y `mod` 4) selectEncodingRange
           move'         = x' .|. y'
-          formattedMove = formatMove thisWormsCoord makeThisSelection (Move move') (toCoord 6 6) aState
+          formattedMove = formatMove thisWormsCoord makeMySelection (Move move') (toCoord 6 6) aState
       in if move' < 8
          then formattedMove `shouldStartWith` "shoot"
          else if move' < 16
@@ -389,14 +389,14 @@ spec = do
           coords = catMaybes $ map ($ coord') coordDeltasInRange
       in (coord', coords) `shouldSatisfy` ((== 81) . S.size . S.fromList . snd)
   describe "displaceCoordByMove" $ do
-    it "N  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 8)  `shouldBe` Just (toCoord 1 0)
-    it "NE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 9)  `shouldBe` Just (toCoord 2 0)
-    it "E  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 10) `shouldBe` Just (toCoord 2 1)
-    it "SE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 11) `shouldBe` Just (toCoord 2 2)
-    it "S  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 12) `shouldBe` Just (toCoord 1 2)
-    it "SW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 13) `shouldBe` Just (toCoord 0 2)
-    it "W  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 14) `shouldBe` Just (toCoord 0 1)
-    it "NW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 15) `shouldBe` Just (toCoord 0 0)
+    it "N  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 8)  `shouldBe` (toCoord 1 0)
+    it "NE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 9)  `shouldBe` (toCoord 2 0)
+    it "E  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 10) `shouldBe` (toCoord 2 1)
+    it "SE (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 11) `shouldBe` (toCoord 2 2)
+    it "S  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 12) `shouldBe` (toCoord 1 2)
+    it "SW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 13) `shouldBe` (toCoord 0 2)
+    it "W  (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 14) `shouldBe` (toCoord 0 1)
+    it "NW (not on boundry)" $ displaceCoordByMove (toCoord 1 1) (Move 15) `shouldBe` (toCoord 0 0)
     prop "Move back and forth" $ \ (i, j, k) ->
       let x'          = 1 + (j `mod` (mapDim - 2))
           y'          = 1 + (k `mod` (mapDim - 2))
@@ -404,7 +404,7 @@ spec = do
           indexOfMove = ((abs i) `mod` 8)
           randomMove  = Move $ indexOfMove + 8
           moveBack    = Move $ ((indexOfMove + 4) `mod` 8) + 8
-      in ((displaceCoordByMove coordInMap randomMove) >>= (\ newCoord -> displaceCoordByMove newCoord moveBack)) `shouldBe` Just coordInMap
+      in displaceCoordByMove (displaceCoordByMove coordInMap randomMove) moveBack `shouldBe` coordInMap
   describe "combined moves" $ do
     it "should be able to extract the maximum move" $
       let iMove = Move 2047
@@ -1004,7 +1004,7 @@ spec = do
          -- Move that worm
          setOpponentsLastMove aStateWithOposingWormsNextToEachother moveEast $
          awardPointsToThatPlayerForMovingToAir $
-         moveThatWorm (fromJust $ displaceCoordByMove (fromJust $ thatWormsCoord aStateWithOposingWormsNextToEachother) moveEast) $
+         moveThatWorm (displaceCoordByMove (thatWormsCoord aStateWithOposingWormsNextToEachother) moveEast) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
@@ -1077,7 +1077,7 @@ spec = do
          -- Move that worm
          setOpponentsLastMove stateWithEnemyTwoSquaresFromEpicentre moveEast $
          awardPointsToThatPlayerForMovingToAir $
-         moveThatWorm (fromJust $ displaceCoordByMove (fromJust $ thatWormsCoord stateWithEnemyTwoSquaresFromEpicentre) moveEast) $
+         moveThatWorm (displaceCoordByMove (thatWormsCoord stateWithEnemyTwoSquaresFromEpicentre) moveEast) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
@@ -1237,7 +1237,7 @@ spec = do
          harmWorm (WormId 4) aStateWithOposingWormsNextToEachother 13 id id id (toCoord 16 31) $
          -- Move this worm
          awardPointsToThisPlayerForMovingToAir $
-         moveThisWorm (fromJust $ displaceCoordByMove (fromJust $ thisWormsCoord aStateWithOposingWormsNextToEachother) moveWest) $
+         moveThisWorm (displaceCoordByMove (thisWormsCoord aStateWithOposingWormsNextToEachother) moveWest) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
@@ -1310,7 +1310,7 @@ spec = do
          harmWorm (WormId 4) stateWithEnemyTwoSquaresFromEpicentre 13 id id id (toCoord 16 31) $
          -- Move this worm
          awardPointsToThisPlayerForMovingToAir $
-         moveThisWorm (fromJust $ displaceCoordByMove (fromJust $ thisWormsCoord stateWithEnemyTwoSquaresFromEpicentre) moveWest) $
+         moveThisWorm (displaceCoordByMove (thisWormsCoord stateWithEnemyTwoSquaresFromEpicentre) moveWest) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
@@ -1599,7 +1599,7 @@ spec = do
       in makeMove True (fromMoves shot moveNorth) state `shouldBe`
          (setOpponentsLastMove state moveNorth $
           incrementRound $
-          moveThatWorm (fromJust $ displaceCoordByMove (fromJust $ thatWormsCoord state) moveNorth) $
+          moveThatWorm (displaceCoordByMove (thatWormsCoord state) moveNorth) $
           awardPointsToThatPlayerForMovingToAir $
           awardPointsToThisPlayerForMissing state)
     prop "should not hit that players first horizontal target in range when it moves out of the way" $ \ (i, j, k) ->
@@ -1613,7 +1613,7 @@ spec = do
       in makeMove True (fromMoves moveNorth shot) state `shouldBe`
          (setOpponentsLastMove state shot $
           incrementRound $
-          moveThisWorm (fromJust $ displaceCoordByMove (fromJust $ thisWormsCoord state) moveNorth) $
+          moveThisWorm (displaceCoordByMove (thisWormsCoord state) moveNorth) $
           awardPointsToThisPlayerForMovingToAir $
           awardPointsToThatPlayerForMissing state)
     prop "should hit this players first horizontal target in range when it's an opponent worm" $ \ (i, j, k) ->
@@ -1984,11 +1984,11 @@ spec = do
            \ (_, state) ->
              (not $
               isAHit $
-              isAPositionOfAWorm (fromJust $ aListFindDataById thisSelection positions)
+              isAPositionOfAWorm (aListFindDataById thisSelection positions)
                                  (wormPositions state)) &&
              (not $
               isAHit $
-              isAPositionOfAWorm (fromJust $ aListFindDataById thatSelection positions)
+              isAPositionOfAWorm (aListFindDataById thatSelection positions)
                                  (wormPositions state))
       prop "should decrement the number of selections left" $ \ (i, j, k, l) ->
         let thisSelection  = WormId $ oneIfZero $ abs i `mod` 4
@@ -2021,12 +2021,10 @@ spec = do
              makeMove False (fromMoves thisMove thatMove) aStateWithNoSelections) `shouldSatisfy`
            \ (_, state) ->
              (isAHit $
-              isAPositionOfAWorm (fromJust $
-                                  aListFindDataById thisSelection positions)
+              isAPositionOfAWorm (aListFindDataById thisSelection positions)
                                  (wormPositions state)) &&
              (isAHit $
-              isAPositionOfAWorm (fromJust $
-                                  aListFindDataById thatSelection positions)
+              isAPositionOfAWorm (aListFindDataById thatSelection positions)
                                  (wormPositions state))
 
 diagonalRocketRange :: Int

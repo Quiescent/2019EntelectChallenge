@@ -2845,6 +2845,7 @@ round.  Like who has the bananas and how many he/she has.
 *** TODO Use the compiler!
 https://wiki.haskell.org/Performance/GHC
 https://wiki.haskell.org/Playing_by_the_rules
+** TODO Only kill worms at the end of a round
 ** TODO Use a better scoring function during the kill search
 ** TODO Use confidence in the dig search, but correct the formula for different maximums
 ** TODO BUG: Sometimes filtering leaves no moves available causing the bot to do nothing in the random search
