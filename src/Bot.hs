@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -2115,131 +2116,75 @@ hitsWorm origin gameMap' direction worms' =
     HitWorm worm -> Just worm
     _            -> Nothing
 
-infixl |>
-(|>) :: (a -> b) -> (b -> c) -> a -> c
-(|>) = flip (.)
-
 findFirstWormHit ::  Coord -> GameMap -> Direction -> WormPositions -> Hit
 findFirstWormHit coord' gameMap' N  worms' =
-  let coord1 = coord' - mapDim
-      coord2 = coord' - 2 * mapDim
-      coord3 = coord' - 3 * mapDim
-      coord4 = coord' - 4 * mapDim
-  in (if isOnNorthernBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnNorthernBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnNorthernBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3 |>
-                       (if isOnNorthernBorder coord3
-                        then id
-                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+  searchForHitRectalinearly (-mapDim) isOnNorthernBorder coord' gameMap' worms'
 findFirstWormHit coord' gameMap' NE worms' =
-  let coord1 = coord' - mapDim + 1
-      coord2 = coord' - 2 * mapDim + 2
-      coord3 = coord' - 3 * mapDim + 3
-  in (if isOnNorthernBorder coord' || isOnEasternBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnNorthernBorder coord1 || isOnEasternBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnNorthernBorder coord2 || isOnEasternBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3))) HitNothing
+  searchForHitDiagonally (1 - mapDim)
+                         (\ coord'' -> isOnNorthernBorder coord'' || isOnEasternBorder coord'')
+                         coord'
+                         gameMap'
+                         worms'
 findFirstWormHit coord' gameMap' E  worms' =
-  let coord1 = coord' + 1
-      coord2 = coord' + 2
-      coord3 = coord' + 3
-      coord4 = coord' + 4
-  in (if isOnEasternBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnEasternBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnEasternBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3 |>
-                       (if isOnEasternBorder coord3
-                        then id
-                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+  searchForHitRectalinearly 1 isOnEasternBorder coord' gameMap' worms'
 findFirstWormHit coord' gameMap' SE worms' =
-  let coord1 = coord' + mapDim + 1
-      coord2 = coord' + 2 * mapDim + 2
-      coord3 = coord' + 3 * mapDim + 3
-  in (if isOnSouthernBorder coord' || isOnEasternBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnSouthernBorder coord1 || isOnEasternBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnSouthernBorder coord2 || isOnEasternBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3))) HitNothing
+  searchForHitDiagonally (mapDim + 1)
+                         (\ coord'' -> isOnSouthernBorder coord'' || isOnEasternBorder coord'')
+                         coord'
+                         gameMap'
+                         worms'
 findFirstWormHit coord' gameMap' S  worms' =
-  let coord1 = coord' + mapDim
-      coord2 = coord' + 2 * mapDim
-      coord3 = coord' + 3 * mapDim
-      coord4 = coord' + 4 * mapDim
-  in (if isOnSouthernBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnSouthernBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnSouthernBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3 |>
-                       (if isOnSouthernBorder coord3
-                        then id
-                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+  searchForHitRectalinearly mapDim isOnSouthernBorder coord' gameMap' worms'
 findFirstWormHit coord' gameMap' SW worms' =
-  let coord1 = coord' + mapDim - 1
-      coord2 = coord' + 2 * mapDim - 2
-      coord3 = coord' + 3 * mapDim - 3
-  in (if isOnSouthernBorder coord' || isOnWesternBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnSouthernBorder coord1 || isOnWesternBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnSouthernBorder coord2 || isOnWesternBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3))) HitNothing
+  searchForHitDiagonally (mapDim - 1)
+                         (\ coord'' -> isOnSouthernBorder coord'' || isOnWesternBorder coord'')
+                         coord'
+                         gameMap'
+                         worms'
 findFirstWormHit coord' gameMap' W  worms' =
-  let coord1 = coord' - 1
-      coord2 = coord' - 2
-      coord3 = coord' - 3
-      coord4 = coord' - 4
-  in (if isOnWesternBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnWesternBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnWesternBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3 |>
-                       (if isOnWesternBorder coord3
-                        then id
-                        else firstWormHit gameMap' worms' coord4)))) HitNothing
+  searchForHitRectalinearly (-1) isOnWesternBorder coord' gameMap' worms'
 findFirstWormHit coord' gameMap' NW worms' =
-  let coord1 = coord' - mapDim - 1
-      coord2 = coord' - 2 * mapDim - 2
-      coord3 = coord' - 3 * mapDim - 3
-  in (if isOnNorthernBorder coord' || isOnWesternBorder coord'
-      then id
-      else firstWormHit gameMap' worms' coord1 |>
-           (if isOnNorthernBorder coord1 || isOnWesternBorder coord1
-            then id
-            else firstWormHit gameMap' worms' coord2 |>
-                 (if isOnNorthernBorder coord2 || isOnWesternBorder coord2
-                  then id
-                  else firstWormHit gameMap' worms' coord3))) HitNothing
+  searchForHitDiagonally (-mapDim - 1)
+                         (\ coord'' -> isOnNorthernBorder coord'' || isOnWesternBorder coord'')
+                         coord'
+                         gameMap'
+                         worms'
+
+-- There's a bit of repitition between these two functions but I'm
+-- fine with that given that I'm optimising this code
+searchForHitRectalinearly :: Int -> (Coord -> Bool) -> Coord -> GameMap -> WormPositions -> Hit
+searchForHitRectalinearly !add isOnBoundary !coord' gameMap' wormPositions' =
+  if isOnBoundary coord' then HitNothing else go 3 (coord' + add)
+  where
+    go :: Int -> Coord -> Hit
+    go 0  _             = HitNothing
+    go !n !currentCoord =
+      if obstacleAt currentCoord gameMap'
+      then HitObstacle
+      else case isAPositionOfAWorm currentCoord wormPositions' of
+        hit@(HitWorm _) -> hit
+        HitNothing      ->
+          if isOnBoundary currentCoord
+          then HitNothing
+          else go (n - 1) (currentCoord + add)
+        HitObstacle     -> HitObstacle
+
+searchForHitDiagonally :: Int -> (Coord -> Bool) -> Coord -> GameMap -> WormPositions -> Hit
+searchForHitDiagonally !add isOnBoundary !coord' gameMap' wormPositions' =
+  if isOnBoundary coord' then HitNothing else go 2 (coord' + add)
+  where
+    go :: Int -> Coord -> Hit
+    go 0  _             = HitNothing
+    go !n !currentCoord =
+      if obstacleAt currentCoord gameMap'
+      then HitObstacle
+      else case isAPositionOfAWorm currentCoord wormPositions' of
+        hit@(HitWorm _) -> hit
+        HitNothing      ->
+          if isOnBoundary currentCoord
+          then HitNothing
+          else go (n - 1) (currentCoord + add)
+        HitObstacle     -> HitObstacle
 
 firstWormHit :: GameMap -> WormPositions -> Coord -> Hit -> Hit
 firstWormHit _        _      _      hit@(HitWorm _) = hit
