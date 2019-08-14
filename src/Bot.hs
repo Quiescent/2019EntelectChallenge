@@ -2186,14 +2186,6 @@ searchForHitDiagonally !add isOnBoundary !coord' gameMap' wormPositions' =
           else go (n - 1) (currentCoord + add)
         HitObstacle     -> HitObstacle
 
-firstWormHit :: GameMap -> WormPositions -> Coord -> Hit -> Hit
-firstWormHit _        _      _      hit@(HitWorm _) = hit
-firstWormHit _        _      _      HitObstacle     = HitObstacle
-firstWormHit gameMap' worms' coord' HitNothing      =
-  if obstacleAt coord' gameMap'
-  then HitObstacle
-  else isAPositionOfAWorm coord' worms'
-
 isAPositionOfAWorm :: Coord -> WormPositions -> Hit
 isAPositionOfAWorm coord' wormPositions' =
   case aListFindDataByData coord' wormPositions' of
