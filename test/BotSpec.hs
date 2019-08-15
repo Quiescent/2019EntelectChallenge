@@ -2568,6 +2568,14 @@ aStateWhereWeSwappedOverTheMedipack =
   moveThatWorm (toCoord 30 31)
   aState { gameMap = aGameMapWithAMedipack }
 
+moveThisWorm :: Coord -> ModifyState
+moveThisWorm coord' state =
+  moveWorm (thisPlayersCurrentWormId state) coord' state
+
+moveThatWorm :: Coord -> ModifyState
+moveThatWorm coord' state =
+  moveWorm (thatPlayersCurrentWormId state) coord' state
+
 aStateWhereNoSwapHappened =
   aStateWithBothWormsNextToTheMedipack
 

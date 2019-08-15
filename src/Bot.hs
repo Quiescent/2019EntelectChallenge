@@ -393,7 +393,7 @@ splitGameMap gameMap' =
       iter xs' = (reverse $ take mapDim xs') : (iter $ drop mapDim xs')
   in iter $ map snd $ sortOn fst $ cells
 
-mapAt :: Int -> GameMap -> Cell
+mapAt :: Coord -> GameMap -> Cell
 mapAt coord' map'@(GameMap air dirt space medipacks) =
   if testBit air coord'
   then AIR
@@ -1236,7 +1236,15 @@ conditionally True  f = f
 conditionally False _ = id
 
 cleanUpDeadWorms :: Move -> Move -> ModifyState
-cleanUpDeadWorms _ _ = id
+cleanUpDeadWorms this that state =
+  if isAShootMove this || isAShootMove that || isABananaMove this || isABananaMove that
+  then go (wormHealths state) state
+  else state
+  where go wormHealths' state'
+          | aListContainsData 0 wormHealths' =
+            let state'' = cleanUpDeadWorm (aListFindIdByData 0 wormHealths') state'
+            in go (wormHealths state'') state''
+          | otherwise                        = state'
 
 collideWorms :: WormPositions -> ModifyState
 collideWorms _ = id
@@ -1256,7 +1264,7 @@ dealLavaDamage state =
      then foldl' (\ state' (wormId', _) ->
                     let wormHealth' = aListFindDataById wormId' $ wormHealths state'
                         cleanUp     = if wormHealth' <= lavaDamage
-                                      then cleanUpDeadWorm wormId'
+                                      then flagWormForCleaning wormId'
                                       else id
                     in cleanUp $ withWormHealths (harmWormById lavaDamage wormId') state') state $
           aListToList hits'
@@ -1798,41 +1806,47 @@ thatPlayersCurrentWormId = playerCurrentWormId . opponent
 
 makeMyMoveMove :: Move -> ModifyState
 makeMyMoveMove this state =
-  let coordOfThisWorm       = thisWormsCoord state
-      thisMoveIsValid       = (not $ moveWouldGoOOB coordOfThisWorm this) && (not $ targetOfThisMoveIsDirt this state)
-      thisTarget            = displaceCoordByMove coordOfThisWorm this
-      thisWormId            = thisPlayersCurrentWormId state
-      thisTargetIsValid     = (mapAtCoord state thisTarget == AIR || mapAtCoord state thisTarget == MEDIPACK) && (containsAnyWormExcept state thisWormId thisTarget) == False
-      thisTargetIsAMedipack = mapAtCoord state thisTarget == MEDIPACK
-      medipackThisWorm      = if thisTargetIsAMedipack then giveMedipackToThisWorm . removeMedipack thisTarget else id
-      penaliseThisMove      = if thisMoveIsValid then id else penaliseThisPlayerForAnInvalidCommand
-      applyPenalties        = penaliseThisMove
-      awardPointsToThisMove = if thisTargetIsValid then awardPointsToThisPlayerForMovingToAir else id
-      awardPoints           = awardPointsToThisMove
-      moveThisWormToTarget  = if thisTargetIsValid then moveThisWorm thisTarget else id
-      moveThisWormIfValid   = medipackThisWorm . moveThisWormToTarget
-      moveWorms             = moveThisWormIfValid
-      move                  = awardPoints . applyPenalties . moveWorms
-  in move state
+  makeMoveMove this
+               (thisWormsCoord state)
+               (thisPlayersCurrentWormId state)
+               (gameMap state)
+               giveMedipackToThisWorm
+               penaliseThisPlayerForAnInvalidCommand
+               awardPointsToThisPlayerForMovingToAir
+               state
 
 makeOpponentsMoveMove :: Move -> ModifyState
 makeOpponentsMoveMove that state =
-  let coordOfThatWorm       = thatWormsCoord state
-      thatMoveIsValid       = (not $ moveWouldGoOOB coordOfThatWorm that) && (not $ targetOfThatMoveIsDirt that state)
-      thatTarget            = displaceCoordByMove coordOfThatWorm that
-      thatWormId            = thatPlayersCurrentWormId state
-      thatTargetIsValid     = (mapAtCoord state thatTarget ==  AIR || mapAtCoord state thatTarget == MEDIPACK) && (containsAnyWormExcept state thatWormId thatTarget) == False
-      thatTargetIsAMedipack = mapAtCoord state thatTarget == MEDIPACK
-      medipackThatWorm      = if thatTargetIsAMedipack then giveMedipackToThatWorm . removeMedipack thatTarget else id
-      penaliseThatMove      = if thatMoveIsValid then id else penaliseThatPlayerForAnInvalidCommand
-      applyPenalties        = penaliseThatMove
-      awardPointsToThatMove = if thatTargetIsValid then awardPointsToThatPlayerForMovingToAir else id
-      awardPoints           = awardPointsToThatMove
-      moveThatWormToTarget  = if thatTargetIsValid then moveThatWorm thatTarget else id
-      moveThatWormIfValid   = medipackThatWorm . moveThatWormToTarget
-      moveWorms             = moveThatWormIfValid
-      move                  = awardPoints . applyPenalties . moveWorms
-  in move state
+  makeMoveMove that
+               (thatWormsCoord state)
+               (thatPlayersCurrentWormId state)
+               (gameMap state)
+               giveMedipackToThatWorm
+               penaliseThatPlayerForAnInvalidCommand
+               awardPointsToThatPlayerForMovingToAir
+               state
+
+makeMoveMove :: Move -> Coord -> WormId -> GameMap -> ModifyState -> ModifyState -> ModifyState -> ModifyState
+makeMoveMove move
+             coord'
+             wormId'
+             gameMap'
+             giveMedipackToWorm
+             penaliseForInvalidMove
+             awardPointsForMovingToAir' =
+  let target            = displaceCoordByMove coord' move
+      moveIsValid       = not $ moveWouldGoOOB coord' move
+      targetCell        = mapAt target gameMap'
+      targetIsValid     = moveIsValid && targetCell == AIR || targetCell == MEDIPACK
+      targetIsAMedipack = targetCell == MEDIPACK
+      -- TODO: Handle collisions in getting the medipack
+      medipackWorm      = if targetIsAMedipack
+                          then giveMedipackToWorm . removeMedipack target
+                          else id
+      applyPenalty      = if targetIsValid then id else penaliseForInvalidMove
+      moveWormToTarget  = if targetIsValid then moveWorm wormId' coord' else id
+      awardPoints       = if targetIsValid then awardPointsForMovingToAir' else id
+  in medipackWorm . applyPenalty . moveWormToTarget . awardPoints
 
 targetOfThisMoveIsDirt :: Move -> State -> Bool
 targetOfThisMoveIsDirt move state =
@@ -1903,17 +1917,9 @@ cleanUpDeadWorm wormId' =
   withWormSnowballs       (aListRemoveWormById wormId') .
   withWormFrozenDurations (aListRemoveWormById wormId')
 
-moveWorm :: (State -> WormId) -> Coord -> ModifyState
-moveWorm wormsId newCoord' state =
-  let thisWormId = wormsId state
-  in withWormPositions (aListMapWormById thisWormId (always newCoord')) state
-
-moveThisWorm :: Coord -> ModifyState
-moveThisWorm = moveWorm thisPlayersCurrentWormId
-
--- TODO test
-moveThatWorm :: Coord -> ModifyState
-moveThatWorm = moveWorm thatPlayersCurrentWormId
+moveWorm :: WormId -> Coord -> ModifyState
+moveWorm wormId' newCoord' state =
+  withWormPositions (aListMapWormById wormId' (always newCoord')) state
 
 targetOfMove :: (State -> WormId) -> Move -> State -> Coord
 targetOfMove wormsId dir state =
@@ -2107,7 +2113,11 @@ errorWithMessageIfJust :: String -> Maybe a -> Maybe a
 errorWithMessageIfJust message Nothing = error message
 errorWithMessageIfJust _       x       = x
 
--- ASSUME: that the given coord maps to a worm
+-- ASSUME: that the given coord maps to a worm.
+-- 
+-- NOTE: Worms set to zero health are flagged for later removal.
+-- Don't use a negative number because that's more difficult to test
+-- for.
 harmWorm :: WormId -> State -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 harmWorm shootingWormId'
          originalState
@@ -2125,10 +2135,14 @@ harmWorm shootingWormId'
       dishOutPoints = if samePlayer
                       then penalisePlayer
                       else awardPoints
-      cleanUp       = cleanUpDeadWorm wormId'
+      cleanUp       = flagWormForCleaning wormId'
       harm          = withWormHealths (harmWormById damage' wormId')
       go            = dishOutPoints . if wormDied then cleanUp else harm
   in go state
+
+flagWormForCleaning :: WormId -> ModifyState
+flagWormForCleaning wormId' =
+  withWormHealths (aListMapWormById wormId' (always 0))
 
 penaliseThisPlayerForHittingHisFriendlyWorm :: ModifyState
 penaliseThisPlayerForHittingHisFriendlyWorm = mapThisPlayer penaliseForHittingFriendlyWorm
