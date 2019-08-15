@@ -88,7 +88,8 @@ spec = do
             aState
       it "should kill any worms with low enough health, removing them fcom the state" $
         dealLavaDamage aStateWithLowHealthWormOnLava `shouldBe`
-        (cleanUpDeadWorm (WormId 1) $ cleanUpDeadWorm (WormId 12) $ aStateWithLowHealthWormOnLava)
+        (withWormHealths (aListMapWormById (WormId 1) (always 0) .
+                          aListMapWormById (WormId 12) (always 0)) $ aStateWithLowHealthWormOnLava)
   describe "wormsNearMyCurrentWorm" $ do
     context "when there are no worms nearby" $ do
       let aStateWithNoWormsNearMyWorm =
@@ -460,8 +461,7 @@ spec = do
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
       (harmWormWithRocket (WormId (-1)) aState id id id (toCoord 15 31) aState) `shouldBe`
-       aState { wormHealths = aListRemoveWormById (WormId 1) $ wormHealths aState,
-                wormPositions = aListRemoveWormById (WormId 1) $ wormPositions aState }
+       aState { wormHealths = aListMapWormById (WormId 1) (always 0) $ wormHealths aState }
   describe "generateShotSwitch" $ do
     prop "produces a function which produces the first given a negative number and the second given a positive number" $
       let switchFunction = generateShotSwitch shootEast shootNorth
@@ -622,20 +622,6 @@ spec = do
        selectNextWormsDefault                $
        awardPointsToThatPlayerForMovingToAir $
        moveThatWorm (toCoord 17 1) aState)
-    it "moving to the same square should swap the worms if true and damage both worms" $
-      makeMove True (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
-      (setOpponentsLastMove aStateWithImpendingCollision moveWest         $
-       incrementRound $
-       selectNextWormsDefault                         $
-       withWormPositions (aListRemoveWormById (WormId 1))  $
-       withWormPositions (aListRemoveWormById (WormId 4))  $
-       awardPointsToThatPlayerForMovingToAir          $
-       awardPointsToThisPlayerForMovingToAir          $
-       moveThisWorm (toCoord 17 31)                   $
-       moveThatWorm (toCoord 15 31)                   $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 17 31) $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 15 31)
-       aStateWithImpendingCollision)
     it "moving to the same square should not swap the worms if false and damage both worms" $
       makeMove False (fromMoves moveEast moveWest) aStateWithImpendingCollision `shouldBe`
       (setOpponentsLastMove aStateWithImpendingCollision moveWest         $
@@ -643,8 +629,8 @@ spec = do
        selectNextWormsDefault                $
        awardPointsToThatPlayerForMovingToAir $
        awardPointsToThisPlayerForMovingToAir $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 17 31) $
-       harmWorm (WormId (-1)) aStateWithImpendingCollision knockBackDamageAmount id id id (toCoord 15 31)
+       cleanUpDeadWorm (WormId 1) $
+       cleanUpDeadWorm (WormId 4)
        aStateWithImpendingCollision)
     it "moving my worm to a square occupied by one of my worms does nothing" $
       makeMove True (fromMoves moveEast doNothing) aStateWithMyWormsNextToEachOther `shouldBe`

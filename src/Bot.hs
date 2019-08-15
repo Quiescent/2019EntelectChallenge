@@ -328,6 +328,23 @@ aListRemoveWormById (WormId 8)  (AList a b c d _ f) = AList    a    b    c    d 
 aListRemoveWormById (WormId 12) (AList a b c d e _) = AList    a    b    c    d    e (-1)
 aListRemoveWormById wormId'     _                   = error $ "Can't remove worm with id: " ++ show wormId'
 
+-- Produce minus one if there are no two entries which are the same
+--
+-- NOTE: One's own worms are never compared with each other because
+-- they can't collide with eachother.
+aListContainsDuplicatedOpponentEntry :: AList -> Bool
+aListContainsDuplicatedOpponentEntry (AList a b c d e f)
+  | a /= -1 && a == d = True
+  | a /= -1 && a == e = True
+  | a /= -1 && a == f = True
+  | b /= -1 && b == d = True
+  | b /= -1 && b == e = True
+  | b /= -1 && b == f = True
+  | c /= -1 && c == d = True
+  | c /= -1 && c == e = True
+  | c /= -1 && c == f = True
+  | otherwise         = False
+
 showPositions :: AList -> String
 showPositions aList =
     let xs = aListToList aList
@@ -1210,44 +1227,48 @@ makeMove _ moves state =
   let (myMove,  opponentsMove)  = freezeActions state $ toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
+      wormPositions'            = wormPositions state
   in -- assertValidState state  myMove  opponentsMove  $
-     incrementRound                                                                                    $
-     cleanUpDeadWorms          myMove' opponentsMove'                                                  $
-     setOpponentsLastMove      state   opponentsMove                                                   $
-     advanceWormSelections                                                                             $
-     conditionally (isAShootMove myMove')           (makeMyShootMove           myMove')                $
-     conditionally (isAShootMove opponentsMove')    (makeOpponentsShootMove    opponentsMove')         $
-     conditionally (isASnowballMove myMove')        (makeMySnowballMove        myMove')                $
-     conditionally (isASnowballMove opponentsMove') (makeOpponentsSnowballMove opponentsMove')         $
-     conditionally (isABananaMove myMove')          (makeMyBananaMove          myMove')                $
-     conditionally (isABananaMove opponentsMove')   (makeOpponentsBananaMove   opponentsMove')         $
-     conditionally (isADigMove myMove')             (makeMyDigMove             myMove')                $
-     conditionally (isADigMove opponentsMove')      (makeOpponentsDigMove      opponentsMove')         $
-     collideWorms (wormPositions state)                                                                $
-     conditionally (isAMoveMove myMove')            (makeMyMoveMove            myMove')                $
-     conditionally (isAMoveMove opponentsMove')     (makeOpponentsMoveMove     opponentsMove')         $
-     conditionally (hasASelection myMove)           (makeMySelection           myMove)                 $
-     conditionally (hasASelection opponentsMove)    (makeOpponentsSelection    opponentsMove)          $
-     tickFreezeDurations                                                                               $
+     incrementRound                                                                                       $
+     setOpponentsLastMove      state   opponentsMove                                                      $
+     advanceWormSelections                                                                                $
+     cleanUpDeadWorms                                                                                     $
+     conditionally (isAShootMove myMove')           (makeMyShootMove           myMove')                   $
+     conditionally (isAShootMove opponentsMove')    (makeOpponentsShootMove    opponentsMove')            $
+     conditionally (isASnowballMove myMove')        (makeMySnowballMove        myMove')                   $
+     conditionally (isASnowballMove opponentsMove') (makeOpponentsSnowballMove opponentsMove')            $
+     conditionally (isABananaMove myMove')          (makeMyBananaMove          myMove')                   $
+     conditionally (isABananaMove opponentsMove')   (makeOpponentsBananaMove   opponentsMove')            $
+     conditionally (isADigMove myMove')             (makeMyDigMove             myMove')                   $
+     conditionally (isADigMove opponentsMove')      (makeOpponentsDigMove      opponentsMove')            $
+     conditionally (isADigMove myMove' && isADigMove opponentsMove') (collideWorms wormPositions')        $
+     conditionally (isAMoveMove myMove')            (makeMyMoveMove wormPositions' myMove')               $
+     conditionally (isAMoveMove opponentsMove')     (makeOpponentsMoveMove wormPositions' opponentsMove') $
+     conditionally (hasASelection myMove)           (makeMySelection           myMove)                    $
+     conditionally (hasASelection opponentsMove)    (makeOpponentsSelection    opponentsMove)             $
+     tickFreezeDurations                                                                                  $
      dealLavaDamage state
 
 conditionally :: Bool -> ModifyState -> ModifyState
 conditionally True  f = f
 conditionally False _ = id
 
-cleanUpDeadWorms :: Move -> Move -> ModifyState
-cleanUpDeadWorms this that state =
-  if isAShootMove this || isAShootMove that || isABananaMove this || isABananaMove that
-  then go (wormHealths state) state
-  else state
+cleanUpDeadWorms :: ModifyState
+cleanUpDeadWorms state =
+  go (wormHealths state) state
   where go wormHealths' state'
           | aListContainsData 0 wormHealths' =
             let state'' = cleanUpDeadWorm (aListFindIdByData 0 wormHealths') state'
             in go (wormHealths state'') state''
           | otherwise                        = state'
 
+-- We never swap here because I'm not sure how worth while it is to
+-- simulate that.
 collideWorms :: WormPositions -> ModifyState
-collideWorms _ = id
+collideWorms originalWormPositions =
+  if aListContainsDuplicatedOpponentEntry originalWormPositions
+  then knockBackDamage . withWormPositions (always originalWormPositions)
+  else id
 
 isOnLavaForRound :: Int -> Coord -> Bool
 isOnLavaForRound currentRound' coord' =
@@ -1804,24 +1825,24 @@ thisPlayersCurrentWormId = playerCurrentWormId . myPlayer
 thatPlayersCurrentWormId :: State -> WormId
 thatPlayersCurrentWormId = playerCurrentWormId . opponent
 
-makeMyMoveMove :: Move -> ModifyState
-makeMyMoveMove this state =
+makeMyMoveMove :: WormPositions -> Move -> ModifyState
+makeMyMoveMove wormPositions' this state =
   makeMoveMove this
                (thisWormsCoord state)
                (thisPlayersCurrentWormId state)
-               (wormPositions state)
+               wormPositions'
                (gameMap state)
                giveMedipackToThisWorm
                penaliseThisPlayerForAnInvalidCommand
                awardPointsToThisPlayerForMovingToAir
                state
 
-makeOpponentsMoveMove :: Move -> ModifyState
-makeOpponentsMoveMove that state =
+makeOpponentsMoveMove :: WormPositions -> Move -> ModifyState
+makeOpponentsMoveMove wormPositions' that state =
   makeMoveMove that
                (thatWormsCoord state)
                (thatPlayersCurrentWormId state)
-               (wormPositions state)
+               wormPositions'
                (gameMap state)
                giveMedipackToThatWorm
                penaliseThatPlayerForAnInvalidCommand
@@ -2118,7 +2139,7 @@ errorWithMessageIfJust message Nothing = error message
 errorWithMessageIfJust _       x       = x
 
 -- ASSUME: that the given coord maps to a worm.
--- 
+--
 -- NOTE: Worms set to zero health are flagged for later removal.
 -- Don't use a negative number because that's more difficult to test
 -- for.
