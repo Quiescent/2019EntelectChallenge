@@ -1844,7 +1844,7 @@ makeMoveMove move
                           then giveMedipackToWorm . removeMedipack target
                           else id
       applyPenalty      = if targetIsValid then id else penaliseForInvalidMove
-      moveWormToTarget  = if targetIsValid then moveWorm wormId' coord' else id
+      moveWormToTarget  = if targetIsValid then moveWorm wormId' target else id
       awardPoints       = if targetIsValid then awardPointsForMovingToAir' else id
   in medipackWorm . applyPenalty . moveWormToTarget . awardPoints
 
