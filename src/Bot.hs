@@ -587,7 +587,9 @@ factsFromMyWorms (ScratchPlayer _ _ worms' _) =
       frozenDurations' = vectorToAList $
                          V.map (\ (ScratchWorm { wormId              = wormId',
                                                  roundsUntilUnfrozen = roundsUntilUnfrozen' }) ->
-                                   (wormId', roundsUntilUnfrozen'))
+                                   (wormId', (if roundsUntilUnfrozen' == 0
+                                              then -1
+                                              else roundsUntilUnfrozen')))
                          liveWorms
   in (healths, positions, bananas, snowballs', frozenDurations')
 
@@ -618,7 +620,9 @@ factsFromOpponentsWorms (Opponent _ _ _ worms' _) =
       frozenDurations' = vectorToAList $
                          V.map (\ (OpponentWorm { opWormId              = wormId',
                                                   opRoundsUntilUnfrozen = opRoundsUntilUnfrozen' }) ->
-                                   (toThatWormId wormId', opRoundsUntilUnfrozen'))
+                                   (toThatWormId wormId', if opRoundsUntilUnfrozen' == 0
+                                                          then -1
+                                                          else opRoundsUntilUnfrozen'))
                          liveWorms
       -- TODO: These two will parse the wrong count of bananas left.
       -- If I lose the state on the first round.
@@ -1261,8 +1265,8 @@ dealLavaDamage state =
 freezeActions :: State -> (Move, Move) -> (Move, Move)
 freezeActions state (myMove, opponentsMove) =
   let frozenDurations' = frozenDurations state
-      freezeThisWorm   = (> 0) $ aListFindDataById (thisPlayersCurrentWormId state) frozenDurations'
-      freezeThatWorm   = (> 0) $ aListFindDataById (thatPlayersCurrentWormId state) frozenDurations'
+      freezeThisWorm   = aListContainsId (thisPlayersCurrentWormId state) frozenDurations'
+      freezeThatWorm   = aListContainsId (thatPlayersCurrentWormId state) frozenDurations'
   in case (freezeThisWorm, freezeThatWorm) of
     (True,  True)  -> (doNothing, doNothing)
     (True,  False) -> (doNothing, opponentsMove)
