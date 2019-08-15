@@ -1809,6 +1809,7 @@ makeMyMoveMove this state =
   makeMoveMove this
                (thisWormsCoord state)
                (thisPlayersCurrentWormId state)
+               (wormPositions state)
                (gameMap state)
                giveMedipackToThisWorm
                penaliseThisPlayerForAnInvalidCommand
@@ -1820,22 +1821,25 @@ makeOpponentsMoveMove that state =
   makeMoveMove that
                (thatWormsCoord state)
                (thatPlayersCurrentWormId state)
+               (wormPositions state)
                (gameMap state)
                giveMedipackToThatWorm
                penaliseThatPlayerForAnInvalidCommand
                awardPointsToThatPlayerForMovingToAir
                state
 
-makeMoveMove :: Move -> Coord -> WormId -> GameMap -> ModifyState -> ModifyState -> ModifyState -> ModifyState
+makeMoveMove :: Move -> Coord -> WormId -> WormPositions -> GameMap -> ModifyState -> ModifyState -> ModifyState -> ModifyState
 makeMoveMove move
              coord'
              wormId'
+             wormPositions'
              gameMap'
              giveMedipackToWorm
              penaliseForInvalidMove
              awardPointsForMovingToAir' =
   let target            = displaceCoordByMove coord' move
-      moveIsValid       = not $ moveWouldGoOOB coord' move
+      moveIsValid       = (not $ moveWouldGoOOB coord' move) &&
+                          (not $ anyWormData (== coord') wormPositions')
       targetCell        = mapAt target gameMap'
       targetIsValid     = moveIsValid && targetCell == AIR || targetCell == MEDIPACK
       targetIsAMedipack = targetCell == MEDIPACK
