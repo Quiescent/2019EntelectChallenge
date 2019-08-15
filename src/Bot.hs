@@ -1838,10 +1838,10 @@ makeMoveMove move
              penaliseForInvalidMove
              awardPointsForMovingToAir' =
   let target            = displaceCoordByMove coord' move
-      moveIsValid       = (not $ moveWouldGoOOB coord' move) &&
-                          (not $ anyWormData (== coord') wormPositions')
+      moveIsValid       = not (moveWouldGoOOB coord' move ||
+                               anyWormData (== target) wormPositions')
       targetCell        = mapAt target gameMap'
-      targetIsValid     = moveIsValid && targetCell == AIR || targetCell == MEDIPACK
+      targetIsValid     = moveIsValid && (targetCell == AIR || targetCell == MEDIPACK)
       targetIsAMedipack = targetCell == MEDIPACK
       -- TODO: Handle collisions in getting the medipack
       medipackWorm      = if targetIsAMedipack
@@ -3192,9 +3192,8 @@ digMovesFrom = map ((flip fromMoves) doNothing) . myDigMovesFrom
 myDigMovesFrom :: State -> [Move]
 myDigMovesFrom state =
   let coord'  = thisWormsCoord state
-      wormId' = thisPlayersCurrentWormId state
   in filter (\ move ->
-              (isAMoveMove move && isValidMoveMove wormId' coord' state move) ||
+              (isAMoveMove move && isValidMoveMove coord' state move) ||
               (isADigMove  move && isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state))) $
      map Move [8..23]
 
@@ -3236,11 +3235,10 @@ myMovesFrom state = do
 moveWouldBeValuableToMe :: State -> Move -> Bool
 moveWouldBeValuableToMe state move =
   let coord'            = thisWormsCoord state
-      wormId'           = thisPlayersCurrentWormId state
       wormHealthsBefore = wormHealths state
       wormHealthsAfter  = wormHealths $ makeMove False (fromMoves move doNothing) state
       iHitOpponent      = aListOpponentsValuesChanged wormHealthsBefore wormHealthsAfter
-  in (isAMoveMove move && isValidMoveMove wormId' coord' state move ||
+  in (isAMoveMove move && isValidMoveMove coord' state move ||
       isADigMove  move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state) ||
       iHitOpponent)
 
@@ -3258,17 +3256,16 @@ opponentsMovesFrom state = do
 moveWouldBeValuableToOpponent :: State -> Move -> Bool
 moveWouldBeValuableToOpponent state move =
   let coord'            = thatWormsCoord state
-      wormId'           = thatPlayersCurrentWormId state
       wormHealthsBefore = wormHealths state
       wormHealthsAfter  = wormHealths $ makeMove False (fromMoves doNothing move) state
       opponentHitMe     = aListMyValuesChanged wormHealthsBefore wormHealthsAfter
-  in (isAMoveMove move && isValidMoveMove wormId' coord' state move ||
+  in (isAMoveMove move && isValidMoveMove coord' state move ||
       isADigMove  move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state) ||
       opponentHitMe)
 
 myShootAndMoveMovesFrom :: State -> [Move]
 myShootAndMoveMovesFrom state =
-  playersShootAndMoveMovesFrom (thisWormsCoord state) (thisPlayersCurrentWormId state) state
+  playersShootAndMoveMovesFrom (thisWormsCoord state) state
 
 addPlayersSelects :: (State -> Bool) -> (AList -> [WormId]) -> State -> [Move] -> [Move]
 addPlayersSelects playerHasSelectionsLeft playersWormIds state moves =
@@ -3291,13 +3288,13 @@ withSelection  (WormId id') (Move x) =
 
 opponentsShootAndMoveMovesFrom :: State -> [Move]
 opponentsShootAndMoveMovesFrom state =
-  playersShootAndMoveMovesFrom (thatWormsCoord state) (thatPlayersCurrentWormId state) state
+  playersShootAndMoveMovesFrom (thatWormsCoord state) state
 
 -- Includes dig moves incase someone is behind a barrier
-playersShootAndMoveMovesFrom :: Coord -> WormId -> State -> [Move]
-playersShootAndMoveMovesFrom coord' wormId' state =
+playersShootAndMoveMovesFrom :: Coord -> State -> [Move]
+playersShootAndMoveMovesFrom coord' state =
   filter (\ move ->
-             (isAMoveMove move && isValidMoveMove wormId' coord' state move) ||
+             (isAMoveMove move && isValidMoveMove coord' state move) ||
              (isADigMove  move && isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state)) ||
              isAShootMove move) $
   map Move [0..23]
@@ -3310,14 +3307,14 @@ targetOfMoveMove targetOfMove' state move =
   let moveMove = if isAMoveMove move then Just move else Nothing
   in moveMove >>= ((flip targetOfMove') state)
 
-isValidMoveMove :: WormId -> Coord -> State -> Move -> Bool
-isValidMoveMove wormId' wormCoord state move =
+isValidMoveMove :: Coord -> State -> Move -> Bool
+isValidMoveMove wormCoord state move =
   let moveIsNotOOB = moveWouldGoOOB wormCoord move
       targetCoord  = displaceCoordByMove wormCoord move
       target       = mapAtCoord state targetCoord
   in moveIsNotOOB &&
      (target == AIR || target == MEDIPACK) &&
-     (containsAnyWormExcept state wormId' targetCoord) == False
+     (not $ containsAnyWorm targetCoord state) == False
 
 inRange :: Coord -> Coord -> Int -> Bool
 inRange xy' xy'' range' =
