@@ -98,7 +98,7 @@ aListReadableShow (AList a b c d e f) =
   show c ++ ") (" ++
   show d ++ ") (" ++
   show e ++ ") (" ++
-  show f ++ ")"
+  show f ++ "))"
 
 wormIds :: [WormId]
 wormIds = [WormId 1, WormId 2, WormId 3, WormId 4, WormId 8, WormId 12]
