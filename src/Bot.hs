@@ -90,6 +90,16 @@ instance NFData AList where
   rnf (AList a b c d e f) =
     a `deepseq` b `deepseq` c `deepseq` d `deepseq` e `deepseq` f `deepseq` ()
 
+aListReadableShow :: AList -> String
+aListReadableShow (AList a b c d e f) =
+  "(AList " ++
+  show a ++ " " ++
+  show b ++ " " ++
+  show c ++ " " ++
+  show d ++ " " ++
+  show e ++ " " ++
+  show f ++ ")"
+
 wormIds :: [WormId]
 wormIds = [WormId 1, WormId 2, WormId 3, WormId 4, WormId 8, WormId 12]
 
@@ -390,6 +400,32 @@ instance NFData GameMap where
 
 instance Show GameMap where
   show = showRows . splitGameMap
+
+readableShow :: State -> String
+readableShow (State opponentsLastCommand'
+                    currentRound'
+                    wormHealths'
+                    wormPositions'
+                    wormBananas'
+                    wormSnowballs'
+                    frozenDurations'
+                    myPlayer'
+                    opponent'
+                    gameMap') =
+  "(State\n" ++
+  " " ++ show opponentsLastCommand' ++ "\n" ++
+  " " ++ show currentRound' ++ "\n" ++
+  " " ++ aListReadableShow wormHealths' ++ "\n" ++
+  " " ++ aListReadableShow wormPositions' ++ "\n" ++
+  " " ++ aListReadableShow wormBananas' ++ "\n" ++
+  " " ++ aListReadableShow wormSnowballs' ++ "\n" ++
+  " " ++ aListReadableShow frozenDurations' ++ "\n" ++
+  " (" ++ show myPlayer' ++ ")\n" ++
+  " (" ++ show opponent' ++ ")\n" ++
+  " (" ++ rawMapString gameMap' ++ ")\n" ++
+  ")"
+
+
 
 rawMapString :: GameMap -> String
 rawMapString (GameMap air dirt space medipacks) =
