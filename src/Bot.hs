@@ -1227,26 +1227,93 @@ makeMove _ moves state =
   let (myMove,  opponentsMove)  = freezeActions state $ toMoves moves
       (myMove', opponentsMove') = (removeSelectionFromMove myMove,
                                    removeSelectionFromMove opponentsMove)
+      wormHealths'              = wormHealths state
       wormPositions'            = wormPositions state
+      gameMap'                  = gameMap state
   in -- assertValidState state  myMove  opponentsMove  $
-     incrementRound                                                                                       $
-     setOpponentsLastMove      state   opponentsMove                                                      $
-     advanceWormSelections                                                                                $
-     cleanUpDeadWorms                                                                                     $
-     conditionally (isAShootMove myMove')           (makeMyShootMove           myMove')                   $
-     conditionally (isAShootMove opponentsMove')    (makeOpponentsShootMove    opponentsMove')            $
-     conditionally (isASnowballMove myMove')        (makeMySnowballMove        myMove')                   $
-     conditionally (isASnowballMove opponentsMove') (makeOpponentsSnowballMove opponentsMove')            $
-     conditionally (isABananaMove myMove')          (makeMyBananaMove          myMove')                   $
-     conditionally (isABananaMove opponentsMove')   (makeOpponentsBananaMove   opponentsMove')            $
-     conditionally (isADigMove myMove')             (makeMyDigMove             myMove')                   $
-     conditionally (isADigMove opponentsMove')      (makeOpponentsDigMove      opponentsMove')            $
-     conditionally (isADigMove myMove' && isADigMove opponentsMove') (collideWorms wormPositions')        $
-     conditionally (isAMoveMove myMove')            (makeMyMoveMove wormPositions' myMove')               $
-     conditionally (isAMoveMove opponentsMove')     (makeOpponentsMoveMove wormPositions' opponentsMove') $
-     conditionally (hasASelection myMove)           (makeMySelection           myMove)                    $
-     conditionally (hasASelection opponentsMove)    (makeOpponentsSelection    opponentsMove)             $
-     tickFreezeDurations                                                                                  $
+
+      -- Post movement actions
+     incrementRound                                  $
+     setOpponentsLastMove      state   opponentsMove $
+     advanceWormSelections                           $
+     cleanUpDeadWorms                                $
+
+     (\ stateAfterSelections ->
+        let thisWormsCoord' = thisWormsCoord state
+            thatWormsCoord' = thatWormsCoord state
+            thisWormsId     = thisPlayersCurrentWormId state
+            thatWormsId     = thatPlayersCurrentWormId state
+        in -- Shoot
+           conditionally (isAShootMove myMove' || isAShootMove opponentsMove')
+           (\ stateAfterBlast ->
+              let gameMapAfterBlast       = gameMap stateAfterBlast
+                  wormPositionsAfterBlast = wormPositions stateAfterBlast
+              in conditionally (isAShootMove myMove')
+                 (makeMyShootMove thisWormsCoord' thisWormsId gameMapAfterBlast wormPositionsAfterBlast myMove') $
+                 conditionally (isAShootMove opponentsMove')
+                 (makeOpponentsShootMove thatWormsCoord' thatWormsId gameMapAfterBlast wormPositionsAfterBlast opponentsMove') stateAfterBlast) $
+           
+           -- Snowballs
+           conditionally (isASnowballMove myMove')
+             (makeMySnowballMove thisWormsId
+                                 thisWormsCoord'
+                                 (thisWormHasSnowballsLeft state)
+                                 gameMap'
+                                 wormPositions'
+                                 myMove') $
+           conditionally (isASnowballMove opponentsMove')
+             (makeOpponentsSnowballMove thatWormsId
+                                        thatWormsCoord'
+                                        (thatWormHasSnowballsLeft state)
+                                        gameMap'
+                                        wormPositions'
+                                        opponentsMove') $
+           
+           -- Bananas
+           conditionally (isABananaMove myMove' || isABananaMove opponentsMove')
+           (\ stateAfterDig ->
+              let gameMapPriorToBlast       = gameMap stateAfterDig
+                  wormPositionsPriorToBlast = wormPositions stateAfterDig
+              in conditionally (isABananaMove myMove')
+                 (makeMyBananaMove thisWormsId
+                                   thisWormsCoord'
+                                   (thisWormHasBananasLeft stateAfterDig)
+                                   gameMapPriorToBlast
+                                   wormPositionsPriorToBlast
+                                   myMove') $
+                 conditionally (isABananaMove opponentsMove')
+                 (makeOpponentsBananaMove thatWormsId
+                                          thatWormsCoord'
+                                          (thatWormHasBananasLeft stateAfterDig)
+                                          gameMapPriorToBlast
+                                          wormPositionsPriorToBlast
+                                          opponentsMove') stateAfterDig) $
+           
+           -- Dig
+           conditionally (isADigMove myMove')
+             (makeMyDigMove thisWormsCoord' gameMap' myMove') $
+           conditionally (isADigMove opponentsMove')
+             (makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove') $
+           
+           -- Move
+           conditionally (isAMoveMove myMove' && isAMoveMove opponentsMove')
+             (collideWorms wormHealths' wormPositions' gameMap') $
+           conditionally (isAMoveMove myMove')
+             (makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove') $
+           conditionally (isAMoveMove opponentsMove')
+             (makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove')
+              stateAfterSelections) $
+
+     -- Select
+     conditionally (hasASelection myMove)
+       (makeMySelection           myMove) $
+     conditionally (hasASelection opponentsMove)
+       (makeOpponentsSelection    opponentsMove) $
+
+     -- Tick freeze durations
+     tickFreezeDurations $
+
+     -- Lava Damage
      dealLavaDamage state
 
 conditionally :: Bool -> ModifyState -> ModifyState
@@ -1264,11 +1331,16 @@ cleanUpDeadWorms state =
 
 -- We never swap here because I'm not sure how worth while it is to
 -- simulate that.
-collideWorms :: WormPositions -> ModifyState
-collideWorms originalWormPositions =
-  if aListContainsDuplicatedOpponentEntry originalWormPositions
-  then knockBackDamage . withWormPositions (always originalWormPositions)
-  else id
+collideWorms :: WormHealths -> WormPositions -> GameMap-> ModifyState
+collideWorms originalWormHealths originalWormPositions originalGameMap state =
+  if aListContainsDuplicatedOpponentEntry (wormPositions state)
+  then knockBackDamage $
+       withWormPositions (always originalWormPositions) $
+       withWormHealths (always originalWormHealths) $
+       -- This one is valid because we can't also have had the dirt on
+       -- the map destroyed and lava doesn't form part of the map.
+       state { gameMap = originalGameMap }
+  else state
 
 isOnLavaForRound :: Int -> Coord -> Bool
 isOnLavaForRound currentRound' coord' =
@@ -1441,140 +1513,130 @@ withWormBananas :: WithWormFacts
 withWormBananas f state@(State { wormBananas = wormBananas' }) =
   state { wormBananas = f wormBananas' }
 
-makeMyBananaMove :: Move -> ModifyState
-makeMyBananaMove this state =
+makeMyBananaMove :: WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
+makeMyBananaMove wormId' coord' hasBananasLeft gameMapPriorToBlast wormPositionsPriorToBlast this =
   throwBanana this
-              thisPlayersCurrentWormId
-              thisWormsCoord
-              thisWormHasBananasLeft
+              wormId'
+              coord'
+              hasBananasLeft
+              gameMapPriorToBlast
+              wormPositionsPriorToBlast
               decrementThisWormsBananas
               awardPointsToThisPlayerForDigging
               awardPointsToThisPlayerForDamage
               penaliseThisPlayerForDamage
               awardPointsToThisPlayerForMissing
               awardPointsToThisPlayerForKillingAnEnemy
-              state
 
-makeOpponentsBananaMove :: Move -> ModifyState
-makeOpponentsBananaMove that state =
+makeOpponentsBananaMove :: WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
+makeOpponentsBananaMove wormId' coord' hasBananasLeft gameMapPriorToBlast wormPositionsPriorToBlast that =
   throwBanana that
-              thatPlayersCurrentWormId
-              thatWormsCoord
-              thatWormHasBananasLeft
+              wormId'
+              coord'
+              hasBananasLeft
+              gameMapPriorToBlast
+              wormPositionsPriorToBlast
               decrementThatWormsBananas
               awardPointsToThatPlayerForDigging
               awardPointsToThatPlayerForDamage
               penaliseThatPlayerForDamage
               awardPointsToThatPlayerForMissing
               awardPointsToThatPlayerForKillingAnEnemy
-              state
 
-throwBanana :: Move -> (State -> WormId) -> (State -> Coord) -> (State -> Bool) -> ModifyState -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> ModifyState
+throwBanana :: Move -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> ModifyState -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> ModifyState
 throwBanana move'
-            playersCurrentWormId'
-            wormsCoord'
-            wormHasBananasLeft'
+            wormId'
+            coord'
+            hasBananasLeft
+            gameMapPriorToBlast
+            wormPositionsPriorToBlast
             decrementWormsBananas'
             awardPointsToPlayerForDigging'
             awardPointsToPlayerForDamage'
             penalisePlayerForDamage'
             awardPointsToPlayerForMissing'
-            awardPointsToPlayerForKillingAnEnemy'
-            state =
-  let bananaMove       = if isABananaMove move' then Just move' else Nothing
-      wormsId'         = playersCurrentWormId' state
-      destinationBlock = bananaMove >>=
-        (\ bananaMove' -> bananaMoveDestination wormHasBananasLeft' wormsCoord' wormsId' bananaMove' state)
+            awardPointsToPlayerForKillingAnEnemy' =
+  let destinationBlock = displaceToBananaDestination move' coord'
       -- TODO: looks very similar to L:2286
-      isValid          = isJust destinationBlock
+      isValid          = hasBananasLeft && isJust destinationBlock
       target           = fromJust destinationBlock
-  in (if isValid
-      then decrementWormsBananas' .
-           bananaBlast wormsId'
-                       awardPointsToPlayerForDigging'
-                       awardPointsToPlayerForDamage'
-                       penalisePlayerForDamage'
-                       awardPointsToPlayerForMissing'
-                       awardPointsToPlayerForKillingAnEnemy'
-                       state
-                       target
-      else id) state
+  in if isValid
+     then decrementWormsBananas' .
+          bananaBlast wormId'
+                      gameMapPriorToBlast
+                      wormPositionsPriorToBlast
+                      awardPointsToPlayerForDigging'
+                      awardPointsToPlayerForDamage'
+                      penalisePlayerForDamage'
+                      awardPointsToPlayerForMissing'
+                      awardPointsToPlayerForKillingAnEnemy'
+                      target
+     else id
 
-bananaMoveDestination :: (State -> Bool) -> (State -> Coord) -> WormId -> Move -> State -> Maybe Coord
-bananaMoveDestination currentWormHasBananasLeft
-                      currentWormCoord
-                      wormId'
-                      move
-                      state =
-  let move'     = if currentWormHasBananasLeft state then Just move else Nothing
-      wormCoord = if (aListContainsId wormId' $ wormPositions state) then (Just $ currentWormCoord state) else Nothing
-  in wormCoord >>= (\ coord' -> move' >>= (flip displaceToBananaDestination) coord')
-
-makeMySnowballMove :: Move -> ModifyState
-makeMySnowballMove this state =
+makeMySnowballMove ::  WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
+makeMySnowballMove wormId' coord' hasSnowballsLeft gameMap' wormPositions' this =
   throwSnowball this
-                thisPlayersCurrentWormId
-                thisWormsCoord
-                thisWormHasSnowballsLeft
+                wormId'
+                coord'
+                hasSnowballsLeft
+                gameMap'
+                wormPositions'
                 decrementThisWormsSnowballs
                 awardThisPlayerForFreezingAWorm
                 penaliseThisPlayerForFreezingAWorm
                 awardPointsToThisPlayerForMissing
-                state
 
-makeOpponentsSnowballMove :: Move -> ModifyState
-makeOpponentsSnowballMove that state =
+makeOpponentsSnowballMove :: WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
+makeOpponentsSnowballMove wormId' coord' hasSnowballsLeft gameMap' wormPositions' that =
   throwSnowball that
-                thatPlayersCurrentWormId
-                thatWormsCoord
-                thatWormHasSnowballsLeft
+                wormId'
+                coord'
+                hasSnowballsLeft
+                gameMap'
+                wormPositions'
                 decrementThatWormsSnowballs
                 awardThatPlayerForFreezingAWorm
                 penaliseThatPlayerForFreezingAWorm
                 awardPointsToThatPlayerForMissing
-                state
 
-throwSnowball :: Move -> (State -> WormId) -> (State -> Coord) -> (State -> Bool) -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState
+throwSnowball :: Move -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState
 throwSnowball move'
-              playersCurrentWormId'
-              wormsCoord'
-              wormHasSnowballsLeft'
+              wormId'
+              coord'
+              hasSnowballsLeft
+              gameMap'
+              wormPositions'
               decrementWormsSnowballs'
               awardPlayerForFreezingAWorm'
               penalisePlayerForFreezingAWorm'
-              awardPointsToPlayerForMissing'
-              state =
-  let snowballMove       = if isASnowballMove move' then Just move' else Nothing
-      wormsId'         = playersCurrentWormId' state
-      destinationBlock = snowballMove >>=
-        (\ snowballMove' -> bananaMoveDestination wormHasSnowballsLeft'
-                                                  wormsCoord'
-                                                  wormsId'
-                                                  (snowballMoveToBananaRange snowballMove')
-                                                  state)
+              awardPointsToPlayerForMissing' =
+  let destinationBlock = displaceToBananaDestination (snowballMoveToBananaRange move') coord'
       -- TODO: looks very similar to L:2286
-      isValid          = isJust destinationBlock
+      isValid          = hasSnowballsLeft && isJust destinationBlock
       target           = fromJust destinationBlock
-  in (if isValid
-      then decrementWormsSnowballs' .
-           snowballBlast wormsId'
-                         awardPlayerForFreezingAWorm'
-                         penalisePlayerForFreezingAWorm'
-                         awardPointsToPlayerForMissing'
-                         target
-      else id) state
+  in if isValid
+     then decrementWormsSnowballs' .
+          snowballBlast wormId'
+                        gameMap'
+                        wormPositions'
+                        awardPlayerForFreezingAWorm'
+                        penalisePlayerForFreezingAWorm'
+                        awardPointsToPlayerForMissing'
+                        target
+     else id
 
-snowballBlast :: WormId -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+snowballBlast :: WormId -> GameMap -> WormPositions -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 snowballBlast wormId'
+              gameMap'
+              wormPositions'
               awardPlayerForFreezingAWorm'
               penalisePlayerForFreezingAWorm'
               awardPointsToPlayerForMissing'
               targetCoord
               state =
-  let gameMap'          = gameMap state
-      targetIsDeepSpace = deepSpaceAt targetCoord gameMap'
+  let targetIsDeepSpace = deepSpaceAt targetCoord gameMap'
       potentialHits     = catMaybes $ map ($ targetCoord) snowballBlastCoordDeltasInRange
-      wormHits          = filter ((flip containsAnyWorm) state) potentialHits
+      wormHits          = filter ((flip containsAnyWorm) wormPositions') potentialHits
   in if targetIsDeepSpace || wormHits == []
      then awardPointsToPlayerForMissing' state
      else foldl' (\ state' nextWormCoord ->
@@ -1711,8 +1773,8 @@ blastCoordDeltasInRange =
         1,  1,  1,
             2]
 
-containsAnyWorm :: Coord -> State -> Bool
-containsAnyWorm coord' = anyWormData (== coord') . wormPositions
+containsAnyWorm :: Coord -> WormPositions -> Bool
+containsAnyWorm coord' = anyWormData (== coord')
 
 bananaBlastRadius :: Int
 bananaBlastRadius = 2
@@ -1739,28 +1801,28 @@ damageTemplate =
     squareAbsFloating :: Int -> Double
     squareAbsFloating x = fromIntegral $ abs x * abs x
 
-bananaBlast :: WormId -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> State -> Coord -> ModifyState
+bananaBlast :: WormId -> GameMap -> WormPositions -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> Coord -> ModifyState
 bananaBlast wormId'
+            gameMapPriorToBlast
+            wormPositions'
             awardPointsForDigging'
             awardPointsForDamage'
             penaliseForDamage'
             awardPointsForMissing'
             rewardKill
-            originalState
             targetCoord
             state =
-  let gameMap'          = gameMap originalState
-      targetIsDeepSpace = deepSpaceAt targetCoord gameMap'
+  let targetIsDeepSpace = deepSpaceAt targetCoord gameMapPriorToBlast
       potentialHits     = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
       -- Compute the things to hit off of the original state
-      wormHits          = filter ((flip containsAnyWorm) originalState . snd) potentialHits
-      dirtHits          = filter ((flip dirtAt)          gameMap'      . snd) potentialHits
-      packHits          = filter ((flip medipackAt)      gameMap'      . snd) potentialHits
+      wormHits          = filter ((flip containsAnyWorm) wormPositions'      . snd) potentialHits
+      dirtHits          = filter ((flip dirtAt)          gameMapPriorToBlast . snd) potentialHits
+      packHits          = filter ((flip medipackAt)      gameMapPriorToBlast . snd) potentialHits
       -- Effect the current state (could have changed as a result of
       -- the other worm blasting too)
       withWormsDamaged  = foldl' (\ state' (damage', nextWormHit) ->
                                     harmWorm wormId'
-                                             originalState
+                                             wormPositions'
                                              damage'
                                              (penaliseForDamage'    damage')
                                              (awardPointsForDamage' damage')
@@ -1825,29 +1887,27 @@ thisPlayersCurrentWormId = playerCurrentWormId . myPlayer
 thatPlayersCurrentWormId :: State -> WormId
 thatPlayersCurrentWormId = playerCurrentWormId . opponent
 
-makeMyMoveMove :: WormPositions -> Move -> ModifyState
-makeMyMoveMove wormPositions' this state =
+makeMyMoveMove :: WormPositions -> Coord -> WormId -> GameMap -> Move -> ModifyState
+makeMyMoveMove wormPositions' coord' wormId' gameMap' this =
   makeMoveMove this
-               (thisWormsCoord state)
-               (thisPlayersCurrentWormId state)
+               coord'
+               wormId'
                wormPositions'
-               (gameMap state)
+               gameMap'
                giveMedipackToThisWorm
                penaliseThisPlayerForAnInvalidCommand
                awardPointsToThisPlayerForMovingToAir
-               state
 
-makeOpponentsMoveMove :: WormPositions -> Move -> ModifyState
-makeOpponentsMoveMove wormPositions' that state =
+makeOpponentsMoveMove :: WormPositions -> Coord -> WormId -> GameMap -> Move -> ModifyState
+makeOpponentsMoveMove wormPositions' coord' wormId' gameMap' that =
   makeMoveMove that
-               (thatWormsCoord state)
-               (thatPlayersCurrentWormId state)
+               coord'
+               wormId'
                wormPositions'
-               (gameMap state)
+               gameMap'
                giveMedipackToThatWorm
                penaliseThatPlayerForAnInvalidCommand
                awardPointsToThatPlayerForMovingToAir
-               state
 
 makeMoveMove :: Move -> Coord -> WormId -> WormPositions -> GameMap -> ModifyState -> ModifyState -> ModifyState -> ModifyState
 makeMoveMove move
@@ -1863,7 +1923,7 @@ makeMoveMove move
                                anyWormData (== target) wormPositions')
       targetCell        = mapAt target gameMap'
       targetIsValid     = moveIsValid && (targetCell == AIR || targetCell == MEDIPACK)
-      targetIsAMedipack = targetCell == MEDIPACK
+      targetIsAMedipack = moveIsValid && targetCell == MEDIPACK
       -- TODO: Handle collisions in getting the medipack
       medipackWorm      = if targetIsAMedipack
                           then giveMedipackToWorm . removeMedipack target
@@ -1995,26 +2055,34 @@ isADigMove (Move x) = x >= 16 && x < 24
 shiftDigToMoveRange :: Move -> Move
 shiftDigToMoveRange (Move x) = Move $ x - 8
 
-makeMyDigMove :: Move -> ModifyState
-makeMyDigMove this state =
-  makeDigMove this (thisWormsCoord state) awardPointsToThisPlayerForDigging penaliseThisPlayerForAnInvalidCommand state
+makeMyDigMove :: Coord -> GameMap -> Move -> ModifyState
+makeMyDigMove coord' gameMap' this =
+  makeDigMove this
+              coord'
+              gameMap'
+              awardPointsToThisPlayerForDigging
+              penaliseThisPlayerForAnInvalidCommand
 
-makeOpponentsDigMove :: Move -> ModifyState
-makeOpponentsDigMove that state =
-  makeDigMove that (thatWormsCoord state) awardPointsToThatPlayerForDigging penaliseThatPlayerForAnInvalidCommand state
+makeOpponentsDigMove :: Coord -> GameMap -> Move -> ModifyState
+makeOpponentsDigMove coord' gameMap' that =
+  makeDigMove that
+              coord'
+              gameMap'
+              awardPointsToThatPlayerForDigging
+              penaliseThatPlayerForAnInvalidCommand
 
-makeDigMove :: Move -> Coord -> ModifyState -> ModifyState -> ModifyState
-makeDigMove move wormsCoord awardPointsForDigging' penalise state =
+makeDigMove :: Move -> Coord -> GameMap -> ModifyState -> ModifyState -> ModifyState
+makeDigMove move wormsCoord gameMap' awardPointsForDigging' penalise =
   -- Target of move works with moves and not digs
   let moveAsDig        = shiftDigToMoveRange move
       target           = displaceCoordByMove wormsCoord moveAsDig
-      targetCell       = mapAt target (gameMap state)
+      targetCell       = mapAt target gameMap'
       notDiggingOffMap = not $ moveWouldGoOOB wormsCoord moveAsDig
       targetIsValid    = notDiggingOffMap && targetCell == DIRT
       digOutTarget     = if targetIsValid then removeDirtFromMapAt target else id
       penaliseBadDig   = if not targetIsValid then penalise else id
       awardPoints      = if targetIsValid then awardPointsForDigging' else penaliseBadDig
-  in awardPoints $ digOutTarget state
+  in awardPoints . digOutTarget
 
 awardPointsForDigging :: Player -> Player
 awardPointsForDigging = modifyScore 7
@@ -2037,47 +2105,47 @@ isOpponentWorm (WormId 8)  = True
 isOpponentWorm (WormId 12) = True
 isOpponentWorm _           = False
 
-makeMyShootMove :: Move -> ModifyState
-makeMyShootMove this state =
-  makeShootMove (thisWormsCoord state)
-                (thisPlayersCurrentWormId state)
+makeMyShootMove :: Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
+makeMyShootMove coord' wormId' gameMap' wormPositions' this =
+  makeShootMove coord'
+                wormId'
                 this
-                (gameMap state)
-                state
+                gameMap'
+                wormPositions'
                 penaliseThisPlayerForHittingHisFriendlyWorm
                 awardPointsToThisPlayerForHittingAnEnemy
                 awardPointsToThisPlayerForKillingAnEnemy
-                awardPointsToThisPlayerForMissing state
+                awardPointsToThisPlayerForMissing
 
-makeOpponentsShootMove :: Move -> ModifyState
-makeOpponentsShootMove that state =
-  makeShootMove (thatWormsCoord state)
-                (thatPlayersCurrentWormId state)
+makeOpponentsShootMove :: Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
+makeOpponentsShootMove coord' wormId' gameMap' wormPositions' that =
+  makeShootMove coord'
+                wormId'
                 that
-                (gameMap state)
-                state
+                gameMap'
+                wormPositions'
                 penaliseThatPlayerForHittingHisFriendlyWorm
                 awardPointsToThatPlayerForHittingAnEnemy
                 awardPointsToThatPlayerForKillingAnEnemy
-                awardPointsToThatPlayerForMissing state
+                awardPointsToThatPlayerForMissing
 
-makeShootMove :: Coord -> WormId -> Move -> GameMap -> State -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState
+makeShootMove :: Coord -> WormId -> Move -> GameMap -> WormPositions -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState
 makeShootMove wormsPosition
               wormId'
               move
               gameMap'
-              state
+              wormPositions'
               penalise
               awardPlayer
               awardPlayerForKill
               awardPointsForMiss =
       let shotsDir        = directionOfShot move
-          coord           = hitsWorm wormsPosition gameMap' shotsDir $ wormPositions state
+          coord           = hitsWorm wormsPosition gameMap' shotsDir wormPositions'
           isHit           = isJust coord
           coord'          = fromJust coord
       in if isHit
          then harmWormWithRocket wormId'
-                                 state
+                                 wormPositions'
                                  penalise
                                  awardPlayer
                                  awardPlayerForKill
@@ -2116,14 +2184,14 @@ awardPointsToThatPlayerForKillingAnEnemy =
 awardPointsForKillingAnEnemy :: ModifyPlayer
 awardPointsForKillingAnEnemy = modifyScore 40
 
-harmWormWithRocket :: WormId -> State -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+harmWormWithRocket :: WormId -> WormPositions -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 harmWormWithRocket wormId'
-                   originalState
+                   wormPositions'
                    penalisePlayer
                    awardPlayer
                    awardPlayerForKill =
   harmWorm wormId'
-           originalState
+           wormPositions'
            rocketDamage
            penalisePlayer
            awardPlayer
@@ -2143,16 +2211,16 @@ errorWithMessageIfJust _       x       = x
 -- NOTE: Worms set to zero health are flagged for later removal.
 -- Don't use a negative number because that's more difficult to test
 -- for.
-harmWorm :: WormId -> State -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+harmWorm :: WormId -> WormPositions -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 harmWorm shootingWormId'
-         originalState
+         wormPositions'
          damage'
          penalisePlayer
          awardPlayer
          awardPlayerForKill
          coord
          state =
-  let wormId'       = aListFindIdByData coord $ wormPositions originalState
+  let wormId'       = aListFindIdByData coord wormPositions'
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormHealth'   = aListFindDataById wormId' $ wormHealths state
       wormDied      = wormHealth' <= damage'
@@ -3335,7 +3403,7 @@ isValidMoveMove wormCoord state move =
       target       = mapAtCoord state targetCoord
   in moveIsNotOOB &&
      (target == AIR || target == MEDIPACK) &&
-     (not $ containsAnyWorm targetCoord state) == False
+     (not $ containsAnyWorm targetCoord (wormPositions state)) == False
 
 inRange :: Coord -> Coord -> Int -> Bool
 inRange xy' xy'' range' =
