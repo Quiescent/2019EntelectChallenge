@@ -3436,7 +3436,7 @@ isValidMoveMove wormCoord state move =
       target       = mapAtCoord state targetCoord
   in moveIsNotOOB &&
      (target == AIR || target == MEDIPACK) &&
-     (not $ containsAnyWorm targetCoord (wormPositions state)) == False
+     (not $ containsAnyWorm targetCoord (wormPositions state))
 
 inRange :: Coord -> Coord -> Int -> Bool
 inRange xy' xy'' range' =
