@@ -1239,10 +1239,10 @@ makeMove _ moves state =
      cleanUpDeadWorms                                $
 
      (\ stateAfterSelections ->
-        let thisWormsCoord' = thisWormsCoord state
-            thatWormsCoord' = thatWormsCoord state
-            thisWormsId     = thisPlayersCurrentWormId state
-            thatWormsId     = thatPlayersCurrentWormId state
+        let thisWormsCoord' = thisWormsCoord           stateAfterSelections
+            thatWormsCoord' = thatWormsCoord           stateAfterSelections
+            thisWormsId     = thisPlayersCurrentWormId stateAfterSelections
+            thatWormsId     = thatPlayersCurrentWormId stateAfterSelections
         in -- Shoot
            conditionally (isAShootMove myMove' || isAShootMove opponentsMove')
            (\ stateAfterBlast ->
@@ -1439,20 +1439,18 @@ hasASelection :: Move -> Bool
 hasASelection (Move x) = x >= 256
 
 makeMySelection :: Move -> ModifyState
-makeMySelection this state =
+makeMySelection this =
   makeSelection this
                 thisPlayerHasSelectionsLeft
                 decrementThisPlayersSelections
                 mapThisPlayer
-                state
 
 makeOpponentsSelection :: Move -> ModifyState
-makeOpponentsSelection that state =
+makeOpponentsSelection that =
   makeSelection that
                 thatPlayerHasSelectionsLeft
                 decrementThatPlayersSelections
                 mapThatPlayer
-                state
 
 makeSelection :: Move -> (State -> Bool) -> ModifyState -> (ModifyPlayer -> ModifyState) -> ModifyState
 makeSelection move' playerHasSelectionsLeft' decrementPlayersSelections' mapPlayer state =
