@@ -583,6 +583,32 @@ spec = do
       noWormHarmed 20 (aListFromList [(1, startingHealth), (2, 20)]) `shouldBe`
       False
   describe "makeMove" $ do
+    context "failures found by the test harness" $ do
+      let aStateWhereWeFailedToProduceTheCorrectScore =
+            (State
+              (Just "nothing \"Player chose to do nothing\"")
+              218
+              (AList (-1) (100) (55) (3) (100) (-1))
+              (AList (-1) (538) (387) (655) (676) (-1))
+              (AList (-1) (3) (-1) (-1) (3) (-1))
+              (AList (-1) (-1) (3) (-1) (-1) (-1))
+              (AList (-1) (-1) (-1) (-1) (-1) (-1))
+              (Player 932 (WormId 2) (Selections 5))
+              (Player 948 (WormId 8) (Selections 5))
+              (GameMap
+               1962353098260910939400198348076859984513963232871126619234399090326665619892270985833273676209326695039633074935707140441755178860177006299921395265892017829452308692443709484681640883059817507523879694299904736557485989940013326380741352134068412776881383802976094753394186149493934224279967947958328394955398997525605120000
+               1274501690068101182794165057890351052183360314882867671467782537290329852263395216831110047932623983656469483743064261824510615924982334352536751593739250420856033796716442880996461640557383586282515998926671262760726455116706056151257526986677843034343429593309056118870730665986260608921857137658739799577650792787330727936
+               6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+               1978643211784836272485696144148420344918497545934470450078439369470751850024470382542996428993703553288881605695399977643272174256727320436097088476166638664576158383315353600))
+      it "should produce the correct score" $
+        makeMove True (fromMoves (Move 9) (Move 11)) aStateWhereWeFailedToProduceTheCorrectScore `shouldBe`
+        (incrementRound $
+         setOpponentsLastMove aStateWhereWeFailedToProduceTheCorrectScore (Move 11) $
+         mapThatPlayer (withScore 954) $
+         selectNextWorms (WormId 3) (WormId 8) $
+         awardPointsToThisPlayerForMovingToAir $
+         awardPointsToThatPlayerForMovingToAir $
+         aStateWhereWeFailedToProduceTheCorrectScore)
     -- TODO make this a property test...?
     it "should not change anything when it receives two 'nothing's" $
       makeMove True (fromMoves doNothing doNothing) aState `shouldBe`
@@ -933,7 +959,6 @@ spec = do
         (incrementRound $
          setOpponentsLastMoveToDummy $
          selectNextWormsDefault $
-         setOpponentsLastMoveToDummy $
          cleanUpDeadWorm (WormId 1) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(4, 3)]) $
@@ -2142,6 +2167,9 @@ bananaIntoDirtFromHim = Move 104
 
 hasScore :: Int -> Player -> Bool
 hasScore score' (Player score'' _ _) = score' == score''
+
+withScore :: Int -> Player -> Player
+withScore score' (Player _ x y) = Player score' x y
 
 oppositeShot :: Move -> Move
 oppositeShot (Move x) = Move ((x + 4) `mod` 8)
