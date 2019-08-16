@@ -92,12 +92,12 @@ instance NFData AList where
 
 aListReadableShow :: AList -> String
 aListReadableShow (AList a b c d e f) =
-  "(AList " ++
-  show a ++ " " ++
-  show b ++ " " ++
-  show c ++ " " ++
-  show d ++ " " ++
-  show e ++ " " ++
+  "(AList (" ++
+  show a ++ ") (" ++
+  show b ++ ") (" ++
+  show c ++ ") (" ++
+  show d ++ ") (" ++
+  show e ++ ") (" ++
   show f ++ ")"
 
 wormIds :: [WormId]
@@ -422,8 +422,7 @@ readableShow (State opponentsLastCommand'
   " " ++ aListReadableShow frozenDurations' ++ "\n" ++
   " (" ++ show myPlayer' ++ ")\n" ++
   " (" ++ show opponent' ++ ")\n" ++
-  " (" ++ rawMapString gameMap' ++ ")\n" ++
-  ")"
+  " (" ++ rawMapString gameMap' ++ "))\n"
 
 
 

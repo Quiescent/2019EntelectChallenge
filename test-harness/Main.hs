@@ -123,4 +123,3 @@ tickState :: Move -> Move -> State -> State
 tickState thisMove thatMove state =
   -- TODO do we swap?! /shrug
   makeMove True (fromMoves thisMove thatMove) state
-
