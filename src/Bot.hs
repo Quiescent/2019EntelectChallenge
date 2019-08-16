@@ -3431,7 +3431,7 @@ targetOfMoveMove targetOfMove' state move =
 
 isValidMoveMove :: Coord -> State -> Move -> Bool
 isValidMoveMove wormCoord state move =
-  let moveIsNotOOB = moveWouldGoOOB wormCoord move
+  let moveIsNotOOB = not $ moveWouldGoOOB wormCoord move
       targetCoord  = displaceCoordByMove wormCoord move
       target       = mapAtCoord state targetCoord
   in moveIsNotOOB &&
