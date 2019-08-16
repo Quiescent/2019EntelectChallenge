@@ -59,7 +59,21 @@ simulateAndCheckRounds dirs@(directory:_) = do
         then do
                _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
                stateDiff <- diff (show nextState) (show simulatedNextState)
-               return (Failure ("Failed for: " ++ path ++ "\nDiff:\n" ++ stateDiff ++ "\nExpected:\n" ++ show nextState ++ "\nBut got:\n" ++ show simulatedNextState ++ "\nReadable input state: \n" ++ readableShow currentState))
+               return (Failure ("Failed for: " ++
+                                path ++
+                                "\nDiff:\n" ++
+                                stateDiff ++
+                                "\nExpected:\n" ++
+                                show nextState ++
+                                "\nBut got:\n" ++
+                                show simulatedNextState ++
+                                "\nReadable input state: \n" ++
+                                readableShow currentState ++
+                                "\nMoves made: (" ++
+                                show thisMove ++
+                                ", " ++
+                                show thatMove ++
+                                ")"))
         else iter simulatedNextState (nextPath:paths)
     iter _            _                     = return Success
 
