@@ -413,7 +413,7 @@ readableShow (State opponentsLastCommand'
                     opponent'
                     gameMap') =
   "(State\n" ++
-  " " ++ show opponentsLastCommand' ++ "\n" ++
+  " (" ++ show opponentsLastCommand' ++ ")\n" ++
   " " ++ show currentRound' ++ "\n" ++
   " " ++ aListReadableShow wormHealths' ++ "\n" ++
   " " ++ aListReadableShow wormPositions' ++ "\n" ++
