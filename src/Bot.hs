@@ -1033,7 +1033,7 @@ readGameState r = do
 -- 3. shift the select;
 -- 4. check the range of the remaining number;
 -- 5. extract and shift according to the type of move;
-data Move = Move Int
+data Move = Move !Int
   deriving (Show, Eq)
 
 instance NFData Move where
@@ -1042,7 +1042,6 @@ instance NFData Move where
 showCoord :: Coord -> String
 showCoord xy = case fromCoord xy of
     (x', y') -> show x' ++ " " ++ show y'
-
 
 formatMove :: (State -> Coord) -> (Move -> ModifyState) -> Move -> Coord -> State -> String
 -- Shoot
@@ -2929,19 +2928,19 @@ startBot g = do
   _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeChannel)
   liftIO $ runRound initialRound' initialState stateChannel treeChannel
 
-data Wins = Wins Int
+data Wins = Wins !Int
   deriving (Eq)
 
 instance NFData Wins where
   rnf (Wins wins') = wins' `deepseq` ()
 
-data Played = Played Int
+data Played = Played !Int
   deriving (Eq)
 
 instance NFData Played where
   rnf (Played played') = played' `deepseq` ()
 
-data SuccessRecord = SuccessRecord Wins Played Move
+data SuccessRecord = SuccessRecord !Wins !Played !Move
   deriving (Eq)
 
 instance NFData SuccessRecord where
