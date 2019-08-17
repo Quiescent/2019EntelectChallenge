@@ -1669,7 +1669,8 @@ assertValidState previousState myMove opponentsMove state =
                  ", invalidWormHealths: " ++ show invalidWormHealths ++
                  ", coordinatesOOB: " ++ show coordinatesOOB ++ ".\n" ++
                  "Moving from:\n" ++ show previousState ++ "\n" ++
-                 "To:\n" ++ show state)
+                 "To:\n" ++ show state ++ "\n" ++
+                 "Readable input state:\n" ++ readableShow previousState)
      else state
 
 -- TODO I shouldn't even be doing this at all.
