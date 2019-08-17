@@ -1257,99 +1257,355 @@ toMoves (CombinedMove moves) =
   (Move $ moves .&. playerMoveMask,
    Move $ (moves .&. (playerMoveMask `shiftL` playersMoveShift)) `shiftR` playersMoveShift)
 
+data MoveType = MOVE
+              | DIG
+              | SHOOT
+              | THROW_BANANA
+              | THROW_SNOWBALL
+              | SELECT
+              | NOTHING
+  deriving (Show, Eq)
+
+decodeMoveType :: Move -> MoveType
+decodeMoveType move
+  | isAMoveMove     move = MOVE
+  | isADigMove      move = DIG
+  | isAShootMove    move = SHOOT
+  | isABananaMove   move = THROW_BANANA
+  | isASnowballMove move = THROW_SNOWBALL
+  | hasASelection   move = SELECT
+  | otherwise            = NOTHING
+
+-- Move ordering:
+--
+-- 1. Movement
+-- 2. Digging
+-- 3. Banana
+-- 4. Shooting
+-- 5. Snowball
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove _ moves state =
   let (myMove,  opponentsMove)  = freezeActions state $ toMoves moves
-      (myMove', opponentsMove') = (removeSelectionFromMove myMove,
-                                   removeSelectionFromMove opponentsMove)
-      wormHealths'              = wormHealths state
-      wormPositions'            = wormPositions state
-      gameMap'                  = gameMap state
   in -- assertValidState state  myMove  opponentsMove  $
 
-      -- Post movement actions
+     -- Post movement actions
      incrementRound                                  $
      setOpponentsLastMove      state   opponentsMove $
      advanceWormSelections                           $
      cleanUpDeadWorms                                $
 
-     (\ stateAfterSelections ->
-        let thisWormsCoord' = thisWormsCoord           stateAfterSelections
-            thatWormsCoord' = thatWormsCoord           stateAfterSelections
-            thisWormsId     = thisPlayersCurrentWormId stateAfterSelections
-            thatWormsId     = thatPlayersCurrentWormId stateAfterSelections
-        in -- Shoot
-           conditionally (isAShootMove myMove' || isAShootMove opponentsMove')
-           (\ stateAfterBlast ->
-              let gameMapAfterBlast       = gameMap stateAfterBlast
-                  wormPositionsAfterBlast = wormPositions stateAfterBlast
-              in conditionally (isAShootMove myMove')
-                 (makeMyShootMove thisWormsCoord' thisWormsId gameMapAfterBlast wormPositionsAfterBlast myMove') $
-                 conditionally (isAShootMove opponentsMove')
-                 (makeOpponentsShootMove thatWormsCoord' thatWormsId gameMapAfterBlast wormPositionsAfterBlast opponentsMove') stateAfterBlast) $
-           
-           -- Snowballs
-           conditionally (isASnowballMove myMove')
-             (makeMySnowballMove thisWormsId
-                                 thisWormsCoord'
-                                 (thisWormHasSnowballsLeft state)
+     -- Make moves
+     go (decodeMoveType myMove) (decodeMoveType opponentsMove) myMove opponentsMove $
+
+     -- Pre move actions
+     tickFreezeDurations $
+     dealLavaDamage state
+  where
+    go myMoveType opponentsMoveType myMove opponentsMove state' =
+      makeMove' myMoveType opponentsMoveType state'
+      where
+        wormHealths'              = wormHealths state'
+        wormPositions'            = wormPositions state'
+        gameMap'                  = gameMap state'
+        thisWormsCoord'           = thisWormsCoord state'
+        thatWormsCoord'           = thatWormsCoord state'
+        thisWormsId               = thisPlayersCurrentWormId state'
+        thatWormsId               = thatPlayersCurrentWormId state'
+        thisWormHasBananasLeft'   = thisWormHasBananasLeft state'
+        thatWormHasBananasLeft'   = thisWormHasBananasLeft state'
+        thisWormHasSnowballsLeft' = thisWormHasSnowballsLeft state'
+        thatWormHasSnowballsLeft' = thatWormHasSnowballsLeft state'
+        makeMove' MOVE            MOVE =
+          collideWorms wormHealths' wormPositions' gameMap' .
+          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove .
+          makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
+        makeMove' MOVE            DIG =
+          makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove .
+          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
+        makeMove' MOVE            SHOOT =
+          go NOTHING SHOOT doNothing opponentsMove .
+          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
+        makeMove' MOVE            THROW_BANANA =
+          go NOTHING THROW_BANANA doNothing opponentsMove .
+          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
+        makeMove' MOVE            THROW_SNOWBALL =
+          go NOTHING THROW_SNOWBALL doNothing opponentsMove .
+          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
+        makeMove' MOVE            SELECT =
+          let opponentsMove'     = removeSelectionFromMove opponentsMove
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType opponentsMoveType' myMove opponentsMove' .
+             makeOpponentsSelection opponentsMove
+        makeMove' MOVE            NOTHING =
+          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
+        makeMove' DIG             DIG =
+          makeMyDigMove thisWormsCoord' gameMap' myMove .
+          makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
+        makeMove' DIG             SHOOT =
+          go NOTHING SHOOT doNothing opponentsMove .
+          makeMyDigMove thisWormsCoord' gameMap' myMove
+        makeMove' DIG             THROW_BANANA =
+          go NOTHING THROW_BANANA doNothing opponentsMove .
+          makeMyDigMove thisWormsCoord' gameMap' myMove
+        makeMove' DIG             THROW_SNOWBALL =
+          makeOpponentsSnowballMove thatWormsId
+                                    thatWormsCoord'
+                                    thatWormHasSnowballsLeft'
+                                    gameMap'
+                                    wormPositions'
+                                    opponentsMove .
+          makeMyDigMove thisWormsCoord' gameMap' myMove
+        makeMove' DIG             SELECT =
+          let opponentsMove'     = removeSelectionFromMove opponentsMove
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType opponentsMoveType' myMove opponentsMove' .
+             makeOpponentsSelection opponentsMove
+        makeMove' DIG             NOTHING =
+          makeMyDigMove thisWormsCoord' gameMap' myMove
+        makeMove' SHOOT           SHOOT =
+          makeMyShootMove thisWormsCoord'
+                          thisWormsId
+                          gameMap'
+                          wormPositions'
+                          myMove .
+          makeOpponentsShootMove thatWormsCoord'
+                                 thatWormsId
                                  gameMap'
                                  wormPositions'
-                                 myMove') $
-           conditionally (isASnowballMove opponentsMove')
-             (makeOpponentsSnowballMove thatWormsId
-                                        thatWormsCoord'
-                                        (thatWormHasSnowballsLeft state)
-                                        gameMap'
-                                        wormPositions'
-                                        opponentsMove') $
-           
-           -- Bananas
-           conditionally (isABananaMove myMove' || isABananaMove opponentsMove')
-           (\ stateAfterDig ->
-              let gameMapPriorToBlast       = gameMap stateAfterDig
-                  wormPositionsPriorToBlast = wormPositions stateAfterDig
-              in conditionally (isABananaMove myMove')
-                 (makeMyBananaMove thisWormsId
-                                   thisWormsCoord'
-                                   (thisWormHasBananasLeft stateAfterDig)
-                                   gameMapPriorToBlast
-                                   wormPositionsPriorToBlast
-                                   myMove') $
-                 conditionally (isABananaMove opponentsMove')
-                 (makeOpponentsBananaMove thatWormsId
-                                          thatWormsCoord'
-                                          (thatWormHasBananasLeft stateAfterDig)
-                                          gameMapPriorToBlast
-                                          wormPositionsPriorToBlast
-                                          opponentsMove') stateAfterDig) $
-           
-           -- Dig
-           conditionally (isADigMove myMove')
-             (makeMyDigMove thisWormsCoord' gameMap' myMove') $
-           conditionally (isADigMove opponentsMove')
-             (makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove') $
-           
-           -- Move
-           conditionally (isAMoveMove myMove' && isAMoveMove opponentsMove')
-             (collideWorms wormHealths' wormPositions' gameMap') $
-           conditionally (isAMoveMove myMove')
-             (makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove') $
-           conditionally (isAMoveMove opponentsMove')
-             (makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove')
-              stateAfterSelections) $
-
-     -- Select
-     conditionally (hasASelection myMove)
-       (makeMySelection           myMove) $
-     conditionally (hasASelection opponentsMove)
-       (makeOpponentsSelection    opponentsMove) $
-
-     -- Tick freeze durations
-     tickFreezeDurations $
-
-     -- Lava Damage
-     dealLavaDamage state
+                                 opponentsMove
+        makeMove' SHOOT           THROW_BANANA =
+          makeMyShootMove thisWormsCoord'
+                          thisWormsId
+                          gameMap'
+                          wormPositions'
+                          myMove .
+          makeOpponentsBananaMove thatWormsId
+                                  thatWormsCoord'
+                                  thatWormHasBananasLeft'
+                                  gameMap'
+                                  wormPositions'
+                                  opponentsMove
+        makeMove' SHOOT           THROW_SNOWBALL =
+          makeOpponentsSnowballMove thatWormsId
+                                    thatWormsCoord'
+                                    thatWormHasSnowballsLeft'
+                                    gameMap'
+                                    wormPositions'
+                                    opponentsMove .
+          makeMyShootMove thisWormsCoord'
+                          thisWormsId
+                          gameMap'
+                          wormPositions'
+                          myMove                          
+        makeMove' SHOOT           SELECT =
+          let opponentsMove'     = removeSelectionFromMove opponentsMove
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType opponentsMoveType' myMove opponentsMove' .
+             makeOpponentsSelection opponentsMove
+        makeMove' SHOOT           NOTHING =
+          makeMyShootMove thisWormsCoord'
+                          thisWormsId
+                          gameMap'
+                          wormPositions'
+                          myMove
+        makeMove' THROW_BANANA    THROW_BANANA =
+          makeMyBananaMove thisWormsId
+                           thisWormsCoord'
+                           thisWormHasBananasLeft'
+                           gameMap'
+                           wormPositions'
+                           myMove .
+          makeOpponentsBananaMove thatWormsId
+                                  thatWormsCoord'
+                                  thatWormHasBananasLeft'
+                                  gameMap'
+                                  wormPositions'
+                                  opponentsMove
+        makeMove' THROW_BANANA    THROW_SNOWBALL =
+          makeOpponentsSnowballMove thatWormsId
+                                    thatWormsCoord'
+                                    thatWormHasSnowballsLeft'
+                                    gameMap'
+                                    wormPositions'
+                                    opponentsMove .
+          makeMyBananaMove thisWormsId
+                           thisWormsCoord'
+                           thisWormHasBananasLeft'
+                           gameMap'
+                           wormPositions'
+                           myMove
+        makeMove' THROW_BANANA    SELECT =
+          let opponentsMove'     = removeSelectionFromMove opponentsMove
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType opponentsMoveType' myMove opponentsMove' .
+             makeOpponentsSelection opponentsMove
+        makeMove' THROW_BANANA    NOTHING =
+          makeMyBananaMove thisWormsId
+                           thisWormsCoord'
+                           thisWormHasBananasLeft'
+                           gameMap'
+                           wormPositions'
+                           myMove
+        makeMove' THROW_SNOWBALL  THROW_SNOWBALL =
+          makeMySnowballMove thisWormsId
+                             thisWormsCoord'
+                             thisWormHasSnowballsLeft'
+                             gameMap'
+                             wormPositions'
+                             myMove .
+          makeOpponentsSnowballMove thatWormsId
+                                    thatWormsCoord'
+                                    thatWormHasSnowballsLeft'
+                                    gameMap'
+                                    wormPositions'
+                                    opponentsMove
+        makeMove' THROW_SNOWBALL  SELECT =
+          let opponentsMove'     = removeSelectionFromMove opponentsMove
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType opponentsMoveType' myMove opponentsMove' .
+             makeOpponentsSelection opponentsMove
+        makeMove' THROW_SNOWBALL  NOTHING =
+          makeMySnowballMove thisWormsId
+                             thisWormsCoord'
+                             thisWormHasSnowballsLeft'
+                             gameMap'
+                             wormPositions'
+                             myMove
+        makeMove' SELECT          SELECT =
+          let myMove'            = removeSelectionFromMove myMove
+              opponentsMove'     = removeSelectionFromMove opponentsMove
+              myMoveType'        = decodeMoveType myMove'
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType' opponentsMoveType' myMove' opponentsMove' .
+             makeMySelection           myMove .
+             makeOpponentsSelection    opponentsMove
+        makeMove' SELECT          NOTHING =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
+        makeMove' DIG             MOVE =
+          makeMyDigMove thisWormsCoord' gameMap' myMove .
+          makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
+        makeMove' SHOOT           MOVE =
+          go SHOOT NOTHING myMove doNothing .
+          makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
+        makeMove' THROW_BANANA    MOVE =
+          go THROW_BANANA NOTHING myMove doNothing .
+          makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
+        makeMove' THROW_SNOWBALL  MOVE =
+          go THROW_SNOWBALL NOTHING myMove doNothing .
+          makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
+        makeMove' SELECT          MOVE =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
+        makeMove' NOTHING         MOVE =
+          makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
+        makeMove' SHOOT           DIG =
+          makeMyShootMove thisWormsCoord'
+                          thisWormsId
+                          gameMap'
+                          wormPositions'
+                          myMove .
+          makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
+        makeMove' THROW_BANANA    DIG =
+          go THROW_BANANA NOTHING myMove doNothing .
+          makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
+        makeMove' THROW_SNOWBALL  DIG =
+          makeMySnowballMove thisWormsId
+                             thisWormsCoord'
+                             thisWormHasSnowballsLeft'
+                             gameMap'
+                             wormPositions'
+                             myMove .
+          makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
+        makeMove' SELECT          DIG =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
+        makeMove' NOTHING         DIG =
+          makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
+        makeMove' THROW_BANANA    SHOOT =
+          makeOpponentsShootMove thatWormsCoord'
+                                 thatWormsId
+                                 gameMap'
+                                 wormPositions'
+                                 opponentsMove .
+          makeMyBananaMove thisWormsId
+                           thisWormsCoord'
+                           thisWormHasBananasLeft'
+                           gameMap'
+                           wormPositions'
+                           myMove
+        makeMove' THROW_SNOWBALL  SHOOT =
+          makeMySnowballMove thisWormsId
+                             thisWormsCoord'
+                             thisWormHasSnowballsLeft'
+                             gameMap'
+                             wormPositions'
+                             myMove .
+          makeOpponentsShootMove thatWormsCoord'
+                                 thatWormsId
+                                 gameMap'
+                                 wormPositions'
+                                 opponentsMove
+        makeMove' SELECT          SHOOT =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
+        makeMove' NOTHING         SHOOT =
+          makeOpponentsShootMove thatWormsCoord'
+                                 thatWormsId
+                                 gameMap'
+                                 wormPositions'
+                                 opponentsMove
+        makeMove' THROW_SNOWBALL  THROW_BANANA =
+          makeMySnowballMove thisWormsId
+                             thisWormsCoord'
+                             thisWormHasSnowballsLeft'
+                             gameMap'
+                             wormPositions'
+                             myMove .
+          makeOpponentsBananaMove thatWormsId
+                                  thatWormsCoord'
+                                  thatWormHasBananasLeft'
+                                  gameMap'
+                                  wormPositions'
+                                  opponentsMove
+        makeMove' SELECT          THROW_BANANA =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
+        makeMove' NOTHING         THROW_BANANA =
+          makeOpponentsBananaMove thatWormsId
+                                  thatWormsCoord'
+                                  thatWormHasBananasLeft'
+                                  gameMap'
+                                  wormPositions'
+                                  opponentsMove
+        makeMove' SELECT          THROW_SNOWBALL =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
+        makeMove' NOTHING         THROW_SNOWBALL =
+          makeOpponentsSnowballMove thatWormsId
+                                    thatWormsCoord'
+                                    thatWormHasSnowballsLeft'
+                                    gameMap'
+                                    wormPositions'
+                                    opponentsMove
+        makeMove' NOTHING         SELECT =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
+        makeMove' NOTHING         NOTHING = id
 
 conditionally :: Bool -> ModifyState -> ModifyState
 conditionally True  f = f
@@ -1384,6 +1640,8 @@ isOnLavaForRound currentRound' coord' =
 lavaDamage :: Int
 lavaDamage = 3
 
+-- TODO: come up with a clever way of not checking for lava on every
+-- worm every time.
 dealLavaDamage :: ModifyState
 dealLavaDamage state =
   let currentRound' = currentRound state
@@ -1398,6 +1656,7 @@ dealLavaDamage state =
           aListToList hits'
      else state
 
+-- TODO: You can still select whne you're frozen...
 freezeActions :: State -> (Move, Move) -> (Move, Move)
 freezeActions state (myMove, opponentsMove) =
   let frozenDurations' = frozenDurations state
