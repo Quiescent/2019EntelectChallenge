@@ -2850,6 +2850,7 @@ are in the minigame.
     - CLOSING NOTE [2019-08-17 Sat 11:38] \\
       Adding retrospectively
     :END:
+*** TODO Investigate why makeMoves is still allocating a lot of memory
 *** TODO Modify state rather than parsing it the whole time
 There are a couple of things that can only be inferred on the first
 round.  Like who has the bananas and how many he/she has.
