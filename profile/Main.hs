@@ -30,10 +30,10 @@ main = do
   guard (length args >= 1)
   let dataSetDirectory = head args
   let startFrom        = headMaybe $ tail args
-  let repeatTimes      = (headMaybe $ tail args) >>= tailMaybe >>= tailMaybe
+  let repeatTimes      = (tailMaybe $ tail args) >>= headMaybe
   when (isJust startFrom && (not $ isJust repeatTimes)) $
     liftIO $ putStrLn ("> Starting search from: " ++ show (fromJust startFrom))
-  when (isJust startFrom && (not $ isJust repeatTimes)) $
+  when (isJust startFrom && isJust repeatTimes) $
     liftIO $ putStrLn ("> Repeating search on: " ++
                        show (fromJust startFrom) ++
                        " " ++
