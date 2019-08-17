@@ -2864,7 +2864,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> CommsChannel SearchTree -> IO SearchTree
-treeAfterAlottedTime _ treeChannel = do
+treeAfterAlottedTime state treeChannel = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -2874,7 +2874,7 @@ treeAfterAlottedTime _ treeChannel = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then return searchTree -- (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
+        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           pollResult <- pollComms treeChannel
           let searchTree' = case pollResult of
@@ -3237,14 +3237,8 @@ digPlayRandomly g round' state moves rewards =
 killSearch :: StdGen -> Int -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
-killSearch g startingRound round' state SearchFront                moves =
-  case gameOver state startingRound round' of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        ->
-      let availableMoves = shootAndMoveMovesFrom state
-          (move, g')     = pickOneAtRandom g availableMoves
-          state'         = makeMove False move state
-      in playRandomly g' startingRound (round' + 1) state' (move:moves)
+killSearch g _             _      _     SearchFront                moves =
+  (SearchResult (Payoff (MyPayoff 0) (OpponentsPayoff 0) (MaxScore 0)) (reverse moves), g)
 killSearch g startingRound round' state tree@(SearchedLevel _ _ _) moves =
   case gameOver state startingRound round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
@@ -3263,13 +3257,8 @@ killSearch g
           myMove                 = successRecordMove myRecord
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
-          state'                 = makeMove False combinedMove state
-      in killSearch g''
-                    startingRound
-                    (round' + 1)
-                    state'
-                    SearchFront
-                    (combinedMove:moves)
+          -- state'                 = makeMove False combinedMove state
+      in (SearchResult (Payoff (MyPayoff 1) (OpponentsPayoff 1) (MaxScore 1)) (reverse (combinedMove:moves)), g'')
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
 findSubTree combinedMove stateTransitions =
@@ -3418,25 +3407,25 @@ myTotalWormHealth = aListSumMyEntries . wormHealths
 opponentsTotalWormHealth :: State -> Int
 opponentsTotalWormHealth = aListSumOpponentsEntries . wormHealths
 
-data OpponentsPayoff = OpponentsPayoff Int
+data OpponentsPayoff = OpponentsPayoff !Int
   deriving (Eq, Show)
 
 instance NFData OpponentsPayoff where
   rnf (OpponentsPayoff opponentsPayoff) = opponentsPayoff `deepseq` ()
 
-data MyPayoff = MyPayoff Int
+data MyPayoff = MyPayoff !Int
   deriving (Eq, Show)
 
 instance NFData MyPayoff where
   rnf (MyPayoff myPayoff) = myPayoff `deepseq` ()
 
-data MaxScore = MaxScore Int
+data MaxScore = MaxScore !Int
   deriving (Eq, Show)
 
 instance NFData MaxScore where
   rnf (MaxScore maxScore') = maxScore' `deepseq` ()
 
-data Payoff = Payoff MyPayoff OpponentsPayoff MaxScore
+data Payoff = Payoff !MyPayoff !OpponentsPayoff !MaxScore
   deriving (Eq, Show)
 
 instance NFData Payoff where
