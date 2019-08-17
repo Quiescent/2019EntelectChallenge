@@ -3228,7 +3228,7 @@ digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (Search
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
 digSearch g round' state SearchFront                moves rewards =
-  case digGameOver round' rewards of
+  case digGameOver round' rewards state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves = digMovesFrom state
@@ -3237,7 +3237,7 @@ digSearch g round' state SearchFront                moves rewards =
           reward'        = reward state state'
       in digPlayRandomly g' (round' + 1) state' (move:moves) (reward':rewards)
 digSearch g round' state tree@(SearchedLevel _ _ _) moves rewards =
-  case digGameOver round' rewards of
+  case digGameOver round' rewards state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        -> digSearchSearchedLevel g round' state tree moves rewards
 digSearch g
@@ -3246,7 +3246,7 @@ digSearch g
           (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves))
           moves
           rewards =
-  case digGameOver round' rewards of
+  case digGameOver round' rewards state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let (myRecord,        g')  = pickOneAtRandom g  myMoves
@@ -3286,7 +3286,7 @@ digSearchSearchedLevel g
 
 digPlayRandomly :: StdGen -> Int -> State -> Moves -> Rewards -> (SearchResult, StdGen)
 digPlayRandomly g round' state moves rewards =
-  case digGameOver round' rewards of
+  case digGameOver round' rewards state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves  = digMovesFrom state
@@ -3469,9 +3469,9 @@ gameOver state startingRound round' =
 digMaxScore :: MaxScore
 digMaxScore = (MaxScore 1)
 
-digGameOver :: Int -> Rewards -> GameOver
-digGameOver round' rewards =
-  if round' > maxDigRound
+digGameOver :: Int -> Rewards -> State -> GameOver
+digGameOver round' rewards state =
+  if round' > maxDigRound || ((aListCountMyEntries $ wormPositions state) == 0)
   then GameOver $ diffMax rewards
   else NoResult
 
