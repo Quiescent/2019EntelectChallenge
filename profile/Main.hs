@@ -31,8 +31,14 @@ main = do
   let dataSetDirectory = head args
   let startFrom        = headMaybe $ tail args
   let repeatTimes      = (headMaybe $ tail args) >>= tailMaybe >>= tailMaybe
-  when (isJust startFrom) $
-    liftIO $ putStrLn ("Starting search from: " ++ show (fromJust startFrom))
+  when (isJust startFrom && (not $ isJust repeatTimes)) $
+    liftIO $ putStrLn ("> Starting search from: " ++ show (fromJust startFrom))
+  when (isJust startFrom && (not $ isJust repeatTimes)) $
+    liftIO $ putStrLn ("> Repeating search on: " ++
+                       show (fromJust startFrom) ++
+                       " " ++
+                       show (fromJust repeatTimes) ++
+                       " times")
   runRIO app $ runDataSet dataSetDirectory startFrom repeatTimes
 
 runDataSet :: FilePath -> Maybe String -> Maybe String -> RIO App ()
