@@ -365,7 +365,7 @@ spec = do
           y'     = abs j `mod` mapDim
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
-      in (coord', zip coords (map (flip (inRange coord') 2) $ map snd coords))
+      in (coord', zip coords (map (flip (inRange coord') 2) coords))
          `shouldSatisfy`
          (all snd . snd)
     prop "should produce 13 possible coords when the from coord is at least 2 inside of borders" $ \ (i, j) ->
@@ -373,7 +373,7 @@ spec = do
           y'     = 2 + (abs j `mod` (mapDim - 4))
           coord' = toCoord x' y'
           coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
-      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . map snd . snd)
+      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . snd)
   describe "coordDeltasInRange" $ do
     prop "should always produce a coord within range of 5 (banana bomb range)" $  \ (i, j) ->
       let x'     = abs i `mod` mapDim

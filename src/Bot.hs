@@ -1991,21 +1991,48 @@ penaliseThisPlayerForDamage  damage' = mapThisPlayer (awardPointsForDamage (-dam
 penaliseThatPlayerForDamage :: Int -> ModifyState
 penaliseThatPlayerForDamage  damage' = mapThatPlayer (awardPointsForDamage (-damage'))
 
-blastCoordDeltasInRange :: [(Coord -> Maybe (Int, Coord))]
+bananaDamageAt :: Coord -> Coord -> Int
+bananaDamageAt centre coord' =
+  let (xCentre, yCentre) = fromCoord centre
+      (xCoord,  yCoord)  = fromCoord coord'
+  in switchDamage (xCentre - xCoord) (yCentre - yCoord)
+     where
+       -- Going in the order of the blastCoordDeltasInRange template
+       switchDamage 0    (-2) = 7
+       switchDamage (-1) (-1) = 11
+       switchDamage 0    (-1) = 13
+       switchDamage 1    (-1) = 11
+       switchDamage (-2) 0    = 7
+       switchDamage (-1) 0    = 13
+       switchDamage 0    0    = 20
+       switchDamage 1    0    = 13
+       switchDamage 2    0    = 7
+       switchDamage (-1) 1    = 11
+       switchDamage 0    1    = 13
+       switchDamage 1    1    = 11
+       switchDamage 0    2    = 7
+       switchDamage   _  _    = 0
+
+-- Damage Pattern (as per damage template)
+-- [     7,
+--   11,13,11,
+-- 7,13,20,13,7,
+--   11,13,11,
+--       7]
+
+blastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
 blastCoordDeltasInRange =
-  zipWith (\ (damage', dx) dy ->
+  zipWith (\ dx dy ->
               \ xy ->
-                fmap (\ x -> (damage', x)) $
                 fmap (uncurry toCoord) $
                 isOOB $
                 let (x', y') = fromCoord xy
                 in (x' + dx, y' + dy))
-  (zip damageTemplate
    [        0,
         -1, 0, 1,
     -2, -1, 0, 1, 2,
         -1, 0, 1,
-            0])
+            0]
    [       -2,
        -1, -1, -1,
     0,  0,  0,  0,  0,
@@ -2054,28 +2081,29 @@ bananaBlast wormId'
   let targetIsDeepSpace = deepSpaceAt targetCoord gameMapPriorToBlast
       potentialHits     = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
       -- Compute the things to hit off of the original state
-      wormHits          = filter ((flip containsAnyWorm) wormPositions'      . snd) potentialHits
-      dirtHits          = filter ((flip dirtAt)          gameMapPriorToBlast . snd) potentialHits
-      packHits          = filter ((flip medipackAt)      gameMapPriorToBlast . snd) potentialHits
+      wormHits          = filter ((flip containsAnyWorm) wormPositions')      potentialHits
+      dirtHits          = filter ((flip dirtAt)          gameMapPriorToBlast) potentialHits
+      packHits          = filter ((flip medipackAt)      gameMapPriorToBlast) potentialHits
       -- Effect the current state (could have changed as a result of
       -- the other worm blasting too)
-      withWormsDamaged  = foldl' (\ state' (damage', nextWormHit) ->
-                                    harmWorm wormId'
-                                             wormPositions'
-                                             damage'
-                                             (penaliseForDamage'    damage')
-                                             (awardPointsForDamage' damage')
-                                             rewardKill
-                                             nextWormHit
-                                             state')
+      withWormsDamaged  = foldl' (\ state' nextWormHit ->
+                                    let damage' = bananaDamageAt targetCoord nextWormHit
+                                    in harmWorm wormId'
+                                                wormPositions'
+                                                damage'
+                                                (penaliseForDamage'    damage')
+                                                (awardPointsForDamage' damage')
+                                                rewardKill
+                                                nextWormHit
+                                                state')
                           state
                           wormHits
-      withDirtRemoved   = foldl' (\ state' (_, dirtHit) ->
+      withDirtRemoved   = foldl' (\ state' dirtHit ->
                                     awardPointsForDigging' $ removeDirtFromMapAt dirtHit state')
                           withWormsDamaged dirtHits
   in if targetIsDeepSpace || (wormHits == [] && dirtHits == [] && packHits == [])
      then awardPointsForMissing' state
-     else foldl' (\ state' (_, packHit) -> removeMedipack packHit state')
+     else foldl' (\ state' packHit -> removeMedipack packHit state')
           withDirtRemoved packHits
 
 bananaCentreDamage :: Int
