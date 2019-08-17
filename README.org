@@ -2832,11 +2832,24 @@ are in the minigame.
     - CLOSING NOTE [2019-08-07 Wed 06:19]
     - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 17:15]
     :END:
-*** IN_PROGRESS Use a bit packed map instead of a HashMap
+*** DONE Use a bit packed map instead of a HashMap
+    CLOSED: [2019-08-17 Sat 11:37]
     :LOGBOOK:
+    - CLOSING NOTE [2019-08-17 Sat 11:37]
     - State "IN_PROGRESS" from "TODO"       [2019-08-07 Wed 06:19]
     :END:
-*** TODO Pass down whether there is a dig move
+*** DONE Remove Maybe from moves to avoid heap allocations
+    CLOSED: [2019-08-17 Sat 11:38]
+    :LOGBOOK:
+    - CLOSING NOTE [2019-08-17 Sat 11:38] \\
+      Adding retrospectively
+    :END:
+*** DONE Unroll move ordering and choice logic to avoid allocation and expensive checks
+    CLOSED: [2019-08-17 Sat 11:38]
+    :LOGBOOK:
+    - CLOSING NOTE [2019-08-17 Sat 11:38] \\
+      Adding retrospectively
+    :END:
 *** TODO Modify state rather than parsing it the whole time
 There are a couple of things that can only be inferred on the first
 round.  Like who has the bananas and how many he/she has.
@@ -2845,6 +2858,12 @@ round.  Like who has the bananas and how many he/she has.
 *** TODO Use the compiler!
 https://wiki.haskell.org/Performance/GHC
 https://wiki.haskell.org/Playing_by_the_rules
+*** DEFUNCT Pass down whether there is a dig move
+    :LOGBOOK:
+    - Note taken on [2019-08-17 Sat 11:37] \\
+      This is an obsolete optimisation because my search doesn't work this
+      way anymore.
+    :END:
 ** TODO Only kill worms at the end of a round
 ** TODO Use a better scoring function during the kill search
 ** TODO Use confidence in the dig search, but correct the formula for different maximums
