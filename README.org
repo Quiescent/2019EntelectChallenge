@@ -2852,6 +2852,11 @@ are in the minigame.
     :END:
 *** IN_PROGRESS Investigate why makeMoves is still allocating a lot of memory
     :LOGBOOK:
+    - Note taken on [2019-08-17 Sat 13:13] \\
+      I think that it's allocating memory because it's not un-boxing some of
+      the arguments and instead putting them on the heap.  I'm going to try
+      throwing some bang patterns on the arguments and moves to see whether
+      it helps.
     - State "IN_PROGRESS" from "TODO"       [2019-08-17 Sat 11:40]
     :END:
 *** TODO Modify state rather than parsing it the whole time
