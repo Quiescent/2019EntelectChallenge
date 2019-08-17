@@ -5,4 +5,4 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-hp2ps -e8in -c $1
+hp2pretty $1
