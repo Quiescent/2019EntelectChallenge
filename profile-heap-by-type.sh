@@ -22,6 +22,6 @@ OUTPUT_DIRECTORY="profiling/$CURRENT_MACHINE"
 mkdir -p $OUTPUT_DIRECTORY
 MATCH_ARG_STRING=$(echo "$*" | grep -o "[0-9][0-9][0-9][0-9].*" | sed -e 's/ /-/g')
 ./heap-profile-to-image.sh Profile-exe.hp
-mv Profile-exe.ps "$OUTPUT_DIRECTORY/$CURRENT_COMMIT-$MATCH_ARG_STRING-heap-by-type.ps"
+mv Profile-exe.svg "$OUTPUT_DIRECTORY/$CURRENT_COMMIT-$MATCH_ARG_STRING-heap-by-type.svg"
 
-echo "Done.  You can find the results in $OUTPUT_DIRECTORY/$CURRENT_COMMIT-$MATCH_ARG_STRING.prof"
+echo "Done.  You can find the results in $OUTPUT_DIRECTORY/$CURRENT_COMMIT-$MATCH_ARG_STRING-heap-by-type.svg"
