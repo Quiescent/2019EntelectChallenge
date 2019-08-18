@@ -200,27 +200,27 @@ aListSumThatPlayersValues (AList _ _ _ d e f) = d + e + f
 -- TODO: use bit twiddling hacks to supercharge this
 aListCountMyEntries :: AList -> Int
 aListCountMyEntries (AList a b c _ _ _) =
-  if a /= -1 then 1 else 0 +
-  if b /= -1 then 1 else 0 +
-  if c /= -1 then 1 else 0
+  (if a /= -1 then 1 else 0) +
+  (if b /= -1 then 1 else 0) +
+  (if c /= -1 then 1 else 0)
 
 aListCountOpponentsEntries :: AList -> Int
 aListCountOpponentsEntries (AList _ _ _ d e f) =
-  if d /= -1 then 1 else 0 +
-  if e /= -1 then 1 else 0 +
-  if f /= -1 then 1 else 0
+  (if d /= -1 then 1 else 0) +
+  (if e /= -1 then 1 else 0) +
+  (if f /= -1 then 1 else 0)
 
 aListSumMyEntries :: AList -> Int
 aListSumMyEntries (AList a b c _ _ _) =
-  if a /= -1 then a else 0 +
-  if b /= -1 then b else 0 +
-  if c /= -1 then c else 0
+  (if a /= -1 then a else 0) +
+  (if b /= -1 then b else 0) +
+  (if c /= -1 then c else 0)
 
 aListSumOpponentsEntries :: AList -> Int
 aListSumOpponentsEntries (AList _ _ _ d e f) =
-  if d /= -1 then d else 0 +
-  if e /= -1 then e else 0 +
-  if f /= -1 then f else 0
+  (if d /= -1 then d else 0) +
+  (if e /= -1 then e else 0) +
+  (if f /= -1 then f else 0)
 
 aListMyIds :: AList -> [WormId]
 aListMyIds (AList a b c _ _ _) =
