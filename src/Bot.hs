@@ -24,6 +24,7 @@ import System.Random
 import Data.Aeson (decode, withObject, (.:), (.:?), FromJSON, parseJSON)
 import System.Clock
 import qualified Control.Concurrent.MVar.Strict as MVar
+import Control.Exception as E
 import Control.Concurrent
 import Control.DeepSeq
 
@@ -2888,8 +2889,11 @@ logStdErr = hPutStrLn stderr
 -- TODO: don't suspend the thread when the new state comes along.
 iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, State) -> CommsChannel SearchTree -> IO ()
 iterativelyImproveSearch gen initialState tree stateChannel treeChannel = do
-  go gen iterationsBeforeComms tree
+  E.catch (go gen iterationsBeforeComms tree) exceptionHandler
   where
+    exceptionHandler e = do
+      -- TODO restart worker??
+      logStdErr $ "Worker died with exception " ++ show (e::ErrorCall)
     nearbyWorms   = wormsNearMyCurrentWorm initialState
     minigameState = withOnlyWormsContainedIn nearbyWorms initialState
     strategy      = determineStrategy nearbyWorms
