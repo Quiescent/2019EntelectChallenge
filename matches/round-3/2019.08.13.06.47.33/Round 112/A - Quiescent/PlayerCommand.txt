@@ -1,0 +1,3 @@
+Command: shoot NW
+Execution time: 912ms
+Exception: 	(Move 14,Move 8)

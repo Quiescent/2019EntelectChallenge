@@ -1,0 +1,3 @@
+Command: dig 7 11
+Execution time: 909ms
+Exception: 	(Move 0,Move 3)

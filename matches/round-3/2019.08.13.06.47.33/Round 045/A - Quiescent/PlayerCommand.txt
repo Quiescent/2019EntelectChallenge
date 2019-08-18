@@ -1,0 +1,3 @@
+Command: move 25 7
+Execution time: 908ms
+Exception: 	dig 25 6: 571/5

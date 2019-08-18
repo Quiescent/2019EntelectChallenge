@@ -1,0 +1,3 @@
+Command: shoot E
+Execution time: 908ms
+Exception: 	(Move 15,Move 7)

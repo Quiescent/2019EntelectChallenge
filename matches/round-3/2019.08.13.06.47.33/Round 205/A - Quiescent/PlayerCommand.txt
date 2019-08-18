@@ -1,0 +1,3 @@
+Command: banana 23 9
+Execution time: 909ms
+Exception: 	(Move 12,Move 12)
