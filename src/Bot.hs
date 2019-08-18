@@ -3633,11 +3633,13 @@ moveWouldBeValuableToMe state move =
      (hasASelection move && moveWouldBeValuableToMe (makeMySelection move state) (removeSelectionFromMove move))
 
 -- TODO: This is wrong, but I now know that it's slow so lets optimise
--- it!! :D
+-- it!! :D  (There should be one for me and one for the opponent.)
 bananaBlastHitEnemy :: Coord -> WormPositions -> Bool
 bananaBlastHitEnemy coord' wormPositions' =
-  any (\ nextCoord -> aListAnyOpponentData (== nextCoord) wormPositions') $
-  catMaybes $ map ($ coord') blastCoordDeltasInRange
+  foldOverBlastCoordsInRange
+    coord'
+    (\ hitsAWorm nextCoord -> hitsAWorm || aListAnyOpponentData (== nextCoord) wormPositions')
+    False
 
 snowballBlastHitEnemy :: Coord -> WormPositions -> Bool
 snowballBlastHitEnemy coord' wormPositions' =
