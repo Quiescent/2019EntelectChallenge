@@ -2903,7 +2903,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
   where
     exceptionHandler e = do
       -- TODO restart worker??
-      logStdErr $ "Worker died with exception " ++ show (e::ErrorCall)
+      logStdErr $ "Worker died with exception " ++ show (e::SomeException)
     nearbyWorms   = wormsNearMyCurrentWorm initialState
     minigameState = withOnlyWormsContainedIn nearbyWorms initialState
     strategy      = determineStrategy nearbyWorms
