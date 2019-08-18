@@ -60,12 +60,12 @@ runSearchForEachRound startFrom repeatTimes directories  =
        let directory = head directories'
        state         <- fmap fromJust $ loadStateForRound directory
        gen           <- liftIO getStdGen
-       treeChannel   <- liftIO newComms
+       treeVariable  <- liftIO $ newVariable SearchFront
        stateChannel  <- liftIO newComms
-       _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
+       _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeVariable)
        forM_ [(1::Int)..repeatCount] $ \ i -> do
          liftIO $ logStdErr $ "Round " ++ show i ++ "/" ++ show repeatCount
-         _      <- liftIO $ searchForAlottedTime state treeChannel
+         _      <- liftIO $ searchForAlottedTime state treeVariable
          liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), state)
      else if (length directories' < 1)
           then (liftIO (putStrLn ("User error: specified directory has less than 1 rounds after starting from: " ++
@@ -77,13 +77,13 @@ runSearchForEachRound startFrom repeatTimes directories  =
     let directories'' = tail directories'
     state         <- fmap fromJust $ loadStateForRound directory
     gen           <- liftIO getStdGen
-    treeChannel   <- liftIO newComms
+    treeVariable  <- liftIO $ newVariable SearchFront
     stateChannel  <- liftIO newComms
-    _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
+    _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeVariable)
     mapM_ (\ directory' -> do
               liftIO $ logStdErr $ "Profiling directory: " ++ directory'
               state' <- fmap fromJust $ loadStateForRound directory'
-              _      <- liftIO $ searchForAlottedTime state' treeChannel
+              _      <- liftIO $ searchForAlottedTime state' treeVariable
               -- Simulate the worst case scenario.  Both players do
               -- nothing and we don't have it in the tree.
               liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), state'))

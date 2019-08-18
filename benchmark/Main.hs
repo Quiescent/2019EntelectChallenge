@@ -44,7 +44,7 @@ runSearchForEachRound []                      = error "No directories to benchma
 runSearchForEachRound (directory:directories) = do
   state         <- fmap fromJust $ loadStateForRound directory
   gen           <- liftIO getStdGen
-  treeChannel   <- liftIO newComms
+  treeChannel   <- liftIO $ newVariable SearchFront
   stateChannel  <- liftIO newComms
   _             <- liftIO $ forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
   go directories [] treeChannel stateChannel
