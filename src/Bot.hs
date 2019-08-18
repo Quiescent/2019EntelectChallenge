@@ -3712,13 +3712,17 @@ bananaBlastHitMe coord' wormPositions' =
 
 snowballBlastHitOpponent :: Coord -> WormPositions -> Bool
 snowballBlastHitOpponent coord' wormPositions' =
-  any (\ nextCoord -> aListAnyOpponentData (== nextCoord) wormPositions') $
-  catMaybes $ map ($ coord') snowballBlastCoordDeltasInRange
+  foldOverSnowballBlastCoordsInRange
+    coord'
+    (\ !hitsAWorm !nextCoord -> hitsAWorm || aListAnyOpponentData (== nextCoord) wormPositions')
+    False
 
 snowballBlastHitMe :: Coord -> WormPositions -> Bool
 snowballBlastHitMe coord' wormPositions' =
-  any (\ nextCoord -> aListAnyOfMyData (== nextCoord) wormPositions') $
-  catMaybes $ map ($ coord') snowballBlastCoordDeltasInRange
+  foldOverSnowballBlastCoordsInRange
+    coord'
+    (\ !hitsAWorm !nextCoord -> hitsAWorm || aListAnyOfMyData (== nextCoord) wormPositions')
+    False
 
 shotHitsWorm :: Coord -> GameMap -> WormPositions -> Move -> Maybe Coord
 shotHitsWorm coord' gameMap' wormPositions' move =
