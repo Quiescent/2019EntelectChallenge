@@ -3625,25 +3625,35 @@ moveWouldBeValuableToMe state move =
      (isADigMove      move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (isAShootMove    move && (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
      (isABananaMove   move && thisWormHasBananasLeft state &&
-      any (\ target -> bananaBlastHitEnemy target wormPositions')
+      any (\ target -> bananaBlastHitOpponent target wormPositions')
           (displaceToBananaDestination move coord')) ||
      (isASnowballMove move && thisWormHasSnowballsLeft state &&
-      any (\ target -> (snowballBlastHitEnemy target wormPositions'))
+      any (\ target -> (snowballBlastHitOpponent target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToMe (makeMySelection move state) (removeSelectionFromMove move))
 
--- TODO: This is wrong, but I now know that it's slow so lets optimise
--- it!! :D  (There should be one for me and one for the opponent.)
-bananaBlastHitEnemy :: Coord -> WormPositions -> Bool
-bananaBlastHitEnemy coord' wormPositions' =
+bananaBlastHitOpponent :: Coord -> WormPositions -> Bool
+bananaBlastHitOpponent coord' wormPositions' =
   foldOverBlastCoordsInRange
     coord'
     (\ !hitsAWorm !nextCoord -> hitsAWorm || aListAnyOpponentData (== nextCoord) wormPositions')
     False
 
-snowballBlastHitEnemy :: Coord -> WormPositions -> Bool
-snowballBlastHitEnemy coord' wormPositions' =
+bananaBlastHitMe :: Coord -> WormPositions -> Bool
+bananaBlastHitMe coord' wormPositions' =
+  foldOverBlastCoordsInRange
+    coord'
+    (\ !hitsAWorm !nextCoord -> hitsAWorm || aListAnyOfMyData (== nextCoord) wormPositions')
+    False
+
+snowballBlastHitOpponent :: Coord -> WormPositions -> Bool
+snowballBlastHitOpponent coord' wormPositions' =
   any (\ nextCoord -> aListAnyOpponentData (== nextCoord) wormPositions') $
+  catMaybes $ map ($ coord') snowballBlastCoordDeltasInRange
+
+snowballBlastHitMe :: Coord -> WormPositions -> Bool
+snowballBlastHitMe coord' wormPositions' =
+  any (\ nextCoord -> aListAnyOfMyData (== nextCoord) wormPositions') $
   catMaybes $ map ($ coord') snowballBlastCoordDeltasInRange
 
 shotHitsWorm :: Coord -> GameMap -> WormPositions -> Move -> Maybe Coord
@@ -3673,12 +3683,12 @@ moveWouldBeValuableToOpponent state move =
      (isADigMove      move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (isAShootMove    move && (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
      (isABananaMove   move && thatWormHasBananasLeft state &&
-      any (\ target -> bananaBlastHitEnemy target wormPositions')
+      any (\ target -> bananaBlastHitMe target wormPositions')
           (displaceToBananaDestination move coord')) ||
      (isASnowballMove move && thatWormHasSnowballsLeft state &&
-      any (\ target -> (snowballBlastHitEnemy target wormPositions'))
+      any (\ target -> (snowballBlastHitMe target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
-     (hasASelection move && moveWouldBeValuableToMe (makeMySelection move state) (removeSelectionFromMove move))
+     (hasASelection move && moveWouldBeValuableToOpponent (makeOpponentsSelection move state) (removeSelectionFromMove move))
 
 myShootAndMoveMovesFrom :: State -> [Move]
 myShootAndMoveMovesFrom state =
