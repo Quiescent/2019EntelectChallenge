@@ -21,9 +21,8 @@ main = do
   runRIO app $ runDataSet dataSetDirectory
 
 type Message = String
-type GamesPlayed = Int
 
-data BenchmarkResult = GamesPlayedPerRound [GamesPlayed]
+data BenchmarkResult = GamesPlayedPerRound [Int]
                      | Failed Message
 
 joinString :: Show a => String -> [a] -> String

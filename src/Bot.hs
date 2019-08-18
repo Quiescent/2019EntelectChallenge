@@ -1697,6 +1697,9 @@ decrementThatPlayersSelections = mapThatPlayer decrementPlayerSelections
 hasSelectionsLeft :: Player -> Bool
 hasSelectionsLeft (Player _ _ (Selections x)) = x > 0
 
+playerSelections :: Player -> Int
+playerSelections (Player _ _ (Selections x)) = x
+
 thisPlayerHasSelectionsLeft :: State -> Bool
 thisPlayerHasSelectionsLeft = hasSelectionsLeft . myPlayer
 
@@ -2915,9 +2918,9 @@ readRound :: IO Int
 readRound = readLn
 
 myMovesFromTree :: SearchTree -> SuccessRecords
-myMovesFromTree (SearchedLevel   (MyMoves myMoves) _ _) = myMoves
-myMovesFromTree (UnSearchedLevel (MyMoves myMoves) _)   = myMoves
-myMovesFromTree SearchFront                             =
+myMovesFromTree (SearchedLevel   _ (MyMoves myMoves) _ _) = myMoves
+myMovesFromTree (UnSearchedLevel _ (MyMoves myMoves) _)   = myMoves
+myMovesFromTree SearchFront                               =
   error $ "myMovesFromTree of SearchFront"
 
 iterationsBeforeComms :: Int
@@ -2986,8 +2989,8 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
       in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
-makeMoveInTree move' (SearchedLevel   _ _ transitions) = findSubTree move' transitions
-makeMoveInTree _     (UnSearchedLevel _ _)             = SearchFront
+makeMoveInTree move' (SearchedLevel   _ _ _ transitions) = findSubTree move' transitions
+makeMoveInTree _     (UnSearchedLevel _ _ _)             = SearchFront
 makeMoveInTree _     SearchFront                       = SearchFront
 
 -- In nanoseconds
@@ -3015,8 +3018,10 @@ prettyPrintThatMove :: State -> Move -> String
 prettyPrintThatMove = prettyPrintMove thatWormsCoord makeOpponentsSelection
 
 prettyPrintSuccessRecord :: (State -> Move -> String) -> State -> SuccessRecord -> String
-prettyPrintSuccessRecord printMove state (SuccessRecord (Wins wins') (Played played') move') =
-    printMove state move' ++ ": " ++ show wins' ++ "/" ++ show played'
+prettyPrintSuccessRecord printMove
+                         state
+                         (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) move') =
+    printMove state move' ++ " (played " ++ show gamesPlayed ++ ")" ++ ": " ++ show ratio
 
 prettyPrintThisSuccessRecord :: State -> SuccessRecord -> String
 prettyPrintThisSuccessRecord = prettyPrintSuccessRecord prettyPrintThisMove
@@ -3025,13 +3030,15 @@ prettyPrintThatSuccessRecord :: State -> SuccessRecord -> String
 prettyPrintThatSuccessRecord = prettyPrintSuccessRecord prettyPrintThatMove
 
 prettyPrintSearchTree :: State -> SearchTree -> String
-prettyPrintSearchTree state (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions') =
+prettyPrintSearchTree state (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions') =
     "Searched:\n" ++
+    "Games played: " ++ show gamesPlayed ++ "\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
     "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves) ++ "\n" ++
     "Transitions:\n\t" ++ (join' ", " $ map (\ (StateTransition move' _) -> (toMoves move')) transitions')
-prettyPrintSearchTree state (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
+prettyPrintSearchTree state (UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched:\n" ++
+    "Games played: " ++ show gamesPlayed ++ "\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
     "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves)
 prettyPrintSearchTree _     SearchFront =
@@ -3055,9 +3062,10 @@ treeAfterAlottedTime state treeVariable = do
           go searchTree' startingTime
 
 searchForAlottedTime :: State -> CommsVariable SearchTree -> IO Move
-searchForAlottedTime state =
-  let strategy = determineStrategy $ wormsNearMyCurrentWorm state
-  in fmap (successRecordMove . chooseBestMove strategy . myMovesFromTree) . (treeAfterAlottedTime state)
+searchForAlottedTime state treeChannel = do
+  searchTree     <- treeAfterAlottedTime state treeChannel
+  let gamesPlayed = countGames searchTree
+  return $ successRecordMove . chooseBestMove gamesPlayed $ myMovesFromTree searchTree
 
 runRound :: Int -> State -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
 runRound roundNumber previousState stateChannel treeVariable = do
@@ -3099,39 +3107,33 @@ startBot g = do
   _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
   liftIO $ runRound initialRound' initialState stateChannel treeVariable
 
-data Wins = Wins !Int
+data PayoffRatio = PayoffRatio !Float
   deriving (Eq)
 
-instance NFData Wins where
-  rnf (Wins wins') = wins' `deepseq` ()
+instance NFData PayoffRatio where
+  rnf (PayoffRatio ratio) = ratio `deepseq` ()
 
-data Played = Played !Int
+data GamesPlayed = GamesPlayed !Int
   deriving (Eq)
 
-instance NFData Played where
-  rnf (Played played') = played' `deepseq` ()
+instance NFData GamesPlayed where
+  rnf (GamesPlayed gamesPlayed) = gamesPlayed `deepseq` ()
 
-data SuccessRecord = SuccessRecord !Wins !Played !Move
+data SuccessRecord = SuccessRecord !GamesPlayed !PayoffRatio !Move
   deriving (Eq)
 
 instance NFData SuccessRecord where
-  rnf (SuccessRecord wins' played' move) =
-    wins' `deepseq` played' `deepseq` move `deepseq` ()
+  rnf (SuccessRecord gamesPlayed ratio move) =
+    gamesPlayed `deepseq `ratio `deepseq` move `deepseq` ()
 
 instance Show SuccessRecord where
-  show (SuccessRecord (Wins wins') (Played played') move') =
-    show move' ++ ": " ++ show wins' ++ "/" ++ show played'
+  show (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) move') =
+    show move' ++ " (" ++ show gamesPlayed ++ "): " ++ show ratio
 
 type SuccessRecords = [SuccessRecord]
 
 successRecordMove :: SuccessRecord -> Move
 successRecordMove (SuccessRecord _ _ move) = move
-
-wins :: SuccessRecord -> Wins
-wins (SuccessRecord wins' _ _) = wins'
-
-played :: SuccessRecord -> Played
-played (SuccessRecord _ played' _) = played'
 
 data MyMoves = MyMoves SuccessRecords
   deriving (Eq)
@@ -3160,16 +3162,16 @@ subTree (StateTransition _ tree) = tree
 
 type StateTransitions = [StateTransition]
 
-data SearchTree = SearchedLevel   MyMoves OpponentsMoves StateTransitions
-                | UnSearchedLevel MyMoves OpponentsMoves
+data SearchTree = SearchedLevel   Int MyMoves OpponentsMoves StateTransitions
+                | UnSearchedLevel Int MyMoves OpponentsMoves
                 | SearchFront
                 deriving (Eq)
 
 instance NFData SearchTree where
-  rnf (SearchedLevel myMoves opponentsMoves stateTransitions) =
-    myMoves `deepseq` opponentsMoves `deepseq` stateTransitions `deepseq` ()
-  rnf (UnSearchedLevel myMoves opponentsMoves) =
-    myMoves `deepseq` opponentsMoves `deepseq` ()
+  rnf (SearchedLevel gamesPlayed myMoves opponentsMoves stateTransitions) =
+    gamesPlayed `deepseq` myMoves `deepseq` opponentsMoves `deepseq` stateTransitions `deepseq` ()
+  rnf (UnSearchedLevel gamesPlayed myMoves opponentsMoves) =
+    gamesPlayed `deepseq` myMoves `deepseq` opponentsMoves `deepseq` ()
   rnf x = x `deepseq` ()
 
 join' :: Show a => String -> [a] -> String
@@ -3178,13 +3180,15 @@ join' joinString strings =
   in take ((length withExtra) - (length joinString)) withExtra
 
 instance Show SearchTree where
-  show (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
-    "Searched: " ++ "\n" ++
+  show (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
+    "Searched:\n" ++
+    "Games played: " ++ show gamesPlayed ++ "\n" ++
     "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
     "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves) -- ++ "\n" ++
     -- "Transitions: " ++ show transitions
-  show (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
-    "UnSearched: " ++ "\n" ++
+  show (UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
+    "UnSearched:\n" ++
+    "Games played: " ++ show gamesPlayed ++ "\n" ++
     "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
     "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves)
   show SearchFront =
@@ -3207,20 +3211,19 @@ instance Show SearchResult where
 instance NFData SearchResult where
   rnf (SearchResult payoff moves) = payoff `deepseq` moves `deepseq` ()
 
-inc :: Int -> Int -> Int
-inc x = (+x)
-
 incInc :: Int -> Int -> SuccessRecord -> SuccessRecord
-incInc reward' maxScore' (SuccessRecord (Wins wins') (Played played') playerMove') =
-  SuccessRecord (Wins $ (inc reward') wins') (Played $ (inc maxScore') played') playerMove'
-
-gamesPlayedForRecords :: [SuccessRecord] -> Int
-gamesPlayedForRecords = sum . map ( (\ (Played x) -> x) . played)
+incInc reward' maxScore' (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) playerMove') =
+  SuccessRecord (GamesPlayed $ gamesPlayed + 1)
+                (PayoffRatio $ if gamesPlayed == 0
+                               then fromIntegral reward' / fromIntegral maxScore'
+                               else (ratio + (fromIntegral reward' / fromIntegral maxScore')) / 2)
+                playerMove'
 
 countGames :: SearchTree -> Int
-countGames = gamesPlayedForRecords . myMovesFromTree
+countGames (SearchedLevel   playedAtLevel _ _ _) = playedAtLevel
+countGames (UnSearchedLevel playedAtLevel _ _)   = playedAtLevel
+countGames SearchFront                           = 0
 
--- TODO: doesn't go deep
 updateTree :: Strategy -> State-> SearchResult -> SearchTree -> SearchTree
 updateTree strategy minigameState result SearchFront =
   let myMovesFrom'  = case strategy of
@@ -3231,23 +3234,24 @@ updateTree strategy minigameState result SearchFront =
         Dig  -> (always [doNothing])
   in updateTree strategy minigameState result $
      UnSearchedLevel
-     (MyMoves        $ map (SuccessRecord (Wins 0) (Played 0)) $ myMovesFrom'        minigameState)
-     (OpponentsMoves $ map (SuccessRecord (Wins 0) (Played 0)) $ opponentsMovesFrom' minigameState)
-updateTree _ _ result level@(UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
+     0
+     (MyMoves        $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ myMovesFrom'        minigameState)
+     (OpponentsMoves $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ opponentsMovesFrom' minigameState)
+updateTree _ _ result level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
           myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
-      in (transitionLevelType myMoves' opponentsMoves') myMoves' opponentsMoves'
+      in (transitionLevelType myMoves' opponentsMoves') (gamesPlayed + 1) myMoves' opponentsMoves'
     _                           -> level
-updateTree strategy minigameState result level@(SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
+updateTree strategy minigameState result level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
           myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
-      in SearchedLevel myMoves' opponentsMoves' $ updateSubTree strategy minigameState result stateTransitions
+      in SearchedLevel (gamesPlayed + 1) myMoves' opponentsMoves' $ updateSubTree strategy minigameState result stateTransitions
     _                           -> level
 
 -- TODO: consider whether I should be treating the rewards like I do moves when transitioning down a tree..?
@@ -3265,17 +3269,17 @@ updateSubTree strategy
                                            (SearchResult payoff moves') subTree') : transitions
   | otherwise                = transition : updateSubTree strategy minigameState result transitions
 
-transitionLevelType :: MyMoves -> OpponentsMoves -> (MyMoves -> OpponentsMoves -> SearchTree)
+transitionLevelType :: MyMoves -> OpponentsMoves -> (Int -> MyMoves -> OpponentsMoves -> SearchTree)
 transitionLevelType myMoves opponentsMoves =
     if allGamesPlayed myMoves opponentsMoves
-    then \ myMoves' opponentsMoves' -> SearchedLevel   myMoves' opponentsMoves' []
-    else \ myMoves' opponentsMoves' -> UnSearchedLevel myMoves' opponentsMoves'
+    then \ gamesPlayed myMoves' opponentsMoves' -> SearchedLevel   gamesPlayed myMoves' opponentsMoves' []
+    else \ gamesPlayed myMoves' opponentsMoves' -> UnSearchedLevel gamesPlayed myMoves' opponentsMoves'
 
 allGamesPlayed :: MyMoves -> OpponentsMoves -> Bool
 allGamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) =
   all hasBeenPlayed myMoves && all hasBeenPlayed opponentsMoves
   where
-    hasBeenPlayed (SuccessRecord _ (Played played') _) = played' /= 0
+    hasBeenPlayed (SuccessRecord (GamesPlayed gamesPlayed) _ _) = gamesPlayed /= 0
 
 updateCount :: (SuccessRecord -> SuccessRecord) -> SuccessRecords -> Move -> SuccessRecords
 updateCount _           []            _ = []
@@ -3329,8 +3333,8 @@ search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
 search g strategy minigameState searchTree =
   let round' = (currentRound minigameState)
   in case strategy of
-       Dig  -> digSearch  g 0                            minigameState searchTree [] []
-       Kill -> killSearch g round' round' minigameState searchTree []
+       Dig  -> digSearch  g 0      minigameState searchTree [] []
+       Kill -> killSearch g round' minigameState searchTree []
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
@@ -3344,14 +3348,14 @@ digSearch g round' state SearchFront                moves rewards =
           state'         = makeMove False move state
           reward'        = reward state state'
       in digPlayRandomly g' (round' + 1) state' (move:moves) (reward':rewards)
-digSearch g round' state tree@(SearchedLevel _ _ _) moves rewards =
+digSearch g round' state tree@(SearchedLevel _ _ _ _) moves rewards =
   case digGameOver round' rewards state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        -> digSearchSearchedLevel g round' state tree moves rewards
 digSearch g
           round'
           state
-          (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves))
+          (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
           moves
           rewards =
   case digGameOver round' rewards state of
@@ -3373,15 +3377,15 @@ digSearch g
 
 digSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
 digSearchSearchedLevel _ _ _ SearchFront                   _ _ = error "searchSearchedLevel: SearchFront"
-digSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ )  _ _ = error $ "searchSearchedLevel: " ++ show level
+digSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _ )  _ _ = error $ "searchSearchedLevel: " ++ show level
 digSearchSearchedLevel g
-                    round'
-                    state
-                    (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
-                    moves
-                    rewards =
-  let myBestMove        = successRecordMove $ chooseBestMove Dig myMoves
-      opponentsBestMove = successRecordMove $ chooseBestMove Dig opponentsMoves
+                       round'
+                       state
+                       (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
+                       moves
+                       rewards =
+  let myBestMove        = successRecordMove $ chooseBestMove gamesPlayed myMoves
+      opponentsBestMove = successRecordMove $ chooseBestMove gamesPlayed opponentsMoves
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
       reward'           = reward state state'
@@ -3405,22 +3409,71 @@ digPlayRandomly g round' state moves rewards =
           reward'         = reward state state'
       in digPlayRandomly g' (round' + 1) state' moves (reward':rewards)
 
-killSearch :: StdGen -> Int -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
+maximumHealth :: Int
+maximumHealth = 100 + 100 + 150
+
+maximumFrozenDuration :: Int
+maximumFrozenDuration = 150
+
+maxPayoffScore :: Int
+maxPayoffScore =
+  -- Maximum health (times two because it's the biggest difference between you and your opponent)
+  2 * maximumHealth +
+  -- Maximum banana ammo (scaled to be similar to health)
+  30 +
+  -- Maximum snowball ammo (scaled to be similar to health)
+  30 +
+  -- Maximum selects left (scaled to be similar to health)
+  50 +
+  -- Maximum duration spent unfrozen (scaled to be similar to health)
+  maximumFrozenDuration -- All three unfrozen for five turns
+
+payOff :: State -> Payoff
+payOff (State { wormHealths     = wormHealths',
+                wormBananas     = wormBananas',
+                wormSnowballs   = wormSnowballs',
+                frozenDurations = frozenDurations',
+                myPlayer        = myPlayer',
+                opponent        = opponent' }) =
+  let myTotalHealth                = aListSumMyEntries wormHealths'
+      myBananasLeft                = aListSumMyEntries wormBananas'
+      mySnowballsLeft              = aListSumMyEntries wormSnowballs'
+      myFrozenDurations            = aListSumMyEntries frozenDurations'
+      mySelectionsRemaining        = playerSelections myPlayer'
+      opponentsTotalHealth         = aListSumOpponentsEntries wormHealths'
+      opponentsBananasLeft         = aListSumOpponentsEntries wormBananas'
+      opponentsSnowballsLeft       = aListSumOpponentsEntries wormSnowballs'
+      opponentsFrozenDurations     = aListSumOpponentsEntries frozenDurations'
+      opponentsSelectionsRemaining = playerSelections opponent'
+      myPayoff                     = myTotalHealth +
+                                     (maximumHealth - opponentsTotalHealth) +
+                                     10 * myBananasLeft +
+                                     10 * mySnowballsLeft +
+                                     (maximumFrozenDuration - myFrozenDurations) +
+                                     10 * mySelectionsRemaining
+      opponentsPayoff              = opponentsTotalHealth +
+                                     (maximumHealth - myTotalHealth) +
+                                     10 * opponentsBananasLeft +
+                                     10 * opponentsSnowballsLeft +
+                                     (maximumFrozenDuration - opponentsFrozenDurations) +
+                                     10 * opponentsSelectionsRemaining
+  in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
+
+killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
-killSearch g _             _      _     SearchFront                moves =
+killSearch g _             _     SearchFront                moves =
   (SearchResult (Payoff (MyPayoff 0) (OpponentsPayoff 0) (MaxScore 0)) (reverse moves), g)
-killSearch g startingRound round' state tree@(SearchedLevel _ _ _) moves =
-  case gameOver state startingRound round' of
+killSearch g round' state tree@(SearchedLevel _ _ _ _) moves =
+  case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        -> searchSearchedLevel g startingRound round' state tree moves
+    NoResult        -> searchSearchedLevel g round' state tree moves
 killSearch g
-           startingRound
            round'
            state
-           (UnSearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves))
+           (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
            moves =
-  case gameOver state startingRound round' of
+  case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let (myRecord,        g')  = pickOneAtRandom g  myMoves
@@ -3445,21 +3498,19 @@ pickOneAtRandom g xs =
 
 type Moves = [CombinedMove]
 
-searchSearchedLevel :: StdGen -> Int -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
-searchSearchedLevel _ _ _ _ SearchFront                   _ = error "searchSearchedLevel: SearchFront"
-searchSearchedLevel _ _ _ _ level@(UnSearchedLevel _ _ )  _ = error $ "searchSearchedLevel: " ++ show level
+searchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
+searchSearchedLevel _ _ _ SearchFront                   _ = error "searchSearchedLevel: SearchFront"
+searchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _) _ = error $ "searchSearchedLevel: " ++ show level
 searchSearchedLevel g
-                    startingRound
                     round'
                     state
-                    (SearchedLevel (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
+                    (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
                     moves =
-  let myBestMove        = successRecordMove $ chooseBestMove Kill myMoves
-      opponentsBestMove = successRecordMove $ chooseBestMove Kill opponentsMoves
+  let myBestMove        = successRecordMove $ chooseBestMove gamesPlayed myMoves
+      opponentsBestMove = successRecordMove $ chooseBestMove gamesPlayed opponentsMoves
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
   in killSearch g
-                startingRound
                 (round' + 1)
                 state'
                 (findSubTree combinedMove transitions)
@@ -3470,9 +3521,9 @@ searchSearchedLevel g
 data GameOver = GameOver Payoff
               | NoResult
 
-playRandomly :: StdGen -> Int -> Int -> State -> Moves -> (SearchResult, StdGen)
-playRandomly g startingRound round' state moves =
-  case gameOver state startingRound round' of
+playRandomly :: StdGen -> Int -> State -> Moves -> (SearchResult, StdGen)
+playRandomly g round' state moves =
+  case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves  = shootAndMoveMovesFrom state
@@ -3480,7 +3531,7 @@ playRandomly g startingRound round' state moves =
                             then (fromMoves doNothing doNothing, g)
                             else pickOneAtRandom g availableMoves
           state'          = makeMove False move state
-      in playRandomly g' startingRound (round' + 1) state' moves
+      in playRandomly g' (round' + 1) state' moves
 
 maxDigRound :: Int
 maxDigRound = 20
@@ -3526,8 +3577,8 @@ maxForecastedRound = 50
 killMaxScore :: MaxScore
 killMaxScore = MaxScore 1
 
-gameOver :: State -> Int -> Int -> GameOver
-gameOver state startingRound round' =
+gameOver :: State -> Int -> GameOver
+gameOver state round' =
   let myWormCount            = aListCountMyEntries $ wormHealths state
       myAverageHealth :: Double
       myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral wormCount
@@ -3558,10 +3609,7 @@ gameOver state startingRound round' =
                     -- I lost because of points when both players are dead
                     else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
                -- Simulation isn't over yet
-               else if round' - startingRound >= maxForecastedRound
-                    -- But I survived so give me the win!
-                    then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
-                    else NoResult
+               else NoResult
 
 digMaxScore :: MaxScore
 digMaxScore = (MaxScore 1)
@@ -3611,32 +3659,20 @@ diffMax rewards =
         rewards
   in Payoff (MyPayoff myScore') (OpponentsPayoff opponentsScore') digMaxScore
 
-chooseBestMove :: Strategy -> [SuccessRecord] -> SuccessRecord
-chooseBestMove strategy successRecords =
-  let totalGames = gamesPlayedForRecords successRecords
-      bestMove'  = case strategy of
-        Dig  -> rateDigMove
-        Kill -> confidence
-      computeConfidence (SuccessRecord (Wins wins')  (Played played') _) =
-        bestMove' totalGames wins' played'
+chooseBestMove :: Int -> [SuccessRecord] -> SuccessRecord
+chooseBestMove totalGames successRecords =
+  let computeConfidence (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) _) =
+        confidence totalGames gamesPlayed ratio
   in maximumBy (\ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
 
-confidence :: Int -> Int -> Int -> Float
-confidence totalCount wins' played' =
-  (w_i / n_i) +
+confidence :: Int -> Int -> Float -> Float
+confidence !totalCount !gamesPlayed !ratio =
+  ratio +
   c * sqrt ((log count_i) / n_i)
   where
+    n_i     = fromIntegral gamesPlayed
     count_i = fromIntegral totalCount
-    n_i     = fromIntegral played'
-    w_i     = fromIntegral wins'
     c       = sqrt 2
-
-rateDigMove :: Int -> Int -> Int -> Float
-rateDigMove _ wins' played' =
-  (w_i / n_i) --  +
-  where
-    n_i     = fromIntegral played'
-    w_i     = fromIntegral wins'
 
 digMovesFrom :: State -> [CombinedMove]
 digMovesFrom = map ((flip fromMoves) doNothing) . myDigMovesFrom

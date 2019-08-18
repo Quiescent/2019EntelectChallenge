@@ -15,29 +15,32 @@ import Data.Maybe
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
-countMyWins :: SearchTree -> Int
-countMyWins = sum . map ( (\ (Wins x) -> x) . wins) . myMovesFromTree
-
 opponentsMovesFromTree :: SearchTree -> SuccessRecords
-opponentsMovesFromTree (SearchedLevel   _ (OpponentsMoves opponentsMoves) _) = opponentsMoves
-opponentsMovesFromTree (UnSearchedLevel _ (OpponentsMoves opponentsMoves))   = opponentsMoves
+opponentsMovesFromTree (SearchedLevel   _ _ (OpponentsMoves opponentsMoves) _) = opponentsMoves
+opponentsMovesFromTree (UnSearchedLevel _ _ (OpponentsMoves opponentsMoves))   = opponentsMoves
 opponentsMovesFromTree SearchFront                                           =
   error $ "myMovesFromTree of SearchFront"
 
-countOpponentsWins :: SearchTree -> Int
-countOpponentsWins = sum . map ( (\ (Wins x) -> x) . wins) . opponentsMovesFromTree
-
 isSearched :: SearchTree -> Bool
-isSearched (SearchedLevel myMoves opponentsMoves _) = allGamesPlayed myMoves opponentsMoves
-isSearched _                                        = False
-
-countGames' :: SearchTree -> Int
-countGames' = gamesPlayedForRecords . myMovesFromTree
+isSearched (SearchedLevel _ myMoves opponentsMoves _) = allGamesPlayed myMoves opponentsMoves
+isSearched _                                          = False
 
 transitions :: SearchTree -> StateTransitions
-transitions (SearchedLevel   _ _ transitions') = transitions'
-transitions (UnSearchedLevel _ _)              = []
-transitions SearchFront                        = []
+transitions (SearchedLevel   _ _ _ transitions') = transitions'
+transitions (UnSearchedLevel _ _ _)              = []
+transitions SearchFront                          = []
+
+sumMyRatios :: SearchTree -> Float
+sumMyRatios = sum . map payoffRatio . myMovesFromTree
+
+sumOpponentsRatios :: SearchTree -> Float
+sumOpponentsRatios = sum . map payoffRatio . opponentsMovesFromTree
+
+played :: SuccessRecord -> Int
+played (SuccessRecord (GamesPlayed x) _ _) = x
+
+payoffRatio :: SuccessRecord -> Float
+payoffRatio (SuccessRecord _ (PayoffRatio x) _) = x
 
 spec :: Spec
 spec = do
@@ -193,19 +196,20 @@ spec = do
           thisMove     = myMoves L.!! (i `mod` length myMoves)
           k'           = k `mod` maxScore + 1
           updateCount' = incInc k' ((\ (MaxScore x) -> x) digMaxScore)
-          oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
+          oldCounts    = map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves
           newCounts    = updateCount updateCount' oldCounts thisMove
       in newCounts `shouldSatisfy` ((== (length oldCounts)) . length)
-    prop "should change the played count of the selected record and might change the win count" $ \ (i, k) ->
+    prop "should change the played count of the selected record and might change the payoff ratio" $ \ (i, k) ->
       let myMoves      = myMovesFrom aState
           thisMove     = myMoves L.!! (i `mod` length myMoves)
-          k'           = k `mod` maxScore + 1
-          updateCount' = incInc k' ((\ (MaxScore x) -> x) digMaxScore)
-          oldCounts    = map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves
+          k'           = k `mod` (maxScore + 1)
+          updateCount' = incInc k' maxScore
+          oldCounts    = map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves
           newCounts    = updateCount updateCount' oldCounts thisMove
-      in newCounts `shouldSatisfy` ((((== (Played $ 2))      . played) .&&.
-                                    (((== (Wins   $ 1 + k')) . wins))) .
-                                    fromJust . find ((== thisMove) . successRecordMove))
+      in (((fromIntegral k') / (fromIntegral maxScore))::Float, newCounts) `shouldSatisfy`
+         ((((== 2) . played) .&&.
+          (((== ((1 + (fromIntegral k') / (fromIntegral maxScore)) / 2)) . payoffRatio))) .
+           fromJust . find ((== thisMove) . successRecordMove)) . snd
   describe "myMovesFrom" $ do
     it "should  not contain repeats" $
       let myMoves = myMovesFrom aState
@@ -216,18 +220,19 @@ spec = do
           thisMove       = L.head myMoves
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = L.head opponentsMoves
-          k'             = k `mod` maxScore + 1
+          k'             = k `mod` (maxScore + 1)
           oldTree        = UnSearchedLevel
+                           0
                            (MyMoves        $
-                            (SuccessRecord (Wins 0) (Played 0) $ L.head myMoves) :
-                            (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail myMoves))
+                            (SuccessRecord (GamesPlayed 0) (PayoffRatio 0) $ L.head myMoves) :
+                            (map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) $ L.tail myMoves))
                            (OpponentsMoves $
-                            (SuccessRecord (Wins 0) (Played 0) $ L.head opponentsMoves) :
-                            (map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) $ L.tail opponentsMoves))
+                            (SuccessRecord (GamesPlayed 0) (PayoffRatio 0) $ L.head opponentsMoves) :
+                            (map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) $ L.tail opponentsMoves))
           newTree        = updateTree Dig
                                       aState
                                       (SearchResult
-                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
+                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
                                       oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy` isSearched . snd
@@ -248,100 +253,74 @@ spec = do
           newTree        = updateTree Kill
                                       aStateWithAnEnemyWormNearby
                                       (SearchResult
-                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
+                                       (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
                                       SearchFront
-      in newTree `shouldSatisfy` (((== (maxScore - k')) . countOpponentsWins) .&&.
-                                  ((== k')              . countMyWins)        .&&.
-                                  ((== 1)               . countGames'))
+      in newTree `shouldSatisfy` (((== (fromIntegral (maxScore - k') / fromIntegral maxScore)) . sumOpponentsRatios) .&&.
+                                  ((== ((fromIntegral k') / fromIntegral maxScore)) . sumMyRatios)        .&&.
+                                  ((== 1)               . countGames))
     prop "should increment the game count when given an UnSearchedLevel" $ \ (i, j, k) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          k'             = k `mod` (maxScore + 1)
+          k'             = (k `mod` (maxScore - 1)) + 1
           oldTree        = UnSearchedLevel
-                           (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
-                           (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
+                           (length myMoves) -- Not strictly correct, but fine
+                           (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
+                           (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
           newTree        = updateTree Dig
                                       aState
                                       (SearchResult
-                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
                                       oldTree
-      in newTree `shouldSatisfy` (((== (1     + countGames' oldTree))                  . countGames')         .&&.
-                                  ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
-                                  ((== (k'              + countMyWins        oldTree)) . countMyWins))
+      in newTree `shouldSatisfy` (((== (1     + countGames oldTree)) . countGames)         .&&.
+                                  ((/= (sumOpponentsRatios oldTree)) . sumOpponentsRatios) .&&.
+                                  ((/= (sumMyRatios        oldTree)) . sumMyRatios))
     prop "should increment the game count when given a SearchedLevel" $ \ (i, j, k) ->
       let myMoves        = myMovesFrom aState
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aState
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          k'             = k `mod` (maxScore + 1)
+          k'             = (k `mod` (maxScore - 1)) + 1
           oldTree        = SearchedLevel
-                           (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
-                           (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
+                           (length myMoves) -- Not strictly correct, but fine
+                           (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
+                           (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
                            []
           newTree        = updateTree Dig
                                       aState
                                       (SearchResult
-                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
                                       oldTree
-      in newTree `shouldSatisfy` (((== (1     + countGames' oldTree))                  . countGames')         .&&.
-                                  ((== ((maxScore - k') + countOpponentsWins oldTree)) . countOpponentsWins) .&&.
-                                  ((== (k'              + countMyWins        oldTree)) . countMyWins))
+      in newTree `shouldSatisfy` (((== (1     + countGames oldTree)) . countGames)         .&&.
+                                  ((/= (sumOpponentsRatios oldTree)) . sumOpponentsRatios) .&&.
+                                  ((/= (sumMyRatios        oldTree)) . sumMyRatios))
     prop "should add an unsearched level to the state transitions for this tree" $ \ (i, j, k) ->
       let myMoves        = myMovesFrom aStateWithAnEnemyWormNearby
           thisMove       = myMoves L.!! (i `mod` length myMoves)
           opponentsMoves = opponentsMovesFrom aStateWithAnEnemyWormNearby
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          k'             = k `mod` (maxScore + 1)
+          k'             = k `mod` ((maxScore - 1) + 1)
           oldTree        = SearchedLevel
-                           (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
-                           (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
+                           (length myMoves)
+                           (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
+                           (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
                            []
           newTree        = updateTree Dig
                                       aStateWithAnEnemyWormNearby
                                       (SearchResult
-                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') digMaxScore)
+                                       (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove, fromMoves thisMove thatMove])
                                       oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy`
          (((== 1) . length . transitions) .&&.
-          ((((== (Wins $ 1 +  k'))         . wins) .&&.
-            ((== (Played $ 1 +  1))        . played)) .
+          (((== (1 +  1)) . played) .
            (fromJust . find ((== thisMove) . successRecordMove) . myMovesFromTree)) .&&.
-          ((((== (Wins $ 1 + maxScore - k')) . wins) .&&.
-            ((== (Played $ 1 + 1))           . played)) .
+          (((== (1 + 1)) . played) .
            (fromJust . find ((== thatMove) . successRecordMove) . opponentsMovesFromTree))) . snd
-    prop "should add an unsearched level to the state transitions for this tree" $ \ (i, j, k, l, m) ->
-      let myMoves        = myMovesFrom aStateWithAnEnemyWormNearby
-          thisMove       = myMoves L.!! (i `mod` length myMoves)
-          thisMove'      = myMoves L.!! (m `mod` length myMoves)
-          opponentsMoves = opponentsMovesFrom aStateWithAnEnemyWormNearby
-          thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
-          thatMove'      = opponentsMoves L.!! (l `mod` length opponentsMoves)
-          k'             = k `mod` (maxScore + 1)
-          oldTree        = SearchedLevel
-                           (MyMoves        $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) myMoves)
-                           (OpponentsMoves $ map (\ move -> (SuccessRecord (Wins 1) (Played 1) move)) opponentsMoves)
-                           []
-          newTree        = updateTree Kill
-                                      aStateWithAnEnemyWormNearby
-                                      (SearchResult
-                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') digMaxScore)
-                                        [fromMoves thisMove thatMove,
-                                         fromMoves thisMove' thatMove'])
-                                      oldTree
-      in ((thisMove', thatMove'), newTree) `shouldSatisfy`
-         (((((== (Wins k'))  . wins) .&&.
-            ((== (Played 1)) . played)) .
-           (fromJust . find ((== thisMove') . successRecordMove) . myMovesFromTree)) .&&.
-          ((((== (Wins $ maxScore - k')) . wins) .&&.
-            ((== (Played 1))             . played)) .
-           (fromJust . find ((== thatMove') . successRecordMove) . opponentsMovesFromTree))) .
-         makeMoveInTree (fromMoves thisMove thatMove) . snd
   describe "formatMove" $ do
     prop "should produce the correct type of move for the correct range" $ \ (x, y) ->
       let x'            = abs x `mod` 186
