@@ -2160,31 +2160,31 @@ bananaBlast wormId'
             rewardKill
             targetCoord
             state =
-  let targetIsDeepSpace = deepSpaceAt targetCoord gameMapPriorToBlast
-      potentialHits     = catMaybes $ map ($ targetCoord) blastCoordDeltasInRange
   -- TODO: I removed this condition: (wormHits == [] && dirtHits == [] && packHits == [])
-  in if targetIsDeepSpace
-     then awardPointsForMissing' state
-     -- Effect the current state (could have changed as a result of
-     -- the other worm blasting too)
-     else foldl' (\ state' nextCoord ->
-                     if containsAnyWorm nextCoord wormPositions'
-                     then let damage' = bananaDamageAt targetCoord nextCoord
-                          in harmWorm wormId'
-                             wormPositions'
-                             damage'
-                             (penaliseForDamage'    damage')
-                             (awardPointsForDamage' damage')
-                             rewardKill
-                             nextCoord
-                             state'
-                     else if dirtAt nextCoord gameMapPriorToBlast
-                          then awardPointsForDigging' $ removeDirtFromMapAt nextCoord state'
-                          else if medipackAt nextCoord gameMapPriorToBlast
-                               then removeMedipack nextCoord state'
-                               else state')
-          state
-          potentialHits
+  if deepSpaceAt targetCoord gameMapPriorToBlast
+  then awardPointsForMissing' state
+  -- Effect the current state (could have changed as a result of
+  -- the other worm blasting too)
+  else foldOverBlastCoordsInRange
+         targetCoord
+         (\ state' nextCoord ->
+             if containsAnyWorm nextCoord wormPositions'
+             then let damage' = bananaDamageAt targetCoord nextCoord
+                  in harmWorm wormId'
+                     wormPositions'
+                     damage'
+                     (penaliseForDamage'    damage')
+                     (awardPointsForDamage' damage')
+                     rewardKill
+                     nextCoord
+                     state'
+             else if dirtAt nextCoord gameMapPriorToBlast
+                  then awardPointsForDigging' $ removeDirtFromMapAt nextCoord state'
+                  else if medipackAt nextCoord gameMapPriorToBlast
+                       then removeMedipack nextCoord state'
+                       else state')
+       state
+
 bananaCentreDamage :: Int
 bananaCentreDamage = 20
 
