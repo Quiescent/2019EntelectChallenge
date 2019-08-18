@@ -2167,7 +2167,7 @@ bananaBlast wormId'
   -- the other worm blasting too)
   else foldOverBlastCoordsInRange
          targetCoord
-         (\ state' nextCoord ->
+         (\ !state' !nextCoord ->
              if containsAnyWorm nextCoord wormPositions'
              then let damage' = bananaDamageAt targetCoord nextCoord
                   in harmWorm wormId'
@@ -3638,7 +3638,7 @@ bananaBlastHitEnemy :: Coord -> WormPositions -> Bool
 bananaBlastHitEnemy coord' wormPositions' =
   foldOverBlastCoordsInRange
     coord'
-    (\ hitsAWorm nextCoord -> hitsAWorm || aListAnyOpponentData (== nextCoord) wormPositions')
+    (\ !hitsAWorm !nextCoord -> hitsAWorm || aListAnyOpponentData (== nextCoord) wormPositions')
     False
 
 snowballBlastHitEnemy :: Coord -> WormPositions -> Bool
