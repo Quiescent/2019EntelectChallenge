@@ -1909,6 +1909,59 @@ withWormFrozenDurations :: WithWormFacts
 withWormFrozenDurations f state@(State { frozenDurations = frozenDurations' }) =
   state { frozenDurations = f frozenDurations' }
 
+foldOverSnowballBlastCoordsInRange :: (Show b) => Coord -> (b -> Coord -> b) -> b -> b
+foldOverSnowballBlastCoordsInRange epicentre f accumulator =
+  go (0::Int) accumulator
+  where
+    go 0 !acc = let acc' = f acc epicentre
+                in if isOnWesternBorder epicentre
+                   then if isOnNorthernBorder epicentre
+                        then go 5 acc'
+                        else go 3 acc'
+                   else go 1 acc'
+    go 1 !acc = let coord' = epicentre - 1
+                    acc'   = f acc coord'
+                in if isOnNorthernBorder coord'
+                      then if isOnEasternBorder epicentre
+                           then go 7 acc'
+                           else go 5 acc'
+                   else go 2 acc'
+    go 2 !acc = let coord' = epicentre - mapDim - 1
+                    acc'   = f acc coord'
+                in go 3 acc'
+    go 3 !acc = let coord' = epicentre - mapDim
+                    acc'   = f acc coord'
+                in if isOnEasternBorder coord'
+                   then if isOnSouthernBorder epicentre
+                        then acc'
+                        else go 7 acc'
+                   else go 4 acc'
+    go 4 !acc = let coord' = epicentre - mapDim + 1
+                    acc'   = f acc coord'
+                in go 5 acc'
+    go 5 !acc = let coord' = epicentre + 1
+                    acc'   = f acc coord'
+                in if isOnSouthernBorder coord'
+                   then acc'
+                   else go 6 acc'
+    go 6 !acc = let coord' = epicentre + mapDim + 1
+                    acc'   = f acc coord'
+                in go 7 acc'
+    go 7 !acc = let coord' = epicentre + mapDim
+                    acc'   = f acc coord'
+                in if isOnWesternBorder coord'
+                   then acc'
+                   else go 8 acc'
+    go 8 !acc = let coord' = epicentre + mapDim - 1
+                    acc'   = f acc coord'
+                in acc'
+    go x acc  = error $ "folding over snowball hits ran into " ++ show x ++ ", with accumulator at " ++ show acc
+
+-- Pattern for iteration:
+-- [  2,   3,  4,
+--    1,   0,  5,
+--    8,   7,  6]
+
 snowballBlastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
 snowballBlastCoordDeltasInRange =
   zipWith (\ dx dy ->
