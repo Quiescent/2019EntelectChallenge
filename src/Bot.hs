@@ -244,20 +244,6 @@ aListOpponentsValuesChanged :: AList -> AList -> Bool
 aListOpponentsValuesChanged (AList _ _ _ d e f) (AList _ _ _ d' e' f') =
   d /= d' || e /= e' || f /= f'
 
-aListMyData :: AList -> [Int]
-aListMyData (AList a b c _ _ _) =
-  catMaybes [
-  if a /= -1 then Just a else Nothing,
-  if b /= -1 then Just b else Nothing,
-  if c /= -1 then Just c else Nothing]
-
-aListOpponentData :: AList -> [Int]
-aListOpponentData (AList _ _ _ d e f) =
-  catMaybes [
-  if d /= -1 then Just d else Nothing,
-  if e /= -1 then Just e else Nothing,
-  if f /= -1 then Just f else Nothing]
-
 anyWormFacts :: (WormId -> Int -> Bool) -> AList -> Bool
 anyWormFacts p (AList a b c d e f) =
   p (WormId 1)  a ||
@@ -2032,6 +2018,90 @@ bananaDamageAt centre coord' =
 --   11,13,11,
 --       7]
 
+-- Hint: Your function should close over the GameMap and WormPositions
+foldOverBlastCoordsInRange :: (Show b) => Coord -> (b -> Coord -> b) -> b -> b
+foldOverBlastCoordsInRange epicentre f accumulator =
+  go (0::Int) accumulator
+  where
+    go 0  !acc = let acc' = f acc epicentre
+                 in if isOnWesternBorder epicentre
+                    then if isOnNorthernBorder epicentre
+                         then go 7 acc'
+                         else go 4 acc'
+                    else go 1 acc'
+    go 1  !acc = let coord' = (epicentre - 1)
+                     acc'   = f acc coord'
+                 in if isOnWesternBorder coord'
+                    then if isOnNorthernBorder coord'
+                         then go 7 acc'
+                         else go 3 acc'
+                    else go 2 acc'
+    go 2  !acc = let coord' = (epicentre - 2)
+                     acc'   = f acc coord'
+                 in if isOnNorthernBorder coord'
+                    then if isOnEasternBorder epicentre
+                         then go 10 acc'
+                         else go 7 acc'
+                    else go 3 acc'
+    go 3  !acc = let coord' = (epicentre - 1 - mapDim)
+                     acc'   = f acc coord'
+                 in go 4 acc'
+    go 4  !acc = let coord' = (epicentre - mapDim)
+                     acc'   = f acc coord'
+                 in if isOnNorthernBorder coord'
+                    then if isOnEasternBorder coord'
+                         then go 10 acc'
+                         else go 6 acc'
+                    else go 5 acc'
+    go 5  !acc = let coord' = (epicentre - 2 * mapDim)
+                     acc'   = f acc coord'
+                 in if isOnEasternBorder coord'
+                    then if isOnSouthernBorder epicentre
+                         then acc'
+                         else go 10 acc'
+                    else go 6 acc'
+    go 6  !acc = let coord' = epicentre - mapDim + 1
+                     acc'   = f acc coord'
+                 in go 7 acc'
+    go 7  !acc = let coord' = epicentre + 1
+                     acc'   = f acc coord'
+                 in if isOnEasternBorder coord'
+                       then if isOnSouthernBorder coord'
+                            then acc'
+                            else go 9 acc'
+                    else go 8 acc'
+    go 8  !acc = let coord' = epicentre + 2
+                     acc'   = f acc coord'
+                 in if isOnSouthernBorder coord'
+                    then acc'
+                    else go 9 acc'
+    go 9  !acc = let coord' = epicentre + mapDim + 1
+                     acc'   = f acc coord'
+                 in go 10 acc'
+    go 10 !acc = let coord' = epicentre + mapDim
+                     acc'   = f acc coord'
+                 in if isOnSouthernBorder coord'
+                    then if isOnWesternBorder coord'
+                         then acc
+                         else go 12 acc'
+                    else go 11 acc'
+    go 11 !acc = let coord' = epicentre + 2 * mapDim
+                     acc'   = f acc coord'
+                 in if isOnWesternBorder coord'
+                    then acc'
+                    else go 12 acc'
+    go 12 !acc = let coord' = epicentre + mapDim - 1
+                     acc'   = f acc coord'
+                 in acc'
+    go i  !acc = error $ "go: " ++ show i ++ " with accumulator: " ++ show acc
+
+-- Pattern for iteration:
+-- [         5,
+--      3,   4,  6,
+--  2,  1,   0,  7, 8,
+--     12,  10,  9,
+--          11]
+
 blastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
 blastCoordDeltasInRange =
   zipWith (\ dx dy ->
@@ -3562,6 +3632,8 @@ moveWouldBeValuableToMe state move =
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToMe (makeMySelection move state) (removeSelectionFromMove move))
 
+-- TODO: This is wrong, but I now know that it's slow so lets optimise
+-- it!! :D
 bananaBlastHitEnemy :: Coord -> WormPositions -> Bool
 bananaBlastHitEnemy coord' wormPositions' =
   any (\ nextCoord -> aListAnyOpponentData (== nextCoord) wormPositions') $
