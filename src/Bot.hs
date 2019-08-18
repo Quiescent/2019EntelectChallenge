@@ -1874,19 +1874,20 @@ snowballBlast wormId'
               awardPointsToPlayerForMissing'
               targetCoord
               state =
-  let targetIsDeepSpace = deepSpaceAt targetCoord gameMap'
-      potentialHits     = catMaybes $ map ($ targetCoord) snowballBlastCoordDeltasInRange
-      wormHits          = filter ((flip containsAnyWorm) wormPositions') potentialHits
-  in if targetIsDeepSpace || wormHits == []
-     then awardPointsToPlayerForMissing' state
-     else foldl' (\ state' nextWormCoord ->
-                     freezeWorm wormId'
-                                awardPlayerForFreezingAWorm'
-                                penalisePlayerForFreezingAWorm'
-                                nextWormCoord
-                                state')
-          state
-          wormHits
+  -- TODO: removed this (wormHits == [])
+  if deepSpaceAt targetCoord gameMap'
+  then awardPointsToPlayerForMissing' state
+  else foldOverSnowballBlastCoordsInRange
+         targetCoord
+         (\ !state' !nextWormCoord ->
+            if containsAnyWorm nextWormCoord wormPositions'
+            then freezeWorm wormId'
+                            awardPlayerForFreezingAWorm'
+                            penalisePlayerForFreezingAWorm'
+                            nextWormCoord
+                            state'
+            else state')
+         state
 
 -- ASSUME: that the worm being frozen exists
 freezeWorm :: WormId -> ModifyState -> ModifyState -> Coord -> ModifyState
