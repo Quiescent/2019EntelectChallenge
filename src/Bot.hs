@@ -3465,8 +3465,8 @@ payOff (State { wormHealths     = wormHealths',
 killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
-killSearch g _             _     SearchFront                moves =
-  (SearchResult (Payoff (MyPayoff 0) (OpponentsPayoff 0) (MaxScore 0)) (reverse moves), g)
+killSearch g _      state SearchFront                  moves =
+  (SearchResult (payOff state) (reverse moves), g)
 killSearch g round' state tree@(SearchedLevel _ _ _ _) moves =
   case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
