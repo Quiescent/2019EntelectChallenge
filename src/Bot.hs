@@ -3209,7 +3209,7 @@ data SearchResult = SearchResult Payoff Moves
 
 instance Show SearchResult where
   show (SearchResult payoff moves') =
-    "SearchResult (Payoff " ++ show payoff ++ ") (Moves " ++ (show $ map toMoves moves') ++ ")"
+    "SearchResult (" ++ show payoff ++ ") (Moves " ++ (show $ map toMoves moves') ++ ")"
 
 instance NFData SearchResult where
   rnf (SearchResult payoff moves) = payoff `deepseq` moves `deepseq` ()
