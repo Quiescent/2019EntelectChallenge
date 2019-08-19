@@ -2464,8 +2464,11 @@ makeDigMove awardPointsForDigging' penalise !wormsCoord !gameMap' !move =
       awardPoints      = if targetIsValid then awardPointsForDigging' else penaliseBadDig
   in awardPoints . digOutTarget
 
+digPoints :: Int
+digPoints = 7
+
 awardPointsForDigging :: Player -> Player
-awardPointsForDigging = modifyScore 7
+awardPointsForDigging = modifyScore digPoints
 
 awardPointsToThisPlayerForDigging :: ModifyState
 awardPointsToThisPlayerForDigging = mapThisPlayer awardPointsForDigging
@@ -3612,7 +3615,7 @@ gameOver state round' =
                else NoResult
 
 digMaxScore :: MaxScore
-digMaxScore = (MaxScore 1)
+digMaxScore = MaxScore $ maxDigRound * digPoints
 
 digGameOver :: Int -> Rewards -> State -> GameOver
 digGameOver round' rewards state =
