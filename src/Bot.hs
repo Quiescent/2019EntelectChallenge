@@ -33,12 +33,6 @@ import Control.DeepSeq
 -- TODO: think long and hard about this...
 import Prelude (read)
 
-import Debug.Trace
-
-probe :: Show a => String -> a -> a
-probe message x =
-  Debug.Trace.trace (message ++ ": " ++ show x) x
-
 data State = State { opponentsLastCommand :: Maybe String,
                      currentRound         :: Int,
                      wormHealths          :: WormHealths,
@@ -1308,7 +1302,7 @@ makeMove _ moves state =
      dealLavaDamage state
   where
     go !myMoveType !opponentsMoveType !myMove !opponentsMove state' =
-      makeMove' (probe ("Go with opponents move type: " ++ show opponentsMoveType ++ ", and mine") myMoveType) opponentsMoveType state'
+      makeMove' myMoveType opponentsMoveType state'
       where
         wormHealths'              = wormHealths state'
         wormPositions'            = wormPositions state'
@@ -1321,20 +1315,38 @@ makeMove _ moves state =
         thatWormHasBananasLeft'   = thisWormHasBananasLeft state'
         thisWormHasSnowballsLeft' = thisWormHasSnowballsLeft state'
         thatWormHasSnowballsLeft' = thatWormHasSnowballsLeft state'
+        makeMove' SELECT          SELECT =
+          let myMove'            = removeSelectionFromMove myMove
+              opponentsMove'     = removeSelectionFromMove opponentsMove
+              myMoveType'        = decodeMoveType myMove'
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType' opponentsMoveType' myMove' opponentsMove' .
+             makeMySelection           myMove .
+             makeOpponentsSelection    opponentsMove
+        makeMove' _               SELECT =
+          let opponentsMove'     = removeSelectionFromMove opponentsMove
+              opponentsMoveType' = decodeMoveType opponentsMove'
+          in go myMoveType opponentsMoveType' myMove opponentsMove' .
+             makeOpponentsSelection opponentsMove
+        makeMove' SELECT          _ =
+          let myMove'     = removeSelectionFromMove myMove
+              myMoveType' = decodeMoveType myMove'
+          in go myMoveType' opponentsMoveType myMove' opponentsMove .
+             makeMySelection           myMove
         makeMove' MOVE            MOVE =
           collideWorms wormHealths' wormPositions' gameMap' .
-          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove .
+          makeMyMoveMove        wormPositions' thisWormsCoord' thisWormsId gameMap' myMove .
           makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
         makeMove' MOVE            DIG =
           makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove .
-          makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
+          makeMyMoveMove       wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
         makeMove' MOVE            NOTHING =
           makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
         makeMove' MOVE            _ =
           go NOTHING opponentsMoveType doNothing opponentsMove .
           makeMyMoveMove wormPositions' thisWormsCoord' thisWormsId gameMap' myMove
         makeMove' DIG             DIG =
-          makeMyDigMove thisWormsCoord' gameMap' myMove .
+          makeMyDigMove        thisWormsCoord' gameMap' myMove .
           makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
         makeMove' DIG             THROW_SNOWBALL =
           makeOpponentsSnowballMove thatWormsId
@@ -1344,11 +1356,6 @@ makeMove _ moves state =
                                     wormPositions'
                                     opponentsMove .
           makeMyDigMove thisWormsCoord' gameMap' myMove
-        makeMove' DIG             SELECT =
-          let opponentsMove'     = removeSelectionFromMove opponentsMove
-              opponentsMoveType' = decodeMoveType opponentsMove'
-          in go myMoveType opponentsMoveType' myMove opponentsMove' .
-             makeOpponentsSelection opponentsMove
         makeMove' DIG             NOTHING =
           makeMyDigMove thisWormsCoord' gameMap' myMove
         makeMove' DIG             MOVE =
@@ -1391,12 +1398,7 @@ makeMove _ moves state =
                           thisWormsId
                           gameMap'
                           wormPositions'
-                          myMove                          
-        makeMove' SHOOT           SELECT =
-          let opponentsMove'     = removeSelectionFromMove opponentsMove
-              opponentsMoveType' = decodeMoveType opponentsMove'
-          in go myMoveType opponentsMoveType' myMove opponentsMove' .
-             makeOpponentsSelection opponentsMove
+                          myMove
         makeMove' SHOOT           NOTHING =
           makeMyShootMove thisWormsCoord'
                           thisWormsId
@@ -1429,11 +1431,6 @@ makeMove _ moves state =
                            gameMap'
                            wormPositions'
                            myMove
-        makeMove' THROW_BANANA    SELECT =
-          let opponentsMove'     = removeSelectionFromMove opponentsMove
-              opponentsMoveType' = decodeMoveType opponentsMove'
-          in go myMoveType opponentsMoveType' myMove opponentsMove' .
-             makeOpponentsSelection opponentsMove
         makeMove' THROW_BANANA    NOTHING =
           makeMyBananaMove thisWormsId
                            thisWormsCoord'
@@ -1454,11 +1451,6 @@ makeMove _ moves state =
                                     gameMap'
                                     wormPositions'
                                     opponentsMove
-        makeMove' THROW_SNOWBALL  SELECT =
-          let opponentsMove'     = removeSelectionFromMove opponentsMove
-              opponentsMoveType' = decodeMoveType opponentsMove'
-          in go myMoveType opponentsMoveType' myMove opponentsMove' .
-             makeOpponentsSelection opponentsMove
         makeMove' THROW_SNOWBALL  NOTHING =
           makeMySnowballMove thisWormsId
                              thisWormsCoord'
@@ -1466,24 +1458,6 @@ makeMove _ moves state =
                              gameMap'
                              wormPositions'
                              myMove
-        makeMove' SELECT          SELECT =
-          let myMove'            = removeSelectionFromMove myMove
-              opponentsMove'     = removeSelectionFromMove opponentsMove
-              myMoveType'        = decodeMoveType myMove'
-              opponentsMoveType' = decodeMoveType opponentsMove'
-          in go myMoveType' opponentsMoveType' myMove' opponentsMove' .
-             makeMySelection           myMove .
-             makeOpponentsSelection    opponentsMove
-        makeMove' SELECT          NOTHING =
-          let myMove'     = removeSelectionFromMove myMove
-              myMoveType' = decodeMoveType myMove'
-          in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
-        makeMove' SELECT          MOVE =
-          let myMove'     = removeSelectionFromMove myMove
-              myMoveType' = decodeMoveType myMove'
-          in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
         makeMove' NOTHING         MOVE =
           makeOpponentsMoveMove wormPositions' thatWormsCoord' thatWormsId gameMap' opponentsMove
         makeMove' _           MOVE =
@@ -1497,11 +1471,6 @@ makeMove _ moves state =
                              wormPositions'
                              myMove .
           makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
-        makeMove' SELECT          DIG =
-          let myMove'     = removeSelectionFromMove myMove
-              myMoveType' = decodeMoveType myMove'
-          in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
         makeMove' NOTHING         DIG =
           makeOpponentsDigMove thatWormsCoord' gameMap' opponentsMove
         makeMove' _           DIG =
@@ -1531,11 +1500,6 @@ makeMove _ moves state =
                                  gameMap'
                                  wormPositions'
                                  opponentsMove
-        makeMove' SELECT          SHOOT =
-          let myMove'     = removeSelectionFromMove myMove
-              myMoveType' = decodeMoveType myMove'
-          in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
         makeMove' NOTHING         SHOOT =
           makeOpponentsShootMove thatWormsCoord'
                                  thatWormsId
@@ -1555,11 +1519,6 @@ makeMove _ moves state =
                                   gameMap'
                                   wormPositions'
                                   opponentsMove
-        makeMove' SELECT          THROW_BANANA =
-          let myMove'     = removeSelectionFromMove myMove
-              myMoveType' = decodeMoveType myMove'
-          in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
         makeMove' NOTHING         THROW_BANANA =
           makeOpponentsBananaMove thatWormsId
                                   thatWormsCoord'
@@ -1567,11 +1526,6 @@ makeMove _ moves state =
                                   gameMap'
                                   wormPositions'
                                   opponentsMove
-        makeMove' SELECT          THROW_SNOWBALL =
-          let myMove'     = removeSelectionFromMove myMove
-              myMoveType' = decodeMoveType myMove'
-          in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
         makeMove' NOTHING         THROW_SNOWBALL =
           makeOpponentsSnowballMove thatWormsId
                                     thatWormsCoord'
@@ -1579,11 +1533,6 @@ makeMove _ moves state =
                                     gameMap'
                                     wormPositions'
                                     opponentsMove
-        makeMove' NOTHING         SELECT =
-          let myMove'     = removeSelectionFromMove myMove
-              myMoveType' = decodeMoveType myMove'
-          in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
         makeMove' NOTHING         NOTHING = id
 
 conditionally :: Bool -> ModifyState -> ModifyState
@@ -2933,7 +2882,7 @@ myMovesFromTree SearchFront                               =
   error $ "myMovesFromTree of SearchFront"
 
 iterationsBeforeComms :: Int
-iterationsBeforeComms = 2
+iterationsBeforeComms = 10
 
 type CommsChannel = TMVar.TMVar
 
@@ -3345,7 +3294,7 @@ digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchR
 digSearch g round' state SearchFront                moves !reward =
   case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        -> 
+    NoResult        ->
       let availableMoves = digMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state

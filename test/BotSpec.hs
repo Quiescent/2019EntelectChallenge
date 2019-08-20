@@ -30,16 +30,16 @@ transitions (SearchedLevel   _ _ _ transitions') = transitions'
 transitions (UnSearchedLevel _ _ _)              = []
 transitions SearchFront                          = []
 
-sumMyRatios :: SearchTree -> Float
+sumMyRatios :: SearchTree -> Double
 sumMyRatios = sum . map payoffRatio . myMovesFromTree
 
-sumOpponentsRatios :: SearchTree -> Float
+sumOpponentsRatios :: SearchTree -> Double
 sumOpponentsRatios = sum . map payoffRatio . opponentsMovesFromTree
 
 played :: SuccessRecord -> Int
 played (SuccessRecord (GamesPlayed x) _ _) = x
 
-payoffRatio :: SuccessRecord -> Float
+payoffRatio :: SuccessRecord -> Double
 payoffRatio (SuccessRecord _ (PayoffRatio x) _) = x
 
 spec :: Spec
@@ -176,19 +176,6 @@ spec = do
       let opponentsMoves          = opponentsMovesFrom aState
           opponentsMovesAsStrings = map (prettyPrintThatMove aState) opponentsMoves
       in (map (parseLastCommand aState . Just) opponentsMovesAsStrings) `shouldBe` opponentsMoves
-  describe "diffMax" $ do
-    it "should produce a very high payoff when the score which I got was very high" $ do
-      diffMax [Reward (MyReward 100)  (OpponentsReward 1500),
-               Reward (MyReward 100)  (OpponentsReward 1500),
-               Reward (MyReward 100)  (OpponentsReward 1500),
-               Reward (MyReward 100)  (OpponentsReward 1500)] `shouldBe`
-        (Payoff (MyPayoff 400) (OpponentsPayoff 6000) digMaxScore)
-    it "should decrease with every move down the chain" $
-      diffMax [Reward (MyReward 0) (OpponentsReward 7),
-               Reward (MyReward 0) (OpponentsReward 7),
-               Reward (MyReward 0) (OpponentsReward 7),
-               Reward (MyReward 0) (OpponentsReward 7)] `shouldBe`
-      (Payoff (MyPayoff 0) (OpponentsPayoff $ 7 + 7 + 7 + 7) digMaxScore)
   let maxScore = 20
   describe "updateCount" $ do
     prop "should produce the same number of records when updating a record regardless of whether it's there or not" $ \ (i, k) ->
