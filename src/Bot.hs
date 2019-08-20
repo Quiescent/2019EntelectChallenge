@@ -3484,8 +3484,8 @@ killSearch g
           myMove                 = successRecordMove myRecord
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
-          -- state'                 = makeMove False combinedMove state
-      in (SearchResult (Payoff (MyPayoff 1) (OpponentsPayoff 1) (MaxScore 1)) (reverse (combinedMove:moves)), g'')
+          state'                 = makeMove False combinedMove state
+      in (SearchResult (payOff state') (reverse (combinedMove:moves)), g'')
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
 findSubTree combinedMove stateTransitions =
@@ -3523,18 +3523,6 @@ searchSearchedLevel g
 -- number.
 data GameOver = GameOver Payoff
               | NoResult
-
-playRandomly :: StdGen -> Int -> State -> Moves -> (SearchResult, StdGen)
-playRandomly g round' state moves =
-  case gameOver state round' of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        ->
-      let availableMoves  = shootAndMoveMovesFrom state
-          (move, g')      = if availableMoves == []
-                            then (fromMoves doNothing doNothing, g)
-                            else pickOneAtRandom g availableMoves
-          state'          = makeMove False move state
-      in playRandomly g' (round' + 1) state' moves
 
 maxDigRound :: Int
 maxDigRound = 20
