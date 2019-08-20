@@ -2828,8 +2828,12 @@ are in the minigame.
    - CLOSING NOTE [2019-08-20 Tue 06:56] \\
      Marking as done retrospectively
    :END:
-** IN_PROGRESS Make dig not do random searches
+** DONE Make dig not do random searches
+   CLOSED: [2019-08-20 Tue 07:13]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-20 Tue 07:13] \\
+     Instead of not doing random searches I decided to improve the reward
+     heuristic for digging so that it now only rewards a dig move.
    - State "IN_PROGRESS" from "TODO"       [2019-08-20 Tue 06:58]
    :END:
 ** IN_PROGRESS Make the Search Faster
