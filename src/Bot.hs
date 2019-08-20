@@ -3110,7 +3110,7 @@ startBot g = do
   _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
   liftIO $ runRound initialRound' initialState stateChannel treeVariable
 
-data PayoffRatio = PayoffRatio !Float
+data PayoffRatio = PayoffRatio !Double
   deriving (Eq)
 
 instance NFData PayoffRatio where
@@ -3668,7 +3668,7 @@ chooseBestMove totalGames successRecords =
         confidence totalGames gamesPlayed ratio
   in maximumBy (\ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
 
-confidence :: Int -> Int -> Float -> Float
+confidence :: Int -> Int -> Double -> Double
 confidence !totalCount !gamesPlayed !ratio =
   ratio +
   c * sqrt ((log count_i) / n_i)
