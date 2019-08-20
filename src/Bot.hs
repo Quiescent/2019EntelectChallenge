@@ -33,6 +33,12 @@ import Control.DeepSeq
 -- TODO: think long and hard about this...
 import Prelude (read)
 
+import Debug.Trace
+
+probe :: Show a => String -> a -> a
+probe message x =
+  Debug.Trace.trace (message ++ ": " ++ show x) x
+
 data State = State { opponentsLastCommand :: Maybe String,
                      currentRound         :: Int,
                      wormHealths          :: WormHealths,
@@ -1302,7 +1308,7 @@ makeMove _ moves state =
      dealLavaDamage state
   where
     go !myMoveType !opponentsMoveType !myMove !opponentsMove state' =
-      makeMove' myMoveType opponentsMoveType state'
+      makeMove' (probe ("Go with opponents move type: " ++ show opponentsMoveType ++ ", and mine") myMoveType) opponentsMoveType state'
       where
         wormHealths'              = wormHealths state'
         wormPositions'            = wormPositions state'
