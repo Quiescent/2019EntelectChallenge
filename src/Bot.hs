@@ -3197,13 +3197,7 @@ instance Show SearchTree where
   show SearchFront =
     "SearchFront"
 
-data MyReward = MyReward Int
-
-data OpponentsReward = OpponentsReward Int
-
-data Reward = Reward MyReward OpponentsReward
-
-type Rewards = [Reward]
+type Reward = Int
 
 data SearchResult = SearchResult Payoff Moves
 
@@ -3290,10 +3284,10 @@ updateCount changeCount (record:rest) move'
   | successRecordMove record == move' = (changeCount record):rest
   | otherwise                         = record:(updateCount changeCount rest move')
 
-reward :: State -> State -> Reward
-reward previousState nextState =
-  Reward (MyReward        $ computeMyScore        nextState - computeMyScore        previousState)
-         (OpponentsReward $ computeOpponentsScore nextState - computeOpponentsScore previousState)
+digReward :: Move -> Reward
+digReward myMove
+  | isADigMove myMove = digPoints
+  | otherwise         = 0
 
 rangeToConsiderInMinigame :: Int
 rangeToConsiderInMinigame = 7
@@ -3336,32 +3330,32 @@ search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
 search g strategy minigameState searchTree =
   let round' = (currentRound minigameState)
   in case strategy of
-       Dig  -> digSearch  g 0      minigameState searchTree [] []
+       Dig  -> digSearch  g 0      minigameState searchTree [] 0
        Kill -> killSearch g round' minigameState searchTree []
 
-digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
+digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
-digSearch g round' state SearchFront                moves rewards =
-  case digGameOver round' rewards state of
+digSearch g round' state SearchFront                moves !reward =
+  case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        ->
+    NoResult        -> 
       let availableMoves = digMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
-          reward'        = reward state state'
-      in digPlayRandomly g' (round' + 1) state' (move:moves) (reward':rewards)
-digSearch g round' state tree@(SearchedLevel _ _ _ _) moves rewards =
-  case digGameOver round' rewards state of
+          reward'        = digReward $ fst $ toMoves move
+      in digPlayRandomly g' (round' + 1) state' (move:moves) (reward' + reward)
+digSearch g round' state tree@(SearchedLevel _ _ _ _) moves reward =
+  case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        -> digSearchSearchedLevel g round' state tree moves rewards
+    NoResult        -> digSearchSearchedLevel g round' state tree moves reward
 digSearch g
           round'
           state
           (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
           moves
-          rewards =
-  case digGameOver round' rewards state of
+          reward =
+  case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let (myRecord,        g')  = pickOneAtRandom g  myMoves
@@ -3370,15 +3364,15 @@ digSearch g
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-          reward'                = reward state state'
+          reward'                = digReward myMove
       in digSearch g''
                    (round' + 1)
                    state'
                    SearchFront
                    (combinedMove:moves)
-                   (reward':rewards)
+                   (reward' + reward)
 
-digSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> Rewards -> (SearchResult, StdGen)
+digSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 digSearchSearchedLevel _ _ _ SearchFront                   _ _ = error "searchSearchedLevel: SearchFront"
 digSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _ )  _ _ = error $ "searchSearchedLevel: " ++ show level
 digSearchSearchedLevel g
@@ -3386,22 +3380,22 @@ digSearchSearchedLevel g
                        state
                        (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
                        moves
-                       rewards =
+                       reward =
   let myBestMove        = successRecordMove $ chooseBestMove gamesPlayed myMoves
       opponentsBestMove = successRecordMove $ chooseBestMove gamesPlayed opponentsMoves
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
-      reward'           = reward state state'
+      reward'           = digReward $ myBestMove
   in digSearch g
                (round' + 1)
                state'
                (findSubTree combinedMove transitions)
                (combinedMove:moves)
-               (reward':rewards)
+               (reward' + reward)
 
-digPlayRandomly :: StdGen -> Int -> State -> Moves -> Rewards -> (SearchResult, StdGen)
-digPlayRandomly g round' state moves rewards =
-  case digGameOver round' rewards state of
+digPlayRandomly :: StdGen -> Int -> State -> Moves -> Reward -> (SearchResult, StdGen)
+digPlayRandomly g round' state moves reward =
+  case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves  = digMovesFrom state
@@ -3409,8 +3403,8 @@ digPlayRandomly g round' state moves rewards =
                             then (fromMoves doNothing doNothing, g)
                             else pickOneAtRandom g availableMoves
           state'          = makeMove False move state
-          reward'         = reward state state'
-      in digPlayRandomly g' (round' + 1) state' moves (reward':rewards)
+          reward'         = digReward $ fst $ toMoves move
+      in digPlayRandomly g' (round' + 1) state' moves (reward' + reward)
 
 maximumHealth :: Int
 maximumHealth = 100 + 100 + 150
@@ -3603,12 +3597,12 @@ gameOver state round' =
                else NoResult
 
 digMaxScore :: MaxScore
-digMaxScore = MaxScore $ maxDigRound * digPoints
+digMaxScore = MaxScore maxDigRound
 
-digGameOver :: Int -> Rewards -> State -> GameOver
-digGameOver round' rewards state =
+digGameOver :: Int -> Reward -> State -> GameOver
+digGameOver round' reward state =
   if round' > maxDigRound || ((aListCountMyEntries $ wormPositions state) == 0)
-  then GameOver $ diffMax rewards
+  then GameOver $ diffMax reward
   else NoResult
 
 myTotalWormHealth :: State -> Int
@@ -3642,13 +3636,8 @@ instance NFData Payoff where
   rnf (Payoff myPayoff opponentsPayoff maxScore') =
     myPayoff `deepseq` opponentsPayoff `deepseq` maxScore' `deepseq` ()
 
-diffMax :: Rewards -> Payoff
-diffMax rewards =
-  let (myScore', opponentsScore') =
-        foldl' (\ (accX', accY') (Reward (MyReward x') (OpponentsReward y')) -> (x' + accX', y' + accY'))
-        (0, 0)
-        rewards
-  in Payoff (MyPayoff myScore') (OpponentsPayoff opponentsScore') digMaxScore
+diffMax :: Reward -> Payoff
+diffMax !rewardTotal = Payoff (MyPayoff rewardTotal) (OpponentsPayoff 0) digMaxScore
 
 chooseBestMove :: Int -> [SuccessRecord] -> SuccessRecord
 chooseBestMove totalGames successRecords =
