@@ -2828,6 +2828,7 @@ are in the minigame.
    - CLOSING NOTE [2019-08-20 Tue 06:56] \\
      Marking as done retrospectively
    :END:
+** TODO Make dig not do random searches
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
