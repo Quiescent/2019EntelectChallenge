@@ -2927,7 +2927,7 @@ myMovesFromTree SearchFront                               =
   error $ "myMovesFromTree of SearchFront"
 
 iterationsBeforeComms :: Int
-iterationsBeforeComms = 10
+iterationsBeforeComms = 2
 
 type CommsChannel = TMVar.TMVar
 
