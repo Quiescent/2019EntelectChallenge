@@ -2985,7 +2985,7 @@ prettyPrintSuccessRecord :: (State -> Move -> String) -> State -> SuccessRecord 
 prettyPrintSuccessRecord printMove
                          state
                          (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) move') =
-    printMove state move' ++ " (played " ++ show gamesPlayed ++ ")" ++ ": " ++ show ratio
+    printMove state move' ++ " (played " ++ show gamesPlayed ++ ")" ++ ": " ++ show (ratio / fromIntegral gamesPlayed)
 
 prettyPrintThisSuccessRecord :: State -> SuccessRecord -> String
 prettyPrintThisSuccessRecord = prettyPrintSuccessRecord prettyPrintThisMove
@@ -3092,7 +3092,7 @@ instance NFData SuccessRecord where
 
 instance Show SuccessRecord where
   show (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) move') =
-    show move' ++ " (" ++ show gamesPlayed ++ "): " ++ show ratio
+    show move' ++ " (" ++ show gamesPlayed ++ "): " ++ show (ratio / fromIntegral gamesPlayed)
 
 type SuccessRecords = [SuccessRecord]
 
@@ -3172,9 +3172,7 @@ instance NFData SearchResult where
 incInc :: Int -> Int -> SuccessRecord -> SuccessRecord
 incInc reward' maxScore' (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) playerMove') =
   SuccessRecord (GamesPlayed $ gamesPlayed + 1)
-                (PayoffRatio $ if gamesPlayed == 0
-                               then fromIntegral reward' / fromIntegral maxScore'
-                               else (ratio + (fromIntegral reward' / fromIntegral maxScore')) / 2)
+                (PayoffRatio $ ratio + (fromIntegral reward' / fromIntegral maxScore'))
                 playerMove'
 
 countGames :: SearchTree -> Int
@@ -3608,7 +3606,7 @@ chooseBestMove totalGames successRecords =
 
 confidence :: Int -> Int -> Double -> Double
 confidence !totalCount !gamesPlayed !ratio =
-  ratio +
+  (ratio / n_i) +
   c * sqrt ((log count_i) / n_i)
   where
     n_i     = fromIntegral gamesPlayed
