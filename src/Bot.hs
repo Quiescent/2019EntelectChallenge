@@ -3660,15 +3660,11 @@ myMovesFrom state = do
   guard (moveWouldBeValuableToMe state myMove)
   return myMove
 
-centreCoord :: Coord
-centreCoord = toCoord (mapDim `div` 2) (mapDim `div` 2)
-
 manhattanDistanceToMiddle :: Coord -> Int
 manhattanDistanceToMiddle coord' =
-  let diff  = abs $ coord' - centreCoord
-      xDiff = diff `mod` mapDim
-      yDiff = diff `div` mapDim
-  in xDiff + yDiff
+  let (x, y)     = fromCoord coord'
+      halfMapDim = 16
+  in (abs $ x - halfMapDim) + (abs $ y - halfMapDim)
 
 isCloserByManhattanDistance :: Coord -> Coord -> Bool
 isCloserByManhattanDistance this that =
