@@ -2913,19 +2913,19 @@ logStdErr = hPutStrLn stderr
 -- state comes along.
 -- TODO: don't suspend the thread when the new state comes along.
 iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
-iterativelyImproveSearch gen initialState _ stateChannel treeVariable = do
-  -- Use SearchFront here because the minigame makes the tree invalid
-  -- on the next turn.
-  E.catch (go gen iterationsBeforeComms SearchFront) exceptionHandler
+iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
+  E.catch (go gen iterationsBeforeComms tree) exceptionHandler
   where
     exceptionHandler e = do
       -- TODO restart worker??
       logStdErr $ "Worker died with exception " ++ show (e::SomeException) ++ "\n" ++
         "State: " ++ readableShow initialState ++ "\n" ++
-        "Minigame state:" ++ readableShow minigameState
-    nearbyWorms   = wormsNearMyCurrentWorm initialState
-    minigameState = withOnlyWormsContainedIn nearbyWorms initialState
-    strategy      = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
+        "state':" ++ readableShow state'
+    nearbyWorms = wormsNearMyCurrentWorm initialState
+    strategy    = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
+    state'      = if strategy == Dig
+                  then withOnlyWormsContainedIn nearbyWorms initialState
+                  else initialState
     go :: StdGen -> Int -> SearchTree-> IO ()
     go gen' 0      !searchTree = do
       writeVariable treeVariable searchTree
@@ -2933,23 +2933,25 @@ iterativelyImproveSearch gen initialState _ stateChannel treeVariable = do
       case newRoundsState of
         -- TODO: use the move (first arg in tuple to modify the
         -- initial state rather than passing it in the whole time.)
-        Just (_, state') -> do
+        Just (move', state'') -> do
           -- This isn't good enough.  I need to have a mode of searching in
           -- between, when the runner hasn't yet told me to move because it's
           -- 900ms from that point that I communicate back.
-          -- let tree'' = makeMoveInTree move' searchTree
-          -- let (myMove', opponentsMove') = (toMoves move')
-          -- when (tree'' == SearchFront) $
-          --   logStdErr $
-          --   "Not in search tree: " ++
-          --   "\n\tCombined: " ++ show move' ++
-          --   "\n\tMy move: " ++ prettyPrintThisMove initialState myMove' ++
-          --   "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
-          iterativelyImproveSearch gen' state' SearchFront stateChannel treeVariable
+          let tree'' = if strategy == Kill
+                       then makeMoveInTree move' searchTree
+                       else SearchFront
+          let (myMove', opponentsMove') = (toMoves move')
+          when (tree'' == SearchFront) $
+            logStdErr $
+            "Not in search tree: " ++
+            "\n\tCombined: " ++ show move' ++
+            "\n\tMy move: " ++ prettyPrintThisMove initialState myMove' ++
+            "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
+          iterativelyImproveSearch gen' state'' tree'' stateChannel treeVariable
         Nothing -> go gen' iterationsBeforeComms searchTree
     go gen' !count' !searchTree =
-      let (result, gen'') = search gen' strategy minigameState searchTree
-          newTree         = updateTree strategy minigameState result searchTree
+      let (result, gen'') = search gen' strategy state' searchTree
+          newTree         = updateTree strategy state' result searchTree
       in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
@@ -3291,13 +3293,13 @@ fixOpponentsCurrentWorm state =
      else advanceThatWormSelection state
 
 search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
-search g strategy minigameState searchTree =
-  let round' = (currentRound minigameState)
+search g strategy state searchTree =
+  let round' = (currentRound state)
   in case strategy of
-       Dig            -> digSearch  g 0      minigameState searchTree [] 0
-       Kill           -> killSearch g round' minigameState searchTree []
+       Dig            -> digSearch  g 0      state searchTree [] 0
+       Kill           -> killSearch g round' state searchTree []
        -- TODO implement a custom search for getting to the choppa! XD
-       GetToTheChoppa -> digSearch  g round' minigameState searchTree [] 0
+       GetToTheChoppa -> digSearch  g round' state searchTree [] 0
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
