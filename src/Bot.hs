@@ -2925,7 +2925,7 @@ iterativelyImproveSearch gen initialState _ stateChannel treeVariable = do
         "Minigame state:" ++ readableShow minigameState
     nearbyWorms   = wormsNearMyCurrentWorm initialState
     minigameState = withOnlyWormsContainedIn nearbyWorms initialState
-    strategy      = determineStrategy nearbyWorms
+    strategy      = determineStrategy (currentRound initialState) nearbyWorms
     go :: StdGen -> Int -> SearchTree-> IO ()
     go gen' 0      !searchTree = do
       writeVariable treeVariable searchTree
@@ -3183,11 +3183,13 @@ countGames SearchFront                           = 0
 updateTree :: Strategy -> State-> SearchResult -> SearchTree -> SearchTree
 updateTree strategy minigameState result SearchFront =
   let myMovesFrom'  = case strategy of
-        Kill -> myMovesFrom
-        Dig  -> myDigMovesFrom
+        GetToTheChoppa -> myGetToTheChoppaMoves
+        Kill           -> myMovesFrom
+        Dig            -> myDigMovesFrom
       opponentsMovesFrom' = case strategy of
-        Kill -> opponentsMovesFrom
-        Dig  -> (always [doNothing])
+        GetToTheChoppa -> (always [doNothing])
+        Kill           -> opponentsMovesFrom
+        Dig            -> (always [doNothing])
   in updateTree strategy minigameState result $
      UnSearchedLevel
      0
@@ -3259,12 +3261,13 @@ wormsNearMyCurrentWorm state =
 
 data Strategy = Dig
               | Kill
+              | GetToTheChoppa
               deriving (Eq, Show)
 
-determineStrategy :: AList -> Strategy
-determineStrategy wormPositions' =
+determineStrategy :: Int -> AList -> Strategy
+determineStrategy round' wormPositions' =
   case (aListCountMyEntries wormPositions', aListCountOpponentsEntries wormPositions') of
-    (_, 0) -> Dig
+    (_, 0) -> if round' >= 100 then GetToTheChoppa else Dig
     (_, _) -> Kill
 
 withOnlyWormsContainedIn :: AList -> ModifyState
@@ -3289,8 +3292,10 @@ search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
 search g strategy minigameState searchTree =
   let round' = (currentRound minigameState)
   in case strategy of
-       Dig  -> digSearch  g 0      minigameState searchTree [] 0
-       Kill -> killSearch g round' minigameState searchTree []
+       Dig            -> digSearch  g 0      minigameState searchTree [] 0
+       Kill           -> killSearch g round' minigameState searchTree []
+       -- TODO implement a custom search for getting to the choppa! XD
+       GetToTheChoppa -> killSearch g round' minigameState searchTree []
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
@@ -3655,6 +3660,34 @@ myMovesFrom state = do
   guard (moveWouldBeValuableToMe state myMove)
   return myMove
 
+centreCoord :: Coord
+centreCoord = toCoord (mapDim `div` 2) (mapDim `div` 2)
+
+manhattanDistanceToMiddle :: Coord -> Int
+manhattanDistanceToMiddle coord' =
+  let diff  = abs $ coord' - centreCoord
+      xDiff = diff `mod` mapDim
+      yDiff = diff `div` mapDim
+  in xDiff + yDiff
+
+isCloserByManhattanDistance :: Coord -> Coord -> Bool
+isCloserByManhattanDistance this that =
+  manhattanDistanceToMiddle this < manhattanDistanceToMiddle that
+
+myGetToTheChoppaMoves :: State -> [Move]
+myGetToTheChoppaMoves state =
+  let coord'  = thisWormsCoord state
+  in filter (\ move ->
+              (let targetOfMove' = displaceCoordByMove coord' move
+                in isAMoveMove move &&
+                   isValidMoveMove coord' state move &&
+                   isCloserByManhattanDistance targetOfMove' coord') ||
+              (let targetOfMove' = displaceCoordByMove coord' (shiftDigToMoveRange move)
+                in isADigMove  move &&
+                   isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state) &&
+                   isCloserByManhattanDistance targetOfMove' coord')) $
+     map Move [8..23]
+
 -- ASSUME: that the player has selections left
 moveWouldBeValuableToMe :: State -> Move -> Bool
 moveWouldBeValuableToMe state move =
@@ -3772,11 +3805,6 @@ playersShootAndMoveMovesFrom coord' state =
 
 doNothing :: Move
 doNothing = Move 187
-
-targetOfMoveMove :: (Move -> State -> Maybe Coord) -> State -> Move -> Maybe Coord
-targetOfMoveMove targetOfMove' state move =
-  let moveMove = if isAMoveMove move then Just move else Nothing
-  in moveMove >>= ((flip targetOfMove') state)
 
 isValidMoveMove :: Coord -> State -> Move -> Bool
 isValidMoveMove wormCoord state move =
