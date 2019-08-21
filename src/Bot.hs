@@ -2913,13 +2913,16 @@ logStdErr = hPutStrLn stderr
 -- state comes along.
 -- TODO: don't suspend the thread when the new state comes along.
 iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
-iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
-  E.catch (go gen iterationsBeforeComms tree) exceptionHandler
+iterativelyImproveSearch gen initialState _ stateChannel treeVariable = do
+  -- Use SearchFront here because the minigame makes the tree invalid
+  -- on the next turn.
+  E.catch (go gen iterationsBeforeComms SearchFront) exceptionHandler
   where
     exceptionHandler e = do
       -- TODO restart worker??
       logStdErr $ "Worker died with exception " ++ show (e::SomeException) ++ "\n" ++
-        "State: " ++ readableShow initialState
+        "State: " ++ readableShow initialState ++ "\n" ++
+        "Minigame state:" ++ readableShow minigameState
     nearbyWorms   = wormsNearMyCurrentWorm initialState
     minigameState = withOnlyWormsContainedIn nearbyWorms initialState
     strategy      = determineStrategy nearbyWorms
@@ -2928,19 +2931,21 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
       writeVariable treeVariable searchTree
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
-        Just (move', state') -> do
+        -- TODO: use the move (first arg in tuple to modify the
+        -- initial state rather than passing it in the whole time.)
+        Just (_, state') -> do
           -- This isn't good enough.  I need to have a mode of searching in
           -- between, when the runner hasn't yet told me to move because it's
           -- 900ms from that point that I communicate back.
-          let tree'' = makeMoveInTree move' searchTree
-          let (myMove', opponentsMove') = (toMoves move')
-          when (tree'' == SearchFront) $
-            logStdErr $
-            "Not in search tree: " ++
-            "\n\tCombined: " ++ show move' ++
-            "\n\tMy move: " ++ prettyPrintThisMove initialState myMove' ++
-            "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
-          iterativelyImproveSearch gen' state' tree'' stateChannel treeVariable
+          -- let tree'' = makeMoveInTree move' searchTree
+          -- let (myMove', opponentsMove') = (toMoves move')
+          -- when (tree'' == SearchFront) $
+          --   logStdErr $
+          --   "Not in search tree: " ++
+          --   "\n\tCombined: " ++ show move' ++
+          --   "\n\tMy move: " ++ prettyPrintThisMove initialState myMove' ++
+          --   "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
+          iterativelyImproveSearch gen' state' SearchFront stateChannel treeVariable
         Nothing -> go gen' iterationsBeforeComms searchTree
     go gen' !count' !searchTree =
       let (result, gen'') = search gen' strategy minigameState searchTree
