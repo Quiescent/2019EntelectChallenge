@@ -3242,7 +3242,7 @@ updateCount changeCount (record:rest) move'
 
 digReward :: Move -> Reward
 digReward myMove
-  | isADigMove myMove = digPoints
+  | isADigMove myMove = 1
   | otherwise         = 0
 
 rangeToConsiderInMinigame :: Int
@@ -3292,15 +3292,8 @@ search g strategy minigameState searchTree =
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
-digSearch g round' state SearchFront                moves !reward =
-  case digGameOver round' reward state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        ->
-      let availableMoves = digMovesFrom state
-          (move, g')     = pickOneAtRandom g availableMoves
-          state'         = makeMove False move state
-          reward'        = digReward $ fst $ toMoves move
-      in digPlayRandomly g' (round' + 1) state' (move:moves) (reward' + reward)
+digSearch g round' _     SearchFront                moves !reward =
+  (SearchResult (diffMax reward round') (reverse moves), g)
 digSearch g round' state tree@(SearchedLevel _ _ _ _) moves reward =
   case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g)
@@ -3348,19 +3341,6 @@ digSearchSearchedLevel g
                (findSubTree combinedMove transitions)
                (combinedMove:moves)
                (reward' + reward)
-
-digPlayRandomly :: StdGen -> Int -> State -> Moves -> Reward -> (SearchResult, StdGen)
-digPlayRandomly g round' state moves reward =
-  case digGameOver round' reward state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g)
-    NoResult        ->
-      let availableMoves  = digMovesFrom state
-          (move, g')      = if availableMoves == []
-                            then (fromMoves doNothing doNothing, g)
-                            else pickOneAtRandom g availableMoves
-          state'          = makeMove False move state
-          reward'         = digReward $ fst $ toMoves move
-      in digPlayRandomly g' (round' + 1) state' moves (reward' + reward)
 
 maximumHealth :: Int
 maximumHealth = 100 + 100 + 150
@@ -3552,13 +3532,13 @@ gameOver state round' =
                -- Simulation isn't over yet
                else NoResult
 
-digMaxScore :: MaxScore
-digMaxScore = MaxScore maxDigRound
+digMaxScore :: Int -> MaxScore
+digMaxScore round' = MaxScore $ round'
 
 digGameOver :: Int -> Reward -> State -> GameOver
 digGameOver round' reward state =
   if round' > maxDigRound || ((aListCountMyEntries $ wormPositions state) == 0)
-  then GameOver $ diffMax reward
+  then GameOver $ diffMax round' reward
   else NoResult
 
 myTotalWormHealth :: State -> Int
@@ -3592,8 +3572,8 @@ instance NFData Payoff where
   rnf (Payoff myPayoff opponentsPayoff maxScore') =
     myPayoff `deepseq` opponentsPayoff `deepseq` maxScore' `deepseq` ()
 
-diffMax :: Reward -> Payoff
-diffMax !rewardTotal = Payoff (MyPayoff rewardTotal) (OpponentsPayoff 0) digMaxScore
+diffMax :: Reward -> Int -> Payoff
+diffMax !rewardTotal round' = Payoff (MyPayoff rewardTotal) (OpponentsPayoff 0) (digMaxScore round')
 
 chooseBestMove :: Int -> [SuccessRecord] -> SuccessRecord
 chooseBestMove totalGames successRecords =
