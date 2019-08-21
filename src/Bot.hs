@@ -3265,13 +3265,11 @@ data Strategy = Dig
               deriving (Eq, Show)
 
 determineStrategy :: Int -> Coord -> AList -> Strategy
-determineStrategy round' currentWormsCoord' wormPositions' =
+determineStrategy _ currentWormsCoord' wormPositions' =
   case (aListCountMyEntries wormPositions', aListCountOpponentsEntries wormPositions') of
-    (_, 0) -> if round' >= 100
-              then if manhattanDistanceToMiddle currentWormsCoord' < 5
-                   then Dig
-                   else GetToTheChoppa
-              else Dig
+    (_, 0) -> if manhattanDistanceToMiddle currentWormsCoord' < 5
+              then Dig
+              else GetToTheChoppa
     (_, _) -> Kill
 
 withOnlyWormsContainedIn :: AList -> ModifyState
