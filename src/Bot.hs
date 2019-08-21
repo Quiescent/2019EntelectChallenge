@@ -2925,7 +2925,7 @@ iterativelyImproveSearch gen initialState _ stateChannel treeVariable = do
         "Minigame state:" ++ readableShow minigameState
     nearbyWorms   = wormsNearMyCurrentWorm initialState
     minigameState = withOnlyWormsContainedIn nearbyWorms initialState
-    strategy      = determineStrategy (currentRound initialState) nearbyWorms
+    strategy      = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
     go :: StdGen -> Int -> SearchTree-> IO ()
     go gen' 0      !searchTree = do
       writeVariable treeVariable searchTree
@@ -3264,10 +3264,14 @@ data Strategy = Dig
               | GetToTheChoppa
               deriving (Eq, Show)
 
-determineStrategy :: Int -> AList -> Strategy
-determineStrategy round' wormPositions' =
+determineStrategy :: Int -> Coord -> AList -> Strategy
+determineStrategy round' currentWormsCoord' wormPositions' =
   case (aListCountMyEntries wormPositions', aListCountOpponentsEntries wormPositions') of
-    (_, 0) -> if round' >= 100 then GetToTheChoppa else Dig
+    (_, 0) -> if round' >= 100
+              then if manhattanDistanceToMiddle currentWormsCoord' < 5
+                   then Dig
+                   else GetToTheChoppa
+              else Dig
     (_, _) -> Kill
 
 withOnlyWormsContainedIn :: AList -> ModifyState
@@ -3295,7 +3299,7 @@ search g strategy minigameState searchTree =
        Dig            -> digSearch  g 0      minigameState searchTree [] 0
        Kill           -> killSearch g round' minigameState searchTree []
        -- TODO implement a custom search for getting to the choppa! XD
-       GetToTheChoppa -> killSearch g round' minigameState searchTree []
+       GetToTheChoppa -> digSearch  g round' minigameState searchTree [] 0
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
