@@ -3011,7 +3011,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> CommsVariable SearchTree -> IO SearchTree
-treeAfterAlottedTime state treeVariable = do
+treeAfterAlottedTime _ treeVariable = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -3021,7 +3021,7 @@ treeAfterAlottedTime state treeVariable = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
+        then return searchTree -- (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           searchTree' <- readVariable treeVariable
           Control.Concurrent.threadDelay pollInterval
