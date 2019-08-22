@@ -2872,12 +2872,11 @@ prettyPrintThatSuccessRecord :: State -> SuccessRecord -> String
 prettyPrintThatSuccessRecord = prettyPrintSuccessRecord prettyPrintThatMove
 
 prettyPrintSearchTree :: State -> SearchTree -> String
-prettyPrintSearchTree state (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions') =
+prettyPrintSearchTree state (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
     "Searched:\n" ++
     "Games played: " ++ show gamesPlayed ++ "\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves) ++ "\n" ++
-    "Transitions:\n\t" ++ (join' ", " $ map (\ (StateTransition move' _) -> (toMoves move')) transitions')
+    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves)
 prettyPrintSearchTree state (UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched:\n" ++
     "Games played: " ++ show gamesPlayed ++ "\n" ++
@@ -3023,8 +3022,7 @@ instance Show SearchTree where
     "Searched:\n" ++
     "Games played: " ++ show gamesPlayed ++ "\n" ++
     "My moves:\n\t" ++ (join' "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves) -- ++ "\n" ++
-    -- "Transitions: " ++ show transitions
+    "Opponents moves:\n\t" ++ (join' "\n\t" opponentsMoves)
   show (UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched:\n" ++
     "Games played: " ++ show gamesPlayed ++ "\n" ++
