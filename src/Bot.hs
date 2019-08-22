@@ -2922,7 +2922,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
         "State: " ++ readableShow initialState ++ "\n" ++
         "state':" ++ readableShow state'
     nearbyWorms = wormsNearMyCurrentWorm initialState
-    strategy    = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
+    strategy    = determineStrategy (thisWormsCoord initialState) nearbyWorms
     state'      = if strategy == Dig
                   then withOnlyWormsContainedIn nearbyWorms initialState
                   else initialState
@@ -2951,7 +2951,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
         Nothing -> go gen' iterationsBeforeComms searchTree
     go gen' !count' !searchTree =
       let (result, gen'') = search gen' strategy state' searchTree
-          newTree         = updateTree strategy state' result searchTree
+          newTree         = updateTree searchTree strategy state' result
       in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
@@ -3182,8 +3182,8 @@ countGames (SearchedLevel   playedAtLevel _ _ _) = playedAtLevel
 countGames (UnSearchedLevel playedAtLevel _ _)   = playedAtLevel
 countGames SearchFront                           = 0
 
-updateTree :: Strategy -> State-> SearchResult -> SearchTree -> SearchTree
-updateTree strategy minigameState result SearchFront =
+initialiseLevel :: Strategy -> State -> SearchResult -> SearchTree
+initialiseLevel strategy state result =
   let myMovesFrom'  = case strategy of
         GetToTheChoppa -> myGetToTheChoppaMoves
         Kill           -> myMovesFrom
@@ -3192,12 +3192,16 @@ updateTree strategy minigameState result SearchFront =
         GetToTheChoppa -> (always [doNothing])
         Kill           -> opponentsMovesFrom
         Dig            -> (always [doNothing])
-  in updateTree strategy minigameState result $
-     UnSearchedLevel
-     0
-     (MyMoves        $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ myMovesFrom'        minigameState)
-     (OpponentsMoves $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ opponentsMovesFrom' minigameState)
-updateTree _ _ result level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
+  in updateTree
+     (UnSearchedLevel
+      0
+      (MyMoves        $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ myMovesFrom'        state)
+      (OpponentsMoves $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ opponentsMovesFrom' state))
+     strategy state result
+
+updateTree :: SearchTree -> Strategy -> State-> SearchResult -> SearchTree
+updateTree SearchFront strategy state result = initialiseLevel strategy state result
+updateTree level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) _ _ result =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
@@ -3205,29 +3209,30 @@ updateTree _ _ result level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (Oppo
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
       in (transitionLevelType myMoves' opponentsMoves') (gamesPlayed + 1) myMoves' opponentsMoves'
     _                           -> level
-updateTree strategy minigameState result level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) =
+updateTree level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) strategy state result =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
           myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
-      in SearchedLevel (gamesPlayed + 1) myMoves' opponentsMoves' $ updateSubTree strategy minigameState result stateTransitions
+      in SearchedLevel (gamesPlayed + 1) myMoves' opponentsMoves' $ updateSubTree strategy state result stateTransitions
     _                           -> level
 
 -- TODO: consider whether I should be treating the rewards like I do moves when transitioning down a tree..?
 updateSubTree :: Strategy -> State -> SearchResult -> StateTransitions -> StateTransitions
-updateSubTree strategy minigameState (SearchResult payoff (move':moves')) [] =
-  [StateTransition move' $ updateTree strategy minigameState (SearchResult payoff moves') SearchFront]
+updateSubTree strategy state (SearchResult payoff (move':moves')) [] =
+  [StateTransition move' $ updateTree SearchFront strategy state (SearchResult payoff moves')]
 updateSubTree _ _ (SearchResult _ []) transitions = transitions
 updateSubTree strategy
-              minigameState
+              state
               result@(SearchResult payoff (move':moves'))
               (transition@(StateTransition transitionMove' subTree'):transitions)
   | move' == transitionMove' = (StateTransition transitionMove' $
-                                updateTree strategy
-                                           (makeMove False transitionMove' minigameState)
-                                           (SearchResult payoff moves') subTree') : transitions
-  | otherwise                = transition : updateSubTree strategy minigameState result transitions
+                                updateTree subTree'
+                                           strategy
+                                           (makeMove False transitionMove' state)
+                                           (SearchResult payoff moves')) : transitions
+  | otherwise                = transition : updateSubTree strategy state result transitions
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (Int -> MyMoves -> OpponentsMoves -> SearchTree)
 transitionLevelType myMoves opponentsMoves =
@@ -3266,8 +3271,8 @@ data Strategy = Dig
               | GetToTheChoppa
               deriving (Eq, Show)
 
-determineStrategy :: Int -> Coord -> AList -> Strategy
-determineStrategy _ currentWormsCoord' wormPositions' =
+determineStrategy :: Coord -> AList -> Strategy
+determineStrategy currentWormsCoord' wormPositions' =
   case (aListCountMyEntries wormPositions', aListCountOpponentsEntries wormPositions') of
     (_, 0) -> if manhattanDistanceToMiddle currentWormsCoord' < 5
               then Dig

@@ -134,21 +134,24 @@ spec = do
                         (2, toCoord 16 31),
                         (4, toCoord 14 31)])
   describe "determineStrategy" $ do
-    context "when no werms are nearby" $ do
+    context "when no worms are nearby" $ do
       let positionsWithNooneNearby = aListFromList [(1, toCoord 15 31)]
       it "should produce a strategy of Dig" $
-        determineStrategy positionsWithNooneNearby `shouldBe` Dig
+        determineStrategy (toCoord 14 14) positionsWithNooneNearby `shouldBe` Dig
+      context "and my worm isn't close to the centre of the map" $ do
+        it "should produce a strategy of GetToTheChoppa" $
+          determineStrategy (toCoord 0 0) positionsWithNooneNearby `shouldBe` GetToTheChoppa
     context "when there is another friendly worm nearby" $ do
       let positionsWithOneOfMyWormsNearby = aListFromList [(1, toCoord 15 31),
                                                            (2, toCoord 16 31)]
       it "should produce a strategy of Dig" $
-        determineStrategy positionsWithOneOfMyWormsNearby `shouldBe` Dig
+        determineStrategy (toCoord 14 14) positionsWithOneOfMyWormsNearby `shouldBe` Dig
     context "when there is an enemy nearby" $ do
       let positionsWithAnEnemyNearby = aListFromList [(1, toCoord 15 31),
                                                       (2, toCoord 16 31),
                                                       (4, toCoord 14 31)]
       it "should produce strategy of kill" $
-        determineStrategy positionsWithAnEnemyNearby `shouldBe` Kill
+        determineStrategy (toCoord 14 14) positionsWithAnEnemyNearby `shouldBe` Kill
   describe "mapAt" $ do
     prop "it should produce an error for any coordinate when the map is empty" $ \ x ->
       let coord' = (abs x) `mod` (mapDim * mapDim)
@@ -195,7 +198,7 @@ spec = do
           newCounts    = updateCount updateCount' oldCounts thisMove
       in (((fromIntegral k') / (fromIntegral maxScore))::Float, newCounts) `shouldSatisfy`
          ((((== 2) . played) .&&.
-          (((== ((1 + (fromIntegral k') / (fromIntegral maxScore)) / 2)) . payoffRatio))) .
+          (((== (1 + (fromIntegral k') / (fromIntegral maxScore))) . payoffRatio))) .
            fromJust . find ((== thisMove) . successRecordMove)) . snd
   describe "myMovesFrom" $ do
     it "should  not contain repeats" $
@@ -216,12 +219,12 @@ spec = do
                            (OpponentsMoves $
                             (SuccessRecord (GamesPlayed 0) (PayoffRatio 0) $ L.head opponentsMoves) :
                             (map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) $ L.tail opponentsMoves))
-          newTree        = updateTree Dig
+          newTree        = updateTree oldTree
+                                      Dig
                                       aState
                                       (SearchResult
                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
-                                      oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy` isSearched . snd
     let aStateWithAnEnemyWormNearby =
             withWormPositions (always $ AList (toCoord 15 31)
@@ -237,12 +240,12 @@ spec = do
           opponentsMoves = opponentsMovesFrom aStateWithAnEnemyWormNearby
           thatMove       = opponentsMoves L.!! (j `mod` length opponentsMoves)
           k'             = k `mod` (maxScore + 1)
-          newTree        = updateTree Kill
+          newTree        = updateTree SearchFront
+                                      Kill
                                       aStateWithAnEnemyWormNearby
                                       (SearchResult
                                        (Payoff (MyPayoff $ abs k') (OpponentsPayoff $ maxScore - abs k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
-                                      SearchFront
       in newTree `shouldSatisfy` (((== (fromIntegral (maxScore - k') / fromIntegral maxScore)) . sumOpponentsRatios) .&&.
                                   ((== ((fromIntegral k') / fromIntegral maxScore)) . sumMyRatios)        .&&.
                                   ((== 1)               . countGames))
@@ -256,12 +259,12 @@ spec = do
                            (length myMoves) -- Not strictly correct, but fine
                            (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
-          newTree        = updateTree Dig
+          newTree        = updateTree oldTree
+                                      Dig
                                       aState
                                       (SearchResult
                                        (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
-                                      oldTree
       in newTree `shouldSatisfy` (((== (1     + countGames oldTree)) . countGames)         .&&.
                                   ((/= (sumOpponentsRatios oldTree)) . sumOpponentsRatios) .&&.
                                   ((/= (sumMyRatios        oldTree)) . sumMyRatios))
@@ -276,12 +279,12 @@ spec = do
                            (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree Dig
+          newTree        = updateTree oldTree
+                                      Dig
                                       aState
                                       (SearchResult
                                        (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove])
-                                      oldTree
       in newTree `shouldSatisfy` (((== (1     + countGames oldTree)) . countGames)         .&&.
                                   ((/= (sumOpponentsRatios oldTree)) . sumOpponentsRatios) .&&.
                                   ((/= (sumMyRatios        oldTree)) . sumMyRatios))
@@ -296,12 +299,12 @@ spec = do
                            (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
                            (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
                            []
-          newTree        = updateTree Dig
+          newTree        = updateTree oldTree
+                                      Dig
                                       aStateWithAnEnemyWormNearby
                                       (SearchResult
                                        (Payoff (MyPayoff k') (OpponentsPayoff $ maxScore - k') (MaxScore maxScore))
                                        [fromMoves thisMove thatMove, fromMoves thisMove thatMove])
-                                      oldTree
       in ((thisMove, thatMove), newTree) `shouldSatisfy`
          (((== 1) . length . transitions) .&&.
           (((== (1 +  1)) . played) .
