@@ -2863,7 +2863,17 @@ prettyPrintSuccessRecord :: (State -> Move -> String) -> State -> SuccessRecord 
 prettyPrintSuccessRecord printMove
                          state
                          (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) move') =
-    printMove state move' ++ " (played " ++ show gamesPlayed ++ ")" ++ ": " ++ show (ratio / fromIntegral gamesPlayed)
+    printMove state move' ++
+              " (played " ++
+              show gamesPlayed ++
+              ")" ++
+              ": " ++
+              "(" ++
+              show ratio ++
+              " / " ++
+              show gamesPlayed ++
+              ") " ++
+              show (ratio / fromIntegral gamesPlayed)
 
 prettyPrintThisSuccessRecord :: State -> SuccessRecord -> String
 prettyPrintThisSuccessRecord = prettyPrintSuccessRecord prettyPrintThisMove
