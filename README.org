@@ -2836,6 +2836,35 @@ are in the minigame.
      heuristic for digging so that it now only rewards a dig move.
    - State "IN_PROGRESS" from "TODO"       [2019-08-20 Tue 06:58]
    :END:
+** DONE Only kill worms at the end of a round
+   CLOSED: [2019-08-22 Thu 18:22]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-08-22 Thu 18:22] \\
+     Retrospectively updating...
+   :END:
+** DONE Use confidence in the dig search, but correct the formula for different maximums
+   CLOSED: [2019-08-22 Thu 18:22]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-08-22 Thu 18:22] \\
+     Retrospectively updating...
+   :END:
+** DONE BUG: Sometimes filtering leaves no moves available causing the bot to do nothing in the random search
+   CLOSED: [2019-08-22 Thu 18:22]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-08-22 Thu 18:22] \\
+     Retrospectively updating...
+   :END:
+I should never do nothing unless that leads to death.
+** TODO BUG: Some of my moves are invalid
+   :LOGBOOK:
+   - Note taken on [2019-08-22 Thu 18:23] \\
+     My bot sometimes tries to make invalid shots or doesn't consider
+     shooting.  It can also dig squares which are air.
+   :END:
+** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
+   :END:
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
@@ -2866,6 +2895,9 @@ are in the minigame.
     :END:
 *** IN_PROGRESS Investigate why makeMoves is still allocating a lot of memory
     :LOGBOOK:
+    - Note taken on [2019-08-22 Thu 18:24] \\
+      I discovered that this was being caused by an accidental loop in the
+      way that I resolved which move to make and fixed it in a later commit.
     - Note taken on [2019-08-17 Sat 13:13] \\
       I think that it's allocating memory because it's not un-boxing some of
       the arguments and instead putting them on the heap.  I'm going to try
@@ -2873,6 +2905,7 @@ are in the minigame.
       it helps.
     - State "IN_PROGRESS" from "TODO"       [2019-08-17 Sat 11:40]
     :END:
+*** TODO Use an unboxed vector for the tree
 *** TODO Modify state rather than parsing it the whole time
 There are a couple of things that can only be inferred on the first
 round.  Like who has the bananas and how many he/she has.
@@ -2887,14 +2920,6 @@ https://wiki.haskell.org/Playing_by_the_rules
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
-** TODO Only kill worms at the end of a round
-** TODO Use confidence in the dig search, but correct the formula for different maximums
-** TODO BUG: Sometimes filtering leaves no moves available causing the bot to do nothing in the random search
-I should never do nothing unless that leads to death.
-** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
-   :LOGBOOK:
-   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
-   :END:
 ** TODO Fine tune the search time
 ** TODO Penalise selects because they can be wasteful
 ** TODO Test that banana bombing space does not cause a blast
