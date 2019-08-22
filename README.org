@@ -2855,8 +2855,9 @@ are in the minigame.
      Retrospectively updating...
    :END:
 I should never do nothing unless that leads to death.
-** TODO BUG: Some of my moves are invalid
+** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-22 Thu 18:24]
    - Note taken on [2019-08-22 Thu 18:23] \\
      My bot sometimes tries to make invalid shots or doesn't consider
      shooting.  It can also dig squares which are air.
