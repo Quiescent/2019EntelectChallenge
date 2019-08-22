@@ -103,9 +103,6 @@ aListReadableShow (AList a b c d e f) =
   show e ++ ") (" ++
   show f ++ "))"
 
-wormIds :: [WormId]
-wormIds = [WormId 1, WormId 2, WormId 3, WormId 4, WormId 8, WormId 12]
-
 instance Show AList where
   show aList =
     let xs = aListToList aList
@@ -239,23 +236,6 @@ aListOpponentIds (AList _ _ _ d e f) =
   if e /= -1 then Just (WormId 8)  else Nothing,
   if f /= -1 then Just (WormId 12) else Nothing]
 
-aListMyValuesChanged :: AList -> AList -> Bool
-aListMyValuesChanged (AList a b c _ _ _) (AList a' b' c' _ _ _) =
-  a /= a' || b /= b' || c /= c'
-
-aListOpponentsValuesChanged :: AList -> AList -> Bool
-aListOpponentsValuesChanged (AList _ _ _ d e f) (AList _ _ _ d' e' f') =
-  d /= d' || e /= e' || f /= f'
-
-anyWormFacts :: (WormId -> Int -> Bool) -> AList -> Bool
-anyWormFacts p (AList a b c d e f) =
-  p (WormId 1)  a ||
-  p (WormId 4)  d ||
-  p (WormId 2)  b ||
-  p (WormId 8)  e ||
-  p (WormId 3)  c ||
-  p (WormId 12) f
-
 anyWormData :: (Int -> Bool) -> AList -> Bool
 anyWormData p (AList a b c d e f) =
   p a ||
@@ -363,9 +343,6 @@ showPositions aList =
     "[\n" ++
     (foldr (++) "" $ map (\ (wormId', coord') -> "    " ++ show wormId' ++ " -> " ++ showCoord coord' ++ ",\n") xs) ++
     "]"
-
-emptyAList :: AList
-emptyAList = AList (-1) (-1) (-1) (-1) (-1) (-1)
 
 instance Show State where
   show (State opponentsLastCommand'
@@ -746,9 +723,6 @@ readThatMove state coord moveString =
 
 readThatWorm :: String -> WormId
 readThatWorm = WormId . (flip shiftL) 2 . read
-
-readThisWorm :: String -> WormId
-readThisWorm = WormId . read
 
 matchThatSelectMove :: State -> String -> Maybe Move
 matchThatSelectMove = matchSelectMove readThatWorm
@@ -1535,10 +1509,6 @@ makeMove _ moves state =
                                     opponentsMove
         makeMove' NOTHING         NOTHING = id
 
-conditionally :: Bool -> ModifyState -> ModifyState
-conditionally True  f = f
-conditionally False _ = id
-
 cleanUpDeadWorms :: ModifyState
 cleanUpDeadWorms state =
   go (wormHealths state) state
@@ -1921,21 +1891,6 @@ foldOverSnowballBlastCoordsInRange epicentre f accumulator =
 --    1,   0,  5,
 --    8,   7,  6]
 
-snowballBlastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
-snowballBlastCoordDeltasInRange =
-  zipWith (\ dx dy ->
-              \ xy ->
-                fmap (uncurry toCoord) $
-                isOOB $
-                let (x', y') = fromCoord xy
-                in (x' + dx, y' + dy))
-   [-1,  0,  1,
-    -1,  0,  1,
-    -1,  0,  1]
-   [-1, -1, -1,
-     0,  0,  0,
-     1,  1,  1]
-
 awardPointsToThisPlayerForDamage :: Int -> ModifyState
 awardPointsToThisPlayerForDamage damage' = mapThisPlayer (awardPointsForDamage damage')
 
@@ -2117,52 +2072,8 @@ foldOverBlastCoordsInRange epicentre f accumulator =
 --     12,  10,  9,
 --          11]
 
-blastCoordDeltasInRange :: [(Coord -> Maybe Coord)]
-blastCoordDeltasInRange =
-  zipWith (\ dx dy ->
-              \ xy ->
-                fmap (uncurry toCoord) $
-                isOOB $
-                let (x', y') = fromCoord xy
-                in (x' + dx, y' + dy))
-   [        0,
-        -1, 0, 1,
-    -2, -1, 0, 1, 2,
-        -1, 0, 1,
-            0]
-   [       -2,
-       -1, -1, -1,
-    0,  0,  0,  0,  0,
-        1,  1,  1,
-            2]
-
 containsAnyWorm :: Coord -> WormPositions -> Bool
 containsAnyWorm coord' = anyWormData (== coord')
-
-bananaBlastRadius :: Int
-bananaBlastRadius = 2
-
-damageTemplate :: [Int]
-damageTemplate =
-  zipWith (\ dx dy ->
-            let blastRadius' = bananaBlastRadius + 1
-            in round $
-               fromIntegral bananaCentreDamage *
-               (((fromIntegral blastRadius') - (sqrt $ squareAbsFloating dx + squareAbsFloating dy)) /
-                 fromIntegral blastRadius'))
-  [        0,
-       -1, 0, 1,
-   -2, -1, 0, 1, 2,
-       -1, 0, 1,
-           0]
-  [       -2,
-      -1, -1, -1,
-   0,  0,  0,  0,  0,
-       1,  1,  1,
-           2]
-  where
-    squareAbsFloating :: Int -> Double
-    squareAbsFloating x = fromIntegral $ abs x * abs x
 
 bananaBlast :: WormId -> GameMap -> WormPositions -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> Coord -> ModifyState
 bananaBlast wormId'
@@ -2199,9 +2110,6 @@ bananaBlast wormId'
                        then removeMedipack nextCoord state'
                        else state')
        state
-
-bananaCentreDamage :: Int
-bananaCentreDamage = 20
 
 advanceWormSelections :: ModifyState
 advanceWormSelections =
@@ -2278,14 +2186,6 @@ makeMoveMove giveMedipackToWorm
       awardPoints       = if targetIsValid then awardPointsForMovingToAir' else id
   in medipackWorm . applyPenalty . moveWormToTarget . awardPoints
 
-targetOfThisMoveIsDirt :: Move -> State -> Bool
-targetOfThisMoveIsDirt move state =
-  (mapAtCoord state $ targetOfThisMove move state) == DIRT
-
-targetOfThatMoveIsDirt :: Move -> State -> Bool
-targetOfThatMoveIsDirt move state =
-  (mapAtCoord state $ targetOfThatMove move state) == DIRT
-
 giveMedipackToThisWorm :: ModifyState
 giveMedipackToThisWorm state =
   let thisWormId = thisPlayersCurrentWormId state
@@ -2309,10 +2209,6 @@ always x _ = x
 mapGameMap :: State -> (GameMap -> GameMap) -> State
 mapGameMap state@(State { gameMap = gameMap' }) f =
   state { gameMap = f gameMap' }
-
-containsAnyWormExcept :: State -> WormId -> Coord -> Bool
-containsAnyWormExcept State { wormPositions = wormPositions' } wormId' coord' =
-  anyWormFacts (\ wormId'' coord'' -> coord' == coord'' && wormId' /= wormId'') wormPositions'
 
 isAMoveMove :: Move -> Bool
 isAMoveMove (Move x) = x >= 8 && x < 16
@@ -2350,18 +2246,6 @@ cleanUpDeadWorm wormId' =
 moveWorm :: WormId -> Coord -> ModifyState
 moveWorm wormId' newCoord' state =
   withWormPositions (aListMapWormById wormId' (always newCoord')) state
-
-targetOfMove :: (State -> WormId) -> Move -> State -> Coord
-targetOfMove wormsId dir state =
-  let wormId'   = wormsId state
-      position' = aListFindDataById wormId' $ wormPositions state
-  in displaceCoordByMove position' dir
-
-targetOfThisMove :: Move -> State -> Coord
-targetOfThisMove = targetOfMove thisPlayersCurrentWormId
-
-targetOfThatMove :: Move -> State -> Coord
-targetOfThatMove = targetOfMove thatPlayersCurrentWormId
 
 mapThisPlayer :: ModifyPlayer -> ModifyState
 mapThisPlayer f state@(State { myPlayer = player' }) =
@@ -2436,12 +2320,6 @@ isMyWorm (WormId 1) = True
 isMyWorm (WormId 2) = True
 isMyWorm (WormId 3) = True
 isMyWorm _          = False
-
-isOpponentWorm :: WormId -> Bool
-isOpponentWorm (WormId 4)  = True
-isOpponentWorm (WormId 8)  = True
-isOpponentWorm (WormId 12) = True
-isOpponentWorm _           = False
 
 makeMyShootMove :: Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
 makeMyShootMove =
@@ -2529,9 +2407,9 @@ harmWormById damage' wormId' = aListMapWormById wormId' (+ (-damage'))
 
 -- DEBUG: This is for debugging.  I should comment out the lines
 -- bellow when I'm done using it...
-errorWithMessageIfJust :: String -> Maybe a -> Maybe a
-errorWithMessageIfJust message Nothing = error message
-errorWithMessageIfJust _       x       = x
+-- errorWithMessageIfJust :: String -> Maybe a -> Maybe a
+-- errorWithMessageIfJust message Nothing = error message
+-- errorWithMessageIfJust _       x       = x
 
 -- ASSUME: that the given coord maps to a worm.
 --
@@ -2580,8 +2458,6 @@ wormsBelongToSamePlayer thisWormId thatWormId =
 type ModifyState = State -> State
 
 type ModifyPlayer = Player -> Player
-
-type GetPlayer = State -> Player
 
 type WithWormFacts = ModifyFacts -> ModifyState
 
@@ -3011,7 +2887,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> CommsVariable SearchTree -> IO SearchTree
-treeAfterAlottedTime _ treeVariable = do
+treeAfterAlottedTime state treeVariable = do
   startingTime <- fmap toNanoSecs $ getTime clock
   searchTree   <- go SearchFront startingTime
   return searchTree
@@ -3021,7 +2897,7 @@ treeAfterAlottedTime _ treeVariable = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then return searchTree -- (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
+        then (logStdErr $ prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           searchTree' <- readVariable treeVariable
           Control.Concurrent.threadDelay pollInterval
@@ -3059,9 +2935,6 @@ parseLastCommand _             Nothing             = doNothing
 parseLastCommand previousState (Just lastCommand') =
   let coord'  = thatWormsCoord previousState
   in fromJust $ readThatMove previousState coord' lastCommand'
-
-withoutCommandWord :: String -> Maybe String
-withoutCommandWord = tailMaybe . dropWhile (/= ' ')
 
 startBot :: StdGen -> RIO App ()
 startBot g = do
@@ -3205,7 +3078,7 @@ updateTree level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves 
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
+          myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore') myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
       in (transitionLevelType myMoves' opponentsMoves') (gamesPlayed + 1) myMoves' opponentsMoves'
     _                           -> level
@@ -3213,7 +3086,7 @@ updateTree level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves op
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
-          myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore')        myMoves        thisMove
+          myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore') myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
       in SearchedLevel (gamesPlayed + 1) myMoves' opponentsMoves' $ updateSubTree strategy state result stateTransitions
     _                           -> level
@@ -3486,8 +3359,6 @@ searchSearchedLevel g
                 (findSubTree combinedMove transitions)
                 (combinedMove:moves)
 
--- Number is the points I get.  The opponent gets ten less that
--- number.
 data GameOver = GameOver Payoff
               | NoResult
 
@@ -3514,23 +3385,8 @@ playerScore (Player score' _ _) = score'
 -- or more points ahead and -10 for being as much behind (although the
 -- numbers here will always be positive.)
 
-computeScore :: (State -> Int) -> (State -> Player) -> State -> Int
-computeScore totalWormHealth' player state =
-  let averageHealth :: Double
-      averageHealth = (fromIntegral $ totalWormHealth' state) / fromIntegral wormCount
-  in (playerScore $ player state) + round averageHealth
-
-computeMyScore :: State -> Int
-computeMyScore = computeScore myTotalWormHealth myPlayer
-
-computeOpponentsScore :: State -> Int
-computeOpponentsScore = computeScore opponentsTotalWormHealth opponent
-
 maxRound :: Int
 maxRound = 400
-
-maxForecastedRound :: Int
-maxForecastedRound = 50
 
 killMaxScore :: MaxScore
 killMaxScore = MaxScore 1
@@ -3644,19 +3500,6 @@ isValidDigMove :: Coord -> Move -> GameMap -> Bool
 isValidDigMove origin digMoveAsMoveMove gameMap' =
   (not $ moveWouldGoOOB origin digMoveAsMoveMove) &&
   mapAt (displaceCoordByMove origin digMoveAsMoveMove) gameMap' == DIRT
-
-shootAndMoveMovesFrom :: State -> [CombinedMove]
-shootAndMoveMovesFrom state = do
-  myMove        <- myShootAndMoveMovesFrom        state
-  opponentsMove <- opponentsShootAndMoveMovesFrom state
-  let combinedMove = fromMoves myMove opponentsMove
-  guard (shootOrDigWouldHaveAPositiveImpactFor myMove opponentsMove state)
-  return combinedMove
-
-shootOrDigWouldHaveAPositiveImpactFor :: Move -> Move -> State -> Bool
-shootOrDigWouldHaveAPositiveImpactFor myMove opponentsMove state =
-  moveWouldBeValuableToMe       state myMove &&
-  moveWouldBeValuableToOpponent state opponentsMove
 
 myMovesFrom :: State -> [Move]
 myMovesFrom state = do
@@ -3772,10 +3615,6 @@ moveWouldBeValuableToOpponent state move =
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToOpponent (makeOpponentsSelection move state) (removeSelectionFromMove move))
 
-myShootAndMoveMovesFrom :: State -> [Move]
-myShootAndMoveMovesFrom state =
-  playersShootAndMoveMovesFrom (thisWormsCoord state) state
-
 addPlayersSelects :: (State -> Bool) -> (AList -> [WormId]) -> State -> [Move] -> [Move]
 addPlayersSelects playerHasSelectionsLeft playersWormIds state moves =
   if not $ playerHasSelectionsLeft state
@@ -3794,19 +3633,6 @@ addThatPlayersSelects = addPlayersSelects thatPlayerHasSelectionsLeft aListOppon
 withSelection :: WormId -> Move -> Move
 withSelection  (WormId id') (Move x) =
   Move $ x .|. (shiftL id' selectEncodingRange)
-
-opponentsShootAndMoveMovesFrom :: State -> [Move]
-opponentsShootAndMoveMovesFrom state =
-  playersShootAndMoveMovesFrom (thatWormsCoord state) state
-
--- Includes dig moves incase someone is behind a barrier
-playersShootAndMoveMovesFrom :: Coord -> State -> [Move]
-playersShootAndMoveMovesFrom coord' state =
-  filter (\ move ->
-             (isAMoveMove move && isValidMoveMove coord' state move) ||
-             (isADigMove  move && isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state)) ||
-             isAShootMove move) $
-  map Move [0..23]
 
 doNothing :: Move
 doNothing = Move 187

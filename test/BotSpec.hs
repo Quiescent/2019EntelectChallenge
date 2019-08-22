@@ -328,21 +328,6 @@ spec = do
                         else if move' < 187
                              then formattedMove `shouldStartWith` "snowball"
                              else formattedMove `shouldStartWith` "select"
-  describe "blastCoordDeltasInRange" $ do
-    prop "should always produce a coord within range of 2 (blast radius of banana bomb)" $ \ (i, j) ->
-      let x'     = abs i `mod` mapDim
-          y'     = abs j `mod` mapDim
-          coord' = toCoord x' y'
-          coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
-      in (coord', zip coords (map (flip (inRange coord') 2) coords))
-         `shouldSatisfy`
-         (all snd . snd)
-    prop "should produce 13 possible coords when the from coord is at least 2 inside of borders" $ \ (i, j) ->
-      let x'     = 2 + (abs i `mod` (mapDim - 4))
-          y'     = 2 + (abs j `mod` (mapDim - 4))
-          coord' = toCoord x' y'
-          coords = catMaybes $ map ($ coord') blastCoordDeltasInRange
-      in (coord', coords) `shouldSatisfy` ((== 13) . S.size . S.fromList . snd)
   describe "coordDeltasInRange" $ do
     prop "should always produce a coord within range of 5 (banana bomb range)" $  \ (i, j) ->
       let x'     = abs i `mod` mapDim
@@ -2691,6 +2676,9 @@ withCurrentRound round' state =
   state { currentRound = round' }
 
 setOpponentsLastMoveToDummy = setOpponentsLastMove aState doNothing
+
+emptyAList :: AList
+emptyAList = AList (-1) (-1) (-1) (-1) (-1) (-1)
 
 -- For generating the lava map
 -- euclideanDistance :: Coord -> Coord -> Double

@@ -18,6 +18,8 @@ import qualified Data.List as L
 
 import System.Environment
 
+import Prelude (read)
+
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
@@ -123,3 +125,9 @@ tickState :: Move -> Move -> State -> State
 tickState thisMove thatMove state =
   -- TODO do we swap?! /shrug
   makeMove True (fromMoves thisMove thatMove) state
+
+readThisWorm :: String -> WormId
+readThisWorm = WormId . read
+
+withoutCommandWord :: String -> Maybe String
+withoutCommandWord = tailMaybe . dropWhile (/= ' ')
