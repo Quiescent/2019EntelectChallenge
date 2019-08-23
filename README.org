@@ -2857,6 +2857,14 @@ are in the minigame.
 I should never do nothing unless that leads to death.
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
+   - Note taken on [2019-08-23 Fri 05:41] \\
+     I've discovered the reason!  When I compute the moves for the next
+     level I'm not using the state which was applicable for that level.  I
+     was instead using the state from the start which means that all levels
+     had the same moves (those generated from the start).  When I
+     interpreted those moves from a different worms perspective (when I
+     transition from one round of kill searching) then I would be left
+     which a meaningless collection of moves for the current worm.
    - State "IN_PROGRESS" from "TODO"       [2019-08-22 Thu 18:24]
    - Note taken on [2019-08-22 Thu 18:23] \\
      My bot sometimes tries to make invalid shots or doesn't consider
