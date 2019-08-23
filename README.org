@@ -2857,6 +2857,10 @@ are in the minigame.
 I should never do nothing unless that leads to death.
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
+   - Note taken on [2019-08-23 Fri 06:15] \\
+     When dig playing randomly I used the state at the end of playing
+     randomly to generate the new level of the tree rather than the state
+     just before falling off of the tree.
    - Note taken on [2019-08-23 Fri 05:55] \\
      I found another instance where my worm makes moves based off of the
      kill search tree from the previous round when the current strategy is
