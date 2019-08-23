@@ -2857,6 +2857,10 @@ are in the minigame.
 I should never do nothing unless that leads to death.
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
+   - Note taken on [2019-08-23 Fri 05:55] \\
+     I found another instance where my worm makes moves based off of the
+     kill search tree from the previous round when the current strategy is
+     dig.
    - Note taken on [2019-08-23 Fri 05:41] \\
      I've discovered the reason!  When I compute the moves for the next
      level I'm not using the state which was applicable for that level.  I
@@ -2869,6 +2873,11 @@ I should never do nothing unless that leads to death.
    - Note taken on [2019-08-22 Thu 18:23] \\
      My bot sometimes tries to make invalid shots or doesn't consider
      shooting.  It can also dig squares which are air.
+   :END:
+** TODO BUG: When getting to the choppa no games are played
+   :LOGBOOK:
+   - Note taken on [2019-08-23 Fri 05:56] \\
+     DERP.
    :END:
 ** TODO Bug: Sometimes the main thread gets stuck in an STM transaction
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
