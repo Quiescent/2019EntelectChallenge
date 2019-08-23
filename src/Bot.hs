@@ -2793,6 +2793,8 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
   let treeFromPreviousRound = if strategy == Dig || strategy == GetToTheChoppa
                               then SearchFront
                               else tree
+  logStdErr "===New Round==="
+  logStdErr $ show initialState
   E.catch (go gen iterationsBeforeComms treeFromPreviousRound) exceptionHandler
   where
     exceptionHandler e = do
@@ -3208,7 +3210,7 @@ digSearch g round' state SearchFront                moves !reward =
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
           reward'        = digReward $ fst $ toMoves move
-      in digPlayRandomly g' (round' + 1) state' (move:moves) (reward' + reward)
+      in digPlayRandomly state g' (round' + 1) state' (move:moves) (reward' + reward)
 digSearch g round' state tree@(SearchedLevel _ _ _ _) moves reward =
   case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
@@ -3257,10 +3259,10 @@ digSearchSearchedLevel g
                (combinedMove:moves)
                (reward' + reward)
 
-digPlayRandomly :: StdGen -> Int -> State -> Moves -> Reward -> (SearchResult, StdGen, State)
-digPlayRandomly g round' state moves reward =
+digPlayRandomly :: State -> StdGen -> Int -> State -> Moves -> Reward -> (SearchResult, StdGen, State)
+digPlayRandomly initialState g round' state moves reward =
   case digGameOver round' reward state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g, initialState)
     NoResult        ->
       let availableMoves  = digMovesFrom state
           (move, g')      = if availableMoves == []
@@ -3268,7 +3270,7 @@ digPlayRandomly g round' state moves reward =
                             else pickOneAtRandom g availableMoves
           state'          = makeMove False move state
           reward'         = digReward $ fst $ toMoves move
-      in digPlayRandomly g' (round' + 1) state' moves (reward' + reward)
+      in digPlayRandomly initialState g' (round' + 1) state' moves (reward' + reward)
 
 maximumHealth :: Int
 maximumHealth = 100 + 100 + 150
