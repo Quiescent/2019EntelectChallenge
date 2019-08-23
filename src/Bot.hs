@@ -2906,12 +2906,14 @@ treeAfterAlottedTime state treeVariable = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then (logStdErr $ "MyWorm: " ++
-              (show $ thisPlayersCurrentWormId state) ++
-              ", Opponent worm: " ++
-              (show $ thatPlayersCurrentWormId state) ++
-              "\n" ++
-              prettyPrintSearchTree state searchTree) >> return searchTree
+        then (logStdErr $ "Current round: " ++
+                          (show $ currentRound state) ++
+                          ", MyWorm: " ++
+                          (show $ thisPlayersCurrentWormId state) ++
+                          ", Opponent worm: " ++
+                          (show $ thatPlayersCurrentWormId state) ++
+                          "\n" ++
+                          prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           searchTree' <- readVariable treeVariable
           Control.Concurrent.threadDelay pollInterval
