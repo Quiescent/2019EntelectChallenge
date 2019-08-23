@@ -2790,7 +2790,7 @@ logStdErr = hPutStrLn stderr
 -- TODO: don't suspend the thread when the new state comes along.
 iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
 iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
-  let treeFromPreviousRound = if strategy == Dig
+  let treeFromPreviousRound = if strategy == Dig || strategy == GetToTheChoppa
                               then SearchFront
                               else tree
   E.catch (go gen iterationsBeforeComms treeFromPreviousRound) exceptionHandler
