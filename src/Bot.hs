@@ -2787,7 +2787,7 @@ logStdErr = hPutStrLn stderr
 -- state comes along.
 -- TODO: don't suspend the thread when the new state comes along.
 iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
-iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
+iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   let treeFromPreviousRound = if strategy == Dig || strategy == GetToTheChoppa
                               then SearchFront
                               else tree
@@ -2805,7 +2805,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
                   then withOnlyWormsContainedIn nearbyWorms initialState
                   else initialState
     go :: StdGen -> Int -> SearchTree-> IO ()
-    go gen' 0      !searchTree = do
+    go !gen' 0      !searchTree = do
       writeVariable treeVariable searchTree
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
@@ -2824,7 +2824,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
             "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
           iterativelyImproveSearch gen' state'' tree'' stateChannel treeVariable
         Nothing -> go gen' iterationsBeforeComms searchTree
-    go gen' !count' !searchTree =
+    go !gen' !count' !searchTree =
       let (result, gen'', finalState) = search gen' strategy state' searchTree
           newTree                     = updateTree searchTree strategy finalState result
       in go gen'' (count' - 1) newTree
