@@ -3289,34 +3289,13 @@ maxPayoffScore =
   maximumFrozenDuration -- All three unfrozen for five turns
 
 payOff :: State -> Payoff
-payOff (State { wormHealths     = wormHealths',
-                wormBananas     = wormBananas',
-                wormSnowballs   = wormSnowballs',
-                frozenDurations = frozenDurations',
-                myPlayer        = myPlayer',
-                opponent        = opponent' }) =
+payOff (State { wormHealths     = wormHealths' }) =
   let myTotalHealth                = aListSumMyEntries wormHealths'
-      myBananasLeft                = aListSumMyEntries wormBananas'
-      mySnowballsLeft              = aListSumMyEntries wormSnowballs'
-      myFrozenDurations            = aListSumMyEntries frozenDurations'
-      mySelectionsRemaining        = playerSelections myPlayer'
       opponentsTotalHealth         = aListSumOpponentsEntries wormHealths'
-      opponentsBananasLeft         = aListSumOpponentsEntries wormBananas'
-      opponentsSnowballsLeft       = aListSumOpponentsEntries wormSnowballs'
-      opponentsFrozenDurations     = aListSumOpponentsEntries frozenDurations'
-      opponentsSelectionsRemaining = playerSelections opponent'
       myPayoff                     = myTotalHealth +
-                                     (maximumHealth - opponentsTotalHealth) +
-                                     10 * myBananasLeft +
-                                     10 * mySnowballsLeft +
-                                     (maximumFrozenDuration - myFrozenDurations) +
-                                     10 * mySelectionsRemaining
+                                     (maximumHealth - opponentsTotalHealth)
       opponentsPayoff              = opponentsTotalHealth +
-                                     (maximumHealth - myTotalHealth) +
-                                     10 * opponentsBananasLeft +
-                                     10 * opponentsSnowballsLeft +
-                                     (maximumFrozenDuration - opponentsFrozenDurations) +
-                                     10 * opponentsSelectionsRemaining
+                                     (maximumHealth - myTotalHealth)
   in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
 killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
