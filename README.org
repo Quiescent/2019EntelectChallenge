@@ -2855,6 +2855,15 @@ are in the minigame.
      Retrospectively updating...
    :END:
 I should never do nothing unless that leads to death.
+** DONE BUG: When getting to the choppa no games are played
+   CLOSED: [2019-08-24 Sat 09:24]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-08-24 Sat 09:24] \\
+     Problem was that the search was stopping early because I started it
+     from the actual round and not zero.
+   - Note taken on [2019-08-23 Fri 05:56] \\
+     DERP.
+   :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-23 Fri 06:15] \\
@@ -2877,11 +2886,6 @@ I should never do nothing unless that leads to death.
    - Note taken on [2019-08-22 Thu 18:23] \\
      My bot sometimes tries to make invalid shots or doesn't consider
      shooting.  It can also dig squares which are air.
-   :END:
-** TODO BUG: When getting to the choppa no games are played
-   :LOGBOOK:
-   - Note taken on [2019-08-23 Fri 05:56] \\
-     DERP.
    :END:
 ** TODO BUG: Searcher dies with this state
 Probably because my worm dies and it doesn't know how to handle that.
