@@ -89,8 +89,10 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 show nextState' ++
                                 "\nBut got:\n" ++
                                 show simulatedNextState' ++
-                                "\nReadable input state: \n" ++
+                                "\nReadable input state:\n" ++
                                 readableShow currentState ++
+                                "\nReadable expected state:\n" ++
+                                readableShow (fromJust nextState') ++
                                 "\nNon-pretty moves made: (" ++
                                 show thisMove ++
                                 ", " ++
