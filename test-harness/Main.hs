@@ -42,31 +42,39 @@ simulateAndCheckRounds dirs@(directory:_) = do
   initialState <- loadStateForRound directory
   if not $ isJust initialState
   then return (Failure $ "Couldn't load initial state from: " ++ show directory)
-  else iter (fromJust initialState) dirs
+  else iter (fromJust initialState) dirs 3 3 3 3
   where
-    iter :: State -> [FilePath] -> RIO App Result
-    iter currentState (path:nextPath:paths) = do
+    iter :: State -> [FilePath] -> Int -> Int -> Int -> Int -> RIO App Result
+    iter currentState (path:nextPath:paths) myBananas opponentBananas mySnowballs opponentSnowballs = do
       let thisWormsCoord'    = thisWormsCoord currentState
       let thatWormsCoord'    = thatWormsCoord currentState
       -- Assume: that there are valid initial worm positions
       thisMove              <- loadThisPlayersCommand currentState thisWormsCoord' path
       thatMove              <- loadThatPlayersCommand currentState thatWormsCoord' path
+      let myBananas'         = myBananas         + if any isABananaMove   thisMove then (-1) else 0
+      let opponentBananas'   = opponentBananas   + if any isABananaMove   thatMove then (-1) else 0
+      let mySnowballs'       = mySnowballs       + if any isASnowballMove thisMove then (-1) else 0
+      let opponentSnowballs' = opponentSnowballs + if any isASnowballMove thatMove then (-1) else 0
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
       else do
         nextState             <- loadStateForRound nextPath
+        let nextState'         = fmap (withWormBananas (always $
+                                         aListFromList [(2, myBananas'),  (8,  opponentBananas')]) .
+                                       withWormSnowballs (always $
+                                         aListFromList [(3, mySnowballs), (12, opponentSnowballs')])) nextState
         let simulatedNextState = tickState (fromJust thisMove) (fromJust thatMove) currentState
-        if any (simulatedNextState /=) nextState
+        if any (simulatedNextState /=) nextState'
         then do
                _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
-               stateDiff <- diff (show nextState) (show simulatedNextState)
+               stateDiff <- diff (show nextState') (show simulatedNextState)
                return (Failure ("Failed for: " ++
                                 path ++
                                 "\nDiff:\n" ++
                                 stateDiff ++
                                 "\nExpected:\n" ++
-                                show nextState ++
+                                show nextState' ++
                                 "\nBut got:\n" ++
                                 show simulatedNextState ++
                                 "\nReadable input state: \n" ++
@@ -76,8 +84,8 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 ", " ++
                                 show thatMove ++
                                 ")"))
-        else iter simulatedNextState (nextPath:paths)
-    iter _            _                     = return Success
+        else iter simulatedNextState (nextPath:paths) myBananas' opponentBananas' mySnowballs' opponentSnowballs'
+    iter _ _ _ _ _ _ = return Success
 
 diff :: String -> String -> RIO App String
 diff this that = do
