@@ -2864,6 +2864,7 @@ I should never do nothing unless that leads to death.
    - Note taken on [2019-08-23 Fri 05:56] \\
      DERP.
    :END:
+** TODO BUG: Search dies with a foldl1 on an empty list
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-23 Fri 06:15] \\
