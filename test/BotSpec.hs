@@ -906,6 +906,7 @@ spec = do
           makeMove False (fromMoves (Move 569) (Move 12)) aFailingSimulationFromround_3_2019_08_24_11_16_33
           `shouldBe`
           (incrementRound $
+           setOpponentsLastMove aFailingSimulationFromround_3_2019_08_24_11_16_33 (Move 12) $
            advanceWormSelections $
            -- Decrement banana bombs
            withWormBananas (always $ aListFromList [(2, 2), (8, 3)]) $

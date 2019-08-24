@@ -1622,7 +1622,7 @@ assertValidState previousState myMove opponentsMove state =
      else state
 
 -- TODO I shouldn't even be doing this at all.
-setOpponentsLastMove :: State -> Move -> State -> State
+setOpponentsLastMove :: State -> Move -> ModifyState
 setOpponentsLastMove stateWhenMoveWasMade move' state =
   state { opponentsLastCommand =
           Just $ if move' == doNothing
