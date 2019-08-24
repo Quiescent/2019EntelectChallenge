@@ -2831,7 +2831,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
     go gen' !count' !searchTree =
       let (result, gen'', finalState) = search gen' strategy state' searchTree
           newTree                     = updateTree searchTree strategy finalState result
-      in logStdErr ("Result: " ++ show result) >> go gen'' (count' - 1) newTree
+      in go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
 makeMoveInTree move' (SearchedLevel   _ _ _ transitions) = findSubTree move' transitions
