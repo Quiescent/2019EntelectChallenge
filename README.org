@@ -2878,6 +2878,9 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
+   - Note taken on [2019-08-24 Sat 10:16] \\
+     The search tree level for the worm on that round is not valid.  I'm
+     allowing him to throw snowballs when he's not the snowball worm.
    - Note taken on [2019-08-24 Sat 10:14] \\
      I've found an instance where I try to dig AIR.  I'm investigating...
    - Note taken on [2019-08-23 Fri 06:15] \\
