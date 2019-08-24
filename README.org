@@ -2936,7 +2936,10 @@ I should never do nothing unless that leads to death.
      (Move 10, Move 28)
      #+END_EXAMPLE
    :END:
-** TODO BUG: I didn't let the opponent shoot like he should have
+** IN_PROGRESS BUG: I didn't let the opponent shoot like he should have
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 16:27]
+   :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
