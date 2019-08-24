@@ -1282,7 +1282,8 @@ decodeMoveType move
 -- 5. Snowball
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove _ moves state =
-  let (myMove,  opponentsMove)  = freezeActions state $ toMoves moves
+  let withFrozenDurationsTicked = tickFreezeDurations state
+      (myMove,  opponentsMove)  = freezeActions withFrozenDurationsTicked $ toMoves moves
   in -- assertValidState state  myMove  opponentsMove  $
 
      -- Post movement actions
@@ -1295,8 +1296,7 @@ makeMove _ moves state =
      go (decodeMoveType myMove) (decodeMoveType opponentsMove) myMove opponentsMove $
 
      -- Pre move actions
-     tickFreezeDurations $
-     dealLavaDamage state
+     dealLavaDamage withFrozenDurationsTicked
   where
     go !myMoveType !opponentsMoveType !myMove !opponentsMove state' =
       makeMove' myMoveType opponentsMoveType state'
@@ -1590,7 +1590,12 @@ freezeActions state (myMove, opponentsMove) =
     (False, False) -> (myMove,    opponentsMove)
 
 tickFreezeDurations :: ModifyState
-tickFreezeDurations = withFrozenDurations (aListMap (\ x -> if x >= 0 then x - 1 else x))
+tickFreezeDurations =
+  withFrozenDurations (aListMap decFrozen)
+  where
+    decFrozen (-1) = (-1)
+    decFrozen 1    = (-1)
+    decFrozen x    = x - 1
 
 withFrozenDurations :: WithWormFacts
 withFrozenDurations f state@(State { frozenDurations = frozenDurations' }) =
