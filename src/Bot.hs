@@ -2802,7 +2802,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
         "state':" ++ readableShow state'
     nearbyWorms = wormsNearMyCurrentWorm initialState
     strategy    = determineStrategy (thisWormsCoord initialState) nearbyWorms
-    state'      = if strategy == Dig
+    state'      = if strategy == Dig || strategy == GetToTheChoppa
                   then withOnlyWormsContainedIn nearbyWorms initialState
                   else initialState
     go :: StdGen -> Int -> SearchTree-> IO ()
