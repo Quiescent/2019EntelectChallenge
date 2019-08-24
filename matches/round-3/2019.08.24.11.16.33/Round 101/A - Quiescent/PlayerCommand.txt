@@ -1,0 +1,3 @@
+Command: snowball 20 13
+Execution time: 890ms
+Exception: 	banana 19 20 (played 814): (365.77499999999486 / 814) 0.44935503685503053

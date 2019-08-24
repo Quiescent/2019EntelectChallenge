@@ -1,0 +1,3 @@
+Command: select 2;banana 13 15
+Execution time: 931ms
+Exception: 	select 3;snowball 12 17 (played 80): (29.853125000000013 / 80) 0.37316406250000017

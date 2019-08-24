@@ -1,0 +1,3 @@
+Command: move 8 17
+Execution time: 881ms
+Exception: 	snowball 18 20 (played 1199): (539.6083333333277 / 1199) 0.45004865165415153
