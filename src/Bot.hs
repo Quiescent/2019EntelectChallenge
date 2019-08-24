@@ -3347,7 +3347,7 @@ killSearch !g
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-      in (SearchResult (payOff state') (reverse (combinedMove:moves)), g'', state)
+      in (SearchResult (payOff state') (reverse (combinedMove:moves)), g'', state')
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
 findSubTree combinedMove stateTransitions =
