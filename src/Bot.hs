@@ -1590,7 +1590,7 @@ freezeActions state (myMove, opponentsMove) =
     (False, False) -> (myMove,    opponentsMove)
 
 tickFreezeDurations :: ModifyState
-tickFreezeDurations = withFrozenDurations (aListMap (\ x -> if x > 0 then x - 1 else x))
+tickFreezeDurations = withFrozenDurations (aListMap (\ x -> if x >= 0 then x - 1 else x))
 
 withFrozenDurations :: WithWormFacts
 withFrozenDurations f state@(State { frozenDurations = frozenDurations' }) =
