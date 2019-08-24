@@ -915,6 +915,7 @@ spec = do
            advanceWormSelections $
            -- Decrement banana bombs
            withWormBananas (always $ aListFromList [(2, 2), (8, 3)]) $
+           -- Banana blast
            awardPointsToThisPlayerForDamage 13 $
            awardPointsToThisPlayerForDigging $
            awardPointsToThisPlayerForDigging $
@@ -1204,6 +1205,62 @@ spec = do
          setOpponentsLastMoveToDummy $
          selectNextWormsDefault $ aState)
     context "when the opponent is throwing the bomb" $ do
+      context "when the opponent throws the bomb straight at me and it's all supposed to work" $ do
+        let aFailingSimulationFrom2019_08_24_15_19_07_Round_059 =
+              (State
+                (Just "invalid")
+                59
+                (AList (150) (100) (100) (150) (110) (110))
+                (AList (347) (874) (538) (513) (479) (546))
+                (AList (-1) (3) (-1) (-1) (3) (-1))
+                (AList (-1) (-1) (3) (-1) (-1) (3))
+                (AList (-1) (-1) (-1) (-1) (-1) (-1))
+                (Player 336 (WormId 3) (Selections 0))
+                (Player 311 (WormId 8) (Selections 5))
+                (GameMap
+                   1565454930231473823837895396229990475607854401278457579774236360629880979412587761549012591448722262670096032072577909281058187003003862837383978439791755785540119900065493887654590806294851244237150582879030040924370729245458136187474015725435449366826062429088421541202435460435417422085194888655365341623819593713941809152
+                   1671399858097538298356468009737220561089469146475536710927945266987114492743078441115371132693228416026006526606193492985207607782155477815074168419841491107980007425367144174167660137667268347115179580797624397763312467661285716727067859824304509997687632572892129308705753529301504731552727285437869491573806354982309392384
+                   6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+                   0))
+        it "should work as expected" $
+          makeMove False (fromMoves (Move 10) (Move 28)) aFailingSimulationFrom2019_08_24_15_19_07_Round_059
+          `shouldBe`
+          (incrementRound $
+           setOpponentsLastMove aFailingSimulationFrom2019_08_24_15_19_07_Round_059 (Move 28) $
+           advanceWormSelections $
+           -- Decrement banana bombs
+           withWormBananas (always $ aListFromList [(2, 3), (8, 2)]) $
+           -- Banana blast
+           awardPointsToThatPlayerForDamage 20 $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           awardPointsToThatPlayerForDigging $
+           harmWorm (WormId 1) (wormPositions aFailingSimulationFrom2019_08_24_15_19_07_Round_059) 20 id id id (toCoord 17 10) $
+           -- Move my worm
+           awardPointsToThisPlayerForMovingToAir $
+           moveThisWorm (displaceCoordByMove (toCoord 10 16) (Move 10)) $
+           -- Remove dirt
+           mapGameMap aFailingSimulationFrom2019_08_24_15_19_07_Round_059
+                      ((addAirAt (toCoord 17 10)) . -- epicentre
+                       -- Up
+                       (addAirAt (toCoord 17 9)) .
+                       (addAirAt (toCoord 16 9)) .
+                       -- Right
+                       (addAirAt (toCoord 18 10)) .
+                       (addAirAt (toCoord 19 10)) .
+                       -- Left
+                       (addAirAt (toCoord 16 10)) .
+                       (addAirAt (toCoord 15 10)) .
+                       -- Down
+                       (addAirAt (toCoord 17 11)) .
+                       (addAirAt (toCoord 16 11)) .
+                       (addAirAt (toCoord 17 12))))
       it "should cause maximum damage to the worm which it lands on" $
         makeMove False (fromMoves doNothing bananaOneToLeft) aStateWithOposingWormsNextToEachother `shouldBe`
         (setOpponentsLastMove aStateWithOposingWormsNextToEachother bananaOneToLeft $
