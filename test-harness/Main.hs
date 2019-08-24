@@ -80,9 +80,9 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 "\nReadable input state: \n" ++
                                 readableShow currentState ++
                                 "\nMoves made: (" ++
-                                show thisMove ++
+                                prettyPrintThisMove currentState (fromJust thisMove) ++
                                 ", " ++
-                                show thatMove ++
+                                prettyPrintThatMove currentState (fromJust thatMove) ++
                                 ")"))
         else iter simulatedNextState (nextPath:paths) myBananas' opponentBananas' mySnowballs' opponentSnowballs'
     iter _ _ _ _ _ _ = return Success
