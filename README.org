@@ -2898,8 +2898,11 @@ I should never do nothing unless that leads to death.
      weren't getting closer nor were they already inside the boundary.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 15:04]
    :END:
-** IN_PROGRESS I'm not going into kill search when an enemy is near
+** DONE I'm not going into kill search when an enemy is near
+   CLOSED: [2019-08-24 Sat 15:32]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-24 Sat 15:32] \\
+     I restored the old logic for this one.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 15:08]
    :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
