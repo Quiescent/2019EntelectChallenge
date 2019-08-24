@@ -2864,8 +2864,11 @@ I should never do nothing unless that leads to death.
    - Note taken on [2019-08-23 Fri 05:56] \\
      DERP.
    :END:
-** IN_PROGRESS BUG: Search dies with a foldl1 on an empty list
+** DONE BUG: Search dies with a foldl1 on an empty list
+   CLOSED: [2019-08-24 Sat 10:14]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-24 Sat 10:14] \\
+     Bug fixed by all appearances.
    - Note taken on [2019-08-24 Sat 10:03] \\
      Problem is that when I'm near the centre and do a get to the choppa
      search then there are no moves when I'm actually at the centre of the
@@ -2875,6 +2878,8 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
+   - Note taken on [2019-08-24 Sat 10:14] \\
+     I've found an instance where I try to dig AIR.  I'm investigating...
    - Note taken on [2019-08-23 Fri 06:15] \\
      When dig playing randomly I used the state at the end of playing
      randomly to generate the new level of the tree rather than the state
