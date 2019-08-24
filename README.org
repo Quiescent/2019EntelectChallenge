@@ -2876,6 +2876,10 @@ I should never do nothing unless that leads to death.
      the target radius.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 09:42]
    :END:
+** IN_PROGRESS BUG: I'm not keeping track of the enemies bananas and snowballs
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 10:29]
+   :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
@@ -2923,11 +2927,12 @@ Probably because my worm dies and it doesn't know how to handle that.
 	6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
 	0))
 #+END_EXAMPLE
-** TODO Bug: Sometimes the main thread gets stuck in an STM transaction
+** TODO BUG: Sometimes the main thread gets stuck in an STM transaction
 ** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
    :END:
+** TODO BUG: I'm not determining whether a swap happened
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
