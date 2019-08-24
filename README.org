@@ -2890,8 +2890,12 @@ I should never do nothing unless that leads to death.
      can't find any more instances of this problem.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 10:29]
    :END:
-** IN_PROGRESS I'm creating levels with empty sets of moves while dig searching
+** DONE I'm creating levels with empty sets of moves while dig searching
+   CLOSED: [2019-08-24 Sat 15:08]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-24 Sat 15:08] \\
+     Problem was that moves on the boundary were filtered because they
+     weren't getting closer nor were they already inside the boundary.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 15:04]
    :END:
 ** TODO I'm not going into kill search when an enemy is near
