@@ -3195,7 +3195,7 @@ search g strategy state searchTree =
        Dig            -> digSearch  g 0      state searchTree [] 0
        Kill           -> killSearch g round' state searchTree []
        -- TODO implement a custom search for getting to the choppa! XD
-       GetToTheChoppa -> digSearch  g round' state searchTree [] 0
+       GetToTheChoppa -> digSearch  g 0      state searchTree [] 0
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use
