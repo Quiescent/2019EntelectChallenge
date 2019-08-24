@@ -917,9 +917,15 @@ spec = do
            awardPointsToThisPlayerForDigging $
            tickFreezeDurations $
            awardPointsToThatPlayerForMovingToAir $
+           moveThatWorm (displaceCoordByMove (toCoord 18 18) (Move 12)) $
            mapThisPlayer (withSelections (always (Selections 4))) $
            harmWorm (WormId 12) (wormPositions aFailingSimulationFromround_3_2019_08_24_11_16_33) 13 id id id (toCoord 14 15) $
-           aFailingSimulationFromround_3_2019_08_24_11_16_33)
+           mapGameMap aFailingSimulationFromround_3_2019_08_24_11_16_33
+                      ((addAirAt (toCoord 13 15)) . -- epicentre
+                       -- Down
+                       (addAirAt (toCoord 12 16)) .
+                       (addAirAt (toCoord 13 16)) .
+                       (addAirAt (toCoord 14 16))))
       let aStateWithMyWormOnTheRightEdgeOfTheMap =
             withWormHealths (always (AList 20 20 20 20 20 20)) $
             withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) $
