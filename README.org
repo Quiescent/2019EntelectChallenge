@@ -2876,11 +2876,22 @@ I should never do nothing unless that leads to death.
      the target radius.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 09:42]
    :END:
-** TODO BUG: I'm not parsing enemy snowballs correctly
-** IN_PROGRESS BUG: I'm not keeping track of the enemies bananas and snowballs
+** DONE BUG: I'm not parsing enemy snowballs correctly
+   CLOSED: [2019-08-24 Sat 13:42]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-24 Sat 13:42] \\
+     I implemented snowball parsing and it seems to be working now.
+   :END:
+** DONE BUG: I'm not keeping track of the enemies bananas and snowballs
+   CLOSED: [2019-08-24 Sat 13:42]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-08-24 Sat 13:42] \\
+     Now that I parse snowballs correctly and handle freezing correctly I
+     can't find any more instances of this problem.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 10:29]
    :END:
+** TODO I'm creating levels with empty sets of moves while dig searching
+** TODO I'm not going into kill search when an enemy is near
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
