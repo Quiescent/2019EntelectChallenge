@@ -3199,7 +3199,7 @@ determineStrategy :: Coord -> WormPositions -> Strategy
 determineStrategy currentWormsCoord' wormPositions' =
   if aListCountOpponentsEntries wormPositions' == 0
   then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
-       then Dig
+       then Kill
        else GetToTheChoppa
   else Kill
 
