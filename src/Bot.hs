@@ -717,6 +717,7 @@ readThatMove state coord moveString =
     matchDirectionCommand moveString,
     matchDigCommand       coord moveString,
     matchBananaMove       coord moveString,
+    matchSnowballMove     coord moveString,
     Just doNothing]
 
 readThatWorm :: String -> WormId
@@ -800,6 +801,30 @@ bananaFrom from to' =
   -- TODO: fromJust?
   in Move $
      (+ 24) $
+     fromJust $
+     findIndex (\ (deltaX, deltaY) -> deltaX == xDiff && deltaY == yDiff) $
+     zip bananaXDisplacements bananaYDisplacements
+
+matchSnowballMove :: Coord -> String -> Maybe Move
+matchSnowballMove origCoord original = do
+  let tokens    = words original
+  firstToken   <- headMaybe tokens
+  guard (firstToken == "snowball")
+  coords       <- tailMaybe tokens
+  xValue       <- fmap toInt $ headMaybe coords
+  yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
+  let destCoord = toCoord xValue yValue
+  return $ snowballFrom origCoord destCoord
+
+snowballFrom :: Coord -> Coord -> Move
+snowballFrom from to' =
+  let (x',  y')  = fromCoord from
+      (x'', y'') = fromCoord to'
+      xDiff      = x'' - x'
+      yDiff      = y'' - y'
+  -- TODO: fromJust?
+  in Move $
+     (+ 105) $
      fromJust $
      findIndex (\ (deltaX, deltaY) -> deltaX == xDiff && deltaY == yDiff) $
      zip bananaXDisplacements bananaYDisplacements
