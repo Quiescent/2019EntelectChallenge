@@ -2811,15 +2811,12 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
       writeVariable treeVariable searchTree
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
-        -- TODO: use the move (first arg in tuple to modify the
-        -- initial state rather than passing it in the whole time.)
-        Just (move', state'') -> do
-          -- This isn't good enough.  I need to have a mode of searching in
-          -- between, when the runner hasn't yet told me to move because it's
-          -- 900ms from that point that I communicate back.
+        Just (move', _) -> do
           let tree'' = if strategy == Kill
                        then makeMoveInTree move' searchTree
                        else SearchFront
+          -- TODO: determine whether a swap happened
+          let state'' = makeMove False move' initialState
           let (myMove', opponentsMove') = (toMoves move')
           when (tree'' == SearchFront) $
             logStdErr $
