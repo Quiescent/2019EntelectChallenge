@@ -402,8 +402,6 @@ readableShow (State opponentsLastCommand'
   " (" ++ show opponent' ++ ")\n" ++
   " (" ++ rawMapString gameMap' ++ "))\n"
 
-
-
 rawMapString :: GameMap -> String
 rawMapString (GameMap air dirt space medipacks) =
   "GameMap\n\t" ++ show air ++ "\n\t" ++ show dirt ++ "\n\t" ++ show space ++ "\n\t" ++ show medipacks
