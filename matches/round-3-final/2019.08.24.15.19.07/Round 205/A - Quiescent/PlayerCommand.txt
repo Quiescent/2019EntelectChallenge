@@ -1,0 +1,3 @@
+Command: shoot E
+Execution time: 865ms
+Exception: 	move 20 15 (played 2899): (1029.8020833333894 / 2899) 0.35522665861793357
