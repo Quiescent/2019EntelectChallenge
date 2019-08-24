@@ -1299,6 +1299,8 @@ makeMove _ moves state =
      dealLavaDamage withFrozenDurationsTicked
   where
     go !myMoveType !opponentsMoveType !myMove !opponentsMove state' =
+      -- For Debugging
+      -- $ Debug.Trace.trace ("makeMove' with " ++ show myMoveType ++ ", " ++ show opponentsMoveType ++ ", " ++ show myMove ++ ", " ++ show opponentsMove)
       makeMove' myMoveType opponentsMoveType state'
       where
         wormHealths'              = wormHealths state'
@@ -1309,7 +1311,7 @@ makeMove _ moves state =
         thisWormsId               = thisPlayersCurrentWormId state'
         thatWormsId               = thatPlayersCurrentWormId state'
         thisWormHasBananasLeft'   = thisWormHasBananasLeft state'
-        thatWormHasBananasLeft'   = thisWormHasBananasLeft state'
+        thatWormHasBananasLeft'   = thatWormHasBananasLeft state'
         thisWormHasSnowballsLeft' = thisWormHasSnowballsLeft state'
         thatWormHasSnowballsLeft' = thatWormHasSnowballsLeft state'
         makeMove' SELECT          SELECT =
