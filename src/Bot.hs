@@ -2815,6 +2815,10 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
                        else SearchFront
           -- TODO: determine whether a swap happened
           let state'' = makeMove False move' initialState
+          logStdErr $ "Making moves: " ++ show (toMoves move') ++ ", to state:\n" ++
+            show initialState ++ "\n" ++
+            "To create new state:\n" ++
+            show state''
           let (myMove', opponentsMove') = (toMoves move')
           when (tree'' == SearchFront) $
             logStdErr $
