@@ -2551,7 +2551,7 @@ findFirstWormHit coord' gameMap' NW worms' =
 -- fine with that given that I'm optimising this code
 searchForHitRectalinearly :: Int -> (Coord -> Bool) -> Coord -> GameMap -> WormPositions -> Hit
 searchForHitRectalinearly !add isOnBoundary !coord' gameMap' wormPositions' =
-  if isOnBoundary coord' then HitNothing else go 3 (coord' + add)
+  if isOnBoundary coord' then HitNothing else go 4 (coord' + add)
   where
     go :: Int -> Coord -> Hit
     go 0  _             = HitNothing
@@ -2568,7 +2568,7 @@ searchForHitRectalinearly !add isOnBoundary !coord' gameMap' wormPositions' =
 
 searchForHitDiagonally :: Int -> (Coord -> Bool) -> Coord -> GameMap -> WormPositions -> Hit
 searchForHitDiagonally !add isOnBoundary !coord' gameMap' wormPositions' =
-  if isOnBoundary coord' then HitNothing else go 2 (coord' + add)
+  if isOnBoundary coord' then HitNothing else go 3 (coord' + add)
   where
     go :: Int -> Coord -> Hit
     go 0  _             = HitNothing
