@@ -3163,13 +3163,16 @@ data Strategy = Dig
               | GetToTheChoppa
               deriving (Eq, Show)
 
+choppaRadius :: Int
+choppaRadius = 5
+
 determineStrategy :: Coord -> AList -> Strategy
 determineStrategy currentWormsCoord' wormPositions' =
-  case (aListCountMyEntries wormPositions', aListCountOpponentsEntries wormPositions') of
-    (_, 0) -> if manhattanDistanceToMiddle currentWormsCoord' < 5
-              then Dig
-              else GetToTheChoppa
-    (_, _) -> Kill
+  if aListCountOpponentsEntries wormPositions' == 0
+  then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
+       then Dig
+       else GetToTheChoppa
+  else Kill
 
 withOnlyWormsContainedIn :: AList -> ModifyState
 withOnlyWormsContainedIn toKeep =
@@ -3548,11 +3551,13 @@ myGetToTheChoppaMoves state =
               (let targetOfMove' = displaceCoordByMove coord' move
                 in isAMoveMove move &&
                    isValidMoveMove coord' state move &&
-                   isCloserByManhattanDistance targetOfMove' coord') ||
+                   (manhattanDistanceToMiddle targetOfMove' < choppaRadius ||
+                    isCloserByManhattanDistance targetOfMove' coord')) ||
               (let targetOfMove' = displaceCoordByMove coord' (shiftDigToMoveRange move)
                 in isADigMove  move &&
                    isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state) &&
-                   isCloserByManhattanDistance targetOfMove' coord')) $
+                   (manhattanDistanceToMiddle targetOfMove' < choppaRadius ||
+                    isCloserByManhattanDistance targetOfMove' coord'))) $
      map Move [8..23]
 
 -- ASSUME: that the player has selections left
