@@ -885,6 +885,38 @@ spec = do
           withWormBananas (always $ aListFromList [(1, 3), (4, 3)])
           aState
     context "when I'm throwing the bomb" $ do
+      context "when I select the banana worm and then make the move" $ do
+        let aFailingSimulationFromround_3_2019_08_24_11_16_33 =
+              (State
+                (Just "dig 20 19")
+                47
+                (AList (150) (100) (100) (150) (110) (110))
+                (AList (843) (538) (284) (615) (612) (509))
+                (AList (-1) (3) (-1) (-1) (3) (-1))
+                (AList (-1) (-1) (3) (-1) (-1) (2))
+                (AList (-1) (1) (-1) (-1) (-1) (-1))
+                (Player 267 (WormId 2) (Selections 5))
+                (Player 266 (WormId 8) (Selections 5))
+                (GameMap
+                   341553804738794534827975990110734837567218455903526732939502801242248357697023299207363580289586067880468155219930568905317950022460070879545225135717716178146117740626946296722511144465516762048569521121344967070914883866547986666157083147948169229106177819528192240862633631250912540309204886807486863224065634949556256768
+                   2895300983590217587366387415856476199130105091850467557762678826374747114458642903457020143852364610815634403458840833360947844762699269772912921723915530715374009584805691765099739799496602829303760642555309471616768313040195866248384792401791790135407517182452358609045555358486009613328717287285747969973560313746694944768
+                   6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+                   0))
+        it "should produce the expected end state" $
+          makeMove False (fromMoves (Move 569) (Move 12)) aFailingSimulationFromround_3_2019_08_24_11_16_33
+          `shouldBe`
+          (incrementRound $
+           advanceWormSelections $
+           -- Decrement banana bombs
+           withWormBananas (always $ aListFromList [(2, 2), (8, 3)]) $
+           awardPointsToThisPlayerForDamage 13 $
+           awardPointsToThisPlayerForDigging $
+           awardPointsToThisPlayerForDigging $
+           awardPointsToThisPlayerForDigging $
+           awardPointsToThisPlayerForDigging $
+           mapThisPlayer (withSelections (always (Selections 4))) $
+           harmWorm (WormId 12) (wormPositions aFailingSimulationFromround_3_2019_08_24_11_16_33) 13 id id id (toCoord 14 15) $
+           aFailingSimulationFromround_3_2019_08_24_11_16_33)
       let aStateWithMyWormOnTheRightEdgeOfTheMap =
             withWormHealths (always (AList 20 20 20 20 20 20)) $
             withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) $
