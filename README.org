@@ -2905,7 +2905,12 @@ I should never do nothing unless that leads to death.
      I restored the old logic for this one.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 15:08]
    :END:
-** TODO BUG: Test harness detects an invalid move incorrectly
+** DONE BUG: Test harness detects an invalid move incorrectly
+   CLOSED: [2019-08-24 Sat 15:39]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-08-24 Sat 15:39] \\
+     I solved it by checking the next state for an invalid move.
+   :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\

@@ -42,6 +42,9 @@ hasAnyBananaMove = isABananaMove . removeSelectionFromMove
 hasAnySnowballMove :: Move -> Bool
 hasAnySnowballMove = isASnowballMove . removeSelectionFromMove
 
+invalidMove :: Maybe String
+invalidMove = Just "invalid"
+
 simulateAndCheckRounds :: [FilePath] -> RIO App Result
 simulateAndCheckRounds []                      = return $ Failure "There are no rounds in the given directory."
 simulateAndCheckRounds dirs@(directory:_) = do
@@ -70,11 +73,14 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                          aListFromList [(2, myBananas'),  (8,  opponentBananas')]) .
                                        withWormSnowballs (always $
                                          aListFromList [(3, mySnowballs), (12, opponentSnowballs')])) nextState
-        let simulatedNextState = tickState (fromJust thisMove) (fromJust thatMove) currentState
-        if any (simulatedNextState /=) nextState'
+        let simulatedNextState  = tickState (fromJust thisMove) (fromJust thatMove) currentState
+        let simulatedNextState' = if (any (\ (State { opponentsLastCommand = opponentsLastCommand' }) -> opponentsLastCommand' == invalidMove) nextState')
+                                  then setOpponentsLastMove' invalidMove simulatedNextState
+                                  else simulatedNextState
+        if any (simulatedNextState' /=) nextState'
         then do
                _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
-               stateDiff <- diff (show nextState') (show simulatedNextState)
+               stateDiff <- diff (show nextState') (show simulatedNextState')
                return (Failure ("Failed for: " ++
                                 path ++
                                 "\nDiff:\n" ++
@@ -82,7 +88,7 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 "\nExpected:\n" ++
                                 show nextState' ++
                                 "\nBut got:\n" ++
-                                show simulatedNextState ++
+                                show simulatedNextState' ++
                                 "\nReadable input state: \n" ++
                                 readableShow currentState ++
                                 "\nNon-pretty moves made: (" ++
@@ -95,8 +101,11 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 ", " ++
                                 prettyPrintThatMove currentState (fromJust thatMove) ++
                                 ")"))
-        else iter simulatedNextState (nextPath:paths) myBananas' opponentBananas' mySnowballs' opponentSnowballs'
+        else iter simulatedNextState' (nextPath:paths) myBananas' opponentBananas' mySnowballs' opponentSnowballs'
     iter _ _ _ _ _ _ = return Success
+
+setOpponentsLastMove' :: Maybe String -> ModifyState
+setOpponentsLastMove' x state = state { opponentsLastCommand = x }
 
 diff :: String -> String -> RIO App String
 diff this that = do
