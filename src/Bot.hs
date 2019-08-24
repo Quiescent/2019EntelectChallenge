@@ -3163,10 +3163,8 @@ choppaRadius = 5
 
 determineStrategy :: Coord -> AList -> Strategy
 determineStrategy currentWormsCoord' wormPositions' =
-  if aListCountOpponentsEntries wormPositions' == 0
-  then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
-       then Dig
-       else GetToTheChoppa
+  if manhattanDistanceToMiddle currentWormsCoord' > choppaRadius
+  then GetToTheChoppa
   else Kill
 
 withOnlyWormsContainedIn :: AList -> ModifyState
