@@ -3557,12 +3557,12 @@ myGetToTheChoppaMoves state =
               (let targetOfMove' = displaceCoordByMove coord' move
                 in isAMoveMove move &&
                    isValidMoveMove coord' state move &&
-                   (manhattanDistanceToMiddle targetOfMove' < choppaRadius ||
+                   (manhattanDistanceToMiddle targetOfMove' <= choppaRadius ||
                     isCloserByManhattanDistance targetOfMove' coord')) ||
               (let targetOfMove' = displaceCoordByMove coord' (shiftDigToMoveRange move)
                 in isADigMove  move &&
                    isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state) &&
-                   (manhattanDistanceToMiddle targetOfMove' < choppaRadius ||
+                   (manhattanDistanceToMiddle targetOfMove' <= choppaRadius ||
                     isCloserByManhattanDistance targetOfMove' coord'))) $
      map Move [8..23]
 
