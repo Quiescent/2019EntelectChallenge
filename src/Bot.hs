@@ -1329,7 +1329,7 @@ makeMove _ moves state =
           let myMove'     = removeSelectionFromMove myMove
               myMoveType' = decodeMoveType myMove'
           in go myMoveType' opponentsMoveType myMove' opponentsMove .
-             makeMySelection           myMove
+             makeMySelection myMove
         makeMove' MOVE            MOVE =
           collideWorms wormHealths' wormPositions' gameMap' .
           makeMyMoveMove        wormPositions' thisWormsCoord' thisWormsId gameMap' myMove .
