@@ -2836,7 +2836,7 @@ iterativelyImproveSearch gen initialState tree stateChannel treeVariable = do
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
 makeMoveInTree move' (SearchedLevel   _ _ _ transitions) = findSubTree move' transitions
 makeMoveInTree _     (UnSearchedLevel _ _ _)             = SearchFront
-makeMoveInTree _     SearchFront                       = SearchFront
+makeMoveInTree _     SearchFront                         = SearchFront
 
 -- In nanoseconds
 maxSearchTime :: Integer
