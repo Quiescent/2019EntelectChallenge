@@ -1158,7 +1158,7 @@ formatSelect wormsCoord makeSelections' move state =
       move'     = removeSelectionFromMove move
   in "select " ++
      show selection ++
-     ";" ++
+     "; " ++
      formatMove wormsCoord
                 makeSelections'
                 move'
