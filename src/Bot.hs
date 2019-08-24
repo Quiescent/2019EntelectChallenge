@@ -2830,7 +2830,7 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
         "State: " ++ readableShow initialState ++ "\n" ++
         "state':" ++ readableShow state'
     nearbyWorms = wormsNearMyCurrentWorm initialState
-    strategy    = determineStrategy $ thisWormsCoord initialState
+    strategy    = determineStrategy (thisWormsCoord initialState) nearbyWorms
     state'      = if strategy == Dig || strategy == GetToTheChoppa
                   then withOnlyWormsContainedIn nearbyWorms initialState
                   else initialState
@@ -3195,10 +3195,12 @@ data Strategy = Dig
 choppaRadius :: Int
 choppaRadius = 5
 
-determineStrategy :: Coord -> Strategy
-determineStrategy currentWormsCoord' =
-  if manhattanDistanceToMiddle currentWormsCoord' > choppaRadius
-  then GetToTheChoppa
+determineStrategy :: Coord -> WormPositions -> Strategy
+determineStrategy currentWormsCoord' wormPositions' =
+  if aListCountOpponentsEntries wormPositions' == 0
+  then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
+       then Dig
+       else GetToTheChoppa
   else Kill
 
 withOnlyWormsContainedIn :: AList -> ModifyState
