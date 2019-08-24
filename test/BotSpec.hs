@@ -916,6 +916,7 @@ spec = do
            awardPointsToThisPlayerForDigging $
            awardPointsToThisPlayerForDigging $
            tickFreezeDurations $
+           awardPointsToThatPlayerForMovingToAir $
            mapThisPlayer (withSelections (always (Selections 4))) $
            harmWorm (WormId 12) (wormPositions aFailingSimulationFromround_3_2019_08_24_11_16_33) 13 id id id (toCoord 14 15) $
            aFailingSimulationFromround_3_2019_08_24_11_16_33)
