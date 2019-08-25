@@ -2984,8 +2984,12 @@ I should never do nothing unless that leads to death.
      snowball throw as invalid.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 11:12]
    :END:
-** IN_PROGRESS BUG: I'm not computing the score correctly in a later round
+** DONE BUG: I'm not computing the score correctly in a later round
+   CLOSED: [2019-08-25 Sun 12:33]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-25 Sun 12:33] \\
+     It was actually that I wasn't computing the correct score after
+     parsing.  Score from health only comes from live worms.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 12:07]
    :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
