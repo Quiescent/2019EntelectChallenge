@@ -2175,7 +2175,7 @@ spec = do
                                  (wormPositions state))
   context "when throwing snowballs" $ do
     context "failing test cases from the harness" $ do
-      context "when I miss" $ do
+      context "when the current worm doesn't have snowballs" $ do
         let aFailingSimulationFrom2019_08_24_15_19_07_Round_098 =
               (State
                 (Just "dig 16 13")
@@ -2192,7 +2192,7 @@ spec = do
                    1671399858097538298356468009737220561089469146475536710927945266987114492743078441115371132494506100095844171158435529786971782532572510341265545964602214829613284807278338600590118979409228193744799477192865212043123046544248330669806443544666483723972081496880526266606206626675867419764431671003898171206066219094395252736
                    6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
                    0))
-        it "should still throw the snowball" $
+        it "it shouldn't throw a snowball and it should penalise me" $
           makeMove False (fromMoves (Move 149) (Move 15)) aFailingSimulationFrom2019_08_24_15_19_07_Round_098
           `shouldBe`
           (State
@@ -2201,7 +2201,7 @@ spec = do
             (AList (-1) (100) (100) (130) (102) (97))
             (AList (-1) (710) (507) (478) (413) (510))
             (AList (-1) (2) (-1) (-1) (-1) (-1))
-            (AList (-1) (-1) (-1) (-1) (-1) (-1))
+            (AList (-1) (-1) (1) (-1) (-1) (-1))
             (AList (-1) (-1) (-1) (-1) (-1) (-1))
             (Player 574 (WormId 3) (Selections 0))
             (Player 860 (WormId 4) (Selections 0))
