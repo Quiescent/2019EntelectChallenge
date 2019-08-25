@@ -1001,6 +1001,7 @@ spec = do
       it "should do nothing when thrown off of the map" $
         makeMove False (fromMoves bananaOneToRight doNothing) aStateWithMyWormOnTheRightEdgeOfTheMap `shouldBe`
         (incrementRound $
+         penaliseThisPlayerForAnInvalidCommand $
          setOpponentsLastMoveToDummy $
          selectNextWormsDefault aStateWithMyWormOnTheRightEdgeOfTheMap)
       let aStateWithBananasOnWormOneAndTwo =
@@ -1258,6 +1259,7 @@ spec = do
       it "should not throw a banana bomb when the current worm has none" $
         makeMove False (fromMoves bananaIntoDirtFromMe doNothing) aState `shouldBe`
         (incrementRound $
+         penaliseThisPlayerForAnInvalidCommand $
          setOpponentsLastMoveToDummy $
          selectNextWormsDefault $ aState)
     context "when the opponent is throwing the bomb" $ do
@@ -1548,6 +1550,7 @@ spec = do
         makeMove False (fromMoves doNothing bananaIntoDirtFromHim) aState `shouldBe`
         (setOpponentsLastMove aState bananaIntoDirtFromHim $
          incrementRound $
+         penaliseThatPlayerForAnInvalidCommand $
          selectNextWormsDefault aState)
     context "when both the opponent and I throw the bomb" $ do
       let aStateWhichIFoundFailing =

@@ -1744,6 +1744,7 @@ makeMyBananaMove =
               penaliseThisPlayerForDamage
               awardPointsToThisPlayerForMissing
               awardPointsToThisPlayerForKillingAnEnemy
+              penaliseThisPlayerForAnInvalidCommand
 
 makeOpponentsBananaMove :: WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
 makeOpponentsBananaMove =
@@ -1753,14 +1754,16 @@ makeOpponentsBananaMove =
               penaliseThatPlayerForDamage
               awardPointsToThatPlayerForMissing
               awardPointsToThatPlayerForKillingAnEnemy
+              penaliseThatPlayerForAnInvalidCommand
 
-throwBanana :: ModifyState -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
+throwBanana :: ModifyState -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> ModifyState -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
 throwBanana decrementWormsBananas'
             awardPointsToPlayerForDigging'
             awardPointsToPlayerForDamage'
             penalisePlayerForDamage'
             awardPointsToPlayerForMissing'
             awardPointsToPlayerForKillingAnEnemy'
+            penalisePlayerForAnInvalidCommand'
             !wormId'
             !coord'
             !hasBananasLeft
@@ -1782,7 +1785,7 @@ throwBanana decrementWormsBananas'
                       awardPointsToPlayerForMissing'
                       awardPointsToPlayerForKillingAnEnemy'
                       target
-     else id
+     else penalisePlayerForAnInvalidCommand'
 
 makeMySnowballMove ::  WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
 makeMySnowballMove =
@@ -1790,6 +1793,7 @@ makeMySnowballMove =
                 awardThisPlayerForFreezingAWorm
                 penaliseThisPlayerForFreezingAWorm
                 awardPointsToThisPlayerForMissing
+                penaliseThisPlayerForAnInvalidCommand
 
 makeOpponentsSnowballMove :: WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
 makeOpponentsSnowballMove =
@@ -1797,12 +1801,14 @@ makeOpponentsSnowballMove =
                 awardThatPlayerForFreezingAWorm
                 penaliseThatPlayerForFreezingAWorm
                 awardPointsToThatPlayerForMissing
+                penaliseThatPlayerForAnInvalidCommand
 
-throwSnowball :: ModifyState -> ModifyState -> ModifyState -> ModifyState -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move ->ModifyState
+throwSnowball :: ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
 throwSnowball decrementWormsSnowballs'
               awardPlayerForFreezingAWorm'
               penalisePlayerForFreezingAWorm'
               awardPointsToPlayerForMissing'
+              penalisePlayerForInvalidCommand'
               !wormId'
               !coord'
               !hasSnowballsLeft
@@ -1822,7 +1828,7 @@ throwSnowball decrementWormsSnowballs'
                         penalisePlayerForFreezingAWorm'
                         awardPointsToPlayerForMissing'
                         target
-     else id
+     else penalisePlayerForInvalidCommand'
 
 snowballBlast :: WormId -> GameMap -> WormPositions -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 snowballBlast wormId'
