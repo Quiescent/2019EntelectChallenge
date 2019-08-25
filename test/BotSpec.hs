@@ -53,7 +53,7 @@ spec = do
     context "when the round is 105" $ do
       let aStateWithRoundAtOneHundredAndFive =
             withCurrentRound 105 $
-            withWormPositions (always $ AList (toCoord 11 0)
+            withWormPositions (always $ AList (toCoord 8  2)
                                               (toCoord 4  10)
                                               (toCoord 5  20)
                                               (toCoord 6  15)
@@ -61,13 +61,13 @@ spec = do
                                               (toCoord 8  23)) $
             withWormHealths (always (AList 20 20 20 20 20 20)) $
             aState
-      it "should deal 3 damage to any worm at coord (11, 0)" $ do
+      it "should deal 3 damage to any worm at coord (8, 2)" $ do
         dealLavaDamage aStateWithRoundAtOneHundredAndFive `shouldBe`
           (withWormHealths (always (AList 17 20 20 20 20 20)) $
            aStateWithRoundAtOneHundredAndFive)
       let aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero =
             withCurrentRound 105 $
-            withWormPositions (always $ AList (toCoord 12 0)
+            withWormPositions (always $ AList (toCoord 9  2)
                                               (toCoord 4  10)
                                               (toCoord 5  20)
                                               (toCoord 6  15)
@@ -75,7 +75,7 @@ spec = do
                                               (toCoord 8  23)) $
             withWormHealths (always (AList 17 20 20 20 20 20)) $
             aState
-      it "should not deal 3 damage to any worm at coord (12, 0)" $ do
+      it "should not deal 3 damage to any worm at coord (9, 2)" $ do
         dealLavaDamage aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero `shouldBe`
           aStateWithRoundAtOneHundredAndFiveAndAWormAtTwelveZero
       let aStateWithLowHealthWormOnLava = withCurrentRound 105 $
