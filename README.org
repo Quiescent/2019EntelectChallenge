@@ -2945,6 +2945,9 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS BUG: I don't set bananas to minus one when depleted
    :LOGBOOK:
+   - Note taken on [2019-08-25 Sun 10:05] \\
+     This is actually a problem in how I read the state.  I need to make
+     sure that I read a zero as minus one when it comes to counts.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:05]
    :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
