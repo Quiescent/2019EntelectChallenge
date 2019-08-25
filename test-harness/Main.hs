@@ -45,6 +45,10 @@ hasAnySnowballMove = isASnowballMove . removeSelectionFromMove
 invalidMove :: Maybe String
 invalidMove = Just "invalid"
 
+zeroToMinusOne :: Int -> Int
+zeroToMinusOne 0 = (-1)
+zeroToMinusOne x = x
+
 simulateAndCheckRounds :: [FilePath] -> RIO App Result
 simulateAndCheckRounds []                      = return $ Failure "There are no rounds in the given directory."
 simulateAndCheckRounds dirs@(directory:_) = do
@@ -60,10 +64,14 @@ simulateAndCheckRounds dirs@(directory:_) = do
       -- Assume: that there are valid initial worm positions
       thisMove              <- loadThisPlayersCommand currentState thisWormsCoord' path
       thatMove              <- loadThatPlayersCommand currentState thatWormsCoord' path
-      let myBananas'         = myBananas         + if any hasAnyBananaMove   thisMove then (-1) else 0
-      let opponentBananas'   = opponentBananas   + if any hasAnyBananaMove   thatMove then (-1) else 0
-      let mySnowballs'       = mySnowballs       + if any hasAnySnowballMove thisMove then (-1) else 0
-      let opponentSnowballs' = opponentSnowballs + if any hasAnySnowballMove thatMove then (-1) else 0
+      let myBananas'         = zeroToMinusOne $
+                               myBananas         + if any hasAnyBananaMove   thisMove then (-1) else 0
+      let opponentBananas'   = zeroToMinusOne $
+                               opponentBananas   + if any hasAnyBananaMove   thatMove then (-1) else 0
+      let mySnowballs'       = zeroToMinusOne $
+                               mySnowballs       + if any hasAnySnowballMove thisMove then (-1) else 0
+      let opponentSnowballs' = zeroToMinusOne $
+                               opponentSnowballs + if any hasAnySnowballMove thatMove then (-1) else 0
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
