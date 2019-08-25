@@ -2953,7 +2953,10 @@ I should never do nothing unless that leads to death.
      sure that I read a zero as minus one when it comes to counts.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:05]
    :END:
-** TODO BUG: Test harness doesn't appear to track my snowballs correctly
+** IN_PROGRESS BUG: Test harness doesn't appear to track my snowballs correctly
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:23]
+   :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
