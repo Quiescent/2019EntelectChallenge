@@ -2943,6 +2943,7 @@ I should never do nothing unless that leads to death.
      It was a problem with the range of the shot.
    - State "IN_PROGRESS" from "TODO"       [2019-08-24 Sat 16:27]
    :END:
+** TODO BUG: I don't set bananas to minus one when depleted
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
