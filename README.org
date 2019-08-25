@@ -2959,8 +2959,12 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-25 Sun 10:28]
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:23]
    :END:
-** IN_PROGRESS BUG: I'm not parsing "move 18 14" correctly for the opponent
+** DONE BUG: I'm not parsing "move 18 14" correctly for the opponent
+   CLOSED: [2019-08-25 Sun 11:09]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-25 Sun 11:09] \\
+     Fixed the test harness for this case.  The opponents last move is now
+     set to nothing when it makes one while frozen.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:54]
    :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
