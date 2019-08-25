@@ -3007,6 +3007,10 @@ I should never do nothing unless that leads to death.
      I needed the new lava progression.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 13:10]
    :END:
+** TODO BUG: Debug search tree update/generation
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
+   :END:
 ** TODO BUG: Searcher dies when the worm is dead
 ** TODO BUG: I generate moves from current position for frozen worms
    :LOGBOOK:
@@ -3082,10 +3086,6 @@ Probably because my worm dies and it doesn't know how to handle that.
      #+END_EXAMPLE
    :END:
 ** TODO BUG: Sometimes the main thread gets stuck in an STM transaction
-** TODO BUG: Find the bug where I'm not inserting moves into sub trees!
-   :LOGBOOK:
-   - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
-   :END:
 ** TODO BUG: I'm not determining whether a swap happened
 ** TODO Never select the current worm
 ** IN_PROGRESS Make the Search Faster
