@@ -2992,6 +2992,7 @@ I should never do nothing unless that leads to death.
      parsing.  Score from health only comes from live worms.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 12:07]
    :END:
+** TODO BUG: I can still make a move when there's one turn left on frozen
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
