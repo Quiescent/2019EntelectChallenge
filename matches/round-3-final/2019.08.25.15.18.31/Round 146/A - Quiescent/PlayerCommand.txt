@@ -1,3 +1,0 @@
-Command: shoot NW
-Execution time: 856ms
-Exception: 	dig 23 19 (played 3912): (2290.7927083334725 / 3912) 0.5855809581629531

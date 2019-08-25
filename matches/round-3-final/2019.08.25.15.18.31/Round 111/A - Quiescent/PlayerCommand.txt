@@ -1,3 +1,0 @@
-Command: move 15 17
-Execution time: 863ms
-Exception: 	dig 17 16 (played 3498): (1581.272916666682 / 3498) 0.45205057651992053
