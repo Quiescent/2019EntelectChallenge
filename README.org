@@ -2959,7 +2959,10 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-25 Sun 10:28]
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:23]
    :END:
-** TODO BUG: I'm not parsing "move 18 14" correctly for the opponent
+** IN_PROGRESS BUG: I'm not parsing "move 18 14" correctly for the opponent
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:54]
+   :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
