@@ -76,16 +76,8 @@ simulateAndCheckRounds dirs@(directory:_) = do
       -- Assume: that there are valid initial worm positions
       thisMove              <- loadThisPlayersCommand currentState thisWormsCoord' path
       thatMove              <- loadThatPlayersCommand currentState thatWormsCoord' path
-      let myBananas'         = zeroToMinusOne $
-                               myBananas         + decrementIfBananaMove thisWormHasBananasLeft thisMove currentState
-      let opponentBananas'   = zeroToMinusOne $
-                               opponentBananas   + decrementIfBananaMove thatWormHasBananasLeft thatMove currentState
-      let mySnowballs'       = zeroToMinusOne $
-                               mySnowballs       + decrementIfSnowballMove thisWormHasSnowballsLeft thisMove currentState
-      let opponentSnowballs' = zeroToMinusOne $
-                               opponentSnowballs + decrementIfSnowballMove thatWormHasSnowballsLeft thatMove currentState
       let thatIdAfterSelect  = thatPlayersCurrentWormId $ (if any hasASelection thatMove
-                                                           then makeMySelection (fromJust thatMove)
+                                                           then makeOpponentsSelection (fromJust thatMove)
                                                            else id) currentState
       let thatMove'          = if (\ (State { frozenDurations = frozenDurations' }) ->
                                      aListContainsId thatIdAfterSelect frozenDurations') currentState
@@ -96,8 +88,27 @@ simulateAndCheckRounds dirs@(directory:_) = do
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
       else do
         nextState             <- loadStateForRound nextPath
-        let nextState'         = fmap (cleanUpDeadWorms .
-                                       setOpponentsLastMove currentState (fromJust thatMove') .
+        let thisBananaWormDied = not $ aListContainsId (WormId 2) (wormHealths (fromJust nextState))
+        let thatBananaWormDied = not $ aListContainsId (WormId 8) (wormHealths (fromJust nextState))
+        let myBananas'         = if thisBananaWormDied
+                                 then (-1)
+                                 else zeroToMinusOne $
+                                      myBananas         + decrementIfBananaMove thisWormHasBananasLeft thisMove currentState
+        let opponentBananas'   = if thatBananaWormDied
+                                 then (-1)
+                                 else zeroToMinusOne $
+                                      opponentBananas   + decrementIfBananaMove thatWormHasBananasLeft thatMove currentState
+        let thisSnowyWormDied  = not $ aListContainsId (WormId 3) (wormHealths (fromJust nextState))
+        let thatSnowyWormDied  = not $ aListContainsId (WormId 12) (wormHealths (fromJust nextState))
+        let mySnowballs'       = if thisSnowyWormDied
+                                 then (-1)
+                                 else zeroToMinusOne $
+                                      mySnowballs       + decrementIfSnowballMove thisWormHasSnowballsLeft thisMove currentState
+        let opponentSnowballs' = if thatSnowyWormDied
+                                 then (-1)
+                                 else zeroToMinusOne $
+                                      opponentSnowballs + decrementIfSnowballMove thatWormHasSnowballsLeft thatMove currentState
+        let nextState'         = fmap (setOpponentsLastMove currentState (fromJust thatMove') .
                                        withWormBananas (always $
                                          aListFromList [(2, myBananas'),   (8,  opponentBananas')]) .
                                        withWormSnowballs (always $

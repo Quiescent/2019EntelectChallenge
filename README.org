@@ -2992,8 +2992,12 @@ I should never do nothing unless that leads to death.
      parsing.  Score from health only comes from live worms.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 12:07]
    :END:
-** IN_PROGRESS BUG: I can still make a move when there's one turn left on frozen
+** DONE BUG: I can still make a move when there's one turn left on frozen
+   CLOSED: [2019-08-25 Sun 12:48]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-25 Sun 12:48] \\
+     I had to augment the test harness again.  I was setting the snowball
+     count when the worm was dead.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 12:39]
    :END:
 ** TODO BUG: I generate moves from current position for frozen worms
