@@ -78,9 +78,9 @@ simulateAndCheckRounds dirs@(directory:_) = do
       else do
         nextState             <- loadStateForRound nextPath
         let nextState'         = fmap (withWormBananas (always $
-                                         aListFromList [(2, myBananas'),  (8,  opponentBananas')]) .
+                                         aListFromList [(2, myBananas'),   (8,  opponentBananas')]) .
                                        withWormSnowballs (always $
-                                         aListFromList [(3, mySnowballs), (12, opponentSnowballs')])) nextState
+                                         aListFromList [(3, mySnowballs'), (12, opponentSnowballs')])) nextState
         let simulatedNextState  = tickState (fromJust thisMove) (fromJust thatMove) currentState
         let simulatedNextState' = if (any (\ (State { opponentsLastCommand = opponentsLastCommand' }) -> opponentsLastCommand' == invalidMove) nextState')
                                   then setOpponentsLastMove' invalidMove simulatedNextState
