@@ -2969,6 +2969,9 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS BUG: I'm not throwing a snowball when it misses
    :LOGBOOK:
+   - Note taken on [2019-08-25 Sun 11:26] \\
+     It appears that the problem is actually that I'm detecting the
+     snowball throw as invalid.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 11:12]
    :END:
 ** IN_PROGRESS BUG: Some of my moves are invalid
