@@ -3007,6 +3007,7 @@ I should never do nothing unless that leads to death.
      I needed the new lava progression.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 13:10]
    :END:
+** TODO BUG: Searcher dies when the worm is dead
 ** TODO BUG: I generate moves from current position for frozen worms
    :LOGBOOK:
    - Note taken on [2019-08-25 Sun 12:45] \\
