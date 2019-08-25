@@ -606,7 +606,7 @@ spec = do
           makeMove False (fromMoves (Move 10) (Move 9)) aFailingSimulationFrom2019_08_24_15_19_07_Round_084
           `shouldBe`
           (State
-            (Just "move 18 14")
+            (Just "nothing \"Player chose to do nothing\"")
             85
             (AList (18) (100) (100) (150) (110) (110))
             (AList (381) (709) (539) (512) (447) (479))
