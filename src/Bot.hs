@@ -1592,14 +1592,26 @@ dealLavaDamage state =
           aListToList hits'
      else state
 
+-- The ruinEverythingBit ruins my model of going fowards and backwards
+-- between combined and non-combined moves.  It will only work in the
+-- case of freezing a move subsequent to the select.
+ruinEverythingBit :: Int
+ruinEverythingBit = shiftL 1 (2 * selectEncodingRange)
+
 keepOnlySelection :: Move -> Move
-keepOnlySelection (Move x) = Move $ x .&. selectMoveMask
+keepOnlySelection (Move x) = Move $ (x .&. selectMoveMask) .|. ruinEverythingBit
 
 freezeActions :: State -> (Move, Move) -> (Move, Move)
 freezeActions state (myMove, opponentsMove) =
-  let frozenDurations' = frozenDurations state
-      freezeThisWorm   = aListContainsId (thisPlayersCurrentWormId state) frozenDurations'
-      freezeThatWorm   = aListContainsId (thatPlayersCurrentWormId state) frozenDurations'
+  let thisWormId       = if hasASelection myMove
+                         then thisPlayersCurrentWormId $ makeMySelection myMove state
+                         else thisPlayersCurrentWormId state
+      thatWormId       = if hasASelection opponentsMove
+                         then thatPlayersCurrentWormId $ makeOpponentsSelection opponentsMove state
+                         else thatPlayersCurrentWormId state
+      frozenDurations' = frozenDurations state
+      freezeThisWorm   = aListContainsId thisWormId frozenDurations'
+      freezeThatWorm   = aListContainsId thatWormId frozenDurations'
   in case (freezeThisWorm, freezeThatWorm) of
     (True,  True)  -> (keepOnlySelection myMove, keepOnlySelection opponentsMove)
     (True,  False) -> (keepOnlySelection myMove, opponentsMove)
@@ -1677,7 +1689,9 @@ thatPlayerHasSelectionsLeft :: State -> Bool
 thatPlayerHasSelectionsLeft = hasSelectionsLeft . opponent
 
 hasASelection :: Move -> Bool
-hasASelection (Move x) = x >= 256
+hasASelection (Move x) =
+  let x' = x .&. selectMoveMask
+  in x' >= 256 && x' < 4096
 
 makeMySelection :: Move -> ModifyState
 makeMySelection =

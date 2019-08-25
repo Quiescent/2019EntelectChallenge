@@ -978,7 +978,6 @@ spec = do
           (incrementRound $
            setOpponentsLastMove aFailingSimulationFromround_3_2019_08_24_11_16_33 (Move 12) $
            advanceWormSelections $
-           penaliseThisPlayerForAnInvalidCommand $
            tickFreezeDurations $
            awardPointsToThatPlayerForMovingToAir $
            moveThatWorm (displaceCoordByMove (toCoord 18 18) (Move 12)) $
