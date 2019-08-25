@@ -2967,6 +2967,7 @@ I should never do nothing unless that leads to death.
      set to nothing when it makes one while frozen.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:54]
    :END:
+** TODO BUG: I'm not throwing a snowball when it misses
 ** IN_PROGRESS BUG: Some of my moves are invalid
    :LOGBOOK:
    - Note taken on [2019-08-24 Sat 10:16] \\
