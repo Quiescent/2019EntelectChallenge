@@ -2969,6 +2969,9 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS BUG: I'm not throwing a snowball when it misses
    :LOGBOOK:
+   - Note taken on [2019-08-25 Sun 11:56] \\
+     The actual bug here is that I'm not penalising myself for bad throw
+     moves.
    - Note taken on [2019-08-25 Sun 11:48] \\
      Ok, so the actual problem is that I'm still decrementing snowballs and
      bananas on invalid snowball and banana moves.
