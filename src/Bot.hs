@@ -603,13 +603,17 @@ factsFromMyWorms (ScratchPlayer _ _ worms' _) =
       bananas          = vectorMaybesToAList $
                          V.map (\ (ScratchWorm { wormId       = wormId',
                                                   bananaBombs = bananas' }) ->
-                                   fmap (\ (BananaBomb count') -> (wormId', count') )
+                                   fmap (\ (BananaBomb count') -> (wormId', if count' == 0
+                                                                            then (-1)
+                                                                            else count') )
                                    bananas')
                          liveWorms
       snowballs'       = vectorMaybesToAList $
                          V.map (\ (ScratchWorm { wormId    = wormId',
                                                  snowballs = snowballs'' }) ->
-                                   fmap (\ (Snowball (count')) -> (wormId', count'))
+                                   fmap (\ (Snowball (count')) -> (wormId', if count' == 0
+                                                                            then (-1)
+                                                                            else count'))
                                    snowballs'')
                          liveWorms
       frozenDurations' = vectorToAList $
