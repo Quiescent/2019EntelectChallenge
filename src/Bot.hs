@@ -1592,17 +1592,19 @@ dealLavaDamage state =
           aListToList hits'
      else state
 
--- TODO: You can still select whne you're frozen...
+keepOnlySelection :: Move -> Move
+keepOnlySelection (Move x) = Move $ x .&. selectMoveMask
+
 freezeActions :: State -> (Move, Move) -> (Move, Move)
 freezeActions state (myMove, opponentsMove) =
   let frozenDurations' = frozenDurations state
       freezeThisWorm   = aListContainsId (thisPlayersCurrentWormId state) frozenDurations'
       freezeThatWorm   = aListContainsId (thatPlayersCurrentWormId state) frozenDurations'
   in case (freezeThisWorm, freezeThatWorm) of
-    (True,  True)  -> (doNothing, doNothing)
-    (True,  False) -> (doNothing, opponentsMove)
-    (False, True)  -> (myMove,    doNothing)
-    (False, False) -> (myMove,    opponentsMove)
+    (True,  True)  -> (keepOnlySelection myMove, keepOnlySelection opponentsMove)
+    (True,  False) -> (keepOnlySelection myMove, opponentsMove)
+    (False, True)  -> (myMove,                   keepOnlySelection opponentsMove)
+    (False, False) -> (myMove,                   opponentsMove)
 
 tickFreezeDurations :: ModifyState
 tickFreezeDurations =
