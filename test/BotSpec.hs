@@ -2986,7 +2986,7 @@ emptyAList = AList (-1) (-1) (-1) (-1) (-1) (-1)
 --   in sqrt (((dx::Double) ** 2) + (dy ** 2))
 
 -- generateLavaProgression =
---   map lavaOn [0..400]
+--   map lavaOn [0..400::Integer]
 --   where
 --     battleRoyaleStart :: Double
 --     battleRoyaleStart   = 0.25  * (fromIntegral maxRound)
@@ -2999,7 +2999,7 @@ emptyAList = AList (-1) (-1) (-1) (-1) (-1) (-1)
 --       (\ (GameMap air _ _ _) -> air) $
 --       vectorGameMapToGameMap $
 --       V.fromList $
---       map ( \ coord -> if currentRound' >= (round battleRoyaleStart) && (euclideanDistance coord mapCentre > (safeAreaRadius + 1))
+--       map ( \ coord -> if currentRound' >= (round battleRoyaleStart) && (euclideanDistance coord mapCentre > (safeAreaRadius))
 --                        then AIR
 --                        else DEEP_SPACE)
 --       [0..(mapDim * mapDim) - 1]
@@ -3007,4 +3007,5 @@ emptyAList = AList (-1) (-1) (-1) (-1) (-1) (-1)
 --         fullPercentageRange = ((fromIntegral currentRound') - battleRoyaleStart) /
 --                               (battleRoyaleEnd - battleRoyaleStart)
 --         currentProgress     = min 1.0 $ max fullPercentageRange 0.0
---         safeAreaRadius      = (fromIntegral (mapDim `div` 2)) * (1 - currentProgress)
+--         nonFloodedRadius    = (fromIntegral (mapDim `div` 2)) * (1 - currentProgress)
+--         safeAreaRadius      = max 3.0 nonFloodedRadius
