@@ -3007,8 +3007,12 @@ I should never do nothing unless that leads to death.
      I needed the new lava progression.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 13:10]
    :END:
-** TODO BUG: Debug search tree update/generation
+** IN_PROGRESS BUG: Debug search tree update/generation
    :LOGBOOK:
+   - Note taken on [2019-08-25 Sun 16:02] \\
+     My plan here is to severely limit the number of moves (to say three)
+     and then print the tree so that I can see every update made to it.
+   - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 16:02]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
    :END:
 ** TODO BUG: Searcher dies when the worm is dead
