@@ -192,10 +192,16 @@ aListFilterByData p (AList a b c d e f) =
         (minusOneWhenFailed p f)
 
 aListSumThisPlayersValues :: AList -> Int
-aListSumThisPlayersValues (AList a b c _ _ _) = a + b + c
+aListSumThisPlayersValues (AList a b c _ _ _) =
+  (if a /= (-1) then a else 0) +
+  (if b /= (-1) then b else 0) +
+  (if c /= (-1) then c else 0)
 
 aListSumThatPlayersValues :: AList -> Int
-aListSumThatPlayersValues (AList _ _ _ d e f) = d + e + f
+aListSumThatPlayersValues (AList _ _ _ d e f) =
+  (if d /= (-1) then d else 0) +
+  (if e /= (-1) then e else 0) +
+  (if f /= (-1) then f else 0)
 
 -- TODO: use bit twiddling hacks to supercharge this
 aListCountMyEntries :: AList -> Int
@@ -570,10 +576,13 @@ toState myPlayer' opponents' gameMap' currentRound' =
 wormCount :: Int
 wormCount = 3
 
+healthPoints :: Int -> Int
+healthPoints totalHealth = totalHealth `div` wormCount
+
 removeHealthPoints :: (AList -> Int) -> WormHealths -> Player -> Player
 removeHealthPoints summingFunction wormHealths' (Player score' wormId' selections') =
   let totalHealth = summingFunction wormHealths'
-  in Player (score' - (totalHealth `div` wormCount)) wormId' selections'
+  in Player (score' - healthPoints totalHealth) wormId' selections'
 
 vectorToAList :: V.Vector (Int, Int) -> AList
 vectorToAList = aListFromList . V.toList
