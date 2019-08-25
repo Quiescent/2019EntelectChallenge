@@ -96,7 +96,8 @@ simulateAndCheckRounds dirs@(directory:_) = do
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
       else do
         nextState             <- loadStateForRound nextPath
-        let nextState'         = fmap (setOpponentsLastMove currentState (fromJust thatMove') .
+        let nextState'         = fmap (cleanUpDeadWorms .
+                                       setOpponentsLastMove currentState (fromJust thatMove') .
                                        withWormBananas (always $
                                          aListFromList [(2, myBananas'),   (8,  opponentBananas')]) .
                                        withWormSnowballs (always $
