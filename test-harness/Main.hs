@@ -49,6 +49,18 @@ zeroToMinusOne :: Int -> Int
 zeroToMinusOne 0 = (-1)
 zeroToMinusOne x = x
 
+decrementIfBananaMove :: (State -> Bool) -> Maybe Move -> State -> Int
+decrementIfBananaMove hasBananasLeft move state =
+  if any hasAnyBananaMove move && hasBananasLeft state
+  then (-1)
+  else 0
+
+decrementIfSnowballMove :: (State -> Bool) -> Maybe Move -> State -> Int
+decrementIfSnowballMove hasSnowballsLeft move state =
+  if any hasAnySnowballMove move && hasSnowballsLeft state
+  then (-1)
+  else 0
+
 simulateAndCheckRounds :: [FilePath] -> RIO App Result
 simulateAndCheckRounds []                      = return $ Failure "There are no rounds in the given directory."
 simulateAndCheckRounds dirs@(directory:_) = do
@@ -65,13 +77,13 @@ simulateAndCheckRounds dirs@(directory:_) = do
       thisMove              <- loadThisPlayersCommand currentState thisWormsCoord' path
       thatMove              <- loadThatPlayersCommand currentState thatWormsCoord' path
       let myBananas'         = zeroToMinusOne $
-                               myBananas         + if any hasAnyBananaMove   thisMove then (-1) else 0
+                               myBananas         + decrementIfBananaMove thisWormHasBananasLeft thisMove currentState
       let opponentBananas'   = zeroToMinusOne $
-                               opponentBananas   + if any hasAnyBananaMove   thatMove then (-1) else 0
+                               opponentBananas   + decrementIfBananaMove thatWormHasBananasLeft thatMove currentState
       let mySnowballs'       = zeroToMinusOne $
-                               mySnowballs       + if any hasAnySnowballMove thisMove then (-1) else 0
+                               mySnowballs       + decrementIfSnowballMove thisWormHasSnowballsLeft thisMove currentState
       let opponentSnowballs' = zeroToMinusOne $
-                               opponentSnowballs + if any hasAnySnowballMove thatMove then (-1) else 0
+                               opponentSnowballs + decrementIfSnowballMove thatWormHasSnowballsLeft thatMove currentState
       let thatIdAfterSelect  = thatPlayersCurrentWormId $ (if any hasASelection thatMove
                                                            then makeMySelection (fromJust thatMove)
                                                            else id) currentState
