@@ -1704,9 +1704,6 @@ isABananaMove :: Move -> Bool
 isABananaMove (Move x) =
   x < 105 && x >= 24
 
-hasBananas :: Bananas -> Bool
-hasBananas x = x > 0
-
 thisWormHasBananasLeft :: State -> Bool
 thisWormHasBananasLeft = wormHasBananasLeft thisPlayersCurrentWormId
 
@@ -1717,7 +1714,7 @@ wormHasBananasLeft :: (State -> WormId) -> State -> Bool
 wormHasBananasLeft wormsId state =
   let wormId'  = wormsId state
       bananas' = wormBananas state
-  in aListContainsId wormId' bananas' && (hasBananas $ aListFindDataById wormId' bananas')
+  in aListContainsId wormId' bananas'
 
 decrementBananas :: Bananas -> Bananas
 decrementBananas (-1) = (-1)
@@ -1952,9 +1949,6 @@ awardThatPlayerForFreezingAWorm = mapThatPlayer awardPointsForFreezing
 penaliseThatPlayerForFreezingAWorm :: ModifyState
 penaliseThatPlayerForFreezingAWorm = mapThatPlayer penaliseForFreezing
 
-hasSnowballs :: Snowballs -> Bool
-hasSnowballs x = x > 0
-
 thisWormHasSnowballsLeft :: State -> Bool
 thisWormHasSnowballsLeft = wormHasSnowballsLeft thisPlayersCurrentWormId
 
@@ -1965,7 +1959,7 @@ wormHasSnowballsLeft :: (State -> WormId) -> State -> Bool
 wormHasSnowballsLeft wormsId state =
   let wormId'    = wormsId state
       snowballs' = wormSnowballs state
-  in aListContainsId wormId' snowballs' && (hasSnowballs $ aListFindDataById wormId' snowballs')
+  in aListContainsId wormId' snowballs'
 
 decrementSnowballs :: Snowballs -> Snowballs
 decrementSnowballs (-1) = (-1)
