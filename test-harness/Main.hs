@@ -72,12 +72,20 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                mySnowballs       + if any hasAnySnowballMove thisMove then (-1) else 0
       let opponentSnowballs' = zeroToMinusOne $
                                opponentSnowballs + if any hasAnySnowballMove thatMove then (-1) else 0
+      let thatIdAfterSelect  = thatPlayersCurrentWormId $ (if any hasASelection thatMove
+                                                           then makeMySelection (fromJust thatMove)
+                                                           else id) currentState
+      let thatMove'          = if (\ (State { frozenDurations = frozenDurations' }) ->
+                                     aListContainsId thatIdAfterSelect frozenDurations') currentState
+                               then Just doNothing
+                               else thatMove
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
       else do
         nextState             <- loadStateForRound nextPath
-        let nextState'         = fmap (withWormBananas (always $
+        let nextState'         = fmap (setOpponentsLastMove currentState (fromJust thatMove') .
+                                       withWormBananas (always $
                                          aListFromList [(2, myBananas'),   (8,  opponentBananas')]) .
                                        withWormSnowballs (always $
                                          aListFromList [(3, mySnowballs'), (12, opponentSnowballs')])) nextState
