@@ -1295,8 +1295,7 @@ decodeMoveType move
 -- 5. Snowball
 makeMove :: Bool -> CombinedMove -> ModifyState
 makeMove _ moves state =
-  let withFrozenDurationsTicked = tickFreezeDurations state
-      (myMove,  opponentsMove)  = freezeActions withFrozenDurationsTicked $ toMoves moves
+  let (myMove,  opponentsMove)  = freezeActions state $ toMoves moves
   in -- assertValidState state  myMove  opponentsMove  $
 
      -- Post movement actions
@@ -1309,7 +1308,8 @@ makeMove _ moves state =
      go (decodeMoveType myMove) (decodeMoveType opponentsMove) myMove opponentsMove $
 
      -- Pre move actions
-     dealLavaDamage withFrozenDurationsTicked
+     tickFreezeDurations $
+     dealLavaDamage state
   where
     go !myMoveType !opponentsMoveType !myMove !opponentsMove state' =
       -- For Debugging
