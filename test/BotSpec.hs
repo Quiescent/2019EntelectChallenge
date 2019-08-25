@@ -2551,7 +2551,7 @@ type AddToWormFacts         = Coord -> Coord -> ModifyState
 type ModifyMap              = Coord -> Coord -> GameMap -> GameMap
 
 justNothing :: Maybe String
-justNothing = Just "nothing"
+justNothing = Just "nothing \"Player chose to do nothing\""
 
 generateShotScenarioWithMapModifications :: GenerateCoordinate -> DisplaceFromCoordinate -> ShotSwitch -> AddToWormFacts -> ModifyMap -> (Int, Int, Int) -> (State, Move)
 generateShotScenarioWithMapModifications generateCoord displace switchShot addFacts modifyMap (i, j, k) =

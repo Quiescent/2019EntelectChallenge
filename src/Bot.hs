@@ -1659,7 +1659,7 @@ assertValidState previousState myMove opponentsMove state =
 setOpponentsLastMove :: State -> Move -> ModifyState
 setOpponentsLastMove stateWhenMoveWasMade move' state =
   state { opponentsLastCommand =
-          Just $ if move' == doNothing
+          Just $ if move' == doNothing || (\ (Move x) -> x > 4096) move'
                  then "nothing \"Player chose to do nothing\""
                  else prettyPrintThatMove stateWhenMoveWasMade move' }
 
