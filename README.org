@@ -3000,8 +3000,11 @@ I should never do nothing unless that leads to death.
      count when the worm was dead.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 12:39]
    :END:
-** IN_PROGRESS BUG: I'm not damaging worms on the lava
+** DONE BUG: I'm not damaging worms on the lava
+   CLOSED: [2019-08-25 Sun 15:16]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-25 Sun 15:16] \\
+     I needed the new lava progression.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 13:10]
    :END:
 ** TODO BUG: I generate moves from current position for frozen worms
