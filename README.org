@@ -2967,8 +2967,12 @@ I should never do nothing unless that leads to death.
      set to nothing when it makes one while frozen.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 10:54]
    :END:
-** IN_PROGRESS BUG: I'm not throwing a snowball when it misses
+** DONE BUG: I'm not throwing a snowball when it misses
+   CLOSED: [2019-08-25 Sun 12:06]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-25 Sun 12:06] \\
+     It was actually a problem with tracking ammo and then penalising bad
+     throws.
    - Note taken on [2019-08-25 Sun 11:56] \\
      The actual bug here is that I'm not penalising myself for bad throw
      moves.
