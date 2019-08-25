@@ -1,3 +1,0 @@
-Command: move 5 25
-Execution time: 910ms
-Exception: 	Opponents move: nothing

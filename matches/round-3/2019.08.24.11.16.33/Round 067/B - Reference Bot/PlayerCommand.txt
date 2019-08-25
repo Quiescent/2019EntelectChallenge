@@ -1,3 +1,0 @@
-Command: select 1;shoot W
-Execution time: 1ms
-Exception: null

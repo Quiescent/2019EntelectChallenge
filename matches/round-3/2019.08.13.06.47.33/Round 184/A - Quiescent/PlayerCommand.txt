@@ -1,3 +1,0 @@
-Command: move 13 15
-Execution time: 908ms
-Exception: 	(Move 10,Move 9)

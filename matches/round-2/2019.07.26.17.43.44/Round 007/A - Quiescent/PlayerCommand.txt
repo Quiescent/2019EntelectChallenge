@@ -1,3 +1,0 @@
-Command: select 3;dig 25 2
-Execution time: 969ms
-Exception: null

@@ -1,6 +1,0 @@
-Match seed: 11230
-
-The winner is: A - Quiescent
-
-A - Quiescent- score:2105 health:172
-B - Reference Bot- score:1750 health:280

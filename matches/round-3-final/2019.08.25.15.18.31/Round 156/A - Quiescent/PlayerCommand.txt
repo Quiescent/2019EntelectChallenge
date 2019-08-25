@@ -1,0 +1,3 @@
+Command: shoot N
+Execution time: 853ms
+Exception: 	dig 18 17 (played 4263): (2493.505208333399 / 4263) 0.5849179470638984

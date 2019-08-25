@@ -1,3 +1,0 @@
-Command: select 3;banana 26 1
-Execution time: 907ms
-Exception: null

@@ -1,3 +1,0 @@
-Command: dig 1 14
-Execution time: 907ms
-Exception: 	move 1 15: 111/1

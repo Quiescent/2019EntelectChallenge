@@ -1,3 +1,0 @@
-Command: move 9 18
-Execution time: 914ms
-Exception: 	snowball 14 25: 0/0

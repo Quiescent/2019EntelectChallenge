@@ -1,3 +1,0 @@
-Command: move 9 17
-Execution time: 878ms
-Exception: 	snowball 17 21 (played 913): (409.874999999994 / 913) 0.44893209200437456

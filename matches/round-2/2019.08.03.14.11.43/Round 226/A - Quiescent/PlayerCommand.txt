@@ -1,3 +1,0 @@
-Command: dig 21 1
-Execution time: 905ms
-Exception: 	Opponents move: move 7 25

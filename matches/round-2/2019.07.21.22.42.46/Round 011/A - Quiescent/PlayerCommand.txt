@@ -1,3 +1,0 @@
-Command: select 3;move 24 2
-Execution time: 912ms
-Exception: null

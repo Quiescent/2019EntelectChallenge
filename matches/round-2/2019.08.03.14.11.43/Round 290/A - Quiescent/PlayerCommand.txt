@@ -1,3 +1,0 @@
-Command: move 17 3
-Execution time: 911ms
-Exception: 	Opponents move: move 13 16

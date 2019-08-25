@@ -1,3 +1,0 @@
-Command: shoot S
-Execution time: 905ms
-Exception: 	dig 22 20: -12/3

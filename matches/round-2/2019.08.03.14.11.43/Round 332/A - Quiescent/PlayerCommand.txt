@@ -1,3 +1,0 @@
-Command: move 21 6
-Execution time: 907ms
-Exception: 	Opponents move: shoot S

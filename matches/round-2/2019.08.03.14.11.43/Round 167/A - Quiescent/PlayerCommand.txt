@@ -1,3 +1,0 @@
-Command: shoot SE
-Execution time: 906ms
-Exception: 	Opponents move: dig 18 24

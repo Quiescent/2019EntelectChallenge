@@ -1,3 +1,0 @@
-Command: dig 10 2
-Execution time: 933ms
-Exception: null

@@ -1,3 +1,0 @@
-Command: dig 4 11
-Execution time: 910ms
-Exception: 	(Move 10,Move 187)

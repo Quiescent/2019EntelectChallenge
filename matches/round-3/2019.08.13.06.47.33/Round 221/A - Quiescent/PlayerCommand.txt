@@ -1,3 +1,0 @@
-Command: move 23 17
-Execution time: 906ms
-Exception: 	(Move 10,Move 9)

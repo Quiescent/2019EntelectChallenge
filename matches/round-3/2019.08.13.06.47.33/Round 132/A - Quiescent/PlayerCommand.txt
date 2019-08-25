@@ -1,3 +1,0 @@
-Command: move 8 9
-Execution time: 910ms
-Exception: 	move 8 9: 191942/1538

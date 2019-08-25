@@ -1,3 +1,0 @@
-Command: shoot W
-Execution time: 4ms
-Exception: null

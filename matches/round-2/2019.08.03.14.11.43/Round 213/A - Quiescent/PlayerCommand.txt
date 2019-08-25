@@ -1,3 +1,0 @@
-Command: shoot E
-Execution time: 909ms
-Exception: 	Opponents move: dig 5 25

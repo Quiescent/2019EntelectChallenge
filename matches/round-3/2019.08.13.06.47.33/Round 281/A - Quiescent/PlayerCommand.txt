@@ -1,3 +1,0 @@
-Command: shoot E
-Execution time: 913ms
-Exception: 	snowball 13 25: 2/2

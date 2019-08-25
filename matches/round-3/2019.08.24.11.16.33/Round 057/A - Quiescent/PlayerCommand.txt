@@ -1,3 +1,0 @@
-Command: dig 20 10
-Execution time: 877ms
-Exception: 	nothing (played 11980): (0.0 / 11980) 0.0

@@ -1,3 +1,0 @@
-Command: dig 6 9
-Execution time: 908ms
-Exception: 	(Move 10,Move 187)

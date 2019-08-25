@@ -1,3 +1,0 @@
-Command: No Command
-Execution time: 1000ms
-Exception: 	(Move 9,Move 187)

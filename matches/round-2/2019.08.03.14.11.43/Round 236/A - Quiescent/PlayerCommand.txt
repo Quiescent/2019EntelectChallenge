@@ -1,3 +1,0 @@
-Command: shoot NW
-Execution time: 912ms
-Exception: 	Opponents move: nothing

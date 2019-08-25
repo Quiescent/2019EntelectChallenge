@@ -1,3 +1,0 @@
-Command: banana 22 6
-Execution time: 910ms
-Exception: 	Opponents move: dig 10 6

@@ -1,0 +1,3 @@
+Command: dig 22 11
+Execution time: 864ms
+Exception: 	select 3; snowball 22 11 (played 999): (385.38125000000406 / 999) 0.3857670170170211

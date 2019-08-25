@@ -1,3 +1,0 @@
-Command: select 2;move 1 17
-Execution time: 915ms
-Exception: 	Opponents move: move 30 17

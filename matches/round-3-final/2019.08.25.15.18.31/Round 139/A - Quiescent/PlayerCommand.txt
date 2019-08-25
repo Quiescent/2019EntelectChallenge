@@ -1,0 +1,3 @@
+Command: shoot SE
+Execution time: 867ms
+Exception: 	dig 16 17 (played 3743): (2164.4541666666823 / 3743) 0.5782672099029341

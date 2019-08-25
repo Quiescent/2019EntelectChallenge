@@ -1,3 +1,0 @@
-Command: dig 8 18
-Execution time: 914ms
-Exception: 	snowball 16 23: 0/1

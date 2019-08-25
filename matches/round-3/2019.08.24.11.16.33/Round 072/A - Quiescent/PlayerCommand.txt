@@ -1,3 +1,0 @@
-Command: shoot SE
-Execution time: 872ms
-Exception: 	snowball 16 22 (played 1375): (558.2750000000042 / 1375) 0.4060181818181849
