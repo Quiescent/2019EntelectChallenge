@@ -33,12 +33,6 @@ import Control.DeepSeq
 -- TODO: think long and hard about this...
 import Prelude (read)
 
-import Debug.Trace
-
-probe :: Show a => String -> a -> a
-probe message x =
-  Debug.Trace.trace (message ++ ": " ++ show x) x
-
 data State = State { opponentsLastCommand :: Maybe String,
                      currentRound         :: Int,
                      wormHealths          :: WormHealths,
@@ -771,10 +765,10 @@ toInt x' = read x'
 
 matchMoveCommand :: Coord -> String -> Maybe Move
 matchMoveCommand origCoord original = do
-  let tokens    = probe "tokens" $ words original
-  firstToken   <- probe "command name" $ headMaybe tokens
+  let tokens    = words original
+  firstToken   <- headMaybe tokens
   guard (firstToken == "move")
-  coords       <- probe "coords" $ tailMaybe tokens
+  coords       <- tailMaybe tokens
   xValue       <- fmap toInt $ headMaybe coords
   yValue       <- fmap toInt $ tailMaybe coords >>= headMaybe
   let destCoord = toCoord xValue yValue
@@ -2994,7 +2988,7 @@ runRound roundNumber previousState stateChannel treeVariable = do
 parseLastCommand :: State -> Maybe String -> Move
 parseLastCommand _             Nothing             = doNothing
 parseLastCommand previousState (Just lastCommand') =
-  let coord'  = probe "That coord" $ thatWormsCoord previousState
+  let coord'  = thatWormsCoord previousState
   in fromJust $ readThatMove previousState coord' lastCommand'
 
 startBot :: StdGen -> RIO App ()
