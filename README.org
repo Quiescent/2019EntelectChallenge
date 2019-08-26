@@ -3016,6 +3016,7 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
    :END:
 ** TODO BUG: Searcher dies when the worm is dead
+** TODO Write tests for the generation of moves at least three deep
 ** TODO BUG: I generate moves from current position for frozen worms
    :LOGBOOK:
    - Note taken on [2019-08-25 Sun 12:45] \\
