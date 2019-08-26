@@ -1301,8 +1301,8 @@ makeMove _ moves state =
      -- Post movement actions
      incrementRound                                  $
      setOpponentsLastMove      state   opponentsMove $
-     advanceWormSelections                           $
      cleanUpDeadWorms                                $
+     advanceWormSelections                           $
 
      -- Make moves
      go (decodeMoveType myMove) (decodeMoveType opponentsMove) myMove opponentsMove $
@@ -2888,12 +2888,18 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
       writeVariable treeVariable searchTree
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
-        Just (move', _) -> do
+        Just (move', nextState) -> do
           let tree'' = if strategy == Kill
                        then makeMoveInTree move' searchTree
                        else SearchFront
           -- TODO: determine whether a swap happened
           let state'' = makeMove False move' initialState
+          when (nextState /= state'') $
+            logStdErr $ "States diverged!\n" ++
+              "Worker state:\n" ++
+              show state'' ++
+              "Read state:\n" ++
+              show nextState
           let (myMove, opponentsMove) = toMoves move'
           logStdErr $ "Received moves:\n" ++
             "My move: " ++ prettyPrintThisMove initialState myMove ++ "\n" ++
@@ -3021,14 +3027,86 @@ treeAfterAlottedTime state treeVariable = do
           Control.Concurrent.threadDelay pollInterval
           go searchTree' startingTime
 
+hasAnyBananaMove :: Move -> Bool
+hasAnyBananaMove = isABananaMove . removeSelectionFromMove
+
+hasAnySnowballMove :: Move -> Bool
+hasAnySnowballMove = isASnowballMove . removeSelectionFromMove
+
+zeroToMinusOne :: Int -> Int
+zeroToMinusOne 0 = (-1)
+zeroToMinusOne x = x
+
+decrementIfBananaMove :: (State -> Bool) -> Move -> State -> Int
+decrementIfBananaMove hasBananasLeft move state =
+  if hasAnyBananaMove move && hasBananasLeft state
+  then (-1)
+  else 0
+
+decrementIfSnowballMove :: (State -> Bool) -> Move -> State -> Int
+decrementIfSnowballMove hasSnowballsLeft move state =
+  if hasAnySnowballMove move && hasSnowballsLeft state
+  then (-1)
+  else 0
+
+nextStateAndAmmoCounts :: Move -> Move -> Int -> Int -> Int -> Int -> State -> State -> (Int, Int, Int, Int, State)
+nextStateAndAmmoCounts thisMove
+                       thatMove
+                       thisBananaCount
+                       thatBananaCount
+                       thisSnowballCount
+                       thatSnowballCount
+                       currentState
+                       nextState =
+  let thisBananaWormDied = not $ aListContainsId (WormId 2) (wormHealths nextState)
+      thatBananaWormDied = not $ aListContainsId (WormId 8) (wormHealths nextState)
+      thisBananaCount'   = if thisBananaWormDied
+                           then (-1)
+                           else zeroToMinusOne $
+                                thisBananaCount         + decrementIfBananaMove thisWormHasBananasLeft thisMove currentState
+      thatBananaCount'   = if thatBananaWormDied
+                           then (-1)
+                           else zeroToMinusOne $
+                                thatBananaCount   + decrementIfBananaMove thatWormHasBananasLeft thatMove currentState
+      thisSnowyWormDied  = not $ aListContainsId (WormId 3) (wormHealths nextState)
+      thatSnowyWormDied  = not $ aListContainsId (WormId 12) (wormHealths nextState)
+      thisSnowballCount' = if thisSnowyWormDied
+                           then (-1)
+                           else zeroToMinusOne $
+                                thisSnowballCount       + decrementIfSnowballMove thisWormHasSnowballsLeft thisMove currentState
+      thatSnowballCount' = if thatSnowyWormDied
+                           then (-1)
+                           else zeroToMinusOne $
+                                thatSnowballCount + decrementIfSnowballMove thatWormHasSnowballsLeft thatMove currentState
+      thatIdAfterSelect  = thatPlayersCurrentWormId $ (if hasASelection thatMove
+                                                       then makeOpponentsSelection thatMove
+                                                       else id) currentState
+      thatMove'          = if (\ (State { frozenDurations = frozenDurations' }) ->
+                                 aListContainsId thatIdAfterSelect frozenDurations') currentState
+                           then Just doNothing
+                           else Just thatMove
+      nextState'         = (setOpponentsLastMove currentState (fromJust thatMove') .
+                            withWormBananas (always $
+                              aListFromList [(2, thisBananaCount'),   (8,  thatBananaCount')]) .
+                            withWormSnowballs (always $
+                              aListFromList [(3, thisSnowballCount'), (12, thatSnowballCount')])) nextState
+  in (thisBananaCount', thatBananaCount', thisSnowballCount', thatSnowballCount', nextState')
+
 searchForAlottedTime :: State -> CommsVariable SearchTree -> IO Move
 searchForAlottedTime state treeChannel = do
   searchTree     <- treeAfterAlottedTime state treeChannel
   let gamesPlayed = countGames searchTree
   return $ successRecordMove . chooseBestMove gamesPlayed $ myMovesFromTree searchTree
 
-runRound :: Int -> State -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
-runRound roundNumber previousState stateChannel treeVariable = do
+runRound :: Int -> Int -> Int -> Int -> Int -> State -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
+runRound !thisBananaCount
+         !thatBananaCount
+         !thisSnowballCount
+         !thatSnowballCount
+         !roundNumber
+         previousState
+         stateChannel
+         treeVariable = do
   move                 <- liftIO $ searchForAlottedTime previousState treeVariable
   liftIO $
     putStrLn $
@@ -3046,7 +3124,26 @@ runRound roundNumber previousState stateChannel treeVariable = do
   -- All I care about is the opponents move...
   -- EXTRA NOTE: And the fact that I don't know whether we swapped.
   writeComms stateChannel $ (fromMoves move opponentsLastMove, state')
-  runRound roundNumber' state' stateChannel treeVariable
+  let (thisBananaCount',
+       thatBananaCount',
+       thisSnowballCount',
+       thatSnowballCount',
+       nextState') = nextStateAndAmmoCounts move
+                                            opponentsLastMove
+                                            thisBananaCount
+                                            thatBananaCount
+                                            thisSnowballCount
+                                            thatSnowballCount
+                                            previousState
+                                            state'
+  runRound thisBananaCount'
+           thatBananaCount'
+           thisSnowballCount'
+           thatSnowballCount'
+           roundNumber'
+           nextState'
+           stateChannel
+           treeVariable
 
 parseLastCommand :: State -> Maybe String -> Move
 parseLastCommand _             Nothing             = doNothing
@@ -3062,7 +3159,7 @@ startBot g = do
   initialRound' <- liftIO $ readRound
   initialState  <- liftIO $ fmap fromJust $ readGameState initialRound'
   _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
-  liftIO $ runRound initialRound' initialState stateChannel treeVariable
+  liftIO $ runRound 3 3 3 3 initialRound' initialState stateChannel treeVariable
 
 data PayoffRatio = PayoffRatio !Double
   deriving (Eq)

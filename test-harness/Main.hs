@@ -36,30 +36,8 @@ runTest matchLogDirectory = do
      Success           -> liftIO $ IO.putStrLn ("Successfully simulated: " ++ matchLogDirectory)
      (Failure message) -> liftIO $ IO.putStrLn message
 
-hasAnyBananaMove :: Move -> Bool
-hasAnyBananaMove = isABananaMove . removeSelectionFromMove
-
-hasAnySnowballMove :: Move -> Bool
-hasAnySnowballMove = isASnowballMove . removeSelectionFromMove
-
 invalidMove :: Maybe String
 invalidMove = Just "invalid"
-
-zeroToMinusOne :: Int -> Int
-zeroToMinusOne 0 = (-1)
-zeroToMinusOne x = x
-
-decrementIfBananaMove :: (State -> Bool) -> Maybe Move -> State -> Int
-decrementIfBananaMove hasBananasLeft move state =
-  if any hasAnyBananaMove move && hasBananasLeft state
-  then (-1)
-  else 0
-
-decrementIfSnowballMove :: (State -> Bool) -> Maybe Move -> State -> Int
-decrementIfSnowballMove hasSnowballsLeft move state =
-  if any hasAnySnowballMove move && hasSnowballsLeft state
-  then (-1)
-  else 0
 
 simulateAndCheckRounds :: [FilePath] -> RIO App Result
 simulateAndCheckRounds []                      = return $ Failure "There are no rounds in the given directory."
@@ -76,48 +54,28 @@ simulateAndCheckRounds dirs@(directory:_) = do
       -- Assume: that there are valid initial worm positions
       thisMove              <- loadThisPlayersCommand currentState thisWormsCoord' path
       thatMove              <- loadThatPlayersCommand currentState thatWormsCoord' path
-      let thatIdAfterSelect  = thatPlayersCurrentWormId $ (if any hasASelection thatMove
-                                                           then makeOpponentsSelection (fromJust thatMove)
-                                                           else id) currentState
-      let thatMove'          = if (\ (State { frozenDurations = frozenDurations' }) ->
-                                     aListContainsId thatIdAfterSelect frozenDurations') currentState
-                               then Just doNothing
-                               else thatMove
       let movesAreValid      = isJust thisMove && isJust thatMove
       if not movesAreValid
       then return $ (Failure $ "Couldn't load the players moves for: " ++ show directory)
       else do
         nextState             <- loadStateForRound nextPath
-        let thisBananaWormDied = not $ aListContainsId (WormId 2) (wormHealths (fromJust nextState))
-        let thatBananaWormDied = not $ aListContainsId (WormId 8) (wormHealths (fromJust nextState))
-        let myBananas'         = if thisBananaWormDied
-                                 then (-1)
-                                 else zeroToMinusOne $
-                                      myBananas         + decrementIfBananaMove thisWormHasBananasLeft thisMove currentState
-        let opponentBananas'   = if thatBananaWormDied
-                                 then (-1)
-                                 else zeroToMinusOne $
-                                      opponentBananas   + decrementIfBananaMove thatWormHasBananasLeft thatMove currentState
-        let thisSnowyWormDied  = not $ aListContainsId (WormId 3) (wormHealths (fromJust nextState))
-        let thatSnowyWormDied  = not $ aListContainsId (WormId 12) (wormHealths (fromJust nextState))
-        let mySnowballs'       = if thisSnowyWormDied
-                                 then (-1)
-                                 else zeroToMinusOne $
-                                      mySnowballs       + decrementIfSnowballMove thisWormHasSnowballsLeft thisMove currentState
-        let opponentSnowballs' = if thatSnowyWormDied
-                                 then (-1)
-                                 else zeroToMinusOne $
-                                      opponentSnowballs + decrementIfSnowballMove thatWormHasSnowballsLeft thatMove currentState
-        let nextState'         = fmap (setOpponentsLastMove currentState (fromJust thatMove') .
-                                       withWormBananas (always $
-                                         aListFromList [(2, myBananas'),   (8,  opponentBananas')]) .
-                                       withWormSnowballs (always $
-                                         aListFromList [(3, mySnowballs'), (12, opponentSnowballs')])) nextState
+        let (myBananas',
+             opponentBananas',
+             mySnowballs',
+             opponentSnowballs',
+             nextState') = nextStateAndAmmoCounts (fromJust thisMove)
+                                                  (fromJust thatMove)
+                                                  myBananas
+                                                  opponentBananas
+                                                  mySnowballs
+                                                  opponentSnowballs
+                                                  currentState
+                                                  (fromJust nextState)
         let simulatedNextState  = tickState (fromJust thisMove) (fromJust thatMove) currentState
-        let simulatedNextState' = if (any (\ (State { opponentsLastCommand = opponentsLastCommand' }) -> opponentsLastCommand' == invalidMove) nextState')
+        let simulatedNextState' = if ((\ (State { opponentsLastCommand = opponentsLastCommand' }) -> opponentsLastCommand' == invalidMove) nextState')
                                   then setOpponentsLastMove' invalidMove simulatedNextState
                                   else simulatedNextState
-        if any (simulatedNextState' /=) nextState'
+        if (simulatedNextState' /=) nextState'
         then do
                _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
                stateDiff <- diff (show nextState') (show simulatedNextState')
@@ -132,7 +90,7 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 "\nReadable input state:\n" ++
                                 readableShow currentState ++
                                 "\nReadable expected state:\n" ++
-                                readableShow (fromJust nextState') ++
+                                readableShow nextState' ++
                                 "\nNon-pretty moves made: (" ++
                                 show thisMove ++
                                 ", " ++
