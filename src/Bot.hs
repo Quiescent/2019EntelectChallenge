@@ -3298,7 +3298,7 @@ initialiseLevel strategy state result =
      strategy state result
 
 updateTree :: SearchTree -> Strategy -> State-> SearchResult -> SearchTree
-updateTree SearchFront strategy state result = initialiseLevel strategy state result
+updateTree SearchFront strategy finalState result = initialiseLevel strategy finalState result
 updateTree level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) _ _ result =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
@@ -3307,30 +3307,29 @@ updateTree level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves 
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
       in (transitionLevelType myMoves' opponentsMoves') (gamesPlayed + 1) myMoves' opponentsMoves'
     _                           -> level
-updateTree level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) strategy state result =
+updateTree level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) stateTransitions) strategy finalState result =
   case result of
     (SearchResult  (Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxScore')) (move':_)) ->
       let (thisMove, thatMove) = toMoves move'
           myMoves'             = MyMoves        $ updateCount (incInc myPayoff        maxScore') myMoves        thisMove
           opponentsMoves'      = OpponentsMoves $ updateCount (incInc opponentsPayoff maxScore') opponentsMoves thatMove
-      in SearchedLevel (gamesPlayed + 1) myMoves' opponentsMoves' $ updateSubTree strategy state result stateTransitions
+      in SearchedLevel (gamesPlayed + 1) myMoves' opponentsMoves' $ updateSubTree strategy finalState result stateTransitions
     _                           -> level
 
--- TODO: consider whether I should be treating the rewards like I do moves when transitioning down a tree..?
 updateSubTree :: Strategy -> State -> SearchResult -> StateTransitions -> StateTransitions
-updateSubTree strategy state (SearchResult payoff (move':moves')) [] =
-  [StateTransition move' $ updateTree SearchFront strategy state (SearchResult payoff moves')]
+updateSubTree strategy finalState (SearchResult payoff (move':moves')) [] =
+  [StateTransition move' $ updateTree SearchFront strategy finalState (SearchResult payoff moves')]
 updateSubTree _ _ (SearchResult _ []) transitions = transitions
 updateSubTree strategy
-              state
+              finalState
               result@(SearchResult payoff (move':moves'))
               (transition@(StateTransition transitionMove' subTree'):transitions)
   | move' == transitionMove' = (StateTransition transitionMove' $
                                 updateTree subTree'
                                            strategy
-                                           (makeMove False transitionMove' state)
+                                           finalState
                                            (SearchResult payoff moves')) : transitions
-  | otherwise                = transition : updateSubTree strategy state result transitions
+  | otherwise                = transition : updateSubTree strategy finalState result transitions
 
 transitionLevelType :: MyMoves -> OpponentsMoves -> (Int -> MyMoves -> OpponentsMoves -> SearchTree)
 transitionLevelType myMoves opponentsMoves =
