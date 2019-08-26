@@ -3058,34 +3058,41 @@ nextStateAndAmmoCounts thisMove
                        thatSnowballCount
                        currentState
                        nextState =
-  let thisBananaWormDied = not $ aListContainsId (WormId 2) (wormHealths nextState)
+  let thatIdAfterSelect  = thatPlayersCurrentWormId $ (if hasASelection thatMove
+                                                       then makeOpponentsSelection thatMove
+                                                       else id) currentState
+      thatMove'          = if (\ (State { frozenDurations = frozenDurations' }) ->
+                                 aListContainsId thatIdAfterSelect frozenDurations') currentState
+                           then doNothing
+                           else thatMove
+      thisIdAfterSelect  = thisPlayersCurrentWormId $ (if hasASelection thisMove
+                                                       then makeMySelection thisMove
+                                                       else id) currentState
+      thisMove'          = if (\ (State { frozenDurations = frozenDurations' }) ->
+                                 aListContainsId thisIdAfterSelect frozenDurations') currentState
+                           then doNothing
+                           else thisMove
+      thisBananaWormDied = not $ aListContainsId (WormId 2) (wormHealths nextState)
       thatBananaWormDied = not $ aListContainsId (WormId 8) (wormHealths nextState)
       thisBananaCount'   = if thisBananaWormDied
                            then (-1)
                            else zeroToMinusOne $
-                                thisBananaCount         + decrementIfBananaMove thisWormHasBananasLeft thisMove currentState
+                                thisBananaCount   + decrementIfBananaMove thisWormHasBananasLeft thisMove' currentState
       thatBananaCount'   = if thatBananaWormDied
                            then (-1)
                            else zeroToMinusOne $
-                                thatBananaCount   + decrementIfBananaMove thatWormHasBananasLeft thatMove currentState
+                                thatBananaCount   + decrementIfBananaMove thatWormHasBananasLeft thatMove' currentState
       thisSnowyWormDied  = not $ aListContainsId (WormId 3) (wormHealths nextState)
       thatSnowyWormDied  = not $ aListContainsId (WormId 12) (wormHealths nextState)
       thisSnowballCount' = if thisSnowyWormDied
                            then (-1)
                            else zeroToMinusOne $
-                                thisSnowballCount       + decrementIfSnowballMove thisWormHasSnowballsLeft thisMove currentState
+                                thisSnowballCount + decrementIfSnowballMove thisWormHasSnowballsLeft thisMove' currentState
       thatSnowballCount' = if thatSnowyWormDied
                            then (-1)
                            else zeroToMinusOne $
-                                thatSnowballCount + decrementIfSnowballMove thatWormHasSnowballsLeft thatMove currentState
-      thatIdAfterSelect  = thatPlayersCurrentWormId $ (if hasASelection thatMove
-                                                       then makeOpponentsSelection thatMove
-                                                       else id) currentState
-      thatMove'          = if (\ (State { frozenDurations = frozenDurations' }) ->
-                                 aListContainsId thatIdAfterSelect frozenDurations') currentState
-                           then Just doNothing
-                           else Just thatMove
-      nextState'         = (setOpponentsLastMove currentState (fromJust thatMove') .
+                                thatSnowballCount + decrementIfSnowballMove thatWormHasSnowballsLeft thatMove' currentState
+      nextState'         = (setOpponentsLastMove currentState thatMove' .
                             withWormBananas (always $
                               aListFromList [(2, thisBananaCount'),   (8,  thatBananaCount')]) .
                             withWormSnowballs (always $
