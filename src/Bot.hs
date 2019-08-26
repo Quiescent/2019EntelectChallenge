@@ -2892,11 +2892,11 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
     go !gen' !count' !searchTree =
       let (result, gen'', finalState) = search gen' strategy state' searchTree
           newTree                     = updateTree searchTree strategy finalState result
-      in logStdErr ("Updating search tree:\n========================================\n" ++
-                    prettyPrintSearchTree initialState searchTree ++
-                    "\nWith moves: " ++ prettyPrintSearchResult initialState result ++ "\n" ++
-                    "Resulting in new search tree:\n" ++ prettyPrintSearchTree initialState newTree ++
-                    "\n========================================\n") >>
+      in -- logStdErr ("Updating search tree:\n========================================\n" ++
+         --            prettyPrintSearchTree initialState searchTree ++
+         --            "\nWith moves: " ++ prettyPrintSearchResult initialState result ++ "\n" ++
+         --            "Resulting in new search tree:\n" ++ prettyPrintSearchTree initialState newTree ++
+         --            "\n========================================\n") >>
          go gen'' (count' - 1) newTree
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
@@ -2960,12 +2960,13 @@ prettyPrintStateTransition state (StateTransition combinedMove searchTree) =
      prettyPrintSearchTree (makeMove False combinedMove state) searchTree
 
 prettyPrintSearchTree :: State -> SearchTree -> String
-prettyPrintSearchTree state (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
+prettyPrintSearchTree state (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
     "Searched:\n" ++
     "Games played: " ++ show gamesPlayed ++ "\n" ++
     "My moves:\n\t" ++ (joinWith (prettyPrintThisSuccessRecord state) "\n\t" myMoves) ++ "\n" ++
-    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves) ++ "\n" ++
-    "Transitions:\n" ++ (indent $ joinWith (prettyPrintStateTransition state) "\n" transitions)
+    "Opponents moves:\n\t" ++ (joinWith (prettyPrintThatSuccessRecord state) "\n\t" opponentsMoves)
+    -- ++ "\n"
+    -- ++ "Transitions:\n" ++ (indent $ joinWith (prettyPrintStateTransition state) "\n" transitions)
 prettyPrintSearchTree state (UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
     "UnSearched:\n" ++
     "Games played: " ++ show gamesPlayed ++ "\n" ++
@@ -3173,8 +3174,8 @@ initialiseLevel strategy state result =
   in updateTree
      (UnSearchedLevel
       0
-      (MyMoves        $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ take 2 $ myMovesFrom'        state)
-      (OpponentsMoves $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ take 2 $ opponentsMovesFrom' state))
+      (MyMoves        $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ myMovesFrom'        state)
+      (OpponentsMoves $ map (SuccessRecord (GamesPlayed 0) (PayoffRatio 0)) $ opponentsMovesFrom' state))
      strategy state result
 
 updateTree :: SearchTree -> Strategy -> State-> SearchResult -> SearchTree
