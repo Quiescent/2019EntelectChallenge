@@ -3123,7 +3123,6 @@ runRound !thisBananaCount
   -- TODO!!!!!  I shouldn't be reading this state in the searcher.
   -- All I care about is the opponents move...
   -- EXTRA NOTE: And the fact that I don't know whether we swapped.
-  writeComms stateChannel $ (fromMoves move opponentsLastMove, state')
   let (thisBananaCount',
        thatBananaCount',
        thisSnowballCount',
@@ -3136,6 +3135,7 @@ runRound !thisBananaCount
                                             thatSnowballCount
                                             previousState
                                             state'
+  writeComms stateChannel $ (fromMoves move opponentsLastMove, nextState')
   runRound thisBananaCount'
            thatBananaCount'
            thisSnowballCount'
