@@ -2816,6 +2816,12 @@ myMovesFromTree (UnSearchedLevel _ (MyMoves myMoves) _)   = myMoves
 myMovesFromTree SearchFront                               =
   error $ "myMovesFromTree of SearchFront"
 
+opponentsMovesFromTree :: SearchTree -> SuccessRecords
+opponentsMovesFromTree (SearchedLevel   _ _ (OpponentsMoves opponentsMoves) _) = opponentsMoves
+opponentsMovesFromTree (UnSearchedLevel _ _ (OpponentsMoves opponentsMoves))   = opponentsMoves
+opponentsMovesFromTree SearchFront                                             =
+  error $ "opponentsMovesFromTree of SearchFront"
+
 iterationsBeforeComms :: Int
 iterationsBeforeComms = 10
 
@@ -2852,6 +2858,18 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   let treeFromPreviousRound = if strategy == Dig || strategy == GetToTheChoppa
                               then SearchFront
                               else tree
+  let myMovesFromTree' = map successRecordMove $ myMovesFromTree tree
+  let myMovesFromState = myMovesFrom initialState
+  when (strategy == Kill && myMovesFromTree' /= myMovesFromState) $
+    logStdErr $ "My moves from tree diverged from moves from state!\n" ++
+    "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromTree' ++ "\n" ++
+    "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromState
+  let opponentsMovesFromTree' = map successRecordMove $ opponentsMovesFromTree tree
+  let opponentsMovesFromState = opponentsMovesFrom initialState
+  when (strategy == Kill && opponentsMovesFromTree' /= opponentsMovesFromState) $
+    logStdErr $ "Opponents moves from tree diverged from moves from state!\n" ++
+    "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromTree' ++ "\n" ++
+    "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromState
   E.catch (go gen iterationsBeforeComms treeFromPreviousRound) exceptionHandler
   where
     exceptionHandler e = do
