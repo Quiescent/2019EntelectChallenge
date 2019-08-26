@@ -3009,6 +3009,10 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS BUG: Debug search tree update/generation
    :LOGBOOK:
+   - Note taken on [2019-08-26 Mon 18:32] \\
+     I think that what was happening was that I only advanced the state
+     when traversing down to a subtree which was already there.  So the bug
+     only surfaces after three moves deep into the tree.
    - Note taken on [2019-08-25 Sun 16:02] \\
      My plan here is to severely limit the number of moves (to say three)
      and then print the tree so that I can see every update made to it.
