@@ -2918,8 +2918,8 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
           iterativelyImproveSearch gen' state'' tree'' stateChannel treeVariable
         Nothing -> go gen' iterationsBeforeComms searchTree
     go !gen' !count' !searchTree =
-      let (result, gen'', finalState) = search gen' strategy state' searchTree
-          newTree                     = updateTree searchTree strategy finalState result
+      let (result, gen'') = search gen' strategy state' searchTree
+          newTree         = updateTree searchTree strategy initialState result
       in -- logStdErr ("Updating search tree:\n========================================\n" ++
          --            prettyPrintSearchTree initialState searchTree ++
          --            "\nWith moves: " ++ prettyPrintSearchResult initialState result ++ "\n" ++
@@ -3319,7 +3319,8 @@ updateTree level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves op
 -- TODO: consider whether I should be treating the rewards like I do moves when transitioning down a tree..?
 updateSubTree :: Strategy -> State -> SearchResult -> StateTransitions -> StateTransitions
 updateSubTree strategy state (SearchResult payoff (move':moves')) [] =
-  [StateTransition move' $ updateTree SearchFront strategy state (SearchResult payoff moves')]
+  [StateTransition move' $
+   updateTree SearchFront strategy (makeMove False move' state) (SearchResult payoff moves')]
 updateSubTree _ _ (SearchResult _ []) transitions = transitions
 updateSubTree strategy
               state
@@ -3398,7 +3399,7 @@ fixOpponentsCurrentWorm state =
      then state
      else advanceThatWormSelection state
 
-search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen, State)
+search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen)
 search g strategy state searchTree =
   let round' = (currentRound state)
   in case strategy of
@@ -3407,21 +3408,21 @@ search g strategy state searchTree =
        -- TODO implement a custom search for getting to the choppa! XD
        GetToTheChoppa -> digSearch  g 0      state searchTree [] 0
 
-digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
+digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
 digSearch !g !round' !state SearchFront                   moves !reward =
   case digGameOver round' reward state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves = digMovesFrom state
           (move, g')     = pickOneAtRandom g availableMoves
           state'         = makeMove False move state
           reward'        = digReward $ fst $ toMoves move
-      in digPlayRandomly state g' (round' + 1) state' (move:moves) (reward' + reward)
+      in digPlayRandomly g' (round' + 1) state' (move:moves) (reward' + reward)
 digSearch !g !round' !state  tree@(SearchedLevel _ _ _ _) moves !reward =
   case digGameOver round' reward state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        -> digSearchSearchedLevel g round' state tree moves reward
 digSearch !g
           !round'
@@ -3430,7 +3431,7 @@ digSearch !g
           moves
           !reward =
   case digGameOver round' reward state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let (myRecord,        g')  = pickOneAtRandom g  myMoves
           (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
@@ -3446,7 +3447,7 @@ digSearch !g
                    (combinedMove:moves)
                    (reward' + reward)
 
-digSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
+digSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen)
 digSearchSearchedLevel _ _ _ SearchFront                     _ _ = error "killSearchSearchedLevel: SearchFront"
 digSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _ )  _ _ = error $ "killSearchSearchedLevel: " ++ show level
 digSearchSearchedLevel !g
@@ -3467,10 +3468,10 @@ digSearchSearchedLevel !g
                (combinedMove:moves)
                (reward' + reward)
 
-digPlayRandomly :: State -> StdGen -> Int -> State -> Moves -> Reward -> (SearchResult, StdGen, State)
-digPlayRandomly initialState g round' state moves reward =
+digPlayRandomly :: StdGen -> Int -> State -> Moves -> Reward -> (SearchResult, StdGen)
+digPlayRandomly g round' state moves reward =
   case digGameOver round' reward state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, initialState)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let availableMoves  = digMovesFrom state
           (move, g')      = if availableMoves == []
@@ -3478,7 +3479,7 @@ digPlayRandomly initialState g round' state moves reward =
                             else pickOneAtRandom g availableMoves
           state'          = makeMove False move state
           reward'         = digReward $ fst $ toMoves move
-      in digPlayRandomly initialState g' (round' + 1) state' moves (reward' + reward)
+      in digPlayRandomly g' (round' + 1) state' moves (reward' + reward)
 
 maximumHealth :: Int
 maximumHealth = 100 + 100 + 150
@@ -3509,14 +3510,14 @@ payOff (State { wormHealths     = wormHealths' }) =
                                      (maximumHealth - myTotalHealth)
   in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
-killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
 killSearch !g _       !state SearchFront                  moves =
-  (SearchResult (payOff state) (reverse moves), g, state)
+  (SearchResult (payOff state) (reverse moves), g)
 killSearch !g !round' !state tree@(SearchedLevel _ _ _ _) moves =
   case gameOver state round' of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        -> killSearchSearchedLevel g round' state tree moves
 killSearch !g
            !round'
@@ -3524,7 +3525,7 @@ killSearch !g
            (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
            !moves =
   case gameOver state round' of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g)
     NoResult        ->
       let (myRecord,        g')  = pickOneAtRandom g  myMoves
           (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
@@ -3532,7 +3533,7 @@ killSearch !g
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-      in (SearchResult (payOff state') (reverse (combinedMove:moves)), g'', state')
+      in (SearchResult (payOff state') (reverse (combinedMove:moves)), g'')
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
 findSubTree combinedMove stateTransitions =
@@ -3548,7 +3549,7 @@ pickOneAtRandom g xs =
 
 type Moves = [CombinedMove]
 
-killSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+killSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen)
 killSearchSearchedLevel _ _ _ SearchFront                   _ = error "killSearchSearchedLevel: SearchFront"
 killSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _) _ = error $ "killSearchSearchedLevel: " ++ show level
 killSearchSearchedLevel !g
