@@ -2860,13 +2860,13 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
                               else tree
   let myMovesFromTree' = map successRecordMove $ myMovesFromTree tree
   let myMovesFromState = myMovesFrom initialState
-  when (strategy == Kill && myMovesFromTree' /= myMovesFromState) $
+  when (strategy == Kill && tree /= SearchFront && myMovesFromTree' /= myMovesFromState) $
     logStdErr $ "My moves from tree diverged from moves from state!\n" ++
     "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromTree' ++ "\n" ++
     "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromState
   let opponentsMovesFromTree' = map successRecordMove $ opponentsMovesFromTree tree
   let opponentsMovesFromState = opponentsMovesFrom initialState
-  when (strategy == Kill && opponentsMovesFromTree' /= opponentsMovesFromState) $
+  when (strategy == Kill && tree /= SearchFront && opponentsMovesFromTree' /= opponentsMovesFromState) $
     logStdErr $ "Opponents moves from tree diverged from moves from state!\n" ++
     "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromTree' ++ "\n" ++
     "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromState
@@ -2894,6 +2894,10 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
                        else SearchFront
           -- TODO: determine whether a swap happened
           let state'' = makeMove False move' initialState
+          let (myMove, opponentsMove) = toMoves move'
+          logStdErr $ "Received moves:\n" ++
+            "My move: " ++ prettyPrintThisMove initialState myMove ++ "\n" ++
+            "Opponents move: " ++ prettyPrintThatMove initialState opponentsMove
           -- logStdErr $ "Making moves: " ++ show (toMoves move') ++ ", to state:\n" ++
           --   show initialState ++ "\n" ++
           --   "To create new state:\n" ++
