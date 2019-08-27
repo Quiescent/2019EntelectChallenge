@@ -2191,33 +2191,27 @@ nextWormId :: WormId -> WormHealths -> WormId
 nextWormId (WormId 1) wormHealths'
   | aListContainsId (WormId 2) wormHealths' = (WormId 2)
   | aListContainsId (WormId 3) wormHealths' = (WormId 3)
-  | aListContainsId (WormId 1) wormHealths' = (WormId 1)
-  | otherwise                               = error "Next worm id with no worms left!"
+  | otherwise                               = (WormId 1)
 nextWormId (WormId 2) wormHealths'
   | aListContainsId (WormId 3) wormHealths' = (WormId 3)
   | aListContainsId (WormId 1) wormHealths' = (WormId 1)
-  | aListContainsId (WormId 2) wormHealths' = (WormId 2)
-  | otherwise                               = error "Next worm id with no worms left!"
+  | otherwise                               = (WormId 2)
 nextWormId (WormId 3) wormHealths'
   | aListContainsId (WormId 1) wormHealths' = (WormId 1)
   | aListContainsId (WormId 2) wormHealths' = (WormId 2)
-  | aListContainsId (WormId 3) wormHealths' = (WormId 3)
-  | otherwise                               = error "Next worm id with no worms left!"
+  | otherwise                               = (WormId 3)
 nextWormId (WormId 4) wormHealths'
   | aListContainsId (WormId 8)  wormHealths' = (WormId 8)
   | aListContainsId (WormId 12) wormHealths' = (WormId 12)
-  | aListContainsId (WormId 4)  wormHealths' = (WormId 4)
-  | otherwise                               = error "Next worm id with no worms left!"
+  | otherwise                                = (WormId 4)
 nextWormId (WormId 8) wormHealths'
   | aListContainsId (WormId 12) wormHealths' = (WormId 12)
   | aListContainsId (WormId 4)  wormHealths' = (WormId 4)
-  | aListContainsId (WormId 8)  wormHealths' = (WormId 8)
-  | otherwise                               = error "Next worm id with no worms left!"
+  | otherwise                                = (WormId 8)
 nextWormId (WormId 12) wormHealths'
   | aListContainsId (WormId 4)  wormHealths' = (WormId 4)
   | aListContainsId (WormId 8)  wormHealths' = (WormId 8)
-  | aListContainsId (WormId 12) wormHealths' = (WormId 12)
-  | otherwise                               = error "Next worm id with no worms left!"
+  | otherwise                                = (WormId 12)
 nextWormId wormId' _ = error $ "Next worm id of: " ++ show wormId'
 
 advanceWormSelectionByWorms :: WormId -> (ModifyPlayer -> ModifyState) -> ModifyState
