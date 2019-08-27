@@ -1302,8 +1302,8 @@ makeMove _ moves state =
      -- Post movement actions
      incrementRound                                  $
      setOpponentsLastMove      state   opponentsMove $
-     cleanUpDeadWorms                                $
      advanceWormSelections                           $
+     cleanUpDeadWorms                                $
 
      -- Make moves
      go (decodeMoveType myMove) (decodeMoveType opponentsMove) myMove opponentsMove $
@@ -2176,35 +2176,53 @@ advanceWormSelections =
   advanceThatWormSelection
 
 advanceThisWormSelection :: ModifyState
-advanceThisWormSelection =
-  advanceWormSelectionByWorms aListMyIds thisPlayersCurrentWormId mapThisPlayer
+advanceThisWormSelection state =
+  advanceWormSelectionByWorms (thisPlayersCurrentWormId state) mapThisPlayer state
 
 advanceThatWormSelection :: ModifyState
-advanceThatWormSelection =
-  advanceWormSelectionByWorms aListOpponentIds thatPlayersCurrentWormId mapThatPlayer
+advanceThatWormSelection state =
+  advanceWormSelectionByWorms (thatPlayersCurrentWormId state) mapThatPlayer state
 
 withCurrentWormId :: WormId -> Player -> Player
 withCurrentWormId wormId' (Player score' _ selections') = (Player score' wormId' selections')
 
 -- ASSUME: that there are worm ids to search through
-nextWormId :: WormId -> [WormId] -> WormId
-nextWormId wormId' wormIds' =
-  iter wormIds'
-  where
-    iter []     = head wormIds'
-    iter (x:xs) = if x == wormId'
-                  then if xs == []
-                       then head wormIds'
-                       else head xs
-                  else iter xs
+nextWormId :: WormId -> WormHealths -> WormId
+nextWormId (WormId 1) wormHealths'
+  | aListContainsId (WormId 2) wormHealths' = (WormId 2)
+  | aListContainsId (WormId 3) wormHealths' = (WormId 3)
+  | aListContainsId (WormId 1) wormHealths' = (WormId 1)
+  | otherwise                               = error "Next worm id with no worms left!"
+nextWormId (WormId 2) wormHealths'
+  | aListContainsId (WormId 3) wormHealths' = (WormId 3)
+  | aListContainsId (WormId 1) wormHealths' = (WormId 1)
+  | aListContainsId (WormId 2) wormHealths' = (WormId 2)
+  | otherwise                               = error "Next worm id with no worms left!"
+nextWormId (WormId 3) wormHealths'
+  | aListContainsId (WormId 1) wormHealths' = (WormId 1)
+  | aListContainsId (WormId 2) wormHealths' = (WormId 2)
+  | aListContainsId (WormId 3) wormHealths' = (WormId 3)
+  | otherwise                               = error "Next worm id with no worms left!"
+nextWormId (WormId 4) wormHealths'
+  | aListContainsId (WormId 8)  wormHealths' = (WormId 8)
+  | aListContainsId (WormId 12) wormHealths' = (WormId 12)
+  | aListContainsId (WormId 4)  wormHealths' = (WormId 4)
+  | otherwise                               = error "Next worm id with no worms left!"
+nextWormId (WormId 8) wormHealths'
+  | aListContainsId (WormId 12) wormHealths' = (WormId 12)
+  | aListContainsId (WormId 4)  wormHealths' = (WormId 4)
+  | aListContainsId (WormId 8)  wormHealths' = (WormId 8)
+  | otherwise                               = error "Next worm id with no worms left!"
+nextWormId (WormId 12) wormHealths'
+  | aListContainsId (WormId 4)  wormHealths' = (WormId 4)
+  | aListContainsId (WormId 8)  wormHealths' = (WormId 8)
+  | aListContainsId (WormId 12) wormHealths' = (WormId 12)
+  | otherwise                               = error "Next worm id with no worms left!"
+nextWormId wormId' _ = error $ "Next worm id of: " ++ show wormId'
 
-advanceWormSelectionByWorms :: (AList -> [WormId]) -> (State -> WormId) -> (ModifyPlayer -> ModifyState) -> ModifyState
-advanceWormSelectionByWorms playersWormIds playersWormId mapPlayer state@(State { wormHealths = wormHealths' }) =
-  let myWormIds      = sort $ playersWormIds wormHealths'
-      currentWormId' = playersWormId state
-  in if myWormIds == []
-     then state
-     else mapPlayer (withCurrentWormId (nextWormId currentWormId' myWormIds)) state
+advanceWormSelectionByWorms :: WormId -> (ModifyPlayer -> ModifyState) -> ModifyState
+advanceWormSelectionByWorms currentWormId' mapPlayer state@(State { wormHealths = wormHealths' }) =
+  mapPlayer (withCurrentWormId (nextWormId currentWormId' wormHealths')) state
 
 playerCurrentWormId :: Player -> WormId
 playerCurrentWormId (Player _ wormId' _) = wormId'
