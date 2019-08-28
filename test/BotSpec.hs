@@ -430,7 +430,7 @@ spec = do
       aState { opponent = Player 307 (WormId 4) startingSelections }
   describe "harmWormWithRocket" $ do
     it "should remove health from the worm" $
-      (harmWormWithRocket (WormId (-1)) (wormPositions aState) id id id (toCoord 15 31) aState) `shouldBe`
+      (harmWormWithRocket (WormId (-1)) (wormPositions aState) id id id id (toCoord 15 31) aState) `shouldBe`
        aState { wormHealths = aListMapWormById (WormId 1) (always 0) $ wormHealths aState }
   describe "generateShotSwitch" $ do
     prop "produces a function which produces the first given a negative number and the second given a positive number" $
@@ -949,6 +949,41 @@ spec = do
           withWormBananas (always $ aListFromList [(1, 3), (4, 3)])
           aState
     context "when I'm throwing the bomb" $ do
+      context "failures discovered from the test harness" $ do
+        let aFailingSimulationFrom2019_08_28_05_47_29_round_131 =
+              (State
+               (Just "move 17 15")
+               130
+               (AList (-1) (100) (3) (154) (93) (65))
+               (AList (-1) (610) (477) (381) (445) (512))
+               (AList (-1) (1) (-1) (-1) (-1) (-1))
+               (AList (-1) (-1) (-1) (-1) (-1) (-1))
+               (AList (-1) (-1) (-1) (-1) (-1) (-1))
+               (Player 793 (WormId 2) (Selections 0))
+               (Player 1174 (WormId 4) (Selections 0))
+               (GameMap
+                  3236854785973407079498020108512522279714525151708118716238188063822313532459001735410030825282972591179454556686272017372743483027748294290253967010368203299753972186152371545805053075728457257895141171283538962584474692361748251456416053900914744982284478208936142860502142505274369267366159556865499248296455405901011402752
+                  2355605042696343297454688756982798396045875574463993563794681939696664467254352898858978087516648001992499384893522311757411046362204179849265043593766155139280266516017197868233662333457188992393115476103208504544995601458125821648825214382229216793044407989406046484462552886271762617227735584901170542795239798784
+                  6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+                  0))
+        it "should produce the expected state" $ do
+          makeMove False (fromMoves (Move 35) (Move 13)) aFailingSimulationFrom2019_08_28_05_47_29_round_131
+          `shouldBe`
+          (State
+            (Just "move 17 12")
+            131
+            (AList (-1) (100) (-1) (154) (93) (58))
+            (AList (-1) (610) (-1) (413) (445) (512))
+            (AList (-1) (-1) (-1) (-1) (-1) (-1))
+            (AList (-1) (-1) (-1) (-1) (-1) (-1))
+            (AList (-1) (-1) (-1) (-1) (-1) (-1))
+            (Player 741 (WormId 2) (Selections 0))
+            (Player 1179 (WormId 8) (Selections 0))
+            (GameMap
+               3236854785973407079498020108512522279714525151708118716238188063822313532459001735410030825282972591179454556686272017372743483027748294290253967010368203299753972186152371545805053075728457257895141171283538962584474692361748251456416053900914744982284478208936142860502142505274369267366159556865499248296455405901011402752
+               2355605042696343297454688756982798396045875574463993563794681939696664467254352898858978087516648001992499384893522311757411046362204179849265043593766155139280266516017197868233662333457188992393115476103208504544995601458125821648825214382229216793044407989406046484462552886271762617227735584901170542795239798784
+               6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+               0))
       context "when I select the banana worm and then make the move" $ do
         let aFailingSimulationFromround_3_2019_08_24_11_16_33 =
               (State
@@ -984,7 +1019,7 @@ spec = do
            awardPointsToThatPlayerForMovingToAir $
            moveThatWorm (displaceCoordByMove (toCoord 18 18) (Move 12)) $
            mapThisPlayer (withSelections (always (Selections 4))) $
-           harmWorm (WormId 12) (wormPositions aFailingSimulationFromround_3_2019_08_24_11_16_33) 13 id id id (toCoord 14 15) $
+           harmWorm (WormId 12) (wormPositions aFailingSimulationFromround_3_2019_08_24_11_16_33) 13 id id id id (toCoord 14 15) $
            mapGameMap aFailingSimulationFromround_3_2019_08_24_11_16_33
                       ((addAirAt (toCoord 13 15)) . -- epicentre
                        -- Down
@@ -1020,6 +1055,7 @@ spec = do
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(4, 3)]) $
          -- Points for the four squares
+         penaliseThisPlayerForKillingOwnWorm      $
          penaliseThisPlayerForDamage 20           $
          awardPointsToThisPlayerForDigging        $
          awardPointsToThisPlayerForDigging        $
@@ -1038,7 +1074,7 @@ spec = do
          selectNextWormsDefault $
          setOpponentsLastMoveToDummy $
          cleanUpDeadWorm (WormId 4) $
-         harmWorm (WormId 1) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id (toCoord 15 31) $
+         harmWorm (WormId 1) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id id (toCoord 15 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 2)]) $
          -- Points for the four squares
@@ -1060,8 +1096,8 @@ spec = do
         makeMove False (fromMoves bananaOneToRight moveEast) aStateWithOposingWormsNextToEachother `shouldBe`
         (incrementRound $
          selectNextWormsDefault $
-         harmWorm (WormId 1) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id (toCoord 16 31) $
-         harmWorm (WormId 1) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id (toCoord 15 31) $
+         harmWorm (WormId 1) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id id (toCoord 16 31) $
+         harmWorm (WormId 1) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id id (toCoord 15 31) $
          -- Move that worm
          setOpponentsLastMove aStateWithOposingWormsNextToEachother moveEast $
          awardPointsToThatPlayerForMovingToAir $
@@ -1088,8 +1124,8 @@ spec = do
         (incrementRound $
          selectNextWormsDefault $
          setOpponentsLastMoveToDummy $
-         harmWorm (WormId 1) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id (toCoord 17 31) $
-         harmWorm (WormId 1) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id (toCoord 15 31) $
+         harmWorm (WormId 1) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id id (toCoord 17 31) $
+         harmWorm (WormId 1) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id id (toCoord 15 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
@@ -1112,8 +1148,8 @@ spec = do
         (incrementRound $
          setOpponentsLastMoveToDummy $
          selectNextWormsDefault $
-         harmWorm (WormId 1) (wormPositions stateWithEnemyTwoSquaresFromEpicentre)  7 id id id (toCoord 18 31) $
-         harmWorm (WormId 1) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id (toCoord 15 31) $
+         harmWorm (WormId 1) (wormPositions stateWithEnemyTwoSquaresFromEpicentre)  7 id id id id (toCoord 18 31) $
+         harmWorm (WormId 1) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id id (toCoord 15 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
@@ -1134,7 +1170,7 @@ spec = do
         makeMove False (fromMoves bananaOneToRight moveEast) stateWithEnemyTwoSquaresFromEpicentre `shouldBe`
         (incrementRound $
          selectNextWormsDefault $
-         harmWorm (WormId 1) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id (toCoord 15 31) $
+         harmWorm (WormId 1) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id id (toCoord 15 31) $
          -- Move that worm
          setOpponentsLastMove stateWithEnemyTwoSquaresFromEpicentre moveEast $
          awardPointsToThatPlayerForMovingToAir $
@@ -1160,7 +1196,7 @@ spec = do
         (incrementRound $
          setOpponentsLastMoveToDummy $
          selectNextWormsDefault $
-         harmWorm (WormId 1) (wormPositions stateWithEnemyThreeSquaresFromEpicentre) 13 id id id (toCoord 15 31) $
+         harmWorm (WormId 1) (wormPositions stateWithEnemyThreeSquaresFromEpicentre) 13 id id id id (toCoord 15 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 2), (4, 3)]) $
          -- Points for the four squares
@@ -1302,7 +1338,7 @@ spec = do
            awardPointsToThatPlayerForDigging $
            awardPointsToThatPlayerForDigging $
            awardPointsToThatPlayerForDigging $
-           harmWorm (WormId 1) (wormPositions aFailingSimulationFrom2019_08_24_15_19_07_Round_059) 20 id id id (toCoord 17 10) $
+           harmWorm (WormId 1) (wormPositions aFailingSimulationFrom2019_08_24_15_19_07_Round_059) 20 id id id id (toCoord 17 10) $
            -- Move my worm
            awardPointsToThisPlayerForMovingToAir $
            moveThisWorm (displaceCoordByMove (toCoord 10 16) (Move 10)) $
@@ -1328,7 +1364,7 @@ spec = do
          incrementRound $
          selectNextWormsDefault $
          cleanUpDeadWorm (WormId 1) $
-         harmWorm (WormId 4) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id (toCoord 16 31) $
+         harmWorm (WormId 4) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id id (toCoord 16 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(4, 2)]) $
          -- Points for the four squares
@@ -1351,8 +1387,8 @@ spec = do
         (setOpponentsLastMove aStateWithOposingWormsNextToEachother bananaOneToLeft $
          incrementRound $
          selectNextWormsDefault $
-         harmWorm (WormId 4) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id (toCoord 15 31) $
-         harmWorm (WormId 4) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id (toCoord 16 31) $
+         harmWorm (WormId 4) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id id (toCoord 15 31) $
+         harmWorm (WormId 4) (wormPositions aStateWithOposingWormsNextToEachother) 13 id id id id (toCoord 16 31) $
          -- Move this worm
          awardPointsToThisPlayerForMovingToAir $
          moveThisWorm (displaceCoordByMove (thisWormsCoord aStateWithOposingWormsNextToEachother) moveWest) $
@@ -1378,8 +1414,8 @@ spec = do
         (setOpponentsLastMove stateWithEnemyOneSquareFromEpicentre bananaOneToLeft $
          incrementRound $
          selectNextWormsDefault $
-         harmWorm (WormId 4) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id (toCoord 14 31) $
-         harmWorm (WormId 4) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id (toCoord 16 31) $
+         harmWorm (WormId 4) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id id (toCoord 14 31) $
+         harmWorm (WormId 4) (wormPositions stateWithEnemyOneSquareFromEpicentre) 13 id id id id (toCoord 16 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
@@ -1402,8 +1438,8 @@ spec = do
         (setOpponentsLastMove stateWithEnemyTwoSquaresFromEpicentre bananaOneToLeft $
          incrementRound $
          selectNextWormsDefault $
-         harmWorm (WormId 4) (wormPositions stateWithEnemyTwoSquaresFromEpicentre)  7 id id id (toCoord 13 31) $
-         harmWorm (WormId 4) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id (toCoord 16 31) $
+         harmWorm (WormId 4) (wormPositions stateWithEnemyTwoSquaresFromEpicentre)  7 id id id id (toCoord 13 31) $
+         harmWorm (WormId 4) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id id (toCoord 16 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
@@ -1425,7 +1461,7 @@ spec = do
         (setOpponentsLastMove stateWithEnemyTwoSquaresFromEpicentre bananaOneToLeft $
          incrementRound $
          selectNextWormsDefault $
-         harmWorm (WormId 4) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id (toCoord 16 31) $
+         harmWorm (WormId 4) (wormPositions stateWithEnemyTwoSquaresFromEpicentre) 13 id id id id (toCoord 16 31) $
          -- Move this worm
          awardPointsToThisPlayerForMovingToAir $
          moveThisWorm (displaceCoordByMove (thisWormsCoord stateWithEnemyTwoSquaresFromEpicentre) moveWest) $
@@ -1450,7 +1486,7 @@ spec = do
         (setOpponentsLastMove stateWithEnemyThreeSquaresFromEpicentre bananaOneToLeft $
          incrementRound $
          selectNextWormsDefault $
-         harmWorm (WormId 4) (wormPositions stateWithEnemyThreeSquaresFromEpicentre) 13 id id id (toCoord 16 31) $
+         harmWorm (WormId 4) (wormPositions stateWithEnemyThreeSquaresFromEpicentre) 13 id id id id (toCoord 16 31) $
          -- Decrement banana bombs
          withWormBananas (always $ aListFromList [(1, 3), (4, 2)]) $
          -- Points for the four squares
@@ -1586,13 +1622,13 @@ spec = do
          incrementRound $
          selectNextWorms (WormId 2) (WormId 4) $
          -- His bombs damage
-         harmWorm (WormId 12) (wormPositions aStateWhichIFoundFailing) 13 id id id (toCoord 27 7) $
-         harmWorm (WormId 12) (wormPositions aStateWhichIFoundFailing) 13 id id id (toCoord 27 9) $
+         harmWorm (WormId 12) (wormPositions aStateWhichIFoundFailing) 13 id id id id (toCoord 27 7) $
+         harmWorm (WormId 12) (wormPositions aStateWhichIFoundFailing) 13 id id id id (toCoord 27 9) $
          penaliseThatPlayerForDamage 26 $
          -- My bombs damage
-         harmWorm (WormId 3) (wormPositions aStateWhichIFoundFailing) 13 id id id (toCoord 27 7) $
-         harmWorm (WormId 3) (wormPositions aStateWhichIFoundFailing) 7  id id id (toCoord 28 5) $
-         harmWorm (WormId 3) (wormPositions aStateWhichIFoundFailing) 13 id id id (toCoord 29 7) $
+         harmWorm (WormId 3) (wormPositions aStateWhichIFoundFailing) 13 id id id id (toCoord 27 7) $
+         harmWorm (WormId 3) (wormPositions aStateWhichIFoundFailing) 7  id id id id (toCoord 28 5) $
+         harmWorm (WormId 3) (wormPositions aStateWhichIFoundFailing) 13 id id id id (toCoord 29 7) $
          awardPointsToThisPlayerForDamage 26 $
          penaliseThisPlayerForDamage 7       $
          withWormBananas (always $ aListFromList [(3,  1)]) $
@@ -1620,6 +1656,8 @@ spec = do
          -- Decrement banana bombs
          withWormBananas (always $ emptyAList) $
          -- Points for the four squares
+         penaliseThatPlayerForKillingOwnWorm      $
+         penaliseThisPlayerForKillingOwnWorm      $
          awardPointsToThisPlayerForKillingAnEnemy $
          awardPointsToThisPlayerForDamage 20      $
          penaliseThisPlayerForDamage 13           $
@@ -1795,6 +1833,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (incrementRound $
           penaliseThisPlayerForHittingHisFriendlyWorm $
+          penaliseThisPlayerForKillingOwnWorm $
           setOpponentsLastMoveToDummy $
           state { wormHealths = aListRemoveWormById (WormId 2) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 2) $ wormPositions state })
@@ -1824,6 +1863,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (incrementRound $
           penaliseThisPlayerForHittingHisFriendlyWorm $
+          penaliseThisPlayerForKillingOwnWorm $
           setOpponentsLastMoveToDummy $
           state { wormHealths = aListRemoveWormById (WormId 2) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 2) $ wormPositions state })
@@ -1853,6 +1893,7 @@ spec = do
       in makeMove True (fromMoves shot doNothing) state `shouldBe`
          (incrementRound $
           setOpponentsLastMoveToDummy $
+          penaliseThisPlayerForKillingOwnWorm $
           penaliseThisPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 2) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 2) $ wormPositions state })
@@ -1897,6 +1938,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
           incrementRound $
+          penaliseThatPlayerForKillingOwnWorm $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 8) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 8) $ wormPositions state })
@@ -1926,6 +1968,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
           incrementRound $
+          penaliseThatPlayerForKillingOwnWorm $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 8) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 8) $ wormPositions state })
@@ -1955,6 +1998,7 @@ spec = do
       in makeMove True (fromMoves doNothing shot) state `shouldBe`
          (setOpponentsLastMove state shot $
           incrementRound $
+          penaliseThatPlayerForKillingOwnWorm $
           penaliseThatPlayerForHittingHisFriendlyWorm $
           state { wormHealths = aListRemoveWormById (WormId 8) $ wormHealths state,
                   wormPositions = aListRemoveWormById (WormId 8) $ wormPositions state })
@@ -1993,7 +2037,7 @@ spec = do
                           (takeBothWormsAndPutAnotherInbetween (WormId 2) (WormId 1) (WormId 4))
                           (i, j, k)
       in makeMove True (fromMoves shot doNothing) state `shouldSatisfy`
-         ((hasScore (284) . myPlayer) .&&.
+         ((hasScore (244) . myPlayer) .&&.
           containsWormOfId (WormId 1) .&&.
           containsWormOfId (WormId 4))
     prop "should not hit that players first horizontal target when it's not in range" $ \ (i, j, k) ->

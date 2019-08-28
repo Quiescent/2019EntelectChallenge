@@ -1769,6 +1769,7 @@ makeMyBananaMove =
               penaliseThisPlayerForDamage
               awardPointsToThisPlayerForMissing
               awardPointsToThisPlayerForKillingAnEnemy
+              penaliseThisPlayerForKillingOwnWorm
               penaliseThisPlayerForAnInvalidCommand
 
 makeOpponentsBananaMove :: WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
@@ -1779,15 +1780,17 @@ makeOpponentsBananaMove =
               penaliseThatPlayerForDamage
               awardPointsToThatPlayerForMissing
               awardPointsToThatPlayerForKillingAnEnemy
+              penaliseThatPlayerForKillingOwnWorm
               penaliseThatPlayerForAnInvalidCommand
 
-throwBanana :: ModifyState -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> ModifyState -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
+throwBanana :: ModifyState -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> WormId -> Coord -> Bool -> GameMap -> WormPositions -> Move -> ModifyState
 throwBanana decrementWormsBananas'
             awardPointsToPlayerForDigging'
             awardPointsToPlayerForDamage'
             penalisePlayerForDamage'
             awardPointsToPlayerForMissing'
             awardPointsToPlayerForKillingAnEnemy'
+            penalisePlayerForKillingOwnWorm'
             penalisePlayerForAnInvalidCommand'
             !wormId'
             !coord'
@@ -1809,6 +1812,7 @@ throwBanana decrementWormsBananas'
                       penalisePlayerForDamage'
                       awardPointsToPlayerForMissing'
                       awardPointsToPlayerForKillingAnEnemy'
+                      penalisePlayerForKillingOwnWorm'
                       target
      else penalisePlayerForAnInvalidCommand'
 
@@ -2134,7 +2138,7 @@ foldOverBlastCoordsInRange epicentre f accumulator =
 containsAnyWorm :: Coord -> WormPositions -> Bool
 containsAnyWorm coord' = anyWormData (== coord')
 
-bananaBlast :: WormId -> GameMap -> WormPositions -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> Coord -> ModifyState
+bananaBlast :: WormId -> GameMap -> WormPositions -> ModifyState -> (Int -> ModifyState) -> (Int -> ModifyState) -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 bananaBlast wormId'
             gameMapPriorToBlast
             wormPositions'
@@ -2143,6 +2147,7 @@ bananaBlast wormId'
             penaliseForDamage'
             awardPointsForMissing'
             rewardKill
+            penaliseKill
             targetCoord
             state =
   -- TODO: I removed this condition: (wormHits == [] && dirtHits == [] && packHits == [])
@@ -2155,12 +2160,14 @@ bananaBlast wormId'
          (\ !state' !nextCoord ->
              if containsAnyWorm nextCoord wormPositions'
              then let damage' = bananaDamageAt targetCoord nextCoord
-                  in harmWorm wormId'
+                  in harmWorm
+                     wormId'
                      wormPositions'
                      damage'
                      (penaliseForDamage'    damage')
                      (awardPointsForDamage' damage')
                      rewardKill
+                     penaliseKill
                      nextCoord
                      state'
              else if dirtAt nextCoord gameMapPriorToBlast
@@ -2396,6 +2403,7 @@ makeMyShootMove =
   makeShootMove penaliseThisPlayerForHittingHisFriendlyWorm
                 awardPointsToThisPlayerForHittingAnEnemy
                 awardPointsToThisPlayerForKillingAnEnemy
+                penaliseThisPlayerForKillingOwnWorm
                 awardPointsToThisPlayerForMissing
 
 makeOpponentsShootMove :: Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
@@ -2403,12 +2411,14 @@ makeOpponentsShootMove =
   makeShootMove penaliseThatPlayerForHittingHisFriendlyWorm
                 awardPointsToThatPlayerForHittingAnEnemy
                 awardPointsToThatPlayerForKillingAnEnemy
+                penaliseThatPlayerForKillingOwnWorm
                 awardPointsToThatPlayerForMissing
 
-makeShootMove :: ModifyState -> ModifyState -> ModifyState -> ModifyState -> Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
+makeShootMove :: ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
 makeShootMove penalise
               awardPlayer
               awardPlayerForKill
+              penalisePlayerForKill
               awardPointsForMiss
               !wormsPosition
               !wormId'
@@ -2424,6 +2434,7 @@ makeShootMove penalise
                                  penalise
                                  awardPlayer
                                  awardPlayerForKill
+                                 penalisePlayerForKill
                                  coord'
          else awardPointsForMiss
 
@@ -2459,18 +2470,31 @@ awardPointsToThatPlayerForKillingAnEnemy =
 awardPointsForKillingAnEnemy :: ModifyPlayer
 awardPointsForKillingAnEnemy = modifyScore 40
 
-harmWormWithRocket :: WormId -> WormPositions -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+penaliseThisPlayerForKillingOwnWorm :: ModifyState
+penaliseThisPlayerForKillingOwnWorm =
+  mapThisPlayer penaliseForKillingOwnWorm
+
+penaliseThatPlayerForKillingOwnWorm :: ModifyState
+penaliseThatPlayerForKillingOwnWorm =
+  mapThatPlayer penaliseForKillingOwnWorm
+
+penaliseForKillingOwnWorm :: ModifyPlayer
+penaliseForKillingOwnWorm = modifyScore (-40)
+
+harmWormWithRocket :: WormId -> WormPositions -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 harmWormWithRocket wormId'
                    wormPositions'
                    penalisePlayer
                    awardPlayer
-                   awardPlayerForKill =
+                   awardPlayerForKill
+                   penalisePlayerForKill =
   harmWorm wormId'
            wormPositions'
            rocketDamage
            penalisePlayer
            awardPlayer
            awardPlayerForKill
+           penalisePlayerForKill
 
 harmWormById :: Int -> WormId -> WormHealths -> WormHealths
 harmWormById damage' wormId' = aListMapWormById wormId' (+ (-damage'))
@@ -2486,22 +2510,24 @@ harmWormById damage' wormId' = aListMapWormById wormId' (+ (-damage'))
 -- NOTE: Worms set to zero health are flagged for later removal.
 -- Don't use a negative number because that's more difficult to test
 -- for.
-harmWorm :: WormId -> WormPositions -> Int -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
+harmWorm :: WormId -> WormPositions -> Int -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> Coord -> ModifyState
 harmWorm shootingWormId'
          wormPositions'
          damage'
          penalisePlayer
          awardPlayer
          awardPlayerForKill
+         penalisePlayerForKill
          coord
          state =
   let wormId'       = aListFindIdByData coord wormPositions'
       samePlayer    = wormsBelongToSamePlayer wormId' shootingWormId'
       wormHealth'   = aListFindDataById wormId' $ wormHealths state
       wormDied      = wormHealth' <= damage'
-      awardPoints   = if wormDied then (awardPlayer . awardPlayerForKill) else awardPlayer
+      awardPoints   = if wormDied then (awardPlayer    . awardPlayerForKill)    else awardPlayer
+      penalise'     = if wormDied then (penalisePlayer . penalisePlayerForKill) else penalisePlayer
       dishOutPoints = if samePlayer
-                      then penalisePlayer
+                      then penalise'
                       else awardPoints
       cleanUp       = flagWormForCleaning wormId'
       harm          = withWormHealths (harmWormById damage' wormId')
