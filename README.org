@@ -3028,7 +3028,10 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 16:02]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
    :END:
-** TODO Investigate state divergence
+** IN_PROGRESS Investigate state divergence
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 05:11]
+   :END:
 ** TODO BUG: Searcher dies when the worm is dead
 ** TODO Write tests for the generation of moves at least three deep
 ** TODO BUG: I generate moves from current position for frozen worms
