@@ -3889,20 +3889,20 @@ moveWouldBeValuableToOpponent state move =
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToOpponent (makeOpponentsSelection move state) (removeSelectionFromMove move))
 
-addPlayersSelects :: (State -> Bool) -> (AList -> [WormId]) -> State -> [Move] -> [Move]
-addPlayersSelects playerHasSelectionsLeft playersWormIds state moves =
+addPlayersSelects :: (State -> Bool) -> (AList -> [WormId]) -> (State -> WormId) -> State -> [Move] -> [Move]
+addPlayersSelects playerHasSelectionsLeft playersWormIds playersWormId state moves =
   if not $ playerHasSelectionsLeft state
   then moves
   else moves ++ do
-    selection  <- playersWormIds $ wormPositions state
+    selection  <- filter (/= (playersWormId state)) $ playersWormIds $ wormPositions state
     move       <- moves
     return $ withSelection selection move
 
 addThisPlayersSelects :: State -> [Move] -> [Move]
-addThisPlayersSelects = addPlayersSelects thisPlayerHasSelectionsLeft aListMyIds
+addThisPlayersSelects = addPlayersSelects thisPlayerHasSelectionsLeft aListMyIds       thisPlayersCurrentWormId
 
 addThatPlayersSelects :: State -> [Move] -> [Move]
-addThatPlayersSelects = addPlayersSelects thatPlayerHasSelectionsLeft aListOpponentIds
+addThatPlayersSelects = addPlayersSelects thatPlayerHasSelectionsLeft aListOpponentIds thatPlayersCurrentWormId
 
 withSelection :: WormId -> Move -> Move
 withSelection  (WormId id') (Move x) =
