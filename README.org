@@ -3098,8 +3098,10 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-28 Wed 18:23] \\
      Retrospectively completing task
    :END:
-** IN_PROGRESS BUG: I'm not determining whether a swap happened
+** DONE BUG: I'm not determining whether a swap happened
+   CLOSED: [2019-08-28 Wed 19:03]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-28 Wed 19:03]
    - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 18:24]
    :END:
 ** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
