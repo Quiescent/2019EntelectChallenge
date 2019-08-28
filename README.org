@@ -3028,8 +3028,15 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 16:02]
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 12:09]
    :END:
-** IN_PROGRESS Investigate state divergence
+** DONE Investigate state divergence
+   CLOSED: [2019-08-28 Wed 05:24]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-28 Wed 05:24] \\
+     Problem was that I read "invalid" as the opponents move to mean
+     "doNothing", but that's not accurate.  I should be reading it as a new
+     move with some name like invalid so that I can deduct points.  Or
+     perhaps simpler would be to add a flag and manually decrement the
+     points.
    - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 05:11]
    :END:
 ** TODO BUG: Searcher dies when the worm is dead
