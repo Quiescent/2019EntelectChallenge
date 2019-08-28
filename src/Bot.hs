@@ -1323,10 +1323,10 @@ makeMove _ moves state =
         thatWormsCoord'           = thatWormsCoord state'
         thisWormsId               = thisPlayersCurrentWormId state'
         thatWormsId               = thatPlayersCurrentWormId state'
-        thisWormHasBananasLeft'   = thisWormHasBananasLeft state'
-        thatWormHasBananasLeft'   = thatWormHasBananasLeft state'
-        thisWormHasSnowballsLeft' = thisWormHasSnowballsLeft state'
-        thatWormHasSnowballsLeft' = thatWormHasSnowballsLeft state'
+        thisWormHasBananasLeft'   = wormHasBananasLeft thisWormsId state'
+        thatWormHasBananasLeft'   = wormHasBananasLeft thatWormsId state'
+        thisWormHasSnowballsLeft' = wormHasSnowballsLeft thisWormsId state'
+        thatWormHasSnowballsLeft' = wormHasSnowballsLeft thatWormsId state'
         makeMove' SELECT          SELECT =
           let myMove'            = removeSelectionFromMove myMove
               opponentsMove'     = removeSelectionFromMove opponentsMove
@@ -1729,16 +1729,9 @@ isABananaMove :: Move -> Bool
 isABananaMove (Move x) =
   x < 105 && x >= 24
 
-thisWormHasBananasLeft :: State -> Bool
-thisWormHasBananasLeft = wormHasBananasLeft thisPlayersCurrentWormId
-
-thatWormHasBananasLeft :: State -> Bool
-thatWormHasBananasLeft = wormHasBananasLeft thatPlayersCurrentWormId
-
-wormHasBananasLeft :: (State -> WormId) -> State -> Bool
-wormHasBananasLeft wormsId state =
-  let wormId'  = wormsId state
-      bananas' = wormBananas state
+wormHasBananasLeft :: WormId -> State -> Bool
+wormHasBananasLeft wormId' state =
+  let bananas' = wormBananas state
   in aListContainsId wormId' bananas'
 
 decrementBananas :: Bananas -> Bananas
@@ -1984,16 +1977,9 @@ awardThatPlayerForFreezingAWorm = mapThatPlayer awardPointsForFreezing
 penaliseThatPlayerForFreezingAWorm :: ModifyState
 penaliseThatPlayerForFreezingAWorm = mapThatPlayer penaliseForFreezing
 
-thisWormHasSnowballsLeft :: State -> Bool
-thisWormHasSnowballsLeft = wormHasSnowballsLeft thisPlayersCurrentWormId
-
-thatWormHasSnowballsLeft :: State -> Bool
-thatWormHasSnowballsLeft = wormHasSnowballsLeft thatPlayersCurrentWormId
-
-wormHasSnowballsLeft :: (State -> WormId) -> State -> Bool
-wormHasSnowballsLeft wormsId state =
-  let wormId'    = wormsId state
-      snowballs' = wormSnowballs state
+wormHasSnowballsLeft :: WormId -> State -> Bool
+wormHasSnowballsLeft wormId' state =
+  let snowballs' = wormSnowballs state
   in aListContainsId wormId' snowballs'
 
 decrementSnowballs :: Snowballs -> Snowballs
@@ -3792,19 +3778,21 @@ myGetToTheChoppaMoves state =
                     isCloserByManhattanDistance targetOfMove' coord'))) $
      map Move [8..23]
 
--- ASSUME: that the player has selections left
+-- ASSUME: that the player has selections left (it's checked
+-- elsewhere!)
 moveWouldBeValuableToMe :: State -> Move -> Bool
 moveWouldBeValuableToMe state move =
   let coord'         = thisWormsCoord state
       gameMap'       = gameMap state
       wormPositions' = wormPositions state
-  in (isAMoveMove      move && isValidMoveMove coord' state move) ||
+      thisWormsId    = thisPlayersCurrentWormId state
+  in (isAMoveMove     move && isValidMoveMove coord' state move) ||
      (isADigMove      move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (isAShootMove    move && (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
-     (isABananaMove   move && thisWormHasBananasLeft state &&
+     (isABananaMove   move && wormHasBananasLeft thisWormsId state &&
       any (\ target -> bananaBlastHitOpponent target wormPositions')
           (displaceToBananaDestination move coord')) ||
-     (isASnowballMove move && thisWormHasSnowballsLeft state &&
+     (isASnowballMove move && wormHasSnowballsLeft thisWormsId state &&
       any (\ target -> (snowballBlastHitOpponent target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToMe (makeMySelection move state) (removeSelectionFromMove move))
@@ -3860,13 +3848,14 @@ moveWouldBeValuableToOpponent state move =
   let coord'         = thatWormsCoord state
       gameMap'       = gameMap state
       wormPositions' = wormPositions state
+      thatWormsId    = thatPlayersCurrentWormId state
   in (isAMoveMove     move && isValidMoveMove coord' state move) ||
      (isADigMove      move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (isAShootMove    move && (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
-     (isABananaMove   move && thatWormHasBananasLeft state &&
+     (isABananaMove   move && wormHasBananasLeft thatWormsId state &&
       any (\ target -> bananaBlastHitMe target wormPositions')
           (displaceToBananaDestination move coord')) ||
-     (isASnowballMove move && thatWormHasSnowballsLeft state &&
+     (isASnowballMove move && wormHasSnowballsLeft thatWormsId state &&
       any (\ target -> (snowballBlastHitMe target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToOpponent (makeOpponentsSelection move state) (removeSelectionFromMove move))
