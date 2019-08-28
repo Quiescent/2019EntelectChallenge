@@ -2248,7 +2248,6 @@ makeMoveMove giveMedipackToWorm
       targetCell        = mapAt target gameMap'
       targetIsValid     = moveIsValid && (targetCell == AIR || targetCell == MEDIPACK)
       targetIsAMedipack = moveIsValid && targetCell == MEDIPACK
-      -- TODO: Handle collisions in getting the medipack
       medipackWorm      = if targetIsAMedipack
                           then giveMedipackToWorm . removeMedipack target
                           else id
