@@ -3089,6 +3089,12 @@ I should never do nothing unless that leads to death.
    - Note taken on [2019-08-25 Sun 12:45] \\
      These should be filtered.
    :END:
+** TODO Never select the current worm
+** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
+   :LOGBOOK:
+   - Note taken on [2019-08-26 Mon 06:16] \\
+     Think about all the shots made which don't result in worms moving.
+   :END:
 ** TODO Write tests for the generation of moves at least three deep
 ** TODO BUG: Searcher dies when the worm is dead
 ** TODO BUG: Searcher dies with this state
@@ -3133,12 +3139,6 @@ Probably because my worm dies and it doesn't know how to handle that.
    :END:
 ** TODO BUG: Sometimes the main thread gets stuck in an STM transaction
 ** TODO BUG: I'm not determining whether a swap happened
-** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
-   :LOGBOOK:
-   - Note taken on [2019-08-26 Mon 06:16] \\
-     Think about all the shots made which don't result in worms moving.
-   :END:
-** TODO Never select the current worm
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
