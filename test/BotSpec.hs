@@ -15,12 +15,6 @@ import Data.Maybe
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
-opponentsMovesFromTree :: SearchTree -> SuccessRecords
-opponentsMovesFromTree (SearchedLevel   _ _ (OpponentsMoves opponentsMoves) _) = opponentsMoves
-opponentsMovesFromTree (UnSearchedLevel _ _ (OpponentsMoves opponentsMoves))   = opponentsMoves
-opponentsMovesFromTree SearchFront                                           =
-  error $ "myMovesFromTree of SearchFront"
-
 isSearched :: SearchTree -> Bool
 isSearched (SearchedLevel _ myMoves opponentsMoves _) = allGamesPlayed myMoves opponentsMoves
 isSearched _                                          = False
@@ -978,11 +972,25 @@ spec = do
           (incrementRound $
            setOpponentsLastMove aFailingSimulationFromround_3_2019_08_24_11_16_33 (Move 12) $
            advanceWormSelections $
+           -- Decrement banana bombs
+           withWormBananas (always $ aListFromList [(2, 2), (8, 3)]) $
+           -- Banana blast
+           awardPointsToThisPlayerForDamage 13 $
+           awardPointsToThisPlayerForDigging $
+           awardPointsToThisPlayerForDigging $
+           awardPointsToThisPlayerForDigging $
+           awardPointsToThisPlayerForDigging $
            tickFreezeDurations $
            awardPointsToThatPlayerForMovingToAir $
            moveThatWorm (displaceCoordByMove (toCoord 18 18) (Move 12)) $
            mapThisPlayer (withSelections (always (Selections 4))) $
-           aFailingSimulationFromround_3_2019_08_24_11_16_33)
+           harmWorm (WormId 12) (wormPositions aFailingSimulationFromround_3_2019_08_24_11_16_33) 13 id id id (toCoord 14 15) $
+           mapGameMap aFailingSimulationFromround_3_2019_08_24_11_16_33
+                      ((addAirAt (toCoord 13 15)) . -- epicentre
+                       -- Down
+                       (addAirAt (toCoord 12 16)) .
+                       (addAirAt (toCoord 13 16)) .
+                       (addAirAt (toCoord 14 16))))
       let aStateWithMyWormOnTheRightEdgeOfTheMap =
             withWormHealths (always (AList 20 20 20 20 20 20)) $
             withWormBananas (always $ aListFromList [(1, 3), (4, 3)]) $
@@ -2103,11 +2111,11 @@ spec = do
         let thisSelection  = oneIfZero $ abs i `mod` 4
             thisMove       = withSelection (WormId thisSelection) $
                              Move $ abs j `mod` 24
-            thisNextWormId = nextWormId (WormId thisSelection) [WormId 1, WormId 2, WormId 3]
+            thisNextWormId = nextWormId (WormId thisSelection) (AList 1 2 3 4 5 6)
             thatSelection  = fourIfZero $ shiftL (abs k `mod` 4) 2
             thatMove       = withSelection (WormId thatSelection) $
                              Move $ abs l `mod` 24
-            thatNextWormId = nextWormId (WormId thatSelection) [WormId 4, WormId 8, WormId 12]
+            thatNextWormId = nextWormId (WormId thatSelection) (AList 1 2 3 4 5 6)
         in ((debugMove thisMove, debugMove thatMove,
              thisSelection, thatSelection,
              thisNextWormId, thatNextWormId),
