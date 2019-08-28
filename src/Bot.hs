@@ -3778,17 +3778,28 @@ myGetToTheChoppaMoves state =
 -- elsewhere!)
 moveWouldBeValuableToMe :: State -> Move -> Bool
 moveWouldBeValuableToMe state move =
-  let coord'         = thisWormsCoord state
-      gameMap'       = gameMap state
-      wormPositions' = wormPositions state
-      thisWormsId    = thisPlayersCurrentWormId state
-  in (isAMoveMove     move && isValidMoveMove coord' state move) ||
-     (isADigMove      move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
-     (isAShootMove    move && (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
-     (isABananaMove   move && wormHasBananasLeft thisWormsId state &&
+  let coord'           = thisWormsCoord state
+      gameMap'         = gameMap state
+      wormPositions'   = wormPositions state
+      thisWormsId      = thisPlayersCurrentWormId state
+      wormIsNotFrozen' = not $ wormIsFrozen thisWormsId state
+  in (wormIsNotFrozen' &&
+      isAMoveMove move &&
+      isValidMoveMove coord' state move) ||
+     (wormIsNotFrozen' &&
+      isADigMove move  &&
+      isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
+     (wormIsNotFrozen'  &&
+      isAShootMove move &&
+      (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
+     (wormIsNotFrozen'                     &&
+      isABananaMove move                   &&
+      wormHasBananasLeft thisWormsId state &&
       any (\ target -> bananaBlastHitOpponent target wormPositions')
           (displaceToBananaDestination move coord')) ||
-     (isASnowballMove move && wormHasSnowballsLeft thisWormsId state &&
+     (wormIsNotFrozen'                       &&
+      isASnowballMove move                   &&
+      wormHasSnowballsLeft thisWormsId state &&
       any (\ target -> (snowballBlastHitOpponent target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToMe (makeMySelection move state) (removeSelectionFromMove move))
@@ -3844,17 +3855,28 @@ wormIsFrozen wormId' = aListContainsId wormId' . frozenDurations
 -- ASSUME: That the opponent has selections left
 moveWouldBeValuableToOpponent :: State -> Move -> Bool
 moveWouldBeValuableToOpponent state move =
-  let coord'         = thatWormsCoord state
-      gameMap'       = gameMap state
-      wormPositions' = wormPositions state
-      thatWormsId    = thatPlayersCurrentWormId state
-  in (isAMoveMove     move && isValidMoveMove coord' state move) ||
-     (isADigMove      move && isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
-     (isAShootMove    move && (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
-     (isABananaMove   move && wormHasBananasLeft thatWormsId state &&
+  let coord'           = thatWormsCoord state
+      gameMap'         = gameMap state
+      wormPositions'   = wormPositions state
+      thatWormsId      = thatPlayersCurrentWormId state
+      wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
+  in (wormIsNotFrozen' &&
+      isAMoveMove move &&
+      isValidMoveMove coord' state move) ||
+     (wormIsNotFrozen' &&
+      isADigMove move  &&
+      isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
+     (wormIsNotFrozen'  &&
+      isAShootMove move &&
+      (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
+     (wormIsNotFrozen'                     &&
+      isABananaMove move                   &&
+      wormHasBananasLeft thatWormsId state &&
       any (\ target -> bananaBlastHitMe target wormPositions')
           (displaceToBananaDestination move coord')) ||
-     (isASnowballMove move && wormHasSnowballsLeft thatWormsId state &&
+     (wormIsNotFrozen'                       &&
+      isASnowballMove move                   &&
+      wormHasSnowballsLeft thatWormsId state &&
       any (\ target -> (snowballBlastHitMe target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move && moveWouldBeValuableToOpponent (makeOpponentsSelection move state) (removeSelectionFromMove move))
