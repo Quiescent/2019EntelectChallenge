@@ -2911,10 +2911,11 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
           let tree'' = if strategy == Kill
                        then makeMoveInTree move' searchTree
                        else SearchFront
-          -- TODO: determine whether a swap happened
-          let state'' = (if thatLastMoveWasInvalid
-                         then penaliseThatPlayerForAnInvalidCommand
-                         else id) $ makeMove False move' initialState
+          let state'' = postStateTransformation (wormPositions nextState)
+                                                thatLastMoveWasInvalid
+                                                move'
+                                                initialState $
+                        makeMove False move' initialState
           when (nextState /= state'') $
             logStdErr $ "States diverged!\n" ++
               "Worker state:\n" ++
@@ -2947,6 +2948,28 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
          --            "Resulting in new search tree:\n" ++ prettyPrintSearchTree initialState newTree ++
          --            "\n========================================\n") >>
          go gen'' (count' - 1) newTree
+
+postStateTransformation :: WormPositions -> Bool -> CombinedMove -> State -> State -> State
+postStateTransformation wormPositions' thatLastMoveWasInvalid move' initialState state =
+  let (myMove, opponentsMove) = toMoves move'
+      thisHasASelection       = hasASelection myMove
+      myMove'                 = removeSelectionFromMove myMove
+      thatHasASelection       = hasASelection opponentsMove
+      opponentsMove'          = removeSelectionFromMove opponentsMove
+      state'                  = (if thisHasASelection
+                                 then makeMySelection myMove
+                                 else id .
+                                 if thatHasASelection
+                                 then makeOpponentsSelection opponentsMove
+                                 else id) state
+      myCoord                 = thisWormsCoord initialState
+      opponentsCoord          = thatWormsCoord initialState
+  in if isAMoveMove myMove' && isAMoveMove opponentsMove' &&
+        displaceCoordByMove myCoord myMove' == displaceCoordByMove opponentsCoord opponentsMove'
+     then withWormPositions (always wormPositions') state'
+     else if thatLastMoveWasInvalid
+          then penaliseThatPlayerForAnInvalidCommand state
+          else state
 
 makeMoveInTree :: CombinedMove -> SearchTree -> SearchTree
 makeMoveInTree move' (SearchedLevel   _ _ _ transitions) = findSubTree move' transitions

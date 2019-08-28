@@ -71,14 +71,19 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                                   opponentSnowballs
                                                   currentState
                                                   (fromJust nextState)
-        let simulatedNextState  = tickState (fromJust thisMove) (fromJust thatMove) currentState
-        let simulatedNextState' = if ((\ (State { opponentsLastCommand = opponentsLastCommand' }) -> opponentsLastCommand' == invalidMove) nextState')
-                                  then setOpponentsLastMove' invalidMove simulatedNextState
-                                  else simulatedNextState
-        if (simulatedNextState' /=) nextState'
+        let simulatedNextState   = tickState (fromJust thisMove) (fromJust thatMove) currentState
+        let simulatedNextState'  = if ((\ (State { opponentsLastCommand = opponentsLastCommand' }) -> opponentsLastCommand' == invalidMove) nextState')
+                                   then setOpponentsLastMove' invalidMove simulatedNextState
+                                   else simulatedNextState
+        let simulatedNextState'' = postStateTransformation (wormPositions nextState')
+                                                           False
+                                                           (fromMoves (fromJust thisMove) (fromJust thatMove))
+                                                           currentState
+                                                           simulatedNextState'
+        if simulatedNextState'' /= nextState'
         then do
                _         <- liftIO $ IO.putStrLn ("ERROR: Failed on round: " ++ path)
-               stateDiff <- diff (show nextState') (show simulatedNextState')
+               stateDiff <- diff (show nextState') (show simulatedNextState'')
                return (Failure ("Failed for: " ++
                                 path ++
                                 "\nDiff:\n" ++
@@ -86,7 +91,7 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 "\nExpected:\n" ++
                                 show nextState' ++
                                 "\nBut got:\n" ++
-                                show simulatedNextState' ++
+                                show simulatedNextState'' ++
                                 "\nReadable input state:\n" ++
                                 readableShow currentState ++
                                 "\nReadable expected state:\n" ++
@@ -101,7 +106,7 @@ simulateAndCheckRounds dirs@(directory:_) = do
                                 ", " ++
                                 prettyPrintThatMove currentState (fromJust thatMove) ++
                                 ")"))
-        else iter simulatedNextState' (nextPath:paths) myBananas' opponentBananas' mySnowballs' opponentSnowballs'
+        else iter simulatedNextState'' (nextPath:paths) myBananas' opponentBananas' mySnowballs' opponentSnowballs'
     iter _ _ _ _ _ _ = return Success
 
 setOpponentsLastMove' :: Maybe String -> ModifyState
