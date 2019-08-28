@@ -3009,6 +3009,11 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS BUG: Debug search tree update/generation
    :LOGBOOK:
+   - Note taken on [2019-08-28 Wed 04:52] \\
+     I seem to have found the problem.  I was updating the state when
+     transitioning over transitions which had already been transitioned
+     over.  I think that there are still problems where I diverge from the
+     state though.
    - Note taken on [2019-08-26 Mon 18:32] \\
      I think that what was happening was that I only advanced the state
      when traversing down to a subtree which was already there.  So the bug
