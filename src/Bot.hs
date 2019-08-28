@@ -1730,9 +1730,7 @@ isABananaMove (Move x) =
   x < 105 && x >= 24
 
 wormHasBananasLeft :: WormId -> State -> Bool
-wormHasBananasLeft wormId' state =
-  let bananas' = wormBananas state
-  in aListContainsId wormId' bananas'
+wormHasBananasLeft wormId' = aListContainsId wormId' . wormBananas
 
 decrementBananas :: Bananas -> Bananas
 decrementBananas (-1) = (-1)
@@ -1978,9 +1976,7 @@ penaliseThatPlayerForFreezingAWorm :: ModifyState
 penaliseThatPlayerForFreezingAWorm = mapThatPlayer penaliseForFreezing
 
 wormHasSnowballsLeft :: WormId -> State -> Bool
-wormHasSnowballsLeft wormId' state =
-  let snowballs' = wormSnowballs state
-  in aListContainsId wormId' snowballs'
+wormHasSnowballsLeft wormId' = aListContainsId wormId' . wormSnowballs
 
 decrementSnowballs :: Snowballs -> Snowballs
 decrementSnowballs (-1) = (-1)
