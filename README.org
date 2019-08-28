@@ -3045,15 +3045,12 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-28 Wed 05:48]
    - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 05:27]
    :END:
-** TODO BUG: Searcher dies when the worm is dead
-** TODO Write tests for the generation of moves at least three deep
-** TODO BUG: I generate moves from current position for frozen worms
+** DONE BUG: Some of my moves are invalid
+   CLOSED: [2019-08-28 Wed 05:49]
    :LOGBOOK:
-   - Note taken on [2019-08-25 Sun 12:45] \\
-     These should be filtered.
-   :END:
-** IN_PROGRESS BUG: Some of my moves are invalid
-   :LOGBOOK:
+   - CLOSING NOTE [2019-08-28 Wed 05:49] \\
+     I believe that this had to do with state divergence and the bug in
+     tree generation.
    - Note taken on [2019-08-24 Sat 10:16] \\
      The search tree level for the worm on that round is not valid.  I'm
      allowing him to throw snowballs when he's not the snowball worm.
@@ -3080,6 +3077,13 @@ I should never do nothing unless that leads to death.
      My bot sometimes tries to make invalid shots or doesn't consider
      shooting.  It can also dig squares which are air.
    :END:
+** TODO BUG: I generate moves from current position for frozen worms
+   :LOGBOOK:
+   - Note taken on [2019-08-25 Sun 12:45] \\
+     These should be filtered.
+   :END:
+** TODO Write tests for the generation of moves at least three deep
+** TODO BUG: Searcher dies when the worm is dead
 ** TODO BUG: Searcher dies with this state
 Probably because my worm dies and it doesn't know how to handle that.
 #+BEGIN_EXAMPLE
