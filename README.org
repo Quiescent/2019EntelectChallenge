@@ -3007,8 +3007,12 @@ I should never do nothing unless that leads to death.
      I needed the new lava progression.
    - State "IN_PROGRESS" from "TODO"       [2019-08-25 Sun 13:10]
    :END:
-** IN_PROGRESS BUG: Debug search tree update/generation
+** DONE BUG: Debug search tree update/generation
+   CLOSED: [2019-08-28 Wed 05:10]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-28 Wed 05:10] \\
+     I'm closing this off because I've not seen it again.  I'll keep the
+     assertion in while I do other work though.
    - Note taken on [2019-08-28 Wed 04:52] \\
      I seem to have found the problem.  I was updating the state when
      transitioning over transitions which had already been transitioned
