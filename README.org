@@ -3077,7 +3077,10 @@ I should never do nothing unless that leads to death.
      My bot sometimes tries to make invalid shots or doesn't consider
      shooting.  It can also dig squares which are air.
    :END:
-** TODO BUG: I don't reward kills made by banana bomb
+** IN_PROGRESS BUG: I don't reward kills made by banana bomb
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 05:54]
+   :END:
 ** TODO BUG: I generate moves from current position for frozen worms
    :LOGBOOK:
    - Note taken on [2019-08-25 Sun 12:45] \\
