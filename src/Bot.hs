@@ -3838,6 +3838,9 @@ opponentsMovesFrom state = do
   guard (moveWouldBeValuableToOpponent state opponentsMove)
   return $ opponentsMove
 
+wormIsFrozen :: WormId -> State -> Bool
+wormIsFrozen wormId' = aListContainsId wormId' . frozenDurations
+
 -- ASSUME: That the opponent has selections left
 moveWouldBeValuableToOpponent :: State -> Move -> Bool
 moveWouldBeValuableToOpponent state move =
