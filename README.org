@@ -3039,6 +3039,7 @@ I should never do nothing unless that leads to death.
      points.
    - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 05:11]
    :END:
+** TODO BUG: I interpret invalid moves as no move
 ** TODO BUG: Searcher dies when the worm is dead
 ** TODO Write tests for the generation of moves at least three deep
 ** TODO BUG: I generate moves from current position for frozen worms
