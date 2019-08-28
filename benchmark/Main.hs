@@ -58,5 +58,5 @@ runSearchForEachRound (directory:directories) = do
         tree <- liftIO $ treeAfterAlottedTime (fromJust state) treeChannel
         let count' = countGames tree
         liftIO $ logStdErr $ "Games played for state: " ++ show count'
-        liftIO $ writeComms stateChannel (fromMoves doNothing doNothing, (fromJust state))
+        liftIO $ writeComms stateChannel (fromMoves doNothing doNothing, False, (fromJust state))
         go dirs (count' : results) treeChannel stateChannel

@@ -66,7 +66,7 @@ runSearchForEachRound startFrom repeatTimes directories  =
        forM_ [(1::Int)..repeatCount] $ \ i -> do
          liftIO $ logStdErr $ "Round " ++ show i ++ "/" ++ show repeatCount
          _      <- liftIO $ searchForAlottedTime state treeVariable
-         liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), state)
+         liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), False, state)
      else if (length directories' < 1)
           then (liftIO (putStrLn ("User error: specified directory has less than 1 rounds after starting from: " ++
                              case startFrom of
@@ -86,5 +86,5 @@ runSearchForEachRound startFrom repeatTimes directories  =
               _      <- liftIO $ searchForAlottedTime state' treeVariable
               -- Simulate the worst case scenario.  Both players do
               -- nothing and we don't have it in the tree.
-              liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), state'))
+              liftIO $ writeComms stateChannel ((fromMoves doNothing doNothing), False, state'))
       directories''

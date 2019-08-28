@@ -2864,7 +2864,7 @@ logStdErr = hPutStrLn stderr
 -- First iteration I think that I'll suspend the thread until a new
 -- state comes along.
 -- TODO: don't suspend the thread when the new state comes along.
-iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
+iterativelyImproveSearch :: StdGen -> State -> SearchTree -> CommsChannel (CombinedMove, Bool, State) -> CommsVariable SearchTree -> IO ()
 iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   let treeFromPreviousRound = if strategy == Dig || strategy == GetToTheChoppa
                               then SearchFront
@@ -2899,12 +2899,14 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
       writeVariable treeVariable searchTree
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
-        Just (move', nextState) -> do
+        Just (move', thatLastMoveWasInvalid, nextState) -> do
           let tree'' = if strategy == Kill
                        then makeMoveInTree move' searchTree
                        else SearchFront
           -- TODO: determine whether a swap happened
-          let state'' = makeMove False move' initialState
+          let state'' = (if thatLastMoveWasInvalid
+                         then penaliseThatPlayerForAnInvalidCommand
+                         else id) $ makeMove False move' initialState
           when (nextState /= state'') $
             logStdErr $ "States diverged!\n" ++
               "Worker state:\n" ++
@@ -3117,7 +3119,7 @@ searchForAlottedTime state treeChannel = do
   let gamesPlayed = countGames searchTree
   return $ successRecordMove . chooseBestMove gamesPlayed $ myMovesFromTree searchTree
 
-runRound :: Int -> Int -> Int -> Int -> Int -> State -> CommsChannel (CombinedMove, State) -> CommsVariable SearchTree -> IO ()
+runRound :: Int -> Int -> Int -> Int -> Int -> State -> CommsChannel (CombinedMove, Bool, State) -> CommsVariable SearchTree -> IO ()
 runRound !thisBananaCount
          !thatBananaCount
          !thisSnowballCount
@@ -3126,7 +3128,7 @@ runRound !thisBananaCount
          previousState
          stateChannel
          treeVariable = do
-  move                 <- liftIO $ searchForAlottedTime previousState treeVariable
+  move                  <- liftIO $ searchForAlottedTime previousState treeVariable
   liftIO $
     putStrLn $
     -- ASSUME: that the worm is on a valid square to begin with
@@ -3134,11 +3136,12 @@ runRound !thisBananaCount
     show roundNumber ++
     ";" ++
     formatMove thisWormsCoord makeMySelection move (thisWormsCoord previousState) previousState ++ "\n"
-  roundNumber'         <- readRound
-  state                <- readGameState roundNumber'
+  roundNumber'          <- readRound
+  state                 <- readGameState roundNumber'
   -- TODO fromJust?
-  let state'            = force $ fromJust state
-  let opponentsLastMove = force $ parseLastCommand previousState $ opponentsLastCommand state'
+  let state'             = force $ fromJust state
+  let opponentsLastMove  = force $ parseLastCommand previousState $ opponentsLastCommand state'
+  let thatMoveWasInvalid = force $ any (== "invalid") $ opponentsLastCommand state'
   -- TODO!!!!!  I shouldn't be reading this state in the searcher.
   -- All I care about is the opponents move...
   -- EXTRA NOTE: And the fact that I don't know whether we swapped.
@@ -3154,7 +3157,7 @@ runRound !thisBananaCount
                                             thatSnowballCount
                                             previousState
                                             state'
-  writeComms stateChannel $ (fromMoves move opponentsLastMove, nextState')
+  writeComms stateChannel $ (fromMoves move opponentsLastMove, thatMoveWasInvalid, nextState')
   runRound thisBananaCount'
            thatBananaCount'
            thisSnowballCount'
