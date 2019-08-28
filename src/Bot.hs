@@ -3738,15 +3738,19 @@ isValidDigMove origin digMoveAsMoveMove gameMap' =
   mapAt (displaceCoordByMove origin digMoveAsMoveMove) gameMap' == DIRT
 
 myMovesFrom :: State -> [Move]
-myMovesFrom state = do
-  let moves              = map Move [0..185]
-  let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
-  let moves'             = if hasMoreThanOneWorm
-                           then addThisPlayersSelects state moves
-                           else moves
-  myMove <- moves'
-  guard (moveWouldBeValuableToMe state myMove)
-  return myMove
+myMovesFrom state =
+  let myMoves = do
+        let moves              = map Move [0..185]
+        let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
+        let moves'             = if hasMoreThanOneWorm
+                                 then addThisPlayersSelects state moves
+                                 else moves
+        myMove <- moves'
+        guard (moveWouldBeValuableToMe state myMove)
+        return myMove
+  in if myMoves == []
+     then [doNothing]
+     else myMoves
 
 manhattanDistanceToMiddle :: Coord -> Int
 manhattanDistanceToMiddle coord' =
@@ -3838,16 +3842,20 @@ shotHitsWorm coord' gameMap' wormPositions' move =
   in hitsWorm coord' gameMap' shotsDir wormPositions'
 
 opponentsMovesFrom :: State -> [Move]
-opponentsMovesFrom state = do
-  let moves              = map Move [0..185]
-  -- This looks wrong
-  let hasMoreThanOneWorm = (aListCountOpponentsEntries $ wormPositions state) > 1
-  let moves'             = if hasMoreThanOneWorm
-                           then addThatPlayersSelects state moves
-                           else moves
-  opponentsMove <- moves'
-  guard (moveWouldBeValuableToOpponent state opponentsMove)
-  return $ opponentsMove
+opponentsMovesFrom state =
+  let opponentsMoves = do
+        let moves              = map Move [0..185]
+        -- This looks wrong
+        let hasMoreThanOneWorm = (aListCountOpponentsEntries $ wormPositions state) > 1
+        let moves'             = if hasMoreThanOneWorm
+                                 then addThatPlayersSelects state moves
+                                 else moves
+        opponentsMove <- moves'
+        guard (moveWouldBeValuableToOpponent state opponentsMove)
+        return $ opponentsMove
+  in if opponentsMoves == []
+     then [doNothing]
+     else opponentsMoves
 
 wormIsFrozen :: WormId -> State -> Bool
 wormIsFrozen wormId' = aListContainsId wormId' . frozenDurations
