@@ -3039,8 +3039,10 @@ I should never do nothing unless that leads to death.
      points.
    - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 05:11]
    :END:
-** IN_PROGRESS BUG: I interpret invalid moves as no move
+** DONE BUG: I interpret invalid moves as no move
+   CLOSED: [2019-08-28 Wed 05:48]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-28 Wed 05:48]
    - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 05:27]
    :END:
 ** TODO BUG: Searcher dies when the worm is dead
