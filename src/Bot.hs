@@ -3146,9 +3146,14 @@ nextStateAndAmmoCounts thisMove
 
 searchForAlottedTime :: State -> CommsVariable SearchTree -> IO Move
 searchForAlottedTime state treeChannel = do
-  searchTree     <- treeAfterAlottedTime state treeChannel
-  let gamesPlayed = countGames searchTree
-  return $ successRecordMove . chooseBestMove gamesPlayed $ myMovesFromTree searchTree
+  searchTree <- treeAfterAlottedTime state treeChannel
+  return . successRecordMove . chooseBestMove $ myMovesFromTree searchTree
+
+chooseBestMove :: SuccessRecords -> SuccessRecord
+chooseBestMove =
+  maximumBy (\ oneTree otherTree -> compare (gamesPlayed oneTree) (gamesPlayed otherTree))
+  where
+    gamesPlayed (SuccessRecord (GamesPlayed x) _ _) = x
 
 runRound :: Int -> Int -> Int -> Int -> Int -> State -> CommsChannel (CombinedMove, Bool, State) -> CommsVariable SearchTree -> IO ()
 runRound !thisBananaCount
@@ -3507,8 +3512,8 @@ digSearchSearchedLevel !g
                        (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
                        moves
                        !reward =
-  let myBestMove        = successRecordMove $ chooseBestMove gamesPlayed myMoves
-      opponentsBestMove = successRecordMove $ chooseBestMove gamesPlayed opponentsMoves
+  let myBestMove        = successRecordMove $ nextSearchMove gamesPlayed myMoves
+      opponentsBestMove = successRecordMove $ nextSearchMove gamesPlayed opponentsMoves
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
       reward'           = digReward $ myBestMove
@@ -3552,18 +3557,18 @@ opponentsMaxDamageDealt = maxDamageDealt aListCountOpponentsEntries aListSumOppo
 payOff :: State -> State -> Payoff
 payOff initialState@(State { wormHealths = initialWormHealths })
         resultState@(State { wormHealths = resultWormHealths }) =
-  let myTotalDamageTaken           = (aListSumMyEntries resultWormHealths) -
-                                     (aListSumMyEntries initialWormHealths)
-      opponentsTotalDamageTaken    = (aListSumOpponentsEntries resultWormHealths) -
-                                     (aListSumOpponentsEntries initialWormHealths)
+  let myTotalDamageTaken           = aListSumMyEntries initialWormHealths -
+                                     aListSumMyEntries resultWormHealths
+      opponentsTotalDamageTaken    = aListSumOpponentsEntries initialWormHealths -
+                                     aListSumOpponentsEntries resultWormHealths
       rounds                       = currentRound resultState - currentRound initialState
       myMaxDamageDealt'            = myMaxDamageDealt initialState rounds
       opponentsMaxDamageDealt'     = opponentsMaxDamageDealt initialState rounds
       maxPayoffScore               = myMaxDamageDealt' + opponentsMaxDamageDealt'
       myPayoff                     = opponentsTotalDamageTaken +
-                                     (opponentsMaxDamageDealt' - myTotalDamageTaken)
+                                     opponentsMaxDamageDealt' - myTotalDamageTaken
       opponentsPayoff              = myTotalDamageTaken +
-                                     (myMaxDamageDealt' - opponentsTotalDamageTaken)
+                                     myMaxDamageDealt' - opponentsTotalDamageTaken
   in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
 killSearch :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
@@ -3615,8 +3620,8 @@ killSearchSearchedLevel !g
                         !state
                         (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
                         moves =
-  let myBestMove        = successRecordMove $ chooseBestMove gamesPlayed myMoves
-      opponentsBestMove = successRecordMove $ chooseBestMove gamesPlayed opponentsMoves
+  let myBestMove        = successRecordMove $ nextSearchMove gamesPlayed myMoves
+      opponentsBestMove = successRecordMove $ nextSearchMove gamesPlayed opponentsMoves
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
   in killSearch g
@@ -3735,8 +3740,8 @@ instance NFData Payoff where
 diffMax :: Reward -> Payoff
 diffMax !rewardTotal = Payoff (MyPayoff rewardTotal) (OpponentsPayoff 0) digMaxScore
 
-chooseBestMove :: Int -> [SuccessRecord] -> SuccessRecord
-chooseBestMove totalGames successRecords =
+nextSearchMove :: Int -> [SuccessRecord] -> SuccessRecord
+nextSearchMove totalGames successRecords =
   let computeConfidence (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) _) =
         confidence totalGames gamesPlayed ratio
   in maximumBy (\ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
