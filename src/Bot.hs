@@ -3454,8 +3454,8 @@ search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen, St
 search g strategy state searchTree =
   let round' = (currentRound state)
   in case strategy of
-       Dig            -> digSearch  g 0      state searchTree [] 0
-       Kill           -> killSearch g round' state searchTree []
+       Dig            -> digSearch  g       0      state searchTree [] 0
+       Kill           -> killSearch g state round' state searchTree []
        -- TODO implement a custom search for getting to the choppa! XD
        GetToTheChoppa -> digSearch  g 0      state searchTree [] 0
 
@@ -3532,45 +3532,51 @@ digPlayRandomly initialState g round' state moves reward =
           reward'         = digReward $ fst $ toMoves move
       in digPlayRandomly initialState g' (round' + 1) state' moves (reward' + reward)
 
-maximumHealth :: Int
-maximumHealth = 100 + 100 + 150
+maxDamageDealt :: (AList -> Int) -> (AList -> Int) -> State -> Int -> Int
+maxDamageDealt countEntries
+               sumEntries
+               state
+               rounds =
+  let wormCount'    = countEntries $ wormHealths state
+      bananaAmmo    = sumEntries   $ wormBananas state
+      bananasThrown = max bananaAmmo $ rounds `div` wormCount'
+  in rocketDamage * (rounds - bananasThrown) +
+     bananasThrown * 20
 
-maximumFrozenDuration :: Int
-maximumFrozenDuration = 150
+myMaxDamageDealt :: State -> Int -> Int
+myMaxDamageDealt = maxDamageDealt aListCountMyEntries aListSumMyEntries
 
-maxPayoffScore :: Int
-maxPayoffScore =
-  -- Maximum health (times two because it's the biggest difference between you and your opponent)
-  2 * maximumHealth +
-  -- Maximum banana ammo (scaled to be similar to health)
-  30 +
-  -- Maximum snowball ammo (scaled to be similar to health)
-  30 +
-  -- Maximum selects left (scaled to be similar to health)
-  50 +
-  -- Maximum duration spent unfrozen (scaled to be similar to health)
-  maximumFrozenDuration -- All three unfrozen for five turns
+opponentsMaxDamageDealt :: State -> Int -> Int
+opponentsMaxDamageDealt = maxDamageDealt aListCountOpponentsEntries aListSumOpponentsEntries
 
-payOff :: State -> Payoff
-payOff (State { wormHealths     = wormHealths' }) =
-  let myTotalHealth                = aListSumMyEntries wormHealths'
-      opponentsTotalHealth         = aListSumOpponentsEntries wormHealths'
-      myPayoff                     = myTotalHealth +
-                                     (maximumHealth - opponentsTotalHealth)
-      opponentsPayoff              = opponentsTotalHealth +
-                                     (maximumHealth - myTotalHealth)
+payOff :: State -> State -> Payoff
+payOff initialState@(State { wormHealths = initialWormHealths })
+        resultState@(State { wormHealths = resultWormHealths }) =
+  let myTotalDamageTaken           = (aListSumMyEntries resultWormHealths) -
+                                     (aListSumMyEntries initialWormHealths)
+      opponentsTotalDamageTaken    = (aListSumOpponentsEntries resultWormHealths) -
+                                     (aListSumOpponentsEntries initialWormHealths)
+      rounds                       = currentRound resultState - currentRound initialState
+      myMaxDamageDealt'            = myMaxDamageDealt initialState rounds
+      opponentsMaxDamageDealt'     = opponentsMaxDamageDealt initialState rounds
+      maxPayoffScore               = myMaxDamageDealt' + opponentsMaxDamageDealt'
+      myPayoff                     = opponentsTotalDamageTaken +
+                                     (opponentsMaxDamageDealt' - myTotalDamageTaken)
+      opponentsPayoff              = myTotalDamageTaken +
+                                     (myMaxDamageDealt' - opponentsTotalDamageTaken)
   in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
-killSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+killSearch :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use
 -- that move when we write the first entry in an unsearched level.
-killSearch !g _       !state SearchFront                  moves =
-  (SearchResult (payOff state) (reverse moves), g, state)
-killSearch !g !round' !state tree@(SearchedLevel _ _ _ _) moves =
+killSearch !g initialState _       !state SearchFront                  moves =
+  (SearchResult (payOff initialState state) (reverse moves), g, state)
+killSearch !g initialState !round' !state tree@(SearchedLevel _ _ _ _) moves =
   case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
-    NoResult        -> killSearchSearchedLevel g round' state tree moves
+    NoResult        -> killSearchSearchedLevel g initialState round' state tree moves
 killSearch !g
+           initialState
            !round'
            !state
            (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
@@ -3584,7 +3590,7 @@ killSearch !g
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-      in (SearchResult (payOff state') (reverse (combinedMove:moves)), g'', state')
+      in (SearchResult (payOff initialState state') (reverse (combinedMove:moves)), g'', state')
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
 findSubTree combinedMove stateTransitions =
@@ -3600,10 +3606,11 @@ pickOneAtRandom g xs =
 
 type Moves = [CombinedMove]
 
-killSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
-killSearchSearchedLevel _ _ _ SearchFront                   _ = error "killSearchSearchedLevel: SearchFront"
-killSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _) _ = error $ "killSearchSearchedLevel: " ++ show level
+killSearchSearchedLevel :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+killSearchSearchedLevel _ _ _ _ SearchFront                   _ = error "killSearchSearchedLevel: SearchFront"
+killSearchSearchedLevel _ _ _ _ level@(UnSearchedLevel _ _ _) _ = error $ "killSearchSearchedLevel: " ++ show level
 killSearchSearchedLevel !g
+                        initialState
                         !round'
                         !state
                         (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
@@ -3613,6 +3620,7 @@ killSearchSearchedLevel !g
       combinedMove      = fromMoves myBestMove opponentsBestMove
       state'            = makeMove True combinedMove state
   in killSearch g
+                initialState
                 (round' + 1)
                 state'
                 (findSubTree combinedMove transitions)
