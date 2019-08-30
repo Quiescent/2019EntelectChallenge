@@ -3155,7 +3155,7 @@ isDoNothing = (==) doNothing
 
 chooseBestMove :: Int -> SuccessRecords -> SuccessRecord
 chooseBestMove totalGamesPlayed records =
-  maximumBy (\ oneTree otherTree -> compare (gamesPlayed oneTree) (gamesPlayed otherTree)) records'
+  maximumBy (\ oneTree otherTree -> compare (gamesPlayed oneTree) (gamesPlayed otherTree)) records''
   where
     records'                    = if noClearWinner
                                   then filter (\ (SuccessRecord _ _ move) ->
@@ -3164,6 +3164,7 @@ chooseBestMove totalGamesPlayed records =
                                                  isADigMove move   ||
                                                  isDoNothing move) records
                                   else records
+    records''                   = if records' == [] then [SuccessRecord (GamesPlayed 1) (PayoffRatio 1) doNothing] else records'
     averagePlayed               = totalGamesPlayed `div` length records
     withinPercentile percentile = (<= percentile) . abs . (100 -) . (`div` averagePlayed) . (* 100) . gamesPlayed
     noClearWinner               = all (withinPercentile 1) records
