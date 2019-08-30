@@ -3125,8 +3125,12 @@ I should never do nothing unless that leads to death.
      This looks good enough.
    - State "IN_PROGRESS" from "TODO"       [2019-08-30 Fri 05:57]
    :END:
-** IN_PROGRESS Value own health more than damage
+** DONE Value own health more than damage
+   CLOSED: [2019-08-30 Fri 18:57]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-30 Fri 18:57] \\
+     This was accomplished by using the absolute health payoff which I had
+     before.
    - State "IN_PROGRESS" from "TODO"       [2019-08-30 Fri 17:37]
    :END:
 (The game often ends running around in circles.)

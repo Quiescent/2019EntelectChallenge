@@ -3563,28 +3563,23 @@ maxDamageDealt countEntries
   in rocketDamage * (rounds - bananasThrown) +
      bananasThrown * 20
 
-myMaxDamageDealt :: State -> Int -> Int
-myMaxDamageDealt = maxDamageDealt aListCountMyEntries aListSumMyEntries
+maximumHealth :: Int
+maximumHealth = 100 + 100 + 150
 
-opponentsMaxDamageDealt :: State -> Int -> Int
-opponentsMaxDamageDealt = maxDamageDealt aListCountOpponentsEntries aListSumOpponentsEntries
+maxPayoffScore :: Int
+maxPayoffScore =
+  -- Maximum health (times two because it's the biggest difference between you and your opponent)
+  2 * maximumHealth
 
 payOff :: State -> State -> Payoff
-payOff initialState@(State { wormHealths = initialWormHealths })
-        resultState@(State { wormHealths = resultWormHealths }) =
-  let myTotalDamageTaken           = aListSumMyEntries initialWormHealths -
-                                     aListSumMyEntries resultWormHealths
-      opponentsTotalDamageTaken    = aListSumOpponentsEntries initialWormHealths -
-                                     aListSumOpponentsEntries resultWormHealths
-      rounds                       = currentRound resultState - currentRound initialState
-      myMaxDamageDealt'            = myMaxDamageDealt initialState rounds
-      opponentsMaxDamageDealt'     = opponentsMaxDamageDealt initialState rounds
-      maxPayoffScore               = myMaxDamageDealt' + opponentsMaxDamageDealt'
-      myPayoff                     = opponentsTotalDamageTaken +
-                                     opponentsMaxDamageDealt' - myTotalDamageTaken
-      opponentsPayoff              = myTotalDamageTaken +
-                                     myMaxDamageDealt' - opponentsTotalDamageTaken
-  in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
+payOff _ (State { wormHealths     = wormHealths' }) =
+  let myTotalHealth                = aListSumMyEntries wormHealths'
+      opponentsTotalHealth         = aListSumOpponentsEntries wormHealths'
+      myPayoff                     = myTotalHealth +
+                                     (maximumHealth - opponentsTotalHealth)
+      opponentsPayoff              = opponentsTotalHealth +
+                                     (maximumHealth - myTotalHealth)
+   in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
 killSearch :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use
