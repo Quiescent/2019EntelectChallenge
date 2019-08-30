@@ -3200,7 +3200,8 @@ https://wiki.haskell.org/Playing_by_the_rules
      To replicate the problem set the player move bits back to 9.
    :END:
 ** TODO Improve the types around all the functions which take multiple ModifyStates
-* Bugs Which I'm not Seeing Anymore** TODO BUG: Searcher dies when the worm is dead
+* Bugs Which I'm not Seeing Anymore
+** TODO BUG: Searcher dies when the worm is dead
 ** TODO BUG: Searcher dies with this state
 Probably because my worm dies and it doesn't know how to handle that.
 #+BEGIN_EXAMPLE
