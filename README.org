@@ -3118,6 +3118,7 @@ I should never do nothing unless that leads to death.
    - Note taken on [2019-08-30 Fri 05:30] \\
      So I stop searching, because it's the end of the game, right?
    :END:
+** TODO Never select or throw ammo when there's no clear winner
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
@@ -3146,6 +3147,21 @@ I should never do nothing unless that leads to death.
     - CLOSING NOTE [2019-08-17 Sat 11:38] \\
       Adding retrospectively
     :END:
+*** DONE Modify state rather than parsing it the whole time
+    CLOSED: [2019-08-30 Fri 05:55]
+    :LOGBOOK:
+    - CLOSING NOTE [2019-08-30 Fri 05:55] \\
+      Already implemented.  I just need to make sure that I can recover with
+      the previous state though.
+    :END:
+There are a couple of things that can only be inferred on the first
+round.  Like who has the bananas and how many he/she has.
+*** TODO Use an unboxed vector for the tree
+*** TODO Further optimise the Snowball and Banana blast folds
+*** TODO Use bitwise logic in make moves instead of Maybe
+*** TODO Use the compiler!
+https://wiki.haskell.org/Performance/GHC
+https://wiki.haskell.org/Playing_by_the_rules
 *** IN_PROGRESS Investigate why makeMoves is still allocating a lot of memory
     :LOGBOOK:
     - Note taken on [2019-08-22 Thu 18:24] \\
@@ -3158,22 +3174,13 @@ I should never do nothing unless that leads to death.
       it helps.
     - State "IN_PROGRESS" from "TODO"       [2019-08-17 Sat 11:40]
     :END:
-*** TODO Use an unboxed vector for the tree
-*** TODO Modify state rather than parsing it the whole time
-There are a couple of things that can only be inferred on the first
-round.  Like who has the bananas and how many he/she has.
 *** TODO Implement Text Parser
-*** TODO Use bitwise logic in make moves instead of Maybe
-*** TODO Use the compiler!
-https://wiki.haskell.org/Performance/GHC
-https://wiki.haskell.org/Playing_by_the_rules
 *** DEFUNCT Pass down whether there is a dig move
     :LOGBOOK:
     - Note taken on [2019-08-17 Sat 11:37] \\
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
-** TODO Never select or throw ammo when there's no clear winner
 ** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
    :LOGBOOK:
    - Note taken on [2019-08-26 Mon 06:16] \\
