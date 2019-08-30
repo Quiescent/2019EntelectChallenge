@@ -3104,8 +3104,10 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-28 Wed 19:03]
    - State "IN_PROGRESS" from "TODO"       [2019-08-28 Wed 18:24]
    :END:
-** IN_PROGRESS Make the payoff relative
+** DONE Make the payoff relative
+   CLOSED: [2019-08-30 Fri 05:22]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-30 Fri 05:22]
    - State "IN_PROGRESS" from "TODO"       [2019-08-29 Thu 06:53]
    :END:
 ** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
