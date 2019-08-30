@@ -3800,19 +3800,22 @@ isCloserByManhattanDistance this that =
 
 myGetToTheChoppaMoves :: State -> [Move]
 myGetToTheChoppaMoves state =
-  let coord'  = thisWormsCoord state
-  in filter (\ move ->
-              (let targetOfMove' = displaceCoordByMove coord' move
-                in isAMoveMove move &&
-                   isValidMoveMove coord' state move &&
-                   (manhattanDistanceToMiddle targetOfMove' <= choppaRadius ||
-                    isCloserByManhattanDistance targetOfMove' coord')) ||
-              (let targetOfMove' = displaceCoordByMove coord' (shiftDigToMoveRange move)
-                in isADigMove  move &&
-                   isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state) &&
-                   (manhattanDistanceToMiddle targetOfMove' <= choppaRadius ||
-                    isCloserByManhattanDistance targetOfMove' coord'))) $
-     map Move [8..23]
+  let coord' = thisWormsCoord state
+      moves  = filter (\ move ->
+                        (let targetOfMove' = displaceCoordByMove coord' move
+                          in isAMoveMove move &&
+                             isValidMoveMove coord' state move &&
+                             (manhattanDistanceToMiddle targetOfMove' <= choppaRadius ||
+                              isCloserByManhattanDistance targetOfMove' coord')) ||
+                        (let targetOfMove' = displaceCoordByMove coord' (shiftDigToMoveRange move)
+                          in isADigMove  move &&
+                             isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state) &&
+                             (manhattanDistanceToMiddle targetOfMove' <= choppaRadius ||
+                              isCloserByManhattanDistance targetOfMove' coord'))) $
+               map Move [8..23]
+  in if moves == []
+     then [doNothing]
+     else moves
 
 -- ASSUME: that the player has selections left (it's checked
 -- elsewhere!)
