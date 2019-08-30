@@ -3147,12 +3147,22 @@ nextStateAndAmmoCounts thisMove
 searchForAlottedTime :: State -> CommsVariable SearchTree -> IO Move
 searchForAlottedTime state treeChannel = do
   searchTree <- treeAfterAlottedTime state treeChannel
-  return . successRecordMove . chooseBestMove $ myMovesFromTree searchTree
+  let gamesPlayed = countGames searchTree
+  return . successRecordMove . chooseBestMove gamesPlayed $ myMovesFromTree searchTree
 
-chooseBestMove :: SuccessRecords -> SuccessRecord
-chooseBestMove =
-  maximumBy (\ oneTree otherTree -> compare (gamesPlayed oneTree) (gamesPlayed otherTree))
+chooseBestMove :: Int -> SuccessRecords -> SuccessRecord
+chooseBestMove totalGamesPlayed records =
+  maximumBy (\ oneTree otherTree -> compare (gamesPlayed oneTree) (gamesPlayed otherTree)) records'
   where
+    records'                    = if noClearWinner
+                                  then filter (\ (SuccessRecord _ _ move) ->
+                                                 isAMoveMove move ||
+                                                 isAShootMove move ||
+                                                 isADigMove move) records
+                                  else records
+    averagePlayed               = totalGamesPlayed `div` length records
+    withinPercentile percentile = (<= percentile) . abs . (100 -) . (`div` averagePlayed) . (* 100) . gamesPlayed
+    noClearWinner               = all (withinPercentile 1) records
     gamesPlayed (SuccessRecord (GamesPlayed x) _ _) = x
 
 runRound :: Int -> Int -> Int -> Int -> Int -> State -> CommsChannel (CombinedMove, Bool, State) -> CommsVariable SearchTree -> IO ()
