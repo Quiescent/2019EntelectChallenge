@@ -3150,15 +3150,19 @@ searchForAlottedTime state treeChannel = do
   let gamesPlayed = countGames searchTree
   return . successRecordMove . chooseBestMove gamesPlayed $ myMovesFromTree searchTree
 
+isDoNothing :: Move -> Bool
+isDoNothing = (==) doNothing
+
 chooseBestMove :: Int -> SuccessRecords -> SuccessRecord
 chooseBestMove totalGamesPlayed records =
   maximumBy (\ oneTree otherTree -> compare (gamesPlayed oneTree) (gamesPlayed otherTree)) records'
   where
     records'                    = if noClearWinner
                                   then filter (\ (SuccessRecord _ _ move) ->
-                                                 isAMoveMove move ||
+                                                 isAMoveMove move  ||
                                                  isAShootMove move ||
-                                                 isADigMove move) records
+                                                 isADigMove move   ||
+                                                 isDoNothing move) records
                                   else records
     averagePlayed               = totalGamesPlayed `div` length records
     withinPercentile percentile = (<= percentile) . abs . (100 -) . (`div` averagePlayed) . (* 100) . gamesPlayed
