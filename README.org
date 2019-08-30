@@ -3173,15 +3173,15 @@ https://wiki.haskell.org/Playing_by_the_rules
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
+** TODO Never select or throw ammo when there's no clear winner
 ** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
    :LOGBOOK:
    - Note taken on [2019-08-26 Mon 06:16] \\
      Think about all the shots made which don't result in worms moving.
    :END:
-** TODO IDEA: Create a number of fine tuned strategies and switch between them on each level
 ** TODO Write tests for the generation of moves at least three deep
 ** TODO Fine tune the search time
-** TODO Penalise selects because they can be wasteful
+** TODO IDEA: Create a number of fine tuned strategies and switch between them on each level
 ** TODO Test that banana bombing space does not cause a blast
 ** TODO Only throw bananas when they'll be good
 ** TODO Debug the test which should be failing
