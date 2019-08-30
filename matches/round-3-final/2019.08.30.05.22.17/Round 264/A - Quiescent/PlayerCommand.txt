@@ -1,0 +1,3 @@
+Command: move 12 16
+Execution time: 813ms
+Exception: 	move 13 17 (played 9816): (5254.6624999999485 / 9816) 0.5353160656071667

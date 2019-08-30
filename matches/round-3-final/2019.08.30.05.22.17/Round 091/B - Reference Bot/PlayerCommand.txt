@@ -1,0 +1,3 @@
+Command: banana 20 9
+Execution time: 1ms
+Exception: null

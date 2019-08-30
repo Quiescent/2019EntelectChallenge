@@ -1,0 +1,3 @@
+Command: dig 22 5
+Execution time: 824ms
+Exception: 	dig 22 5 (played 4012): (1307.4999999999848 / 4012) 0.3258973080757689

@@ -1,0 +1,3 @@
+Command: shoot N
+Execution time: 815ms
+Exception: 	move 13 15 (played 7385): (4097.7047331027425 / 7385) 0.5548686165338852
