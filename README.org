@@ -3110,13 +3110,6 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-30 Fri 05:22]
    - State "IN_PROGRESS" from "TODO"       [2019-08-29 Thu 06:53]
    :END:
-** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
-   :LOGBOOK:
-   - Note taken on [2019-08-26 Mon 06:16] \\
-     Think about all the shots made which don't result in worms moving.
-   :END:
-** TODO IDEA: Create a number of fine tuned strategies and switch between them on each level
-** TODO Write tests for the generation of moves at least three deep
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
@@ -3172,6 +3165,13 @@ https://wiki.haskell.org/Playing_by_the_rules
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
+** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
+   :LOGBOOK:
+   - Note taken on [2019-08-26 Mon 06:16] \\
+     Think about all the shots made which don't result in worms moving.
+   :END:
+** TODO IDEA: Create a number of fine tuned strategies and switch between them on each level
+** TODO Write tests for the generation of moves at least three deep
 ** TODO Fine tune the search time
 ** TODO Penalise selects because they can be wasteful
 ** TODO Test that banana bombing space does not cause a blast
