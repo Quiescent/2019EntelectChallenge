@@ -3687,7 +3687,7 @@ gameOver state round' =
      else if opponentWormCount == 0
           -- I Killed his worms and he didn't kill mine
           then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
-          else if round' >= maxRound
+          else if round' > maxRound
                -- Simulation was terminated early.  Decide based on how valuable the moves were
                then if myScoreIsHigher
                     -- I won because of points when both players are dead

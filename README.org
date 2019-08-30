@@ -3110,8 +3110,10 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-30 Fri 05:22]
    - State "IN_PROGRESS" from "TODO"       [2019-08-29 Thu 06:53]
    :END:
-** IN_PROGRESS BUG: I'm bombing out on round 400
+** DONE BUG: I'm bombing out on round 400
+   CLOSED: [2019-08-30 Fri 05:38]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-30 Fri 05:38]
    - State "IN_PROGRESS" from "TODO"       [2019-08-30 Fri 05:31]
    - Note taken on [2019-08-30 Fri 05:30] \\
      So I stop searching, because it's the end of the game, right?
