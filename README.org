@@ -3165,7 +3165,10 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "IN_PROGRESS" [2019-08-31 Sat 17:31]
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 16:57]
    :END:
-** TODO BUG: I'm often not making a move!
+** IN_PROGRESS BUG: I'm often not making a move!
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 17:33]
+   :END:
 ** TODO IDEA: Add a heuristic for average distance from enemy worm
 ** TODO IDEA: Always follow up a snowball with shots
 ** TODO IDEA: Run away strategy
