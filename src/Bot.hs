@@ -2877,6 +2877,7 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   let treeFromPreviousRound = if strategy == Dig || strategy == GetToTheChoppa
                               then SearchFront
                               else tree
+  -- Comment for final submission
   let myMoveMoves        = myMoveMovesFrom initialState
   let opponentsMoveMoves = opponentsMoveMovesFrom initialState
   let myMovesFromTree' = map successRecordMove $ myMovesFromTree tree
@@ -2894,11 +2895,13 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   E.catch (go gen iterationsBeforeComms treeFromPreviousRound) exceptionHandler
   where
     exceptionHandler e = do
-      -- TODO restart worker??
+      -- Comment for final submission
       logStdErr $ "Worker died during [" ++
         show strategy ++ "] with exception " ++ show (e::SomeException) ++ "\n" ++
         "State: " ++ readableShow initialState ++ "\n" ++
         "state':" ++ readableShow state'
+      logStdErr $ "Worker died... restarting."
+      iterativelyImproveSearch gen initialState tree stateChannel treeVariable
     nearbyWorms = wormsNearMyCurrentWorm initialState
     strategy    = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
     state'      = if strategy == Dig || strategy == GetToTheChoppa
@@ -2925,6 +2928,7 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
               "Read state:\n" ++
               show nextState
           let (myMove, opponentsMove) = toMoves move'
+          -- Comment for final submission
           logStdErr $ "Received moves:\n" ++
             "My move: " ++ prettyPrintThisMove initialState myMove ++ "\n" ++
             "Opponents move: " ++ prettyPrintThatMove initialState opponentsMove
