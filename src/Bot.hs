@@ -3783,10 +3783,14 @@ isValidDigMove origin digMoveAsMoveMove gameMap' =
   (not $ moveWouldGoOOB origin digMoveAsMoveMove) &&
   mapAt (displaceCoordByMove origin digMoveAsMoveMove) gameMap' == DIRT
 
+startUsingAmmoRound :: Int
+startUsingAmmoRound = 250
+
 myMovesFrom :: State -> [Move]
 myMovesFrom state =
   let myMoves = do
-        let moves              = map Move [0..185]
+        let currentRound'      = currentRound state
+        let moves              = map Move $ if currentRound' < startUsingAmmoRound then [0..23] else [0..185]
         let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
         let moves'             = if hasMoreThanOneWorm
                                  then addThisPlayersSelects state moves
