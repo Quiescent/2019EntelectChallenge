@@ -3140,6 +3140,7 @@ I should never do nothing unless that leads to death.
    :END:
 ** TODO Add back shots where a worm could move to
 ** TODO Run away strategy
+** TODO Optimise for points and health until round 250
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
