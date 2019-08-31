@@ -3134,7 +3134,9 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "TODO"       [2019-08-30 Fri 17:37]
    :END:
 (The game often ends running around in circles.)
+** TODO Hold on to ammo until round 250
 ** TODO Add back shots where a worm could move to
+** TODO Run away strategy
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
