@@ -3140,7 +3140,10 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-31 Sat 10:20]
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 10:01]
    :END:
-** TODO WormId 5 comes into existence somewhere somehow!?
+** IN_PROGRESS WormId 5 comes into existence somewhere somehow!?
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 10:20]
+   :END:
 ** TODO Add back shots where a worm could move to
 ** TODO Run away strategy
 ** TODO Optimise for points and health until round 250
