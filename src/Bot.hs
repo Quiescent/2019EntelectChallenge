@@ -3791,12 +3791,22 @@ startUsingAmmoRound :: Int
 startUsingAmmoRound = 250
 
 myMoveMovesFrom :: State -> [Move]
-myMoveMovesFrom = undefined
+myMoveMovesFrom state = do
+  let moves              = map Move [8..15]
+  let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
+  let moves'             = if hasMoreThanOneWorm
+                           then addThisPlayersSelects state moves
+                           else moves
+  myMove <- moves'
+  guard (moveMoveWouldBeValuableToMe state myMove)
+  return myMove
 
 myUsefulNonMoveMoves :: [Move] -> State -> [Move]
 myUsefulNonMoveMoves opponentsMoveMoves state = do
   let currentRound'      = currentRound state
-  let moves              = map Move $ if currentRound' < startUsingAmmoRound then [0..23] else [0..185]
+  let moves              = map Move $ if currentRound' < startUsingAmmoRound
+                                      then [0..7] ++ [16..24]
+                                      else [0..7] ++ [16..185]
   let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
   let moves'             = if hasMoreThanOneWorm
                            then addThisPlayersSelects state moves
@@ -3805,7 +3815,7 @@ myUsefulNonMoveMoves opponentsMoveMoves state = do
                                        makeMove False (fromMoves doNothing opponentsMoveMove) state)
                                        opponentsMoveMoves
   myMove <- moves'
-  guard (moveWouldBeValuableToMe opponentsPossiblePositions state myMove)
+  guard (nonMoveMoveWouldBeValuableToMe opponentsPossiblePositions state myMove)
   return myMove
 
 myMovesFrom :: [Move] -> [Move] -> State -> [Move]
@@ -3844,10 +3854,19 @@ myGetToTheChoppaMoves state =
      then [doNothing]
      else moves
 
+moveMoveWouldBeValuableToMe :: State -> Move -> Bool
+moveMoveWouldBeValuableToMe state move =
+  let thisWormsId      = thisPlayersCurrentWormId state
+      wormIsNotFrozen' = not $ wormIsFrozen thisWormsId state
+      coord'           = thisWormsCoord state
+  in wormIsNotFrozen' &&
+     isAMoveMove move &&
+     isValidMoveMove coord' state move
+
 -- ASSUME: that the player has selections left (it's checked
 -- elsewhere!)
-moveWouldBeValuableToMe :: [WormPositions] -> State -> Move -> Bool
-moveWouldBeValuableToMe opponentsPossibleWormPositions state move =
+nonMoveMoveWouldBeValuableToMe :: [WormPositions] -> State -> Move -> Bool
+nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
   let coord'           = thisWormsCoord state
       gameMap'         = gameMap state
       wormPositions'   = wormPositions state
@@ -3861,7 +3880,9 @@ moveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (wormIsNotFrozen'  &&
       isAShootMove move &&
-      (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
+      (any (\ positions -> isJust $
+                           shotHitsWorm coord' gameMap' positions move) $
+           wormPositions' : opponentsPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
       isABananaMove move                   &&
       wormHasBananasLeft thisWormsId state &&
@@ -3873,9 +3894,9 @@ moveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       any (\ target -> (snowballBlastHitOpponent target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move &&
-      moveWouldBeValuableToMe opponentsPossibleWormPositions
-                              (makeMySelection move state)
-                              (removeSelectionFromMove move))
+      nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions
+                                     (makeMySelection move state)
+                                     (removeSelectionFromMove move))
 
 bananaBlastHitOpponent :: Coord -> WormPositions -> Bool
 bananaBlastHitOpponent coord' wormPositions' =
@@ -3911,7 +3932,15 @@ shotHitsWorm coord' gameMap' wormPositions' move =
   in hitsWorm coord' gameMap' shotsDir wormPositions'
 
 opponentsMoveMovesFrom :: State -> [Move]
-opponentsMoveMovesFrom = undefined
+opponentsMoveMovesFrom state = do
+  let moves              = map Move [8..15]
+  let hasMoreThanOneWorm = (aListCountOpponentsEntries $ wormPositions state) > 1
+  let moves'             = if hasMoreThanOneWorm
+                           then addThatPlayersSelects state moves
+                           else moves
+  opponentsMove <- moves'
+  guard (moveMoveWouldBeValuableToOpponent state opponentsMove)
+  return opponentsMove
 
 opponentsUsefulNonMoveMoves :: [Move] -> State -> [Move]
 opponentsUsefulNonMoveMoves myMoveMoves state = do
@@ -3923,7 +3952,7 @@ opponentsUsefulNonMoveMoves myMoveMoves state = do
   let myPossiblePositions = map (\ myMoveMove -> wormPositions $
                                 makeMove False (fromMoves myMoveMove doNothing) state) myMoveMoves
   opponentsMove          <- moves'
-  guard (moveWouldBeValuableToOpponent myPossiblePositions state opponentsMove)
+  guard (nonMoveMoveWouldBeValuableToOpponent myPossiblePositions state opponentsMove)
   return $ opponentsMove
 
 opponentsMovesFrom :: [Move] -> [Move] -> State -> [Move]
@@ -3936,23 +3965,31 @@ opponentsMovesFrom myMoveMoves opponentsMoveMoves state =
 wormIsFrozen :: WormId -> State -> Bool
 wormIsFrozen wormId' = aListContainsId wormId' . frozenDurations
 
+moveMoveWouldBeValuableToOpponent :: State -> Move -> Bool
+moveMoveWouldBeValuableToOpponent state move =
+  let thatWormsId      = thatPlayersCurrentWormId state
+      wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
+      coord'           = thatWormsCoord state
+  in wormIsNotFrozen' &&
+     isAMoveMove move &&
+     isValidMoveMove coord' state move
+
 -- ASSUME: That the opponent has selections left
-moveWouldBeValuableToOpponent :: [WormPositions] -> State -> Move -> Bool
-moveWouldBeValuableToOpponent allPossibleWormPositions state move =
+nonMoveMoveWouldBeValuableToOpponent :: [WormPositions] -> State -> Move -> Bool
+nonMoveMoveWouldBeValuableToOpponent myPossibleWormPositions state move =
   let coord'           = thatWormsCoord state
       gameMap'         = gameMap state
       wormPositions'   = wormPositions state
       thatWormsId      = thatPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
   in (wormIsNotFrozen' &&
-      isAMoveMove move &&
-      isValidMoveMove coord' state move) ||
-     (wormIsNotFrozen' &&
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (wormIsNotFrozen'  &&
       isAShootMove move &&
-      (isJust $ shotHitsWorm coord' gameMap' wormPositions' move)) ||
+      (any (\ positions -> isJust $
+                           shotHitsWorm coord' gameMap' positions move) $
+       wormPositions' : myPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
       isABananaMove move                   &&
       wormHasBananasLeft thatWormsId state &&
@@ -3964,7 +4001,7 @@ moveWouldBeValuableToOpponent allPossibleWormPositions state move =
       any (\ target -> (snowballBlastHitMe target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move &&
-      moveWouldBeValuableToOpponent allPossibleWormPositions
+      nonMoveMoveWouldBeValuableToOpponent myPossibleWormPositions
                                     (makeOpponentsSelection move state)
                                     (removeSelectionFromMove move))
 
