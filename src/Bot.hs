@@ -3599,7 +3599,7 @@ killSearch !g
            !round'
            !state
            (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
-           !moves =
+           moves =
   case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
     NoResult        ->
