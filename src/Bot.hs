@@ -2900,7 +2900,7 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
         "State: " ++ readableShow initialState ++ "\n" ++
         "state':" ++ readableShow state'
     nearbyWorms = wormsNearMyCurrentWorm initialState
-    strategy    = determineStrategy (thisWormsCoord initialState) nearbyWorms
+    strategy    = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
     state'      = if strategy == Dig || strategy == GetToTheChoppa
                   then withOnlyWormsContainedIn nearbyWorms initialState
                   else initialState
@@ -3362,10 +3362,12 @@ initialiseLevel strategy state result =
       myMovesFrom'        = case strategy of
         GetToTheChoppa -> myGetToTheChoppaMoves
         Kill           -> myMovesFrom myMoveMoves opponentsMoveMoves
+        Points         -> myMovesFrom myMoveMoves opponentsMoveMoves
         Dig            -> myDigMovesFrom
       opponentsMovesFrom' = case strategy of
         GetToTheChoppa -> (always [doNothing])
         Kill           -> opponentsMovesFrom myMoveMoves opponentsMoveMoves
+        Points         -> opponentsMovesFrom myMoveMoves opponentsMoveMoves
         Dig            -> (always [doNothing])
   in updateTree
      (UnSearchedLevel
@@ -3441,6 +3443,7 @@ wormsNearMyCurrentWorm state =
      wormPositions state
 
 data Strategy = Dig
+              | Points
               | Kill
               | GetToTheChoppa
               deriving (Eq, Show)
@@ -3448,13 +3451,17 @@ data Strategy = Dig
 choppaRadius :: Int
 choppaRadius = 5
 
-determineStrategy :: Coord -> WormPositions -> Strategy
-determineStrategy currentWormsCoord' wormPositions' =
-  if aListCountOpponentsEntries wormPositions' == 0
-  then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
-       then Kill
-       else GetToTheChoppa
-  else Kill
+determineStrategy :: Int -> Coord -> WormPositions -> Strategy
+determineStrategy currentRound' currentWormsCoord' wormPositions' =
+  if currentRound' > 30
+  then if currentRound' < 250
+       then Points
+       else Kill
+  else if aListCountOpponentsEntries wormPositions' == 0
+       then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
+            then Points
+            else GetToTheChoppa
+       else Points
 
 withOnlyWormsContainedIn :: AList -> ModifyState
 withOnlyWormsContainedIn toKeep =
@@ -3478,10 +3485,59 @@ search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen, St
 search g strategy state searchTree =
   let round' = (currentRound state)
   in case strategy of
-       Dig            -> digSearch  g       0      state searchTree [] 0
-       Kill           -> killSearch g state round' state searchTree []
-       -- TODO implement a custom search for getting to the choppa! XD
-       GetToTheChoppa -> digSearch  g 0      state searchTree [] 0
+       Dig            -> digSearch    g 0                    state searchTree [] 0
+       Kill           -> killSearch   g state  round'        state searchTree []
+       Points         -> pointsSearch g        round' round' state searchTree [] 0
+       GetToTheChoppa -> digSearch    g 0                    state searchTree [] 0
+
+pointsSearch :: StdGen -> Int -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
+pointsSearch !g initialRound _ !state SearchFront moves !reward =
+  (SearchResult (pointAndHealthPayOff initialRound state reward) (reverse moves), g, state)
+pointsSearch !g initialRound !round' !state tree@(SearchedLevel _ _ _ _) moves !reward =
+  case gameOver state round' of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    NoResult        -> pointsSearchSearchedLevel g initialRound round' state tree moves reward
+pointsSearch !g
+             initialRound
+             !round'
+             !state
+             (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
+             moves
+             !reward =
+  case gameOver state round' of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    NoResult        ->
+      let (myRecord,        g')  = pickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = pickOneAtRandom g' opponentsMoves
+          myMove                 = successRecordMove myRecord
+          opponentsMove          = successRecordMove opponentsRecord
+          combinedMove           = fromMoves myMove opponentsMove
+          state'                 = makeMove False combinedMove state
+          reward'                = digReward myMove
+      in (SearchResult (pointAndHealthPayOff initialRound state' (reward' + reward)) (reverse (combinedMove:moves)), g'', state')
+
+pointsSearchSearchedLevel :: StdGen -> Int -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
+pointsSearchSearchedLevel _ _ _ _ SearchFront                   _ _ = error "pointsSearchSearchedLevel: SearchFront"
+pointsSearchSearchedLevel _ _ _ _ level@(UnSearchedLevel _ _ _) _ _ = error $ "pointsSearchSearchedLevel: " ++ show level
+pointsSearchSearchedLevel !g
+                          initialRound
+                          !round'
+                          !state
+                          (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
+                          moves
+                          !reward =
+  let myBestMove        = successRecordMove $ nextSearchMove gamesPlayed myMoves
+      opponentsBestMove = successRecordMove $ nextSearchMove gamesPlayed opponentsMoves
+      combinedMove      = fromMoves myBestMove opponentsBestMove
+      state'            = makeMove True combinedMove state
+      reward'           = digReward $ myBestMove
+  in pointsSearch g
+                  initialRound
+                  (round' + 1)
+                  state'
+                  (findSubTree combinedMove transitions)
+                  (combinedMove:moves)
+                  (reward' + reward)
 
 digSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use
@@ -3523,8 +3579,8 @@ digSearch !g
                    (reward' + reward)
 
 digSearchSearchedLevel :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
-digSearchSearchedLevel _ _ _ SearchFront                     _ _ = error "killSearchSearchedLevel: SearchFront"
-digSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _ )  _ _ = error $ "killSearchSearchedLevel: " ++ show level
+digSearchSearchedLevel _ _ _ SearchFront                    _ _ = error "killSearchSearchedLevel: SearchFront"
+digSearchSearchedLevel _ _ _ level@(UnSearchedLevel _ _ _)  _ _ = error $ "killSearchSearchedLevel: " ++ show level
 digSearchSearchedLevel !g
                        !round'
                        !state
@@ -3584,6 +3640,20 @@ payOff _ (State { wormHealths     = wormHealths' }) =
       opponentsPayoff              = opponentsTotalHealth +
                                      (maximumHealth - myTotalHealth)
    in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
+
+pointAndHealthPayOff :: Int -> State -> Int -> Payoff
+pointAndHealthPayOff initialRound (State { wormHealths  = wormHealths',
+                                           currentRound = currentRound' }) !reward =
+  let myTotalHealth        = aListSumMyEntries wormHealths'
+      opponentsTotalHealth = aListSumOpponentsEntries wormHealths'
+      maxPoints            = (currentRound' - initialRound) * digPoints
+      -- Health is much more important than reward and the reward term
+      -- gets bigger as you go deeper.
+      myPayoff             = 20 * myTotalHealth + reward
+      opponentsPayoff      = maxPoints +
+                             10 * (opponentsTotalHealth +
+                                   (maximumHealth - myTotalHealth))
+   in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore ((10 * maxPayoffScore) + maxPoints))
 
 killSearch :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use

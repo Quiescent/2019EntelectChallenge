@@ -128,25 +128,29 @@ spec = do
                         (2, toCoord 16 31),
                         (4, toCoord 14 31)])
   describe "determineStrategy" $ do
+    context "when the round is greater than 30 and less than 250" $ do
+      let positionsWithNooneNearby = aListFromList [(1, toCoord 14 14)]
+      it "should produce a strategy of Points" $
+        determineStrategy 31 (toCoord 10 10) positionsWithNooneNearby `shouldBe` Points
     context "when no worms are nearby" $ do
       let positionsWithNooneNearby = aListFromList [(1, toCoord 14 14)]
       context "and the worm is inside the choppa radius" $ do
         it "should produce a strategy of Kill" $
-          determineStrategy (toCoord 14 14) positionsWithNooneNearby `shouldBe` Kill
+          determineStrategy 251 (toCoord 14 14) positionsWithNooneNearby `shouldBe` Kill
       context "and my worm isn't close to the centre of the map" $ do
         it "should produce a strategy of GetToTheChoppa" $
-          determineStrategy (toCoord 0 0) positionsWithNooneNearby `shouldBe` GetToTheChoppa
+          determineStrategy 10 (toCoord 0 0) positionsWithNooneNearby `shouldBe` GetToTheChoppa
     context "when there is another friendly worm nearby" $ do
       let positionsWithOneOfMyWormsNearby = aListFromList [(1, toCoord 15 31),
                                                            (2, toCoord 16 31)]
       it "should produce a strategy of GetToTheChoppa" $
-        determineStrategy (toCoord 15 31) positionsWithOneOfMyWormsNearby `shouldBe` GetToTheChoppa
+        determineStrategy 10 (toCoord 15 31) positionsWithOneOfMyWormsNearby `shouldBe` GetToTheChoppa
     context "when there is an enemy nearby" $ do
       let positionsWithAnEnemyNearby = aListFromList [(1, toCoord 20 31),
                                                       (2, toCoord 21 31),
                                                       (4, toCoord 22 31)]
       it "should produce strategy of kill" $
-        determineStrategy (toCoord 14 14) positionsWithAnEnemyNearby `shouldBe` Kill
+        determineStrategy 251 (toCoord 14 14) positionsWithAnEnemyNearby `shouldBe` Kill
   describe "mapAt" $ do
     prop "it should produce an error for any coordinate when the map is empty" $ \ x ->
       let coord' = (abs x) `mod` (mapDim * mapDim)
