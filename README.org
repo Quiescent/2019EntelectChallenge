@@ -3153,6 +3153,7 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 12:53]
    :END:
 ** TODO Recover from worker death
+** TODO Recover from state divergence
 ** TODO IDEA: Add a heuristic for average distance from enemy worm
 ** TODO IDEA: Always follow up a snowball with shots
 ** TODO IDEA: Run away strategy
