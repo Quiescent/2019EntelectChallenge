@@ -3146,10 +3146,13 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-08-31 Sat 12:52]
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 11:06]
    :END:
-** IN_PROGRESS Optimise for points and health until round 250
+** DONE Optimise for points and health until round 250
+   CLOSED: [2019-08-31 Sat 14:33]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-31 Sat 14:33]
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 12:53]
    :END:
+** TODO Recover from worker death
 ** TODO IDEA Always follow up a snowball with shots
 ** TODO IDEA Run away strategy
 ** IN_PROGRESS WormId 5 comes into existence somewhere somehow!?
