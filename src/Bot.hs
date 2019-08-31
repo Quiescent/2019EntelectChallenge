@@ -2877,14 +2877,16 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   let treeFromPreviousRound = if strategy == Dig || strategy == GetToTheChoppa
                               then SearchFront
                               else tree
+  let myMoveMoves        = myMoveMovesFrom initialState
+  let opponentsMoveMoves = opponentsMoveMovesFrom initialState
   let myMovesFromTree' = map successRecordMove $ myMovesFromTree tree
-  let myMovesFromState = myMovesFrom initialState
+  let myMovesFromState = myMovesFrom myMoveMoves opponentsMoveMoves initialState
   when (strategy == Kill && tree /= SearchFront && myMovesFromTree' /= myMovesFromState) $
     logStdErr $ "My moves from tree diverged from moves from state!\n" ++
     "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromTree' ++ "\n" ++
     "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromState
   let opponentsMovesFromTree' = map successRecordMove $ opponentsMovesFromTree tree
-  let opponentsMovesFromState = opponentsMovesFrom initialState
+  let opponentsMovesFromState = opponentsMovesFrom myMoveMoves opponentsMoveMoves initialState
   when (strategy == Kill && tree /= SearchFront && opponentsMovesFromTree' /= opponentsMovesFromState) $
     logStdErr $ "Opponents moves from tree diverged from moves from state!\n" ++
     "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromTree' ++ "\n" ++
@@ -3355,13 +3357,15 @@ countGames SearchFront                           = 0
 
 initialiseLevel :: Strategy -> State -> SearchResult -> SearchTree
 initialiseLevel strategy state result =
-  let myMovesFrom'  = case strategy of
+  let myMoveMoves         = myMoveMovesFrom        state
+      opponentsMoveMoves  = opponentsMoveMovesFrom state
+      myMovesFrom'        = case strategy of
         GetToTheChoppa -> myGetToTheChoppaMoves
-        Kill           -> myMovesFrom
+        Kill           -> myMovesFrom myMoveMoves opponentsMoveMoves
         Dig            -> myDigMovesFrom
       opponentsMovesFrom' = case strategy of
         GetToTheChoppa -> (always [doNothing])
-        Kill           -> opponentsMovesFrom
+        Kill           -> opponentsMovesFrom myMoveMoves opponentsMoveMoves
         Dig            -> (always [doNothing])
   in updateTree
      (UnSearchedLevel
@@ -3786,18 +3790,27 @@ isValidDigMove origin digMoveAsMoveMove gameMap' =
 startUsingAmmoRound :: Int
 startUsingAmmoRound = 250
 
-myMovesFrom :: State -> [Move]
-myMovesFrom state =
-  let myMoves = do
-        let currentRound'      = currentRound state
-        let moves              = map Move $ if currentRound' < startUsingAmmoRound then [0..23] else [0..185]
-        let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
-        let moves'             = if hasMoreThanOneWorm
-                                 then addThisPlayersSelects state moves
-                                 else moves
-        myMove <- moves'
-        guard (moveWouldBeValuableToMe state myMove)
-        return myMove
+myMoveMovesFrom :: State -> [Move]
+myMoveMovesFrom = undefined
+
+myUsefulNonMoveMoves :: [Move] -> State -> [Move]
+myUsefulNonMoveMoves opponentsMoveMoves state = do
+  let currentRound'      = currentRound state
+  let moves              = map Move $ if currentRound' < startUsingAmmoRound then [0..23] else [0..185]
+  let hasMoreThanOneWorm = (aListCountMyEntries $ wormPositions state) > 1
+  let moves'             = if hasMoreThanOneWorm
+                           then addThisPlayersSelects state moves
+                           else moves
+  let opponentsPossiblePositions = map (\ opponentsMoveMove -> wormPositions $
+                                       makeMove False (fromMoves doNothing opponentsMoveMove) state)
+                                       opponentsMoveMoves
+  myMove <- moves'
+  guard (moveWouldBeValuableToMe opponentsPossiblePositions state myMove)
+  return myMove
+
+myMovesFrom :: [Move] -> [Move] -> State -> [Move]
+myMovesFrom myMoveMoves opponentsMoveMoves state =
+  let myMoves = myMoveMoves ++ myUsefulNonMoveMoves opponentsMoveMoves state
   in if myMoves == []
      then [doNothing]
      else myMoves
@@ -3833,8 +3846,8 @@ myGetToTheChoppaMoves state =
 
 -- ASSUME: that the player has selections left (it's checked
 -- elsewhere!)
-moveWouldBeValuableToMe :: State -> Move -> Bool
-moveWouldBeValuableToMe state move =
+moveWouldBeValuableToMe :: [WormPositions] -> State -> Move -> Bool
+moveWouldBeValuableToMe opponentsPossibleWormPositions state move =
   let coord'           = thisWormsCoord state
       gameMap'         = gameMap state
       wormPositions'   = wormPositions state
@@ -3859,7 +3872,10 @@ moveWouldBeValuableToMe state move =
       wormHasSnowballsLeft thisWormsId state &&
       any (\ target -> (snowballBlastHitOpponent target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
-     (hasASelection move && moveWouldBeValuableToMe (makeMySelection move state) (removeSelectionFromMove move))
+     (hasASelection move &&
+      moveWouldBeValuableToMe opponentsPossibleWormPositions
+                              (makeMySelection move state)
+                              (removeSelectionFromMove move))
 
 bananaBlastHitOpponent :: Coord -> WormPositions -> Bool
 bananaBlastHitOpponent coord' wormPositions' =
@@ -3894,18 +3910,25 @@ shotHitsWorm coord' gameMap' wormPositions' move =
   let shotsDir = directionOfShot move
   in hitsWorm coord' gameMap' shotsDir wormPositions'
 
-opponentsMovesFrom :: State -> [Move]
-opponentsMovesFrom state =
-  let opponentsMoves = do
-        let moves              = map Move [0..185]
-        -- This looks wrong
-        let hasMoreThanOneWorm = (aListCountOpponentsEntries $ wormPositions state) > 1
-        let moves'             = if hasMoreThanOneWorm
-                                 then addThatPlayersSelects state moves
-                                 else moves
-        opponentsMove <- moves'
-        guard (moveWouldBeValuableToOpponent state opponentsMove)
-        return $ opponentsMove
+opponentsMoveMovesFrom :: State -> [Move]
+opponentsMoveMovesFrom = undefined
+
+opponentsUsefulNonMoveMoves :: [Move] -> State -> [Move]
+opponentsUsefulNonMoveMoves myMoveMoves state = do
+  let moves               = map Move $ [0..7] ++ [16..185]
+  let hasMoreThanOneWorm  = (aListCountOpponentsEntries $ wormPositions state) > 1
+  let moves'              = if hasMoreThanOneWorm
+                            then addThatPlayersSelects state moves
+                            else moves
+  let myPossiblePositions = map (\ myMoveMove -> wormPositions $
+                                makeMove False (fromMoves myMoveMove doNothing) state) myMoveMoves
+  opponentsMove          <- moves'
+  guard (moveWouldBeValuableToOpponent myPossiblePositions state opponentsMove)
+  return $ opponentsMove
+
+opponentsMovesFrom :: [Move] -> [Move] -> State -> [Move]
+opponentsMovesFrom myMoveMoves opponentsMoveMoves state =
+  let opponentsMoves = opponentsMoveMoves ++ opponentsUsefulNonMoveMoves myMoveMoves state
   in if opponentsMoves == []
      then [doNothing]
      else opponentsMoves
@@ -3914,8 +3937,8 @@ wormIsFrozen :: WormId -> State -> Bool
 wormIsFrozen wormId' = aListContainsId wormId' . frozenDurations
 
 -- ASSUME: That the opponent has selections left
-moveWouldBeValuableToOpponent :: State -> Move -> Bool
-moveWouldBeValuableToOpponent state move =
+moveWouldBeValuableToOpponent :: [WormPositions] -> State -> Move -> Bool
+moveWouldBeValuableToOpponent allPossibleWormPositions state move =
   let coord'           = thatWormsCoord state
       gameMap'         = gameMap state
       wormPositions'   = wormPositions state
@@ -3940,7 +3963,10 @@ moveWouldBeValuableToOpponent state move =
       wormHasSnowballsLeft thatWormsId state &&
       any (\ target -> (snowballBlastHitMe target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
-     (hasASelection move && moveWouldBeValuableToOpponent (makeOpponentsSelection move state) (removeSelectionFromMove move))
+     (hasASelection move &&
+      moveWouldBeValuableToOpponent allPossibleWormPositions
+                                    (makeOpponentsSelection move state)
+                                    (removeSelectionFromMove move))
 
 addPlayersSelects :: (State -> Bool) -> (AList -> [WormId]) -> (State -> WormId) -> State -> [Move] -> [Move]
 addPlayersSelects playerHasSelectionsLeft playersWormIds playersWormId state moves =
