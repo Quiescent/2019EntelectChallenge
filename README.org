@@ -3134,11 +3134,13 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "TODO"       [2019-08-30 Fri 17:37]
    :END:
 (The game often ends running around in circles.)
-** TODO WormId 5 comes into existence somewhere somehow!?
-** IN_PROGRESS Hold on to ammo until round 250
+** DONE Hold on to ammo until round 250
+   CLOSED: [2019-08-31 Sat 10:20]
    :LOGBOOK:
+   - CLOSING NOTE [2019-08-31 Sat 10:20]
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 10:01]
    :END:
+** TODO WormId 5 comes into existence somewhere somehow!?
 ** TODO Add back shots where a worm could move to
 ** TODO Run away strategy
 ** TODO Optimise for points and health until round 250
