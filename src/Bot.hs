@@ -2913,20 +2913,22 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
         Just (move', thatLastMoveWasInvalid, nextState) -> do
-          let tree'' = if strategy == Kill
-                       then makeMoveInTree move' searchTree
-                       else SearchFront
-          let state'' = postStateTransformation (wormPositions nextState)
-                                                thatLastMoveWasInvalid
-                                                move'
-                                                initialState $
-                        makeMove False move' initialState
-          when (nextState /= state'') $
-            logStdErr $ "States diverged!\n" ++
+          let tree''   = if strategy == Kill
+                         then makeMoveInTree move' searchTree
+                         else SearchFront
+          let state''  = postStateTransformation (wormPositions nextState)
+                                                 thatLastMoveWasInvalid
+                                                 move'
+                                                 initialState $
+                         makeMove False move' initialState
+          let diverged = nextState /= state''
+          when diverged $
+            logStdErr $ "States diverged (this could be an error in game run)!\n" ++
               "Worker state:\n" ++
               show state'' ++
               "Read state:\n" ++
-              show nextState
+              show nextState ++ "\n" ++
+              "Recovering..."
           let (myMove, opponentsMove) = toMoves move'
           -- Comment for final submission
           logStdErr $ "Received moves:\n" ++
@@ -2943,7 +2945,11 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
           --   "\n\tCombined: " ++ show move' ++
           --   "\n\tMy move: " ++ prettyPrintThisMove initialState myMove' ++
           --   "\n\tOpponents move: " ++ prettyPrintThatMove initialState opponentsMove'
-          iterativelyImproveSearch gen' state'' tree'' stateChannel treeVariable
+          iterativelyImproveSearch gen'
+                                   (if diverged then nextState else state'')
+                                   (if diverged then SearchFront else tree'')
+                                   stateChannel
+                                   treeVariable
         Nothing -> go gen' iterationsBeforeComms searchTree
     go !gen' !count' !searchTree =
       let (result, gen'', finalState) = search gen' strategy state' searchTree
