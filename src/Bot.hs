@@ -3676,16 +3676,16 @@ maximumHealth = 100 + 100 + 150
 maxPayoffScore :: Int
 maxPayoffScore =
   -- Maximum health (times two because it's the biggest difference between you and your opponent)
-  2 * maximumHealth
+  3 * maximumHealth
 
 payOff :: State -> State -> Payoff
 payOff _ (State { wormHealths     = wormHealths' }) =
   let myTotalHealth                = aListSumMyEntries wormHealths'
       opponentsTotalHealth         = aListSumOpponentsEntries wormHealths'
-      myPayoff                     = myTotalHealth +
+      myPayoff                     = 2 * myTotalHealth +
                                      (maximumHealth - opponentsTotalHealth)
       opponentsPayoff              = opponentsTotalHealth +
-                                     (maximumHealth - myTotalHealth)
+                                     2 * (maximumHealth - myTotalHealth)
    in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
 maxAverageDistance :: Int
@@ -3706,13 +3706,13 @@ pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
       maxPoints            = (currentRound' - initialRound) * digPoints
       -- Health is much more important than reward and the reward term
       -- gets bigger as you go deeper.
-      myPayoff             = 10 * (20 * myTotalHealth +
+      myPayoff             = 10 * (30 * myTotalHealth +
                                    reward) +
                              aListAveragePairOffs manhattanDistance  wormPositions'
       opponentsPayoff      = maxAverageDistance +
                              10 * (maxPoints +
                                    10 * (opponentsTotalHealth +
-                                         (maximumHealth - myTotalHealth)))
+                                         2 * (maximumHealth - myTotalHealth)))
    in Payoff (MyPayoff myPayoff)
              (OpponentsPayoff opponentsPayoff)
              (MaxScore (10 * ((10 * maxPayoffScore) + maxPoints) + maxAverageDistance))
