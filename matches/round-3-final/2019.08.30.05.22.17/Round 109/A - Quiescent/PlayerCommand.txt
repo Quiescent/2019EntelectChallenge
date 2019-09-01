@@ -1,3 +1,0 @@
-Command: snowball 18 14
-Execution time: 813ms
-Exception: 	nothing (played 36315): (17650.866666666177 / 36315) 0.4860489237688607

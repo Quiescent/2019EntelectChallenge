@@ -1,0 +1,3 @@
+Command: shoot SE
+Execution time: 763ms
+Exception: 	shoot NW (played 2708): (1452.0214285714083 / 2708) 0.536196982485749

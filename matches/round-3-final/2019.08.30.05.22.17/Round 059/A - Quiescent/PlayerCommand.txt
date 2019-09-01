@@ -1,3 +1,0 @@
-Command: move 7 16
-Execution time: 811ms
-Exception: 	select 3; snowball 20 9 (played 401): (97.86877828054268 / 401) 0.24406179122329846

@@ -1,0 +1,3 @@
+Command: move 14 17
+Execution time: 766ms
+Exception: 	shoot S (played 2880): (1440.8957142857334 / 2880) 0.5003110119047686

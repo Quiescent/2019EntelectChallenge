@@ -1,0 +1,3 @@
+Command: nothing
+Execution time: 765ms
+Exception: 	nothing (played 21929): (13831.764147508446 / 21929) 0.630752161407654

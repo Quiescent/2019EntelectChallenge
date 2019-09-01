@@ -1,3 +1,0 @@
-Command: banana 18 14
-Execution time: 861ms
-Exception: 	banana 11 19 (played 1481): (607.2739583333326 / 1481) 0.41004318591042044

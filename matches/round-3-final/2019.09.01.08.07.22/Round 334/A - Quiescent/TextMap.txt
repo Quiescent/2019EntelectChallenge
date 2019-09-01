@@ -1,0 +1,164 @@
+@01 Match Details
+Section lines count: 11
+Current round: 334
+Max rounds: 400
+Map size: 33
+Current worm id: 3
+Consecutive do nothing count: 0
+Players count: 2
+Worms per player: 3
+Pushback damage: 20
+Lava damage: 3
+
+@02 My Player
+Section lines count: 66
+Player id: 1
+Score: 2521
+Selection Tokens: 0
+Previous Command: move 14 15
+Health: 15
+Current Worm: 3
+Worms: 
+
+Worm id: 1
+Health: -6
+Position x: 18
+Position y: 3
+Digging range: 1
+Movement range: 1
+Rounds until unfrozen: 0
+Profession: Commando
+Weapon damage: 8
+Weapon range: 4
+Banana bomb damage: null
+Banana bomb range: null
+Banana bombs count: null
+Banana bomb damage radius: null
+Snowballs freeze duration: null
+Snowballs range: null
+Snowballs count: null
+Snowballs freeze radius: null
+
+Worm id: 2
+Health: -3
+Position x: 12
+Position y: 15
+Digging range: 1
+Movement range: 1
+Rounds until unfrozen: 0
+Profession: Agent
+Weapon damage: 8
+Weapon range: 4
+Banana bomb damage: 20
+Banana bomb range: 5
+Banana bombs count: 0
+Banana bomb damage radius: 2
+Snowballs freeze duration: null
+Snowballs range: null
+Snowballs count: null
+Snowballs freeze radius: null
+
+Worm id: 3
+Health: 15
+Position x: 14
+Position y: 15
+Digging range: 1
+Movement range: 1
+Rounds until unfrozen: 0
+Profession: Technologist
+Weapon damage: 8
+Weapon range: 4
+Banana bomb damage: null
+Banana bomb range: null
+Banana bombs count: null
+Banana bomb damage radius: null
+Snowballs freeze duration: 5
+Snowballs range: 5
+Snowballs count: 0
+Snowballs freeze radius: 1
+
+@03 Opponents
+Section lines count: 37
+Player id: 2
+Score: 2017
+Selection Tokens: 0
+Previous Command: shoot E
+Current Worm: 3
+Worms: 
+
+Worm id: 1
+Health: -1
+Position x: 13
+Position y: 16
+Digging range: 1
+Movement range: 1
+Rounds until unfrozen: 0
+Profession: Commando
+
+Worm id: 2
+Health: -3
+Position x: 14
+Position y: 14
+Digging range: 1
+Movement range: 1
+Rounds until unfrozen: 0
+Profession: Agent
+
+Worm id: 3
+Health: 17
+Position x: 13
+Position y: 16
+Digging range: 1
+Movement range: 1
+Rounds until unfrozen: 0
+Profession: Technologist
+
+
+@04 Special Items
+Section lines count: 3
+HEALTH_PACK: 10
+
+@05 Legend
+Section lines count: 8
+DEEP_SPACE: ██ ASCII:219
+DIRT: ▓▓ ASCII:178
+AIR: ░░ ASCII:176
+LAVA: XX
+HEALTH_PACK: ╠╣ ASCII:204, 185
+WORM_MARKER: 13 Example for:Player1, Worm3
+
+@06 World Map
+Section lines count: 35
+██████████████████████▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██████████████████████
+████████████████▓▓XXXXXX▓▓▓▓▓▓XXXXXX▓▓▓▓▓▓XXXXXXXX████████████████
+██████████████▓▓▓▓▓▓▓▓XX▓▓▓▓▓▓XXXXXXXXXXXXXXXXXXXXXX██████████████
+████████████▓▓XXXXXX▓▓▓▓XX▓▓▓▓▓▓XXXXXXXXXXXXXXXXXXXXXX████████████
+████████XXXX▓▓XXXXXX▓▓▓▓▓▓▓▓▓▓▓▓▓▓XX▓▓XXXXXXXXXXXXXXXXXXXX████████
+████████▓▓▓▓▓▓XXXXXX▓▓XX▓▓XXXX▓▓▓▓▓▓XXXX▓▓XXXXXXXXXXXX▓▓▓▓████████
+██████XX▓▓▓▓▓▓▓▓▓▓▓▓XXXXXXXXXX▓▓▓▓▓▓XXXXXXXXXXXXXXXX▓▓▓▓▓▓XX██████
+████XXXX▓▓▓▓XXXXXX▓▓▓▓XXXX▓▓▓▓XXXXXX▓▓XXXXXXXXXXXXXXXX▓▓▓▓XXXX████
+██XXXXXX▓▓XXXXXXXX▓▓▓▓XXXX▓▓▓▓▓▓▓▓▓▓XXXXXXXXXXXXXXXXXXXX▓▓XXXXXX██
+██▓▓▓▓XXXXXXXX▓▓▓▓▓▓▓▓▓▓XXXX▓▓▓▓▓▓▓▓XXXXXXXXXXXX▓▓XXXXXXXXXX▓▓▓▓██
+██XXXXXXXXXX▓▓▓▓▓▓▓▓▓▓XXXX▓▓XXXXXXXX▓▓XXXXXXXX▓▓XX▓▓▓▓XXXXXX▓▓▓▓██
+XX▓▓XXXXXXXXXX▓▓▓▓XXXXXX▓▓XXXX▓▓▓▓▓▓XXXXXXXXXXXX▓▓▓▓XXXX▓▓XXXX▓▓XX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX▓▓▓▓▓▓XXXXXX▓▓XXXXXXXXXX▓▓▓▓XXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXX▓▓XXXXXX░░XXXXXX▓▓XX▓▓XXXXXX▓▓▓▓▓▓XXXXXXXX
+▓▓XXXXXXXXXXXXXXXXXXXXXXXXXX░░░░░░░░░░XXXXXXXXXXXX▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX13▓▓░░░░░░XXXXXXXXXXXXXXXX▓▓▓▓▓▓XXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXX23░░░░░░▓▓░░░░XXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX░░░░░░░░▓▓XXXXXXXXXXXXXX▓▓▓▓▓▓▓▓XXXXXX
+▓▓▓▓▓▓XXXXXXXXXXXXXXXXXXXXXX░░░░░░░░░░XX▓▓▓▓▓▓XXXXXX▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓XXXXXXXXXXXXXXXXXXXXXXXXXXXX░░XXXX▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓XXXX▓▓▓▓
+▓▓XXXX▓▓▓▓XXXXXXXXXXXXXXXXXXXXXXXXXXXX▓▓▓▓▓▓▓▓XXXX▓▓▓▓▓▓▓▓▓▓XXXX▓▓
+XXXX▓▓▓▓▓▓▓▓XXXXXXXXXXXXXXXXXXXXXXXXXXXX▓▓▓▓XXXXXX▓▓▓▓▓▓▓▓▓▓▓▓XXXX
+██▓▓▓▓▓▓▓▓▓▓XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX▓▓▓▓▓▓XXXXXX▓▓▓▓▓▓▓▓▓▓██
+██XX▓▓XXXXXXXXXXXXXXXX▓▓XXXXXXXXXXXXXXXXXX▓▓XXXXXXXXXXXXXXXX▓▓XX██
+██▓▓▓▓XXXXXX▓▓▓▓▓▓▓▓▓▓XXXXXXXXXXXXXX▓▓▓▓XXXXXXXXXXXXXXXXXXXX▓▓▓▓██
+████▓▓XX▓▓▓▓▓▓▓▓▓▓▓▓▓▓XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX▓▓████
+██████XXXXXX▓▓▓▓▓▓▓▓XX▓▓XXXX▓▓XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX██████
+████████XXXX▓▓XXXXXX▓▓▓▓XX▓▓▓▓XXXXXXXXXXXXXXXXXXXXXXXXXXXX████████
+████████▓▓XX▓▓XXXXXX▓▓XX▓▓▓▓▓▓▓▓▓▓▓▓▓▓XXXXXXXXXXXXXXXXXX▓▓████████
+████████████▓▓XXXXXX▓▓▓▓▓▓▓▓XX▓▓▓▓▓▓XX▓▓▓▓▓▓▓▓XXXXXXXX████████████
+██████████████▓▓▓▓▓▓▓▓▓▓▓▓XXXXXXXXXXXXXX▓▓▓▓▓▓▓▓XXXX██████████████
+████████████████▓▓XXXXXX▓▓XXXXXXXXXXXXXX▓▓XXXXXXXX████████████████
+██████████████████████▓▓▓▓▓▓XXXX▓▓XXXX▓▓▓▓▓▓██████████████████████

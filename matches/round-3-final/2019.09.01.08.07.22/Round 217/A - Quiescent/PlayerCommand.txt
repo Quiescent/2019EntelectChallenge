@@ -1,0 +1,3 @@
+Command: shoot W
+Execution time: 763ms
+Exception: 	shoot W (played 2261): (1604.97637915184 / 2261) 0.7098524454453075

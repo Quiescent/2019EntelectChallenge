@@ -1,3 +1,0 @@
-Command: shoot NE
-Execution time: 838ms
-Exception: 	move 12 15 (played 2412): (1047.8694444444784 / 2412) 0.43444006817764447

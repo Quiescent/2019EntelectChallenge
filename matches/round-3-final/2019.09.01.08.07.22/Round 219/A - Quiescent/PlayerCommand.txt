@@ -1,0 +1,3 @@
+Command: shoot NE
+Execution time: 766ms
+Exception: 	dig 13 20 (played 3005): (2193.8200515258386 / 3005) 0.7300565895260694

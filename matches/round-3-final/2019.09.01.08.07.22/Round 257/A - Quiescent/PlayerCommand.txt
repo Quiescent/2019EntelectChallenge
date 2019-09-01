@@ -1,0 +1,3 @@
+Command: shoot S
+Execution time: 762ms
+Exception: 	nothing (played 33729): (19842.87428571653 / 33729) 0.5883030711173332

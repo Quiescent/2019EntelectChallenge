@@ -1,0 +1,3 @@
+Command: banana 12 17
+Execution time: 768ms
+Exception: 	shoot N (played 2481): (1671.4957142856995 / 2481) 0.6737185466689639

@@ -1,0 +1,3 @@
+Command: shoot S
+Execution time: 767ms
+Exception: 	shoot NE (played 2627): (1379.359999999989 / 2627) 0.5250704225352071

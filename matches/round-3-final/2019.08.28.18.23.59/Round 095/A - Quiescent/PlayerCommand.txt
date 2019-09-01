@@ -1,3 +1,0 @@
-Command: nothing
-Execution time: 811ms
-Exception: 	select 3; snowball 14 16 (played 487): (207.95000000000118 / 487) 0.4270020533880928

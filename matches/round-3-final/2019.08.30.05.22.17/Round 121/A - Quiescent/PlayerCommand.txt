@@ -1,3 +1,0 @@
-Command: shoot N
-Execution time: 811ms
-Exception: 	nothing (played 24759): (11645.23793650598 / 24759) 0.4703436300539594

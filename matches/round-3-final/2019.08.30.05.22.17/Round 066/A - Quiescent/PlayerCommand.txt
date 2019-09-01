@@ -1,3 +1,0 @@
-Command: nothing
-Execution time: 813ms
-Exception: 	select 2; banana 11 16 (played 6084): (2679.5542986424857 / 6084) 0.4404264133205927

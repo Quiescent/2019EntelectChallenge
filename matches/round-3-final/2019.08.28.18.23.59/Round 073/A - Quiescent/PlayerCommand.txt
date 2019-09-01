@@ -1,3 +1,0 @@
-Command: banana 18 15
-Execution time: 815ms
-Exception: 	select 3; dig 18 14 (played 1075): (415.06145833333886 / 1075) 0.3861036821705478

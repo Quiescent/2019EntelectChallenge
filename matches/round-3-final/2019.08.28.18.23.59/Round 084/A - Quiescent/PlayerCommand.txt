@@ -1,3 +1,0 @@
-Command: move 14 1
-Execution time: 821ms
-Exception: 	select 2; banana 15 4 (played 1096): (451.0093750000025 / 1096) 0.4115049041970826

@@ -1,0 +1,3 @@
+Command: dig 5 13
+Execution time: 765ms
+Exception: 	select 2; dig 15 15 (played 1175): (606.4966379163504 / 1175) 0.5161673514181706

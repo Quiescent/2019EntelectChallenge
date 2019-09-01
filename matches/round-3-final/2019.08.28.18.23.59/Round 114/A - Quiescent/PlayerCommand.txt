@@ -1,3 +1,0 @@
-Command: shoot SW
-Execution time: 809ms
-Exception: 	dig 16 7 (played 2059): (979.9052083333187 / 2059) 0.4759131657762597

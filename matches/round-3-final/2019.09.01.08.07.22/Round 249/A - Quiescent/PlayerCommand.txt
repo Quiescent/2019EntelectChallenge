@@ -1,0 +1,3 @@
+Command: dig 13 14
+Execution time: 765ms
+Exception: 	shoot N (played 1992): (1476.5827081733883 / 1992) 0.7412563796051146

@@ -1,0 +1,3 @@
+Command: snowball 11 15
+Execution time: 768ms
+Exception: 	shoot S (played 3383): (1728.341428571437 / 3383) 0.5108901651112732

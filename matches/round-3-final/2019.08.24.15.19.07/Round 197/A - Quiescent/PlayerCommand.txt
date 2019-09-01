@@ -1,3 +1,0 @@
-Command: shoot E
-Execution time: 853ms
-Exception: 	dig 23 18 (played 2822): (1045.479166666697 / 2822) 0.3704745452397934

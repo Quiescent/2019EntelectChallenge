@@ -1,0 +1,3 @@
+Command: nothing
+Execution time: 769ms
+Exception: 	select 3; snowball 22 4 (played 1266): (786.8386547396886 / 1266) 0.6215155250708441

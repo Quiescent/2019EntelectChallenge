@@ -1,0 +1,3 @@
+Command: dig 12 19
+Execution time: 761ms
+Exception: 	dig 12 21 (played 2573): (1917.8505592827394 / 2573) 0.7453752659474308

@@ -1,3 +1,0 @@
-Command: move 17 12
-Execution time: 813ms
-Exception: 	move 16 14 (played 0): (0.0 / 0) NaN

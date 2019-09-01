@@ -1,3 +1,0 @@
-Command: move 9 17
-Execution time: 864ms
-Exception: 	select 3;move 17 16 (played 1199): (461.2645833333413 / 1199) 0.3847077425632538

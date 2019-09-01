@@ -1,3 +1,0 @@
-Command: move 23 4
-Execution time: 802ms
-Exception: Games played: 11910

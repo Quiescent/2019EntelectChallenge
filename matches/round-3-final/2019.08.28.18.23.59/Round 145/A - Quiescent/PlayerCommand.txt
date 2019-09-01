@@ -1,3 +1,0 @@
-Command: snowball 15 12
-Execution time: 808ms
-Exception: 	dig 12 10 (played 2782): (1398.8666666666736 / 2782) 0.502827701893125

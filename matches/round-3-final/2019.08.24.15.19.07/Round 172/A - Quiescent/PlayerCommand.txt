@@ -1,3 +1,0 @@
-Command: move 22 13
-Execution time: 861ms
-Exception: 	banana 14 20 (played 605): (224.74791666666755 / 605) 0.3714841597796158

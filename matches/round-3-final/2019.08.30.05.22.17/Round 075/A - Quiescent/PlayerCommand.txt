@@ -1,3 +1,0 @@
-Command: shoot S
-Execution time: 824ms
-Exception: 	select 3; snowball 22 9 (played 621): (126.54336349924614 / 621) 0.2037735322049052

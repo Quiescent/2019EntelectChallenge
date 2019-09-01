@@ -1,0 +1,3 @@
+Command: move 10 20
+Execution time: 760ms
+Exception: 	shoot W (played 2110): (1477.7326526273173 / 2110) 0.7003472287333258

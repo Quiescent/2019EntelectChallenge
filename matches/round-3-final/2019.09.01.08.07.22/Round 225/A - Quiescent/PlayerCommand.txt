@@ -1,0 +1,3 @@
+Command: move 11 21
+Execution time: 763ms
+Exception: 	shoot NW (played 1867): (1386.925824344441 / 1867) 0.7428633231625287

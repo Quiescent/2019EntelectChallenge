@@ -1,0 +1,3 @@
+Command: move 27 26
+Execution time: 765ms
+Exception: 	select 2; shoot N (played 1092): (642.818825622337 / 1092) 0.5886619282255834

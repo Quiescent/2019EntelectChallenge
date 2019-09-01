@@ -1,0 +1,3 @@
+Command: dig 18 3
+Execution time: 764ms
+Exception: 	shoot W (played 2293): (1488.8658420447623 / 2293) 0.6493091330330407
