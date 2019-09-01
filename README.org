@@ -3165,21 +3165,23 @@ I should never do nothing unless that leads to death.
    - State "IN_PROGRESS" from "IN_PROGRESS" [2019-08-31 Sat 17:31]
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 16:57]
    :END:
-** IN_PROGRESS BUG: I'm often not making a move!
+** DONE BUG: I'm often not making a move!
+   CLOSED: [2019-09-01 Sun 07:37]
    :LOGBOOK:
+   - CLOSING NOTE [2019-09-01 Sun 07:37] \\
+     Looks like this was being caused by timing issues.  I should hold off
+     on parsing the whole state and passing it to the searcher, because
+     everything that I do in the main thread is untimed.
+   - Note taken on [2019-08-31 Sat 18:04] \\
+     This seems to have been caused by my time for moves being too
+     aggressive.  Odd...  I should test it on their servers a bunch and see
+     what happens.
    - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 17:33]
    :END:
 ** TODO IDEA: Add a heuristic for average distance from enemy worm
+** TODO Limit selects to the 5th percentile of certainty
 ** TODO IDEA: Always follow up a snowball with shots
 ** TODO IDEA: Run away strategy
-** IN_PROGRESS WormId 5 comes into existence somewhere somehow!?
-   :LOGBOOK:
-   - Note taken on [2019-08-31 Sat 11:06] \\
-     I haven't been able to replicate it.  It's worrying.  I think that I
-     need to make the recovering task a high priority item to mitigate this
-     sort of thing.
-   - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 10:20]
-   :END:
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
@@ -3219,6 +3221,7 @@ There are a couple of things that can only be inferred on the first
 round.  Like who has the bananas and how many he/she has.
 *** TODO Use vectors everywhere instead of lists
 *** TODO Use an unboxed vector for the tree
+*** TODO separate state check from the move/round trigger
 *** TODO Further optimise the Snowball and Banana blast folds
 *** TODO Use bitwise logic in make moves instead of Maybe
 *** TODO Use the compiler!
@@ -3243,6 +3246,14 @@ https://wiki.haskell.org/Playing_by_the_rules
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
+** IN_PROGRESS WormId 5 comes into existence somewhere somehow!?
+   :LOGBOOK:
+   - Note taken on [2019-08-31 Sat 11:06] \\
+     I haven't been able to replicate it.  It's worrying.  I think that I
+     need to make the recovering task a high priority item to mitigate this
+     sort of thing.
+   - State "IN_PROGRESS" from "TODO"       [2019-08-31 Sat 10:20]
+   :END:
 ** TODO IDEA: If I make the payoff relative then trees become circular (Opportunity for massive improvement to algorithm)
    :LOGBOOK:
    - Note taken on [2019-08-26 Mon 06:16] \\

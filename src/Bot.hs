@@ -2990,7 +2990,7 @@ makeMoveInTree _     SearchFront                         = SearchFront
 
 -- In nanoseconds
 maxSearchTime :: Integer
-maxSearchTime = 800000000
+maxSearchTime = 750000000
 
 -- In microseconds
 pollInterval :: Int
