@@ -3500,10 +3500,16 @@ choppaRadius :: Int
 choppaRadius = 5
 
 determineStrategy :: Int -> Coord -> WormPositions -> Strategy
-determineStrategy currentRound' _ _ =
-  if currentRound' < 250
-  then Points
-  else Kill
+determineStrategy currentRound' currentWormsCoord' wormPositions' =
+  if currentRound' > 30
+  then if currentRound' < 250
+       then Points
+       else Kill
+  else if aListCountOpponentsEntries wormPositions' == 0
+       then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
+            then Points
+            else GetToTheChoppa
+       else Points
 
 withOnlyWormsContainedIn :: AList -> ModifyState
 withOnlyWormsContainedIn toKeep =
@@ -3698,19 +3704,19 @@ pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
                                            currentRound  = currentRound' }) !reward =
   let myTotalHealth        = aListSumMyEntries wormHealths'
       opponentsTotalHealth = aListSumOpponentsEntries wormHealths'
-      maxPoints            = 100 * (currentRound' - initialRound) * digPoints
+      maxPoints            = (currentRound' - initialRound) * digPoints
       -- Health is much more important than reward and the reward term
       -- gets bigger as you go deeper.
-      myPayoff             = 200 * myTotalHealth +
-                             100 * reward +
+      myPayoff             = 20 * myTotalHealth +
+                             reward +
                              aListAveragePairOffs manhattanDistance  wormPositions'
       opponentsPayoff      = maxAverageDistance +
-                             100 * maxPoints +
-                             100 * (opponentsTotalHealth +
-                                    (maximumHealth - myTotalHealth))
+                             maxPoints +
+                             10 * (opponentsTotalHealth +
+                                   (maximumHealth - myTotalHealth))
    in Payoff (MyPayoff myPayoff)
              (OpponentsPayoff opponentsPayoff)
-             (MaxScore $ 100 * maxPayoffScore + 100 * maxPoints + maxAverageDistance)
+             (MaxScore ((10 * maxPayoffScore) + maxPoints + maxAverageDistance))
 
 killSearch :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use

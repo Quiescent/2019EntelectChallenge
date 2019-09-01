@@ -138,13 +138,13 @@ spec = do
         it "should produce a strategy of Kill" $
           determineStrategy 251 (toCoord 14 14) positionsWithNooneNearby `shouldBe` Kill
       context "and my worm isn't close to the centre of the map" $ do
-        it "should produce a strategy of Points" $
-          determineStrategy 10 (toCoord 0 0) positionsWithNooneNearby `shouldBe` Points
+        it "should produce a strategy of GetToTheChoppa" $
+          determineStrategy 10 (toCoord 0 0) positionsWithNooneNearby `shouldBe` GetToTheChoppa
     context "when there is another friendly worm nearby" $ do
       let positionsWithOneOfMyWormsNearby = aListFromList [(1, toCoord 15 31),
                                                            (2, toCoord 16 31)]
-      it "should produce a strategy of Points" $
-        determineStrategy 10 (toCoord 15 31) positionsWithOneOfMyWormsNearby `shouldBe` Points
+      it "should produce a strategy of GetToTheChoppa" $
+        determineStrategy 10 (toCoord 15 31) positionsWithOneOfMyWormsNearby `shouldBe` GetToTheChoppa
     context "when there is an enemy nearby" $ do
       let positionsWithAnEnemyNearby = aListFromList [(1, toCoord 20 31),
                                                       (2, toCoord 21 31),
