@@ -280,6 +280,44 @@ aListAddMineAndHis :: AList -> AList -> AList
 aListAddMineAndHis (AList a b c _ _ _) (AList _ _ _ d e f) =
   AList a b c d e f
 
+aListAveragePairOffs :: (Int -> Int -> Int) -> AList -> Int
+aListAveragePairOffs fun aList@(AList a b c d e f) =
+  let count' = aListCountMyEntries aList + aListCountOpponentsEntries aList
+      result = (if a /= (-1)
+                then (if d /= (-1)
+                      then fun a d
+                      else 0) +
+                     (if e /= (-1)
+                      then fun a e
+                      else 0) +
+                     (if f /= (-1)
+                      then fun a f
+                      else 0)
+                else 0) +
+               (if b /= (-1)
+                then (if d /= (-1)
+                      then fun b d
+                      else 0) +
+                     (if e /= (-1)
+                      then fun b e
+                      else 0) +
+                     (if f /= (-1)
+                      then fun b f
+                      else 0)
+                else 0) +
+               (if c /= (-1)
+                then (if d /= (-1)
+                      then fun c d
+                      else 0) +
+                     (if e /= (-1)
+                      then fun c e
+                      else 0) +
+                     (if f /= (-1)
+                      then fun c f
+                      else 0)
+                else 0)
+  in result `div` count'
+
 aListFromList :: [(Int, Int)] -> AList
 aListFromList xs =
   go xs (AList (-1) (-1) (-1) (-1) (-1) (-1))
@@ -3651,19 +3689,34 @@ payOff _ (State { wormHealths     = wormHealths' }) =
                                      (maximumHealth - myTotalHealth)
    in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
+maxAverageDistance :: Int
+maxAverageDistance = mapDim
+
+manhattanDistance :: Coord -> Coord -> Int
+manhattanDistance xy' xy'' =
+  let (x',  y')  = fromCoord xy'
+      (x'', y'') = fromCoord xy''
+  in (abs $ x'' - x') + (abs $ y'' - y')
+
 pointAndHealthPayOff :: Int -> State -> Int -> Payoff
-pointAndHealthPayOff initialRound (State { wormHealths  = wormHealths',
-                                           currentRound = currentRound' }) !reward =
+pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
+                                           wormPositions = wormPositions',
+                                           currentRound  = currentRound' }) !reward =
   let myTotalHealth        = aListSumMyEntries wormHealths'
       opponentsTotalHealth = aListSumOpponentsEntries wormHealths'
       maxPoints            = (currentRound' - initialRound) * digPoints
       -- Health is much more important than reward and the reward term
       -- gets bigger as you go deeper.
-      myPayoff             = 20 * myTotalHealth + reward
-      opponentsPayoff      = maxPoints +
+      myPayoff             = 20 * myTotalHealth +
+                             reward +
+                             aListAveragePairOffs manhattanDistance  wormPositions'
+      opponentsPayoff      = maxAverageDistance +
+                             maxPoints +
                              10 * (opponentsTotalHealth +
                                    (maximumHealth - myTotalHealth))
-   in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore ((10 * maxPayoffScore) + maxPoints))
+   in Payoff (MyPayoff myPayoff)
+             (OpponentsPayoff opponentsPayoff)
+             (MaxScore ((10 * maxPayoffScore) + maxPoints + maxAverageDistance))
 
 killSearch :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use
