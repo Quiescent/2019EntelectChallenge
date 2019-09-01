@@ -3204,8 +3204,6 @@ I should never do nothing unless that leads to death.
      Closing retrospectively
    :END:
 ** TODO Swap to traditional search when I can "see" then end
-** TODO IDEA: Always follow up a snowball with shots
-** TODO IDEA: Run away strategy
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
@@ -3270,6 +3268,8 @@ https://wiki.haskell.org/Playing_by_the_rules
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
+** TODO IDEA: Always follow up a snowball with shots
+** TODO IDEA: Run away strategy
 ** IN_PROGRESS WormId 5 comes into existence somewhere somehow!?
    :LOGBOOK:
    - Note taken on [2019-08-31 Sat 11:06] \\
