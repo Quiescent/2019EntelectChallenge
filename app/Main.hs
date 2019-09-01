@@ -16,5 +16,5 @@ main = do
   where
     exceptionHandler :: SomeException -> IO ()
     exceptionHandler e = do
-      logStdErr $ "Worker died with (" ++ show e ++ ")... restarting."
+      logStdErr $ "Program died with (" ++ show e ++ ")... restarting."
       main
