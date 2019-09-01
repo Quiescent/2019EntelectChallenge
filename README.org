@@ -3190,11 +3190,20 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-09-01 Sun 09:07]
    - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 08:50]
    :END:
-** IN_PROGRESS Make health and points worth more than distance from enemy in points search
+** DONE Make health and points worth more than distance from enemy in points search
+   CLOSED: [2019-09-01 Sun 10:39]
    :LOGBOOK:
+   - CLOSING NOTE [2019-09-01 Sun 10:39] \\
+     Closing retrospectively
    - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 09:09]
    :END:
-** TODO Make my health worth twice as much as my damage in kill search
+** DONE Make my health worth twice as much as my damage in kill search
+   CLOSED: [2019-09-01 Sun 10:39]
+   :LOGBOOK:
+   - CLOSING NOTE [2019-09-01 Sun 10:39] \\
+     Closing retrospectively
+   :END:
+** TODO Swap to traditional search when I can "see" then end
 ** TODO IDEA: Always follow up a snowball with shots
 ** TODO IDEA: Run away strategy
 ** IN_PROGRESS Make the Search Faster
