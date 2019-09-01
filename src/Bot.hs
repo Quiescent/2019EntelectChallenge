@@ -3709,16 +3709,16 @@ pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
       maxPoints            = (currentRound' - initialRound) * digPoints
       -- Health is much more important than reward and the reward term
       -- gets bigger as you go deeper.
-      myPayoff             = 20 * myTotalHealth +
-                             reward +
+      myPayoff             = 10 * (20 * myTotalHealth +
+                                   reward) +
                              aListAveragePairOffs manhattanDistance  wormPositions'
       opponentsPayoff      = maxAverageDistance +
-                             maxPoints +
-                             10 * (opponentsTotalHealth +
-                                   (maximumHealth - myTotalHealth))
+                             10 * (maxPoints +
+                                   10 * (opponentsTotalHealth +
+                                         (maximumHealth - myTotalHealth)))
    in Payoff (MyPayoff myPayoff)
              (OpponentsPayoff opponentsPayoff)
-             (MaxScore ((10 * maxPayoffScore) + maxPoints + maxAverageDistance))
+             (MaxScore (10 * ((10 * maxPayoffScore) + maxPoints) + maxAverageDistance))
 
 killSearch :: StdGen -> State -> Int -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use
