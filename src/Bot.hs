@@ -3216,7 +3216,7 @@ chooseBestMove totalGamesPlayed records =
                                   else records
     records''                   = if records' == [] then [SuccessRecord (GamesPlayed 1) (PayoffRatio 1) doNothing] else records'
     records'''                  = filter (\ record -> (not . hasASelection $ successRecordMove record) ||
-                                                      withinPercentile 5 record) records''
+                                                      (not $ withinPercentile 5 record)) records''
     averagePlayed               = totalGamesPlayed `div` length records
     withinPercentile percentile = (<= percentile) . abs . (100 -) . (`div` averagePlayed) . (* 100) . gamesPlayed
     noClearWinner               = all (withinPercentile 1) records
