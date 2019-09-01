@@ -3240,8 +3240,11 @@ I should never do nothing unless that leads to death.
     :END:
 There are a couple of things that can only be inferred on the first
 round.  Like who has the bananas and how many he/she has.
+*** IN_PROGRESS Use an unboxed vector for the tree
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 11:05]
+    :END:
 *** TODO Use vectors everywhere instead of lists
-*** TODO Use an unboxed vector for the tree
 *** TODO separate state check from the move/round trigger
 *** TODO Further optimise the Snowball and Banana blast folds
 *** TODO Use bitwise logic in make moves instead of Maybe
