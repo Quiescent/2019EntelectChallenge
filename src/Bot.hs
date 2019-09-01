@@ -3502,7 +3502,7 @@ choppaRadius = 5
 determineStrategy :: Int -> Coord -> WormPositions -> Strategy
 determineStrategy currentRound' currentWormsCoord' wormPositions' =
   if currentRound' > 30
-  then if currentRound' < 250
+  then if currentRound' < startUsingAmmoRound
        then Points
        else Kill
   else if aListCountOpponentsEntries wormPositions' == 0
@@ -3921,7 +3921,7 @@ isValidDigMove origin digMoveAsMoveMove gameMap' =
   mapAt (displaceCoordByMove origin digMoveAsMoveMove) gameMap' == DIRT
 
 startUsingAmmoRound :: Int
-startUsingAmmoRound = 250
+startUsingAmmoRound = 200
 
 myMoveMovesFrom :: State -> [Move]
 myMoveMovesFrom state = do
