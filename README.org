@@ -3240,9 +3240,26 @@ I should never do nothing unless that leads to death.
     :END:
 There are a couple of things that can only be inferred on the first
 round.  Like who has the bananas and how many he/she has.
-*** IN_PROGRESS Use an unboxed vector for the tree
+*** DONE Use an unboxed vector for the tree
+    CLOSED: [2019-09-01 Sun 21:37]
     :LOGBOOK:
+    - CLOSING NOTE [2019-09-01 Sun 21:37] \\
+      In the end I used an IntMap because mutable vectors, it turns out, are
+      very difficult to use for performance reasons in a parallel or
+      multi-threaded context.
     - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 11:05]
+    :END:
+*** TODO Eliminate possible moves to search through when the enemy is too far from me
+    :LOGBOOK:
+    - Note taken on [2019-09-01 Sun 20:13] \\
+      If I'm not close enough to the enemy (and vice versa) then there's no
+      point shooting or throwing anything.
+    :END:
+*** TODO Eliminate possible moves to search through with direction to enemy
+    :LOGBOOK:
+    - Note taken on [2019-09-01 Sun 20:13] \\
+      I'm thinking: if the enemy worms are only to my North then there's no
+      use shooting West.
     :END:
 *** TODO Use vectors everywhere instead of lists
 *** TODO separate state check from the move/round trigger
