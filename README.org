@@ -3184,7 +3184,10 @@ I should never do nothing unless that leads to death.
    - CLOSING NOTE [2019-09-01 Sun 08:49]
    - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 07:40]
    :END:
-** TODO Limit selects to the 5th percentile of certainty
+** IN_PROGRESS Limit selects to the 5th percentile of certainty
+   :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 08:50]
+   :END:
 ** TODO IDEA: Always follow up a snowball with shots
 ** TODO IDEA: Run away strategy
 ** IN_PROGRESS Make the Search Faster
