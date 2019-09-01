@@ -2938,8 +2938,6 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
         show strategy ++ "] with exception " ++ show (e::SomeException) ++ "\n" ++
         "State: " ++ readableShow initialState ++ "\n" ++
         "state':" ++ readableShow state'
-      logStdErr $ "Worker died... restarting."
-      iterativelyImproveSearch gen initialState tree stateChannel treeVariable
     nearbyWorms = wormsNearMyCurrentWorm initialState
     strategy    = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
     state'      = if strategy == Dig || strategy == GetToTheChoppa
@@ -3214,9 +3212,9 @@ chooseBestMove totalGamesPlayed records =
                                                  isADigMove move   ||
                                                  isDoNothing move) records
                                   else records
-    records''                   = if records' == [] then [SuccessRecord (GamesPlayed 1) (PayoffRatio 1) doNothing] else records'
-    records'''                  = filter (\ record -> (not . hasASelection $ successRecordMove record) ||
-                                                      (not $ withinPercentile 5 record)) records''
+    records''                  = filter (\ record -> (not . hasASelection $ successRecordMove record) ||
+                                                     (not $ withinPercentile 5 record)) records'
+    records'''                   = if records' == [] then [SuccessRecord (GamesPlayed 1) (PayoffRatio 1) doNothing] else records''
     averagePlayed               = totalGamesPlayed `div` length records
     withinPercentile percentile = (<= percentile) . abs . (100 -) . (`div` averagePlayed) . (* 100) . gamesPlayed
     noClearWinner               = all (withinPercentile 1) records
@@ -3231,9 +3229,8 @@ runRound !thisBananaCount
          previousState
          stateChannel
          treeVariable = do
-  move                  <- liftIO $ searchForAlottedTime previousState treeVariable
-  liftIO $
-    putStrLn $
+  move                  <- searchForAlottedTime previousState treeVariable
+  putStrLn $
     -- ASSUME: that the worm is on a valid square to begin with
     "C;" ++
     show roundNumber ++
@@ -3276,15 +3273,15 @@ parseLastCommand previousState (Just lastCommand') =
   let coord'  = thatWormsCoord previousState
   in fromJust $ readThatMove previousState coord' lastCommand'
 
-startBot :: StdGen -> RIO App ()
+startBot :: StdGen -> IO ()
 startBot g = do
-  treeVariable   <- liftIO $ newVariable SearchFront
-  stateChannel  <- liftIO newComms
+  treeVariable  <- newVariable SearchFront
+  stateChannel  <- newComms
   -- This is where I seed it with a search front
-  initialRound' <- liftIO $ readRound
-  initialState  <- liftIO $ fmap fromJust $ readGameState initialRound'
-  _             <- liftIO $ forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
-  liftIO $ runRound 3 3 3 3 initialRound' initialState stateChannel treeVariable
+  initialRound' <- readRound
+  initialState  <- fmap fromJust $ readGameState initialRound'
+  _             <- forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
+  runRound 3 3 3 3 initialRound' initialState stateChannel treeVariable
 
 data PayoffRatio = PayoffRatio !Double
   deriving (Eq)

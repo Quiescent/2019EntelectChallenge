@@ -14,12 +14,12 @@ import Data.Aeson (decode)
 data Result = Success
             | Failure String
 
-withRoundsDirectories :: FilePath -> ([FilePath] -> RIO App a) -> RIO App a
+withRoundsDirectories :: FilePath -> ([FilePath] -> IO a) -> IO a
 withRoundsDirectories matchLogsDirectory f = do
   (fmap (map ((++) (matchLogsDirectory ++ "/")) . L.sort . filter (L.isPrefixOf "Round")) $
     listDirectory matchLogsDirectory) >>= f
 
-loadStateForRound :: FilePath -> RIO App (Maybe State)
+loadStateForRound :: FilePath -> IO (Maybe State)
 loadStateForRound path = do
   playerPaths     <- listDirectory path
   let aPlayersPath = headMaybe $ L.sort playerPaths
