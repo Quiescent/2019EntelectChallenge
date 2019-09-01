@@ -5,6 +5,7 @@ module BotSpec (spec) where
 import Bot
 import Import
 
+import qualified Data.IntMap.Lazy as IM
 import qualified RIO.Vector.Boxed as V
 import qualified RIO.List.Partial as L
 import RIO.List
@@ -21,20 +22,23 @@ isSearched _                                          = False
 
 transitions :: SearchTree -> StateTransitions
 transitions (SearchedLevel   _ _ _ transitions') = transitions'
-transitions (UnSearchedLevel _ _ _)              = []
-transitions SearchFront                          = []
+transitions (UnSearchedLevel _ _ _)              = IM.empty
+transitions SearchFront                          = IM.empty
 
 sumMyRatios :: SearchTree -> Double
-sumMyRatios = sum . map payoffRatio . myMovesFromTree
+sumMyRatios = sum . fmap payoffRatio . myMovesFromTree
 
 sumOpponentsRatios :: SearchTree -> Double
-sumOpponentsRatios = sum . map payoffRatio . opponentsMovesFromTree
+sumOpponentsRatios = sum . fmap payoffRatio . opponentsMovesFromTree
 
 played :: SuccessRecord -> Int
 played (SuccessRecord (GamesPlayed x) _ _) = x
 
 payoffRatio :: SuccessRecord -> Double
 payoffRatio (SuccessRecord _ (PayoffRatio x) _) = x
+
+moveValue :: Move -> Int
+moveValue (Move x) = x
 
 spec :: Spec
 spec = do
@@ -210,7 +214,7 @@ spec = do
           thisMove           = myMoves L.!! (i `mod` length myMoves)
           k'                 = k `mod` maxScore + 1
           updateCount'       = incInc k' ((\ (MaxScore x) -> x) digMaxScore)
-          oldCounts          = map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves
+          oldCounts          = IM.fromList $ map (initSuccessRecordKeyValue 1 1) myMoves
           newCounts          = updateCount updateCount' oldCounts thisMove
       in newCounts `shouldSatisfy` ((== (length oldCounts)) . length)
     prop "should change the played count of the selected record and might change the payoff ratio" $ \ (i, k) ->
@@ -220,7 +224,7 @@ spec = do
           thisMove           = myMoves L.!! (i `mod` length myMoves)
           k'                 = k `mod` (maxScore + 1)
           updateCount'       = incInc k' maxScore
-          oldCounts          = map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves
+          oldCounts          = IM.fromList $ map (initSuccessRecordKeyValue 1 1) myMoves
           newCounts          = updateCount updateCount' oldCounts thisMove
       in (((fromIntegral k') / (fromIntegral maxScore))::Float, newCounts) `shouldSatisfy`
          ((((== 2) . played) .&&.
@@ -241,14 +245,20 @@ spec = do
           opponentsMoves     = opponentsMovesFrom myMoveMoves opponentsMoveMoves aState
           thatMove           = L.head opponentsMoves
           k'                 = k `mod` (maxScore + 1)
+          myFirstMove        = L.head myMoves
+          opponentsFirstMove = L.head opponentsMoves
           oldTree            = UnSearchedLevel
                                0
-                               (MyMoves        $
-                                (SuccessRecord (GamesPlayed 0) (PayoffRatio 0) $ L.head myMoves) :
-                                (map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) $ L.tail myMoves))
+                               (MyMoves     $
+                                IM.fromList $
+                                (moveValue myFirstMove,
+                                 (SuccessRecord (GamesPlayed 0) (PayoffRatio 0) myFirstMove)) :
+                                (map (initSuccessRecordKeyValue 1 1) $ L.tail myMoves))
                                (OpponentsMoves $
-                                (SuccessRecord (GamesPlayed 0) (PayoffRatio 0) $ L.head opponentsMoves) :
-                                (map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) $ L.tail opponentsMoves))
+                                IM.fromList    $
+                                (moveValue opponentsFirstMove,
+                                 (SuccessRecord (GamesPlayed 0) (PayoffRatio 0) opponentsFirstMove)) :
+                                (map (initSuccessRecordKeyValue 1 1) $ L.tail opponentsMoves))
           newTree            = updateTree oldTree
                                           Dig
                                           aState
@@ -291,8 +301,12 @@ spec = do
           k'                 = (k `mod` (maxScore - 1)) + 1
           oldTree            = UnSearchedLevel
                                (length myMoves) -- Not strictly correct, but fine
-                               (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
-                               (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
+                               (MyMoves     $
+                                IM.fromList $
+                                map (initSuccessRecordKeyValue 1 1) myMoves)
+                               (OpponentsMoves $
+                                IM.fromList    $
+                                map (initSuccessRecordKeyValue 1 1) opponentsMoves)
           newTree            = updateTree oldTree
                                           Dig
                                           aState
@@ -312,9 +326,13 @@ spec = do
           k'                 = (k `mod` (maxScore - 1)) + 1
           oldTree            = SearchedLevel
                                (length myMoves) -- Not strictly correct, but fine
-                               (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
-                               (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
-                               []
+                               (MyMoves     $
+                                IM.fromList $
+                                map (initSuccessRecordKeyValue 1 1) myMoves)
+                               (OpponentsMoves $
+                                IM.fromList    $
+                                map (initSuccessRecordKeyValue 1 1) opponentsMoves)
+                               IM.empty
           newTree            = updateTree oldTree
                                           Dig
                                           aState
@@ -334,9 +352,13 @@ spec = do
           k'                 = k `mod` ((maxScore - 1) + 1)
           oldTree            = SearchedLevel
                                (length myMoves)
-                               (MyMoves        $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) myMoves)
-                               (OpponentsMoves $ map (\ move -> (SuccessRecord (GamesPlayed 1) (PayoffRatio 1) move)) opponentsMoves)
-                               []
+                               (MyMoves     $
+                                IM.fromList $
+                                map (initSuccessRecordKeyValue 1 1) myMoves)
+                               (OpponentsMoves $
+                                IM.fromList    $
+                                map (initSuccessRecordKeyValue 1 1) opponentsMoves)
+                               IM.empty
           newTree            = updateTree oldTree
                                           Dig
                                           aStateWithAnEnemyWormNearby

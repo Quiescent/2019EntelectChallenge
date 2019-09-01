@@ -25,6 +25,7 @@ dependencies:
 - deepseq >= 1.4.4.0
 - strict-concurrency >= 0.2.4.3
 - stm >= 2.5.0.0
+- containers >= 0.6.2.1
 
 ghc-options:
 - -Wall
