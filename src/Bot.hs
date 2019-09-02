@@ -14,6 +14,7 @@ import Lava
 import qualified Data.IntMap.Lazy as IM
 import qualified RIO.Vector.Boxed as V
 import qualified RIO.Vector.Boxed.Partial as PV
+import qualified RIO.Vector.Boxed.Unsafe  as UV
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import RIO.List
@@ -1084,7 +1085,7 @@ allCoords =
     flipTuple (a, b) = (b, a)
 
 fromCoord :: Coord -> (Int, Int)
-fromCoord xy = allCoords PV.! xy
+fromCoord xy = allCoords `UV.unsafeIndex` xy
 
 data Weapon = Weapon { damage :: Int,
                        range :: Int }
