@@ -11,6 +11,8 @@ module Bot
 import Import
 import Lava
 
+import qualified RIO.Vector.Unboxed as UV
+import qualified RIO.Vector.Unboxed.Partial as UVP
 import qualified Data.IntMap.Lazy as IM
 import qualified RIO.Vector.Boxed as V
 import qualified RIO.Vector.Boxed.Partial as PV
@@ -1080,8 +1082,10 @@ toCoord xCoord yCoord =
 -- Consider whether to use applicative here and get rid of the tuple
 fromCoord :: Coord -> (Int, Int)
 fromCoord xy =
-  case (divMod xy mapDim) of
-    (y', x') -> (x', y')
+  coords UVP.! xy
+  where
+    coords           = UV.fromList $ map (flipTuple . (flip divMod) mapDim) [0..(mapDim * mapDim)]
+    flipTuple (a, b) = (b, a)
 
 data Weapon = Weapon { damage :: Int,
                        range :: Int }
