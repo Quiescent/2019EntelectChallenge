@@ -3249,8 +3249,9 @@ round.  Like who has the bananas and how many he/she has.
       multi-threaded context.
     - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 11:05]
     :END:
-*** TODO Eliminate possible moves to search through when the enemy is too far from me
+*** IN_PROGRESS Eliminate possible moves to search through when the enemy is too far from me
     :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-09-02 Mon 04:50]
     - Note taken on [2019-09-01 Sun 20:13] \\
       If I'm not close enough to the enemy (and vice versa) then there's no
       point shooting or throwing anything.
