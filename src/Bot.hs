@@ -2193,7 +2193,7 @@ readGameState r = do
 -- 4. check the range of the remaining number;
 -- 5. extract and shift according to the type of move;
 data Move = Move !Int
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 instance NFData Move where
   rnf (Move move) = move `deepseq` ()
@@ -4032,14 +4032,14 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   -- Comment for final submission
   let myMoveMoves        = myMoveMovesFrom initialState
   let opponentsMoveMoves = opponentsMoveMovesFrom initialState
-  let myMovesFromTree' = map successRecordMove $ intMapValues $ myMovesFromTree tree
-  let myMovesFromState = myMovesFrom myMoveMoves opponentsMoveMoves initialState
+  let myMovesFromTree' = sort $ map successRecordMove $ intMapValues $ myMovesFromTree tree
+  let myMovesFromState = sort $ myMovesFrom myMoveMoves opponentsMoveMoves initialState
   when (strategy == Kill && tree /= SearchFront && myMovesFromTree' /= myMovesFromState) $
     logStdErr $ "My moves from tree diverged from moves from state!\n" ++
     "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromTree' ++ "\n" ++
     "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromState
-  let opponentsMovesFromTree' = map successRecordMove $ intMapValues $ opponentsMovesFromTree tree
-  let opponentsMovesFromState = opponentsMovesFrom myMoveMoves opponentsMoveMoves initialState
+  let opponentsMovesFromTree' = sort $ map successRecordMove $ intMapValues $ opponentsMovesFromTree tree
+  let opponentsMovesFromState = sort $ opponentsMovesFrom myMoveMoves opponentsMoveMoves initialState
   when (strategy == Kill && tree /= SearchFront && opponentsMovesFromTree' /= opponentsMovesFromState) $
     logStdErr $ "Opponents moves from tree diverged from moves from state!\n" ++
     "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromTree' ++ "\n" ++
