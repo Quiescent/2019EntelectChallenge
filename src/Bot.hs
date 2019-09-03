@@ -4580,7 +4580,8 @@ updateSubTree strategy
               finalState
               (SearchResult payoff (move'@(CombinedMove idx):moves'))
               transitions =
-  IM.insertWith (\ (StateTransition transitionMove' subTree') _ ->
+  -- Second is old value
+  IM.insertWith (\ _ (StateTransition transitionMove' subTree') ->
                    (StateTransition transitionMove' $
                                     updateTree subTree'
                                                strategy
