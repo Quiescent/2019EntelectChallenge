@@ -14,6 +14,7 @@ import Lava
 import qualified Data.IntMap.Lazy as IM
 import qualified RIO.Vector.Boxed as V
 import qualified RIO.Vector.Boxed.Partial as PV
+import qualified RIO.Vector.Boxed.Unsafe  as UV
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import RIO.List
@@ -4864,11 +4865,25 @@ payOff _ (State { wormHealths     = wormHealths' }) =
 maxAverageDistance :: Int
 maxAverageDistance = mapDim
 
+allManhattanDistances :: V.Vector Int
+allManhattanDistances =
+  V.fromList $ do
+    this <- [0..mapDim - 1]
+    that <- [0..mapDim - 1]
+    return $ manhattanDistance' this that
+  where
+    manhattanDistance' :: Coord -> Coord -> Int
+    manhattanDistance' xy' xy'' =
+      let (x',  y')  = fromCoord xy'
+          (x'', y'') = fromCoord xy''
+      in (abs $ x'' - x') + (abs $ y'' - y')
+
+mapLength :: Int
+mapLength = mapDim * mapDim
+
 manhattanDistance :: Coord -> Coord -> Int
 manhattanDistance xy' xy'' =
-  let (x',  y')  = fromCoord xy'
-      (x'', y'') = fromCoord xy''
-  in (abs $ x'' - x') + (abs $ y'' - y')
+  allManhattanDistances `UV.unsafeIndex` (xy' * mapLength + xy'')
 
 pointAndHealthPayOff :: Int -> State -> Int -> Payoff
 pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
