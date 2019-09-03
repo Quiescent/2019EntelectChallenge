@@ -1176,9 +1176,7 @@ formatMove wormsCoord makeSelections' dir@(Move x) xy state
   -- Shoot
   | isAShootMove  dir   = formatShootMove dir
   -- Move
-  | isAMoveMove   dir   = if moveWouldGoOOB xy dir
-                          then "nothing"
-                          else "move " ++ (showCoord $ displaceCoordByMove xy dir)
+  | isAMoveMove   dir   = "move " ++ (showCoord $ displaceCoordByMove xy dir)
   -- Dig
   | isADigMove    dir   = "dig "  ++ (showCoord $ displaceCoordByMove xy (Move (x - 8)))
   -- Throwing the bomb
@@ -1775,9 +1773,7 @@ assertValidState previousState myMove opponentsMove state =
 setOpponentsLastMove :: State -> Move -> ModifyState
 setOpponentsLastMove stateWhenMoveWasMade move' state =
   state { opponentsLastCommand =
-          Just $ if move' == doNothing ||
-                    (isAMoveMove move' && moveWouldGoOOB (thatWormsCoord stateWhenMoveWasMade) move') ||
-                    (\ (Move x) -> x > 4096) move'
+          Just $ if move' == doNothing || (\ (Move x) -> x > 4096) move'
                  then "nothing \"Player chose to do nothing\""
                  else prettyPrintThatMove stateWhenMoveWasMade move' }
 
