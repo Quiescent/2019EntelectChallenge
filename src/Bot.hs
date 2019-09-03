@@ -5189,6 +5189,31 @@ myGetToTheChoppaMoves state =
      then [doNothing]
      else moves
 
+data DirectionZone = NW_ZONE
+                   | NE_ZONE
+                   | SE_ZONE
+                   | SW_ZONE
+                   | N_ZONE
+                   | E_ZONE
+                   | S_ZONE
+                   | W_ZONE
+                   | NOT_SW_ZONE
+                   | NOT_NW_ZONE
+                   | NOT_NE_ZONE
+                   | NOT_SE_ZONE
+                   | ALL_ZONE
+                   | NONE
+
+directionZoneFrom :: Coord -> Coord -> DirectionZone
+directionZoneFrom xy' xy'' = NONE
+
+opponentsDirectionsFrom :: Coord -> AList -> DirectionZone
+opponentsDirectionsFrom coord' positions =
+  aListFoldOverOpponentValues updateZone NONE positions
+  where
+    updateZone :: DirectionZone -> Coord -> DirectionZone
+    updateZone NONE x = directionFrom coord' x
+
 moveMoveWouldBeValuableToMe :: State -> Move -> Bool
 moveMoveWouldBeValuableToMe state move =
   let thisWormsId      = thisPlayersCurrentWormId state
