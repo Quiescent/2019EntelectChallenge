@@ -326,7 +326,7 @@ aListMinPairOff wormId' fun (AList a b c d e f) =
   (WormId 1)  -> (if a /= (-1)
                   then min (if d /= (-1)
                            then fun a d
-                           else (maxBound::Int)) $!
+                           else (maxBound::Int)) $
                        min (if e /= (-1)
                             then fun a e
                             else (maxBound::Int))
@@ -337,7 +337,7 @@ aListMinPairOff wormId' fun (AList a b c d e f) =
   (WormId 2)  -> (if b /= (-1)
                   then min (if d /= (-1)
                             then fun b d
-                              else (maxBound::Int)) $!
+                              else (maxBound::Int)) $
                        min (if e /= (-1)
                             then fun b e
                             else (maxBound::Int))
@@ -348,7 +348,7 @@ aListMinPairOff wormId' fun (AList a b c d e f) =
   (WormId 3)  -> (if c /= (-1)
                   then min (if d /= (-1)
                             then fun c d
-                            else (maxBound::Int)) $!
+                            else (maxBound::Int)) $
                       min (if e /= (-1)
                            then fun c e
                            else (maxBound::Int))
@@ -359,7 +359,7 @@ aListMinPairOff wormId' fun (AList a b c d e f) =
   (WormId 4)  -> (if d /= (-1)
                   then min (if a /= (-1)
                             then fun d a
-                            else (maxBound::Int)) $!
+                            else (maxBound::Int)) $
                        min (if b /= (-1)
                             then fun d b
                             else (maxBound::Int))
@@ -370,7 +370,7 @@ aListMinPairOff wormId' fun (AList a b c d e f) =
   (WormId 8)  -> (if e /= (-1)
                   then min (if a /= (-1)
                             then fun e a
-                            else (maxBound::Int)) $!
+                            else (maxBound::Int)) $
                        min (if b /= (-1)
                             then fun e b
                             else (maxBound::Int))
@@ -381,7 +381,7 @@ aListMinPairOff wormId' fun (AList a b c d e f) =
   (WormId 12) -> (if f /= (-1)
                   then min (if a /= (-1)
                             then fun f a
-                            else (maxBound::Int)) $!
+                            else (maxBound::Int)) $
                        min (if b /= (-1)
                             then fun f b
                             else (maxBound::Int))
