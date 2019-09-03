@@ -4030,20 +4030,20 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
                               then SearchFront
                               else tree
   -- Comment for final submission
-  let myMoveMoves        = myMoveMovesFrom initialState
-  let opponentsMoveMoves = opponentsMoveMovesFrom initialState
-  let myMovesFromTree' = sort $ map successRecordMove $ intMapValues $ myMovesFromTree tree
-  let myMovesFromState = sort $ myMovesFrom myMoveMoves opponentsMoveMoves initialState
-  when (strategy == Kill && tree /= SearchFront && myMovesFromTree' /= myMovesFromState) $
-    logStdErr $ "My moves from tree diverged from moves from state!\n" ++
-    "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromTree' ++ "\n" ++
-    "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromState
-  let opponentsMovesFromTree' = sort $ map successRecordMove $ intMapValues $ opponentsMovesFromTree tree
-  let opponentsMovesFromState = sort $ opponentsMovesFrom myMoveMoves opponentsMoveMoves initialState
-  when (strategy == Kill && tree /= SearchFront && opponentsMovesFromTree' /= opponentsMovesFromState) $
-    logStdErr $ "Opponents moves from tree diverged from moves from state!\n" ++
-    "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromTree' ++ "\n" ++
-    "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromState
+  -- let myMoveMoves        = myMoveMovesFrom initialState
+  -- let opponentsMoveMoves = opponentsMoveMovesFrom initialState
+  -- let myMovesFromTree' = sort $ map successRecordMove $ intMapValues $ myMovesFromTree tree
+  -- let myMovesFromState = sort $ myMovesFrom myMoveMoves opponentsMoveMoves initialState
+  -- when (strategy == Kill && tree /= SearchFront && myMovesFromTree' /= myMovesFromState) $
+  --   logStdErr $ "My moves from tree diverged from moves from state!\n" ++
+  --   "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromTree' ++ "\n" ++
+  --   "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " myMovesFromState
+  -- let opponentsMovesFromTree' = sort $ map successRecordMove $ intMapValues $ opponentsMovesFromTree tree
+  -- let opponentsMovesFromState = sort $ opponentsMovesFrom myMoveMoves opponentsMoveMoves initialState
+  -- when (strategy == Kill && tree /= SearchFront && opponentsMovesFromTree' /= opponentsMovesFromState) $
+  --   logStdErr $ "Opponents moves from tree diverged from moves from state!\n" ++
+  --   "From tree:  " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromTree' ++ "\n" ++
+  --   "From state: " ++ joinWith (prettyPrintThisMove initialState) ", " opponentsMovesFromState
   E.catch (go gen iterationsBeforeComms treeFromPreviousRound) exceptionHandler
   where
     exceptionHandler e = do
