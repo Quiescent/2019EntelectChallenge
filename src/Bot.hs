@@ -462,7 +462,7 @@ splitGameMap :: GameMap -> [[Cell]]
 splitGameMap gameMap' =
   let cells = zip [(1::Int)..]
                   (foldl' (\ acc coord' -> mapAt coord' gameMap' : acc) []
-                   [0..((mapDim * mapDim) - 1)])
+                   [0..(mapLength - 1)])
       iter []  = []
       iter xs' = (reverse $ take mapDim xs') : (iter $ drop mapDim xs')
   in iter $ map snd $ sortOn fst $ cells
@@ -512,7 +512,7 @@ emptyGameMap = GameMap 0 0 0 0
 vectorGameMapToGameMap :: V.Vector Cell -> GameMap
 vectorGameMapToGameMap =
   V.foldl' (\ gameMap' (coord', cell) -> setCellAt coord' cell gameMap') emptyGameMap .
-  V.zip (V.fromList [0..(mapDim * mapDim) - 1])
+  V.zip (V.fromList [0..mapLength - 1])
 
 -- Deprecated
 mapAtCoord :: State -> Coord -> Cell
@@ -1010,8 +1010,8 @@ toCoord xCoord yCoord =
 allManhattanDistances :: V.Vector Int
 allManhattanDistances =
   V.fromList $ do
-    this <- [0..mapDim - 1]
-    that <- [0..mapDim - 1]
+    this <- [0..mapLength - 1]
+    that <- [0..mapLength - 1]
     return $ manhattanDistance' this that
   where
     manhattanDistance' :: Coord -> Coord -> Int
