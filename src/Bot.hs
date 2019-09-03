@@ -321,73 +321,74 @@ aListAveragePairOffs fun aList@(AList a b c d e f) =
 
 aListMinPairOff :: WormId -> (Int -> Int -> Int) -> AList -> Int
 aListMinPairOff wormId' fun (AList a b c d e f) =
- case wormId' of
+ minimum $
+ catMaybes $ case wormId' of
   (WormId 1)  -> (if a /= (-1)
-                  then min (if d /= (-1)
-                           then fun a d
-                           else (maxBound::Int)) $
-                       min (if e /= (-1)
-                            then fun a e
-                            else (maxBound::Int))
-                           (if f /= (-1)
-                            then fun a f
-                            else (maxBound::Int))
-                  else maxBound::Int)
+                  then [(if d /= (-1)
+                         then Just $ fun a d
+                         else Nothing),
+                         (if e /= (-1)
+                          then Just $ fun a e
+                          else Nothing),
+                         (if f /= (-1)
+                          then Just $ fun a f
+                          else Nothing)]
+                  else [Just(maxBound::Int)])
   (WormId 2)  -> (if b /= (-1)
-                  then min (if d /= (-1)
-                            then fun b d
-                              else (maxBound::Int)) $
-                       min (if e /= (-1)
-                            then fun b e
-                            else (maxBound::Int))
-                           (if f /= (-1)
-                            then fun b f
-                            else (maxBound::Int))
-                  else maxBound::Int)
+                  then [(if d /= (-1)
+                         then Just $ fun b d
+                           else Nothing),
+                         (if e /= (-1)
+                          then Just $ fun b e
+                          else Nothing),
+                         (if f /= (-1)
+                          then Just $ fun b f
+                          else Nothing)]
+                  else [Just(maxBound::Int)])
   (WormId 3)  -> (if c /= (-1)
-                  then min (if d /= (-1)
-                            then fun c d
-                            else (maxBound::Int)) $
-                      min (if e /= (-1)
-                           then fun c e
-                           else (maxBound::Int))
-                          (if f /= (-1)
-                           then fun c f
-                           else (maxBound::Int))
-                  else maxBound::Int)
+                  then [(if d /= (-1)
+                         then Just $ fun c d
+                         else Nothing),
+                        (if e /= (-1)
+                         then Just $ fun c e
+                         else Nothing),
+                        (if f /= (-1)
+                         then Just $ fun c f
+                         else Nothing)]
+                  else [Just(maxBound::Int)])
   (WormId 4)  -> (if d /= (-1)
-                  then min (if a /= (-1)
-                            then fun d a
-                            else (maxBound::Int)) $
-                       min (if b /= (-1)
-                            then fun d b
-                            else (maxBound::Int))
-                           (if c /= (-1)
-                            then fun d c
-                            else (maxBound::Int))
-                  else maxBound::Int)
+                  then [(if a /= (-1)
+                         then Just $ fun d a
+                         else Nothing),
+                        (if b /= (-1)
+                         then Just $ fun d b
+                         else Nothing),
+                        (if c /= (-1)
+                         then Just $ fun d c
+                         else Nothing)]
+                  else [Just(maxBound::Int)])
   (WormId 8)  -> (if e /= (-1)
-                  then min (if a /= (-1)
-                            then fun e a
-                            else (maxBound::Int)) $
-                       min (if b /= (-1)
-                            then fun e b
-                            else (maxBound::Int))
-                           (if c /= (-1)
-                            then fun e c
-                            else (maxBound::Int))
-                  else maxBound::Int)
+                  then [(if a /= (-1)
+                         then Just $ fun e a
+                         else Nothing),
+                        (if b /= (-1)
+                         then Just $ fun e b
+                         else Nothing),
+                        (if c /= (-1)
+                         then Just $ fun e c
+                         else Nothing)]
+                  else [Just(maxBound::Int)])
   (WormId 12) -> (if f /= (-1)
-                  then min (if a /= (-1)
-                            then fun f a
-                            else (maxBound::Int)) $
-                       min (if b /= (-1)
-                            then fun f b
-                            else (maxBound::Int))
-                           (if c /= (-1)
-                            then fun f c
-                            else (maxBound::Int))
-                  else maxBound::Int)
+                  then [(if a /= (-1)
+                         then Just $ fun f a
+                         else Nothing),
+                        (if b /= (-1)
+                         then Just $ fun f b
+                         else Nothing),
+                        (if c /= (-1)
+                         then Just $ fun f c
+                         else Nothing)]
+                  else [Just(maxBound::Int)])
   _           -> error $ "aListMinPairOff: " ++ show wormId'
 
 aListFromList :: [(Int, Int)] -> AList
