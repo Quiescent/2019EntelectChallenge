@@ -3249,6 +3249,10 @@ round.  Like who has the bananas and how many he/she has.
       multi-threaded context.
     - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 11:05]
     :END:
+*** IN_PROGRESS Investigate Int Map implementation being slower
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-09-03 Tue 18:42]
+    :END:
 *** TODO Eliminate possible moves to search through when the enemy is too far from me
     :LOGBOOK:
     - Note taken on [2019-09-03 Tue 17:02] \\
