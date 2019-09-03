@@ -4871,13 +4871,13 @@ maxPayoffScore =
   3 * maximumHealth
 
 payOff :: State -> State -> Payoff
-payOff _ (State { wormHealths     = wormHealths' }) =
-  let myTotalHealth                = aListSumMyEntries wormHealths'
-      opponentsTotalHealth         = aListSumOpponentsEntries wormHealths'
-      myPayoff                     = 2 * myTotalHealth +
-                                     (maximumHealth - opponentsTotalHealth)
-      opponentsPayoff              = opponentsTotalHealth +
-                                     2 * (maximumHealth - myTotalHealth)
+payOff _ (State { wormHealths = wormHealths' }) =
+  let myTotalHealth           = aListSumMyEntries wormHealths'
+      opponentsTotalHealth    = aListSumOpponentsEntries wormHealths'
+      myPayoff                = 2 * myTotalHealth +
+                                (maximumHealth - opponentsTotalHealth)
+      opponentsPayoff         = opponentsTotalHealth +
+                                2 * (maximumHealth - myTotalHealth)
    in Payoff (MyPayoff myPayoff) (OpponentsPayoff opponentsPayoff) (MaxScore maxPayoffScore)
 
 maxAverageDistance :: Int
@@ -4888,13 +4888,7 @@ allManhattanDistances =
   V.fromList $ do
   this <- [0..mapLength - 1]
   that <- [0..mapLength - 1]
-  return $ manhattanDistance' this that
-  where
-    manhattanDistance' :: Int -> Int -> Int
-    manhattanDistance' xy' xy'' =
-      let (x',  y')  = fromCoord xy'
-          (x'', y'') = fromCoord xy''
-      in (abs $ x'' - x') + (abs $ y'' - y')
+  return $ manhattanDistance this that
 
 mapLength :: Int
 mapLength = mapDim * mapDim
