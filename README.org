@@ -3262,8 +3262,6 @@ round.  Like who has the bananas and how many he/she has.
       I'm thinking: if the enemy worms are only to my North then there's no
       use shooting West.
     :END:
-*** TODO Don't recompute anything
-*** TODO Stack space profile
 *** TODO Use vectors everywhere instead of lists
 *** TODO separate state check from the move/round trigger
 *** TODO Further optimise the Snowball and Banana blast folds
