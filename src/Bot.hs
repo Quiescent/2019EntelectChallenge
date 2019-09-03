@@ -5219,7 +5219,6 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       wormPositions'   = wormPositions state
       thisWormsId      = thisPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thisWormsId state
-      wormsAreClose    = aListMinPairOff thisWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
   in (wormIsNotFrozen' &&
       isAMoveMove move &&
       isValidMoveMove coord' state move) ||
@@ -5227,19 +5226,16 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (wormIsNotFrozen'  &&
-      wormsAreClose     &&
       isAShootMove move &&
       (any (\ positions -> isJust $
                            shotHitsWorm coord' gameMap' positions move) $
            wormPositions' : opponentsPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
-      wormsAreClose                        &&
       isABananaMove move                   &&
       wormHasBananasLeft thisWormsId state &&
       any (\ target -> bananaBlastHitOpponent target wormPositions')
           (displaceToBananaDestination move coord')) ||
      (wormIsNotFrozen'                       &&
-      wormsAreClose                          &&
       isASnowballMove move                   &&
       wormHasSnowballsLeft thisWormsId state &&
       any (\ target -> (snowballBlastHitOpponent target wormPositions'))
@@ -5333,24 +5329,20 @@ nonMoveMoveWouldBeValuableToOpponent myPossibleWormPositions state move =
       wormPositions'   = wormPositions state
       thatWormsId      = thatPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
-      wormsAreClose    = aListMinPairOff thatWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
   in (wormIsNotFrozen' &&
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (wormIsNotFrozen'  &&
-      wormsAreClose     &&
       isAShootMove move &&
       (any (\ positions -> isJust $
                            shotHitsWorm coord' gameMap' positions move) $
        wormPositions' : myPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
-      wormsAreClose                        &&
       isABananaMove move                   &&
       wormHasBananasLeft thatWormsId state &&
       any (\ target -> bananaBlastHitMe target wormPositions')
           (displaceToBananaDestination move coord')) ||
      (wormIsNotFrozen'                       &&
-      wormsAreClose                          &&
       isASnowballMove move                   &&
       wormHasSnowballsLeft thatWormsId state &&
       any (\ target -> (snowballBlastHitMe target wormPositions'))
