@@ -4877,10 +4877,8 @@ killSearch !g
       in (SearchResult (payOff initialState state') (reverse (combinedMove:moves)), g'', state')
 
 findSubTree :: CombinedMove -> StateTransitions -> SearchTree
-findSubTree combinedMove stateTransitions =
-  case (find (hasMove combinedMove) stateTransitions) of
-        Just transition -> subTree transition
-        Nothing         -> SearchFront
+findSubTree (CombinedMove idx) stateTransitions =
+  subTree $ IM.findWithDefault (StateTransition (CombinedMove 0) SearchFront) idx stateTransitions
 
 pickOneAtRandom :: StdGen -> [a] -> (a, StdGen)
 pickOneAtRandom g xs =
