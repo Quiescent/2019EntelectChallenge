@@ -4869,8 +4869,8 @@ maxAverageDistance = mapDim
 allManhattanDistances :: UnBoxed.Vector Int
 allManhattanDistances =
   UnBoxed.fromList $ do
-    this <- [0..mapLength - 1]
-    that <- [0..mapLength - 1]
+    this <- [0..mapDim - 1]
+    that <- [0..mapDim - 1]
     return $ manhattanDistance' this that
   where
     manhattanDistance' :: Coord -> Coord -> Int
