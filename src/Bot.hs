@@ -5162,7 +5162,9 @@ myMovesFrom myMoveMoves opponentsMoveMoves state =
 
 manhattanDistanceToMiddle :: Coord -> Int
 manhattanDistanceToMiddle coord' =
-  manhattanDistance coord' (fromCoord 16 16)
+  let (x, y)     = fromCoord coord'
+      halfMapDim = 16
+  in (abs $ x - halfMapDim) + (abs $ y - halfMapDim)
 
 isCloserByManhattanDistance :: Coord -> Coord -> Bool
 isCloserByManhattanDistance this that =
