@@ -4051,7 +4051,9 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
       logStdErr $ "Worker died during [" ++
         show strategy ++ "] with exception " ++ show (e::SomeException) ++ "\n" ++
         "State: " ++ readableShow initialState ++ "\n" ++
-        "state':" ++ readableShow state'
+        "state':" ++ readableShow state' ++ "\n" ++
+        "restarting worker"
+      iterativelyImproveSearch gen initialState SearchFront stateChannel treeVariable
     nearbyWorms = wormsNearMyCurrentWorm initialState
     strategy    = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
     state'      = if strategy == Dig || strategy == GetToTheChoppa
