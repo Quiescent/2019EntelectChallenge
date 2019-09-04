@@ -4692,8 +4692,8 @@ pointsSearch !g
   case gameOver state round' of
     GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
     NoResult        ->
-      let (myRecord,        g')  = pickOneAtRandom g  $ IM.elems myMoves
-          (opponentsRecord, g'') = pickOneAtRandom g' $ IM.elems opponentsMoves
+      let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
           myMove                 = successRecordMove myRecord
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
@@ -4749,8 +4749,8 @@ digSearch !g
   case digGameOver round' reward state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
     NoResult        ->
-      let (myRecord,        g')  = pickOneAtRandom g  $ IM.elems myMoves
-          (opponentsRecord, g'') = pickOneAtRandom g' $ IM.elems opponentsMoves
+      let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
           myMove                 = successRecordMove myRecord
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
@@ -4868,8 +4868,8 @@ killSearch !g
     GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
     NoResult        ->
       -- TODO this might be slow :/
-      let (myRecord,        g')  = pickOneAtRandom g  $ IM.elems myMoves
-          (opponentsRecord, g'') = pickOneAtRandom g' $ IM.elems opponentsMoves
+      let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
           myMove                 = successRecordMove myRecord
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
@@ -4885,6 +4885,19 @@ pickOneAtRandom g xs =
   let (i, g') = next g
       index   = i `mod` (length xs)
   in (xs !! index, g')
+
+intMapNth :: Int -> IM.IntMap a -> a
+intMapNth n xs =
+  snd $
+  IM.foldl' (\ current@(!cnt, _) next' -> if cnt == n then current else (cnt + 1, next'))
+  (-1, snd $ IM.findMin xs)
+  xs
+
+intMapPickOneAtRandom :: StdGen -> IM.IntMap a -> (a, StdGen)
+intMapPickOneAtRandom g xs =
+  let (i, g') = next g
+      index   = i `mod` (IM.size xs)
+  in (intMapNth index xs, g')
 
 type Moves = [CombinedMove]
 
@@ -5023,10 +5036,10 @@ nextSearchMove totalGames successRecords =
         confidence totalGames gamesPlayed ratio
       firstRecord = snd $ IM.findMin successRecords
   in snd $
-     IM.foldl' (\ current@(best, _) otherTree -> let next' = computeConfidence otherTree
-                                                 in if next' > best
-                                                    then (next', otherTree)
-                                                    else current)
+     IM.foldl' (\ current@(!best, _) otherTree -> let next' = computeConfidence otherTree
+                                                  in if next' > best
+                                                     then (next', otherTree)
+                                                     else current)
                (computeConfidence firstRecord, firstRecord)
                successRecords
 
