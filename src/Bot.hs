@@ -320,6 +320,24 @@ aListAveragePairOffs fun aList@(AList a b c d e f) =
                 else 0)
   in result `div` count'
 
+aListFoldOverOpponentValues :: (b -> Int -> b) -> b -> AList -> b
+aListFoldOverOpponentValues fun acc (AList _ _ _ d e f) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' d)
+    go 1 !acc' = go 2 (fun acc' e)
+    go 2 !acc' = fun acc' f
+    go x _     = error $ "Can't get here... " ++ show x
+
+aListFoldOverMyValues :: (b -> Int -> b) -> b -> AList -> b
+aListFoldOverMyValues fun acc (AList a b c _ _ _) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' a)
+    go 1 !acc' = go 2 (fun acc' b)
+    go 2 !acc' = fun acc' c
+    go x _     = error $ "Can't get here... " ++ show x
+
 aListMinPairOff :: WormId -> (Int -> Int -> Int) -> AList -> Int
 aListMinPairOff wormId' fun (AList a b c d e f) =
  case wormId' of
