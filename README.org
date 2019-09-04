@@ -3287,8 +3287,9 @@ round.  Like who has the bananas and how many he/she has.
       If I'm not close enough to the enemy (and vice versa) then there's no
       point shooting or throwing anything.
     :END:
-*** TODO Eliminate possible moves to search through with direction to enemy
+*** IN_PROGRESS Eliminate possible moves to search through with direction to enemy
     :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-09-04 Wed 06:02]
     - Note taken on [2019-09-01 Sun 20:13] \\
       I'm thinking: if the enemy worms are only to my North then there's no
       use shooting West.
