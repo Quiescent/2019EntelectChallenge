@@ -3258,14 +3258,18 @@ round.  Like who has the bananas and how many he/she has.
       indexing into the tree.
     - State "IN_PROGRESS" from "TODO"       [2019-09-03 Tue 18:42]
     :END:
-*** IN_PROGRESS Optimise `nextSearchMove' by turning it into a strict left fold
+*** DONE Optimise `nextSearchMove' by turning it into a strict left fold
+    CLOSED: [2019-09-04 Wed 05:39]
     :LOGBOOK:
+    - CLOSING NOTE [2019-09-04 Wed 05:39] \\
+      Retrospectively completing task
     - State "IN_PROGRESS" from "TODO"       [2019-09-04 Wed 05:11]
     - Note taken on [2019-09-04 Wed 05:10] \\
       Idea is to remove multiple calls to confidence.
     :END:
-*** TODO Optimise out the use of elems
+*** IN_PROGRESS Optimise out the use of elems
     :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-09-04 Wed 05:39]
     - Note taken on [2019-09-04 Wed 05:11] \\
       It's allocating a lot and it's slower than folding over the tree.
     :END:
