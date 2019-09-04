@@ -2285,7 +2285,9 @@ formatMove wormsCoord makeSelections' dir@(Move x) xy state
                           then "nothing"
                           else "move " ++ (showCoord $ displaceCoordByMove xy dir)
   -- Dig
-  | isADigMove    dir   = "dig "  ++ (showCoord $ displaceCoordByMove xy (Move (x - 8)))
+  | isADigMove    dir   = if moveWouldGoOOB xy (Move $ x - 8)
+                          then "nothing"
+                          else "dig "  ++ (showCoord $ displaceCoordByMove xy (Move $ x - 8))
   -- Throwing the bomb
   | isABananaMove dir   = moveFromMaybe $
                           fmap (\ newCoord -> "banana " ++ showCoord newCoord) $
@@ -4200,6 +4202,7 @@ postStateTransformation wormPositions' thatLastMoveWasInvalid move' initialState
       myCoord                 = thisWormsCoord initialState
       opponentsCoord          = thatWormsCoord initialState
   in if isAMoveMove myMove' && isAMoveMove opponentsMove' &&
+        (not $ moveWouldGoOOB myCoord myMove') && (not $ moveWouldGoOOB opponentsCoord opponentsMove') &&
         displaceCoordByMove myCoord myMove' == displaceCoordByMove opponentsCoord opponentsMove'
      then withWormPositions (always wormPositions') state'
      else if thatLastMoveWasInvalid
