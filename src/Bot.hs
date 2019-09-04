@@ -5230,6 +5230,257 @@ myGetToTheChoppaMoves state =
      then [doNothing]
      else moves
 
+data DirectionZone = NW_ZONE
+                   | NE_ZONE
+                   | SE_ZONE
+                   | SW_ZONE
+                   | N_ZONE
+                   | E_ZONE
+                   | S_ZONE
+                   | W_ZONE
+                   | NOT_SW_ZONE
+                   | NOT_NW_ZONE
+                   | NOT_NE_ZONE
+                   | NOT_SE_ZONE
+                   | ALL_ZONE
+                   | NONE
+                   deriving (Show)
+
+opponentsDirectionsFrom :: Coord -> AList -> DirectionZone
+opponentsDirectionsFrom coord' positions =
+  aListFoldOverOpponentValues updateZone NONE positions
+  where
+    updateZone :: DirectionZone -> Coord -> DirectionZone
+    updateZone NONE x = directionFrom coord' x
+    updateZone zone x = mergeZones zone (directionFrom coord' x)
+
+-- Generated with:
+-- let zones = [NW_ZONE, NE_ZONE, SE_ZONE, SW_ZONE, N_ZONE, E_ZONE, S_ZONE, W_ZONE, NOT_SW_ZONE, NOT_NW_ZONE, NOT_NE_ZONE, NOT_SE_ZONE, ALL_ZONE, NONE]
+-- putStrLn $ concat $ do { one <- zones; other <- zones; return $ "mergeZones " ++ show one ++ " " ++ show other ++ " = undefined\n" }
+mergeZones :: DirectionZone -> DirectionZone -> DirectionZone
+mergeZones NW_ZONE     NW_ZONE     = undefined
+mergeZones NW_ZONE     NE_ZONE     = undefined
+mergeZones NW_ZONE     SE_ZONE     = undefined
+mergeZones NW_ZONE     SW_ZONE     = undefined
+mergeZones NW_ZONE     N_ZONE      = undefined
+mergeZones NW_ZONE     E_ZONE      = undefined
+mergeZones NW_ZONE     S_ZONE      = undefined
+mergeZones NW_ZONE     W_ZONE      = undefined
+mergeZones NW_ZONE     NOT_SW_ZONE = undefined
+mergeZones NW_ZONE     NOT_NW_ZONE = undefined
+mergeZones NW_ZONE     NOT_NE_ZONE = undefined
+mergeZones NW_ZONE     NOT_SE_ZONE = undefined
+mergeZones NW_ZONE     ALL_ZONE    = undefined
+mergeZones NW_ZONE     NONE        = undefined
+mergeZones NE_ZONE     NW_ZONE     = undefined
+mergeZones NE_ZONE     NE_ZONE     = undefined
+mergeZones NE_ZONE     SE_ZONE     = undefined
+mergeZones NE_ZONE     SW_ZONE     = undefined
+mergeZones NE_ZONE     N_ZONE      = undefined
+mergeZones NE_ZONE     E_ZONE      = undefined
+mergeZones NE_ZONE     S_ZONE      = undefined
+mergeZones NE_ZONE     W_ZONE      = undefined
+mergeZones NE_ZONE     NOT_SW_ZONE = undefined
+mergeZones NE_ZONE     NOT_NW_ZONE = undefined
+mergeZones NE_ZONE     NOT_NE_ZONE = undefined
+mergeZones NE_ZONE     NOT_SE_ZONE = undefined
+mergeZones NE_ZONE     ALL_ZONE    = undefined
+mergeZones NE_ZONE     NONE        = undefined
+mergeZones SE_ZONE     NW_ZONE     = undefined
+mergeZones SE_ZONE     NE_ZONE     = undefined
+mergeZones SE_ZONE     SE_ZONE     = undefined
+mergeZones SE_ZONE     SW_ZONE     = undefined
+mergeZones SE_ZONE     N_ZONE      = undefined
+mergeZones SE_ZONE     E_ZONE      = undefined
+mergeZones SE_ZONE     S_ZONE      = undefined
+mergeZones SE_ZONE     W_ZONE      = undefined
+mergeZones SE_ZONE     NOT_SW_ZONE = undefined
+mergeZones SE_ZONE     NOT_NW_ZONE = undefined
+mergeZones SE_ZONE     NOT_NE_ZONE = undefined
+mergeZones SE_ZONE     NOT_SE_ZONE = undefined
+mergeZones SE_ZONE     ALL_ZONE    = undefined
+mergeZones SE_ZONE     NONE        = undefined
+mergeZones SW_ZONE     NW_ZONE     = undefined
+mergeZones SW_ZONE     NE_ZONE     = undefined
+mergeZones SW_ZONE     SE_ZONE     = undefined
+mergeZones SW_ZONE     SW_ZONE     = undefined
+mergeZones SW_ZONE     N_ZONE      = undefined
+mergeZones SW_ZONE     E_ZONE      = undefined
+mergeZones SW_ZONE     S_ZONE      = undefined
+mergeZones SW_ZONE     W_ZONE      = undefined
+mergeZones SW_ZONE     NOT_SW_ZONE = undefined
+mergeZones SW_ZONE     NOT_NW_ZONE = undefined
+mergeZones SW_ZONE     NOT_NE_ZONE = undefined
+mergeZones SW_ZONE     NOT_SE_ZONE = undefined
+mergeZones SW_ZONE     ALL_ZONE    = undefined
+mergeZones SW_ZONE     NONE        = undefined
+mergeZones N_ZONE      NW_ZONE     = undefined
+mergeZones N_ZONE      NE_ZONE     = undefined
+mergeZones N_ZONE      SE_ZONE     = undefined
+mergeZones N_ZONE      SW_ZONE     = undefined
+mergeZones N_ZONE      N_ZONE      = undefined
+mergeZones N_ZONE      E_ZONE      = undefined
+mergeZones N_ZONE      S_ZONE      = undefined
+mergeZones N_ZONE      W_ZONE      = undefined
+mergeZones N_ZONE      NOT_SW_ZONE = undefined
+mergeZones N_ZONE      NOT_NW_ZONE = undefined
+mergeZones N_ZONE      NOT_NE_ZONE = undefined
+mergeZones N_ZONE      NOT_SE_ZONE = undefined
+mergeZones N_ZONE      ALL_ZONE    = undefined
+mergeZones N_ZONE      NONE        = undefined
+mergeZones E_ZONE      NW_ZONE     = undefined
+mergeZones E_ZONE      NE_ZONE     = undefined
+mergeZones E_ZONE      SE_ZONE     = undefined
+mergeZones E_ZONE      SW_ZONE     = undefined
+mergeZones E_ZONE      N_ZONE      = undefined
+mergeZones E_ZONE      E_ZONE      = undefined
+mergeZones E_ZONE      S_ZONE      = undefined
+mergeZones E_ZONE      W_ZONE      = undefined
+mergeZones E_ZONE      NOT_SW_ZONE = undefined
+mergeZones E_ZONE      NOT_NW_ZONE = undefined
+mergeZones E_ZONE      NOT_NE_ZONE = undefined
+mergeZones E_ZONE      NOT_SE_ZONE = undefined
+mergeZones E_ZONE      ALL_ZONE    = undefined
+mergeZones E_ZONE      NONE        = undefined
+mergeZones S_ZONE      NW_ZONE     = undefined
+mergeZones S_ZONE      NE_ZONE     = undefined
+mergeZones S_ZONE      SE_ZONE     = undefined
+mergeZones S_ZONE      SW_ZONE     = undefined
+mergeZones S_ZONE      N_ZONE      = undefined
+mergeZones S_ZONE      E_ZONE      = undefined
+mergeZones S_ZONE      S_ZONE      = undefined
+mergeZones S_ZONE      W_ZONE      = undefined
+mergeZones S_ZONE      NOT_SW_ZONE = undefined
+mergeZones S_ZONE      NOT_NW_ZONE = undefined
+mergeZones S_ZONE      NOT_NE_ZONE = undefined
+mergeZones S_ZONE      NOT_SE_ZONE = undefined
+mergeZones S_ZONE      ALL_ZONE    = undefined
+mergeZones S_ZONE      NONE        = undefined
+mergeZones W_ZONE      NW_ZONE     = undefined
+mergeZones W_ZONE      NE_ZONE     = undefined
+mergeZones W_ZONE      SE_ZONE     = undefined
+mergeZones W_ZONE      SW_ZONE     = undefined
+mergeZones W_ZONE      N_ZONE      = undefined
+mergeZones W_ZONE      E_ZONE      = undefined
+mergeZones W_ZONE      S_ZONE      = undefined
+mergeZones W_ZONE      W_ZONE      = undefined
+mergeZones W_ZONE      NOT_SW_ZONE = undefined
+mergeZones W_ZONE      NOT_NW_ZONE = undefined
+mergeZones W_ZONE      NOT_NE_ZONE = undefined
+mergeZones W_ZONE      NOT_SE_ZONE = undefined
+mergeZones W_ZONE      ALL_ZONE    = undefined
+mergeZones W_ZONE      NONE        = undefined
+mergeZones NOT_SW_ZONE NW_ZONE     = undefined
+mergeZones NOT_SW_ZONE NE_ZONE     = undefined
+mergeZones NOT_SW_ZONE SE_ZONE     = undefined
+mergeZones NOT_SW_ZONE SW_ZONE     = undefined
+mergeZones NOT_SW_ZONE N_ZONE      = undefined
+mergeZones NOT_SW_ZONE E_ZONE      = undefined
+mergeZones NOT_SW_ZONE S_ZONE      = undefined
+mergeZones NOT_SW_ZONE W_ZONE      = undefined
+mergeZones NOT_SW_ZONE NOT_SW_ZONE = undefined
+mergeZones NOT_SW_ZONE NOT_NW_ZONE = undefined
+mergeZones NOT_SW_ZONE NOT_NE_ZONE = undefined
+mergeZones NOT_SW_ZONE NOT_SE_ZONE = undefined
+mergeZones NOT_SW_ZONE ALL_ZONE    = undefined
+mergeZones NOT_SW_ZONE NONE        = undefined
+mergeZones NOT_NW_ZONE NW_ZONE     = undefined
+mergeZones NOT_NW_ZONE NE_ZONE     = undefined
+mergeZones NOT_NW_ZONE SE_ZONE     = undefined
+mergeZones NOT_NW_ZONE SW_ZONE     = undefined
+mergeZones NOT_NW_ZONE N_ZONE      = undefined
+mergeZones NOT_NW_ZONE E_ZONE      = undefined
+mergeZones NOT_NW_ZONE S_ZONE      = undefined
+mergeZones NOT_NW_ZONE W_ZONE      = undefined
+mergeZones NOT_NW_ZONE NOT_SW_ZONE = undefined
+mergeZones NOT_NW_ZONE NOT_NW_ZONE = undefined
+mergeZones NOT_NW_ZONE NOT_NE_ZONE = undefined
+mergeZones NOT_NW_ZONE NOT_SE_ZONE = undefined
+mergeZones NOT_NW_ZONE ALL_ZONE    = undefined
+mergeZones NOT_NW_ZONE NONE        = undefined
+mergeZones NOT_NE_ZONE NW_ZONE     = undefined
+mergeZones NOT_NE_ZONE NE_ZONE     = undefined
+mergeZones NOT_NE_ZONE SE_ZONE     = undefined
+mergeZones NOT_NE_ZONE SW_ZONE     = undefined
+mergeZones NOT_NE_ZONE N_ZONE      = undefined
+mergeZones NOT_NE_ZONE E_ZONE      = undefined
+mergeZones NOT_NE_ZONE S_ZONE      = undefined
+mergeZones NOT_NE_ZONE W_ZONE      = undefined
+mergeZones NOT_NE_ZONE NOT_SW_ZONE = undefined
+mergeZones NOT_NE_ZONE NOT_NW_ZONE = undefined
+mergeZones NOT_NE_ZONE NOT_NE_ZONE = undefined
+mergeZones NOT_NE_ZONE NOT_SE_ZONE = undefined
+mergeZones NOT_NE_ZONE ALL_ZONE    = undefined
+mergeZones NOT_NE_ZONE NONE        = undefined
+mergeZones NOT_SE_ZONE NW_ZONE     = undefined
+mergeZones NOT_SE_ZONE NE_ZONE     = undefined
+mergeZones NOT_SE_ZONE SE_ZONE     = undefined
+mergeZones NOT_SE_ZONE SW_ZONE     = undefined
+mergeZones NOT_SE_ZONE N_ZONE      = undefined
+mergeZones NOT_SE_ZONE E_ZONE      = undefined
+mergeZones NOT_SE_ZONE S_ZONE      = undefined
+mergeZones NOT_SE_ZONE W_ZONE      = undefined
+mergeZones NOT_SE_ZONE NOT_SW_ZONE = undefined
+mergeZones NOT_SE_ZONE NOT_NW_ZONE = undefined
+mergeZones NOT_SE_ZONE NOT_NE_ZONE = undefined
+mergeZones NOT_SE_ZONE NOT_SE_ZONE = undefined
+mergeZones NOT_SE_ZONE ALL_ZONE    = undefined
+mergeZones NOT_SE_ZONE NONE        = undefined
+mergeZones ALL_ZONE    NW_ZONE     = undefined
+mergeZones ALL_ZONE    NE_ZONE     = undefined
+mergeZones ALL_ZONE    SE_ZONE     = undefined
+mergeZones ALL_ZONE    SW_ZONE     = undefined
+mergeZones ALL_ZONE    N_ZONE      = undefined
+mergeZones ALL_ZONE    E_ZONE      = undefined
+mergeZones ALL_ZONE    S_ZONE      = undefined
+mergeZones ALL_ZONE    W_ZONE      = undefined
+mergeZones ALL_ZONE    NOT_SW_ZONE = undefined
+mergeZones ALL_ZONE    NOT_NW_ZONE = undefined
+mergeZones ALL_ZONE    NOT_NE_ZONE = undefined
+mergeZones ALL_ZONE    NOT_SE_ZONE = undefined
+mergeZones ALL_ZONE    ALL_ZONE    = undefined
+mergeZones ALL_ZONE    NONE        = undefined
+mergeZones NONE        NW_ZONE     = undefined
+mergeZones NONE        NE_ZONE     = undefined
+mergeZones NONE        SE_ZONE     = undefined
+mergeZones NONE        SW_ZONE     = undefined
+mergeZones NONE        N_ZONE      = undefined
+mergeZones NONE        E_ZONE      = undefined
+mergeZones NONE        S_ZONE      = undefined
+mergeZones NONE        W_ZONE      = undefined
+mergeZones NONE        NOT_SW_ZONE = undefined
+mergeZones NONE        NOT_NW_ZONE = undefined
+mergeZones NONE        NOT_NE_ZONE = undefined
+mergeZones NONE        NOT_SE_ZONE = undefined
+mergeZones NONE        ALL_ZONE    = undefined
+mergeZones NONE        NONE        = undefined
+
+directionFrom :: Coord -> Coord -> DirectionZone
+directionFrom xy' xy'' =
+  allDirectionsFrom `UV.unsafeIndex` (xy' * mapLength + xy'')
+
+allDirectionsFrom :: V.Vector DirectionZone
+allDirectionsFrom =
+  V.fromList $ do
+    this <- [0..mapLength - 1]
+    that <- [0..mapLength - 1]
+    return $ directionFrom' this that
+  where
+    directionFrom' :: Coord -> Coord -> DirectionZone
+    directionFrom' xy' xy'' =
+      let (x',  y')  = fromCoord xy'
+          (x'', y'') = fromCoord xy''
+      in case (compareToTernary x'' x', compareToTernary y'' y') of
+        (Zero,   NegOne) -> N_ZONE
+        (One,    NegOne) -> NE_ZONE
+        (One,    Zero)   -> E_ZONE
+        (One,    One)    -> SE_ZONE
+        (Zero,   One)    -> S_ZONE
+        (NegOne, One)    -> SW_ZONE
+        (NegOne, Zero)   -> W_ZONE
+        (NegOne, NegOne) -> NW_ZONE
+        (Zero,   Zero)   -> NONE
+
 moveMoveWouldBeValuableToMe :: State -> Move -> Bool
 moveMoveWouldBeValuableToMe state move =
   let thisWormsId      = thisPlayersCurrentWormId state
