@@ -5235,17 +5235,29 @@ myGetToTheChoppaMoves state =
 -- NW NE SE SW
 type DirectionZone = Int
 
+nwBit :: Int
+nwBit = 3
+
 nwZone :: DirectionZone
-nwZone = shiftL 1 3
+nwZone = shiftL 1 nwBit
+
+neBit :: Int
+neBit = 2
 
 neZone :: DirectionZone
-neZone = shiftL 1 2
+neZone = shiftL 1 neBit
+
+seBit :: Int
+seBit = 1
 
 seZone :: DirectionZone
-seZone = shiftL 1 1
+seZone = shiftL 1 seBit
+
+swBit :: Int
+swBit = 0
 
 swZone :: DirectionZone
-swZone = 1
+swZone = shiftL 1 swBit
 
 nZone :: DirectionZone
 nZone = mergeZones nwZone neZone
@@ -5265,6 +5277,13 @@ allZones = (shiftL 1 4) - 1
 opponentsDirectionsFrom :: Coord -> AList -> DirectionZone
 opponentsDirectionsFrom coord' positions =
   aListFoldOverOpponentValues updateZone 0 positions
+  where
+    updateZone :: DirectionZone -> Coord -> DirectionZone
+    updateZone zone x = mergeZones zone (directionFrom coord' x)
+
+myDirectionsFrom :: Coord -> AList -> DirectionZone
+myDirectionsFrom coord' positions =
+  aListFoldOverMyValues updateZone 0 positions
   where
     updateZone :: DirectionZone -> Coord -> DirectionZone
     updateZone zone x = mergeZones zone (directionFrom coord' x)
@@ -5301,6 +5320,17 @@ allDirectionsFrom =
         (NegOne, NegOne) -> nwZone
         (Zero,   Zero)   -> allZones
 
+shotGoesInDirection :: Move -> DirectionZone -> Bool
+shotGoesInDirection (Move 0) direction = testBit direction nwBit || testBit direction neBit
+shotGoesInDirection (Move 1) direction = testBit direction neBit
+shotGoesInDirection (Move 2) direction = testBit direction seBit || testBit direction neBit
+shotGoesInDirection (Move 3) direction = testBit direction seBit
+shotGoesInDirection (Move 4) direction = testBit direction swBit || testBit direction seBit
+shotGoesInDirection (Move 5) direction = testBit direction swBit
+shotGoesInDirection (Move 6) direction = testBit direction nwBit || testBit direction swBit
+shotGoesInDirection (Move 7) direction = testBit direction nwBit
+shotGoesInDirection move'    _         = error $ "shotGoesInDirection:" ++ show move'
+
 moveMoveWouldBeValuableToMe :: State -> Move -> Bool
 moveMoveWouldBeValuableToMe state move =
   let thisWormsId      = thisPlayersCurrentWormId state
@@ -5326,15 +5356,17 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       thisWormsId      = thisPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thisWormsId state
       wormsAreClose    = aListMinPairOff thisWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
+      directionZone    = opponentsDirectionsFrom coord' wormPositions'
   in (wormIsNotFrozen' &&
       isAMoveMove move &&
       isValidMoveMove coord' state move) ||
      (wormIsNotFrozen' &&
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
-     (wormIsNotFrozen'  &&
-      wormsAreClose     &&
-      isAShootMove move &&
+     (wormIsNotFrozen'                       &&
+      wormsAreClose                          &&
+      isAShootMove move                      &&
+      shotGoesInDirection move directionZone &&
       (any (\ positions -> isJust $
                            shotHitsWorm coord' gameMap' positions move) $
            wormPositions' : opponentsPossibleWormPositions)) ||
@@ -5440,12 +5472,14 @@ nonMoveMoveWouldBeValuableToOpponent myPossibleWormPositions state move =
       thatWormsId      = thatPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
       wormsAreClose    = aListMinPairOff thatWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
+      directionZone    = myDirectionsFrom coord' wormPositions'
   in (wormIsNotFrozen' &&
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
-     (wormIsNotFrozen'  &&
-      wormsAreClose     &&
-      isAShootMove move &&
+     (wormIsNotFrozen'                       &&
+      wormsAreClose                          &&
+      isAShootMove move                      &&
+      shotGoesInDirection move directionZone &&
       (any (\ positions -> isJust $
                            shotHitsWorm coord' gameMap' positions move) $
        wormPositions' : myPossibleWormPositions)) ||
