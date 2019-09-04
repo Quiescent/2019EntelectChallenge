@@ -4269,8 +4269,8 @@ prettyPrintStateTransition state (StateTransition combinedMove searchTree) =
   in "Transition (" ++ prettyPrintThisMove state myMove ++ ", " ++ prettyPrintThatMove state opponentsMove ++ "):\n" ++
      prettyPrintSearchTree (makeMove False combinedMove state) searchTree
 
-intMapValues :: IntMap a -> [a]
-intMapValues = map snd . IM.toList
+intMapValues :: IM.IntMap a -> [a]
+intMapValues = IM.elems
 
 prettyPrintSearchTree :: State -> SearchTree -> String
 prettyPrintSearchTree state (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) _) =
