@@ -320,6 +320,64 @@ aListAveragePairOffs fun aList@(AList a b c d e f) =
                 else 0)
   in result `div` count'
 
+aListFoldOverOtherValues ::  WormId -> (b -> Int -> b) -> b -> AList -> b
+aListFoldOverOtherValues (WormId 1) fun acc (AList _ b c d e f) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' b)
+    go 1 !acc' = go 2 (fun acc' c)
+    go 2 !acc' = go 3 (fun acc' d)
+    go 3 !acc' = go 4 (fun acc' e)
+    go 4 !acc' = fun acc' f
+    go x _     = error $ "Can't get here... " ++ show x
+aListFoldOverOtherValues (WormId 2) fun acc (AList a _ c d e f) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' a)
+    go 1 !acc' = go 2 (fun acc' c)
+    go 2 !acc' = go 3 (fun acc' d)
+    go 3 !acc' = go 4 (fun acc' e)
+    go 4 !acc' = fun acc' f
+    go x _     = error $ "Can't get here... " ++ show x
+aListFoldOverOtherValues (WormId 3) fun acc (AList a b _ d e f) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' a)
+    go 1 !acc' = go 2 (fun acc' b)
+    go 2 !acc' = go 3 (fun acc' d)
+    go 3 !acc' = go 4 (fun acc' e)
+    go 4 !acc' = fun acc' f
+    go x _     = error $ "Can't get here... " ++ show x
+aListFoldOverOtherValues (WormId 4) fun acc (AList a b c _ e f) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' a)
+    go 1 !acc' = go 2 (fun acc' b)
+    go 2 !acc' = go 3 (fun acc' c)
+    go 3 !acc' = go 4 (fun acc' e)
+    go 4 !acc' = fun acc' f
+    go x _     = error $ "Can't get here... " ++ show x
+aListFoldOverOtherValues (WormId 8) fun acc (AList a b c d _ f) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' a)
+    go 1 !acc' = go 2 (fun acc' b)
+    go 2 !acc' = go 3 (fun acc' c)
+    go 3 !acc' = go 4 (fun acc' d)
+    go 4 !acc' = fun acc' f
+    go x _     = error $ "Can't get here... " ++ show x
+aListFoldOverOtherValues (WormId 12) fun acc (AList a b c d e _) =
+  go (0::Int) acc
+  where
+    go 0 !acc' = go 1 (fun acc' a)
+    go 1 !acc' = go 2 (fun acc' b)
+    go 2 !acc' = go 3 (fun acc' c)
+    go 3 !acc' = go 4 (fun acc' d)
+    go 4 !acc' = fun acc' e
+    go x _     = error $ "Can't get here... " ++ show x
+aListFoldOverOtherValues wormId' _ _ _ = error $ "aListFoldOverOtherValues: " ++ show wormId'
+
+
 aListFoldOverOpponentValues :: (b -> Int -> b) -> b -> AList -> b
 aListFoldOverOpponentValues fun acc (AList _ _ _ d e f) =
   go (0::Int) acc
@@ -2568,6 +2626,8 @@ makeMove _ moves state =
         thatWormHasBananasLeft'   = wormHasBananasLeft thatWormsId state'
         thisWormHasSnowballsLeft' = wormHasSnowballsLeft thisWormsId state'
         thatWormHasSnowballsLeft' = wormHasSnowballsLeft thatWormsId state'
+        thatDirectionsFrom        = directionsFrom thatWormsId thatWormsCoord' wormPositions'
+        thisDirectionsFrom        = directionsFrom thisWormsId thisWormsCoord' wormPositions'
         makeMove' SELECT          SELECT =
           let myMove'            = removeSelectionFromMove myMove
               opponentsMove'     = removeSelectionFromMove opponentsMove
@@ -2621,17 +2681,20 @@ makeMove _ moves state =
           makeMyShootMove thisWormsCoord'
                           thisWormsId
                           gameMap'
+                          thisDirectionsFrom
                           wormPositions'
                           myMove .
           makeOpponentsShootMove thatWormsCoord'
                                  thatWormsId
                                  gameMap'
+                                 thatDirectionsFrom
                                  wormPositions'
                                  opponentsMove
         makeMove' SHOOT           THROW_BANANA =
           makeMyShootMove thisWormsCoord'
                           thisWormsId
                           gameMap'
+                          thisDirectionsFrom
                           wormPositions'
                           myMove .
           makeOpponentsBananaMove thatWormsId
@@ -2650,12 +2713,14 @@ makeMove _ moves state =
           makeMyShootMove thisWormsCoord'
                           thisWormsId
                           gameMap'
+                          thisDirectionsFrom
                           wormPositions'
                           myMove
         makeMove' SHOOT           NOTHING =
           makeMyShootMove thisWormsCoord'
                           thisWormsId
                           gameMap'
+                          thisDirectionsFrom
                           wormPositions'
                           myMove
         makeMove' THROW_BANANA    THROW_BANANA =
@@ -2733,6 +2798,7 @@ makeMove _ moves state =
           makeOpponentsShootMove thatWormsCoord'
                                  thatWormsId
                                  gameMap'
+                                 thatDirectionsFrom
                                  wormPositions'
                                  opponentsMove .
           makeMyBananaMove thisWormsId
@@ -2751,12 +2817,14 @@ makeMove _ moves state =
           makeOpponentsShootMove thatWormsCoord'
                                  thatWormsId
                                  gameMap'
+                                 thatDirectionsFrom
                                  wormPositions'
                                  opponentsMove
         makeMove' NOTHING         SHOOT =
           makeOpponentsShootMove thatWormsCoord'
                                  thatWormsId
                                  gameMap'
+                                 thatDirectionsFrom
                                  wormPositions'
                                  opponentsMove
         makeMove' THROW_SNOWBALL  THROW_BANANA =
@@ -3623,7 +3691,7 @@ isMyWorm (WormId 2) = True
 isMyWorm (WormId 3) = True
 isMyWorm _          = False
 
-makeMyShootMove :: Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
+makeMyShootMove :: Coord -> WormId -> GameMap -> DirectionZone -> WormPositions -> Move -> ModifyState
 makeMyShootMove =
   makeShootMove penaliseThisPlayerForHittingHisFriendlyWorm
                 awardPointsToThisPlayerForHittingAnEnemy
@@ -3631,7 +3699,7 @@ makeMyShootMove =
                 penaliseThisPlayerForKillingOwnWorm
                 awardPointsToThisPlayerForMissing
 
-makeOpponentsShootMove :: Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
+makeOpponentsShootMove :: Coord -> WormId -> GameMap -> DirectionZone -> WormPositions -> Move -> ModifyState
 makeOpponentsShootMove =
   makeShootMove penaliseThatPlayerForHittingHisFriendlyWorm
                 awardPointsToThatPlayerForHittingAnEnemy
@@ -3639,7 +3707,7 @@ makeOpponentsShootMove =
                 penaliseThatPlayerForKillingOwnWorm
                 awardPointsToThatPlayerForMissing
 
-makeShootMove :: ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> Coord -> WormId -> GameMap -> WormPositions -> Move -> ModifyState
+makeShootMove :: ModifyState -> ModifyState -> ModifyState -> ModifyState -> ModifyState -> Coord -> WormId -> GameMap -> DirectionZone -> WormPositions -> Move -> ModifyState
 makeShootMove penalise
               awardPlayer
               awardPlayerForKill
@@ -3648,9 +3716,10 @@ makeShootMove penalise
               !wormsPosition
               !wormId'
               !gameMap'
+              !directionZone
               !wormPositions'
               !move =
-      let coord    = shotHitsWorm wormsPosition gameMap' wormPositions' move
+      let coord    = shotHitsWorm wormsPosition gameMap' directionZone wormPositions' move
           isHit    = isJust coord
           coord'   = fromJust coord
       in if isHit
@@ -5288,6 +5357,13 @@ myDirectionsFrom coord' positions =
     updateZone :: DirectionZone -> Coord -> DirectionZone
     updateZone zone x = mergeZones zone (directionFrom coord' x)
 
+directionsFrom :: WormId -> Coord -> AList -> DirectionZone
+directionsFrom wormId' coord' positions =
+  aListFoldOverOtherValues wormId' updateZone 0 positions
+  where
+    updateZone :: DirectionZone -> Coord -> DirectionZone
+    updateZone zone x = mergeZones zone (directionFrom coord' x)
+
 -- Generated with:
 -- let zones = [NW_ZONE, NE_ZONE, SE_ZONE, SW_ZONE, N_ZONE, E_ZONE, S_ZONE, W_ZONE, NOT_SW_ZONE, NOT_NW_ZONE, NOT_NE_ZONE, NOT_SE_ZONE, ALL_ZONE, NONE]
 -- putStrLn $ concat $ do { one <- zones; other <- zones; return $ "mergeZones " ++ show one ++ " " ++ show other ++ " = undefined\n" }
@@ -5356,7 +5432,6 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       thisWormsId      = thisPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thisWormsId state
       wormsAreClose    = aListMinPairOff thisWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
-      directionZone    = opponentsDirectionsFrom coord' wormPositions'
   in (wormIsNotFrozen' &&
       isAMoveMove move &&
       isValidMoveMove coord' state move) ||
@@ -5366,9 +5441,11 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
      (wormIsNotFrozen'                       &&
       wormsAreClose                          &&
       isAShootMove move                      &&
-      shotGoesInDirection move directionZone &&
       (any (\ positions -> isJust $
-                           shotHitsWorm coord' gameMap' positions move) $
+                           shotHitsWorm coord'
+                                        gameMap'
+                                        (opponentsDirectionsFrom coord' positions)
+                                        positions move) $
            wormPositions' : opponentsPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
       wormsAreClose                        &&
@@ -5415,10 +5492,12 @@ snowballBlastHitMe coord' wormPositions' =
     (\ !hitsAWorm !nextCoord -> hitsAWorm || aListAnyOfMyData (== nextCoord) wormPositions')
     False
 
-shotHitsWorm :: Coord -> GameMap -> WormPositions -> Move -> Maybe Coord
-shotHitsWorm coord' gameMap' wormPositions' move =
+shotHitsWorm :: Coord -> GameMap -> DirectionZone -> WormPositions -> Move -> Maybe Coord
+shotHitsWorm coord' gameMap' directionZone wormPositions' move =
   let shotsDir = directionOfShot move
-  in hitsWorm coord' gameMap' shotsDir wormPositions'
+  in if shotGoesInDirection move directionZone
+     then hitsWorm coord' gameMap' shotsDir wormPositions'
+     else Nothing
 
 opponentsMoveMovesFrom :: State -> [Move]
 opponentsMoveMovesFrom state = do
@@ -5472,16 +5551,18 @@ nonMoveMoveWouldBeValuableToOpponent myPossibleWormPositions state move =
       thatWormsId      = thatPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
       wormsAreClose    = aListMinPairOff thatWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
-      directionZone    = myDirectionsFrom coord' wormPositions'
   in (wormIsNotFrozen' &&
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (wormIsNotFrozen'                       &&
       wormsAreClose                          &&
       isAShootMove move                      &&
-      shotGoesInDirection move directionZone &&
       (any (\ positions -> isJust $
-                           shotHitsWorm coord' gameMap' positions move) $
+                           shotHitsWorm coord'
+                                        gameMap'
+                                        (myDirectionsFrom coord' positions)
+                                        positions
+                                        move) $
        wormPositions' : myPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
       wormsAreClose                        &&
