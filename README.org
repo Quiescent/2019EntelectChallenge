@@ -3275,8 +3275,10 @@ round.  Like who has the bananas and how many he/she has.
     - Note taken on [2019-09-04 Wed 05:11] \\
       It's allocating a lot and it's slower than folding over the tree.
     :END:
-*** IN_PROGRESS Eliminate possible moves to search through when the enemy is too far from me
+*** DONE Eliminate possible moves to search through when the enemy is too far from me
+    CLOSED: [2019-09-04 Wed 06:01]
     :LOGBOOK:
+    - CLOSING NOTE [2019-09-04 Wed 06:01]
     - State "IN_PROGRESS" from "TODO"       [2019-09-04 Wed 05:48]
     - Note taken on [2019-09-03 Tue 17:02] \\
       I forgot to start this task (or the revert undid it).
