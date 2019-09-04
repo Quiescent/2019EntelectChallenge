@@ -5021,7 +5021,14 @@ nextSearchMove :: Int -> SuccessRecords -> SuccessRecord
 nextSearchMove totalGames successRecords =
   let computeConfidence (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) _) =
         confidence totalGames gamesPlayed ratio
-  in maximumBy (\ oneTree otherTree -> compare (computeConfidence oneTree) (computeConfidence otherTree)) successRecords
+      firstRecord = snd $ IM.findMin successRecords
+  in snd $
+     IM.foldl' (\ current@(best, _) otherTree -> let next' = computeConfidence otherTree
+                                                 in if next' > best
+                                                    then (next', otherTree)
+                                                    else current)
+               (computeConfidence firstRecord, firstRecord)
+               successRecords
 
 confidence :: Int -> Int -> Double -> Double
 confidence !totalCount !gamesPlayed !ratio =
