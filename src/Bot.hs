@@ -320,6 +320,77 @@ aListAveragePairOffs fun aList@(AList a b c d e f) =
                 else 0)
   in result `div` count'
 
+aListMinPairOff :: WormId -> (Int -> Int -> Int) -> AList -> Int
+aListMinPairOff wormId' fun (AList a b c d e f) =
+ case wormId' of
+  (WormId 1)  -> (if a /= (-1)
+                  then min (if d /= (-1)
+                           then fun a d
+                           else (maxBound::Int)) $
+                       min (if e /= (-1)
+                            then fun a e
+                            else (maxBound::Int))
+                           (if f /= (-1)
+                            then fun a f
+                            else (maxBound::Int))
+                  else maxBound::Int)
+  (WormId 2)  -> (if b /= (-1)
+                  then min (if d /= (-1)
+                            then fun b d
+                              else (maxBound::Int)) $
+                       min (if e /= (-1)
+                            then fun b e
+                            else (maxBound::Int))
+                           (if f /= (-1)
+                            then fun b f
+                            else (maxBound::Int))
+                  else maxBound::Int)
+  (WormId 3)  -> (if c /= (-1)
+                  then min (if d /= (-1)
+                            then fun c d
+                            else (maxBound::Int)) $
+                      min (if e /= (-1)
+                           then fun c e
+                           else (maxBound::Int))
+                          (if f /= (-1)
+                           then fun c f
+                           else (maxBound::Int))
+                  else maxBound::Int)
+  (WormId 4)  -> (if d /= (-1)
+                  then min (if a /= (-1)
+                            then fun d a
+                            else (maxBound::Int)) $
+                       min (if b /= (-1)
+                            then fun d b
+                            else (maxBound::Int))
+                           (if c /= (-1)
+                            then fun d c
+                            else (maxBound::Int))
+                  else maxBound::Int)
+  (WormId 8)  -> (if e /= (-1)
+                  then min (if a /= (-1)
+                            then fun e a
+                            else (maxBound::Int)) $
+                       min (if b /= (-1)
+                            then fun e b
+                            else (maxBound::Int))
+                           (if c /= (-1)
+                            then fun e c
+                            else (maxBound::Int))
+                  else maxBound::Int)
+  (WormId 12) -> (if f /= (-1)
+                  then min (if a /= (-1)
+                            then fun f a
+                            else (maxBound::Int)) $
+                       min (if b /= (-1)
+                            then fun f b
+                            else (maxBound::Int))
+                           (if c /= (-1)
+                            then fun f c
+                            else (maxBound::Int))
+                  else maxBound::Int)
+  _           -> error $ "aListMinPairOff: " ++ show wormId'
+
 aListFromList :: [(Int, Int)] -> AList
 aListFromList xs =
   go xs (AList (-1) (-1) (-1) (-1) (-1) (-1))
@@ -5147,6 +5218,12 @@ moveMoveWouldBeValuableToMe state move =
      isAMoveMove move &&
      isValidMoveMove coord' state move
 
+-- Determined by moving the point around in the reference for banana
+-- bomb destinations.  Use the same for shooting because a worm could
+-- move into range.
+maxManhattanDistanceForBombs :: Int
+maxManhattanDistanceForBombs = 7
+
 -- ASSUME: that the player has selections left (it's checked
 -- elsewhere!)
 nonMoveMoveWouldBeValuableToMe :: [WormPositions] -> State -> Move -> Bool
@@ -5156,6 +5233,7 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       wormPositions'   = wormPositions state
       thisWormsId      = thisPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thisWormsId state
+      wormsAreClose    = aListMinPairOff thisWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
   in (wormIsNotFrozen' &&
       isAMoveMove move &&
       isValidMoveMove coord' state move) ||
@@ -5163,16 +5241,19 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (wormIsNotFrozen'  &&
+      wormsAreClose     &&
       isAShootMove move &&
       (any (\ positions -> isJust $
                            shotHitsWorm coord' gameMap' positions move) $
            wormPositions' : opponentsPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
+      wormsAreClose                        &&
       isABananaMove move                   &&
       wormHasBananasLeft thisWormsId state &&
       any (\ target -> bananaBlastHitOpponent target wormPositions')
           (displaceToBananaDestination move coord')) ||
      (wormIsNotFrozen'                       &&
+      wormsAreClose                          &&
       isASnowballMove move                   &&
       wormHasSnowballsLeft thisWormsId state &&
       any (\ target -> (snowballBlastHitOpponent target wormPositions'))
@@ -5266,20 +5347,24 @@ nonMoveMoveWouldBeValuableToOpponent myPossibleWormPositions state move =
       wormPositions'   = wormPositions state
       thatWormsId      = thatPlayersCurrentWormId state
       wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
+      wormsAreClose    = aListMinPairOff thatWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
   in (wormIsNotFrozen' &&
       isADigMove move  &&
       isValidDigMove  coord' (shiftDigToMoveRange move) (gameMap state)) ||
      (wormIsNotFrozen'  &&
+      wormsAreClose     &&
       isAShootMove move &&
       (any (\ positions -> isJust $
                            shotHitsWorm coord' gameMap' positions move) $
        wormPositions' : myPossibleWormPositions)) ||
      (wormIsNotFrozen'                     &&
+      wormsAreClose                        &&
       isABananaMove move                   &&
       wormHasBananasLeft thatWormsId state &&
       any (\ target -> bananaBlastHitMe target wormPositions')
           (displaceToBananaDestination move coord')) ||
      (wormIsNotFrozen'                       &&
+      wormsAreClose                          &&
       isASnowballMove move                   &&
       wormHasSnowballsLeft thatWormsId state &&
       any (\ target -> (snowballBlastHitMe target wormPositions'))
