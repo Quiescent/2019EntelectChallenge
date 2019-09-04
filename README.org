@@ -3249,9 +3249,25 @@ round.  Like who has the bananas and how many he/she has.
       multi-threaded context.
     - State "IN_PROGRESS" from "TODO"       [2019-09-01 Sun 11:05]
     :END:
-*** IN_PROGRESS Investigate Int Map implementation being slower
+*** DONE Investigate Int Map implementation being slower
+    CLOSED: [2019-09-04 Wed 05:09]
     :LOGBOOK:
+    - CLOSING NOTE [2019-09-04 Wed 05:09] \\
+      Problems appear to come from the usages of the tree.  e.g. I was using
+      ~find~ at one point and ~find~ uses a linear traversal instead of
+      indexing into the tree.
     - State "IN_PROGRESS" from "TODO"       [2019-09-03 Tue 18:42]
+    :END:
+*** IN_PROGRESS Optimise `nextSearchMove' by turning it into a strict left fold
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-09-04 Wed 05:11]
+    - Note taken on [2019-09-04 Wed 05:10] \\
+      Idea is to remove multiple calls to confidence.
+    :END:
+*** TODO Optimise out the use of elems
+    :LOGBOOK:
+    - Note taken on [2019-09-04 Wed 05:11] \\
+      It's allocating a lot and it's slower than folding over the tree.
     :END:
 *** TODO Eliminate possible moves to search through when the enemy is too far from me
     :LOGBOOK:
