@@ -5447,22 +5447,110 @@ nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions state move =
                                         (opponentsDirectionsFrom coord' positions)
                                         positions move) $
            wormPositions' : opponentsPossibleWormPositions)) ||
-     (wormIsNotFrozen'                     &&
-      wormsAreClose                        &&
-      isABananaMove move                   &&
-      wormHasBananasLeft thisWormsId state &&
+     (wormIsNotFrozen'                                                               &&
+      wormsAreClose                                                                  &&
+      isABananaMove move                                                             &&
+      wormHasBananasLeft thisWormsId state                                           &&
+      bananaIsThrownInDirection move (opponentsDirectionsFrom coord' wormPositions') &&
       any (\ target -> bananaBlastHitOpponent target wormPositions')
           (displaceToBananaDestination move coord')) ||
-     (wormIsNotFrozen'                       &&
-      wormsAreClose                          &&
-      isASnowballMove move                   &&
-      wormHasSnowballsLeft thisWormsId state &&
+     (wormIsNotFrozen'                                                          &&
+      wormsAreClose                                                             &&
+      isASnowballMove move                                                      &&
+      wormHasSnowballsLeft thisWormsId state                                    &&
+      bananaIsThrownInDirection (snowballMoveToBananaRange move)
+                                (opponentsDirectionsFrom coord' wormPositions') &&
       any (\ target -> (snowballBlastHitOpponent target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move &&
       nonMoveMoveWouldBeValuableToMe opponentsPossibleWormPositions
                                      (makeMySelection move state)
                                      (removeSelectionFromMove move))
+
+bananaIsThrownInDirection :: Move -> DirectionZone -> Bool
+bananaIsThrownInDirection (Move 24)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 25)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 26)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 27)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 28)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 29)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 30)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 31)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 32)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 33)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 34)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 35)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 36)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 37)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 38)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 39)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 40)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 41)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 42)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 43)  direction = testBit direction nwBit
+bananaIsThrownInDirection (Move 44)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 45)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 46)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 47)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 48)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 49)  direction = testBit direction neBit
+bananaIsThrownInDirection (Move 50)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 51)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 52)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 53)  direction = testBit direction swBit || testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 54)  direction = testBit direction neBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 55)  direction = testBit direction neBit || testBit direction nwBit || testBit direction seBit
+bananaIsThrownInDirection (Move 56)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 57)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 58)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 59)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 60)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 61)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 62)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 63)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 64)  _         = True
+bananaIsThrownInDirection (Move 65)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 66)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 67)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 68)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 69)  direction = testBit direction neBit || testBit direction seBit
+bananaIsThrownInDirection (Move 70)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 71)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 72)  direction = testBit direction swBit || testBit direction nwBit
+bananaIsThrownInDirection (Move 73)  direction = testBit direction swBit || testBit direction nwBit || testBit direction seBit
+bananaIsThrownInDirection (Move 74)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 75)  direction = testBit direction seBit || testBit direction neBit
+bananaIsThrownInDirection (Move 76)  direction = testBit direction seBit || testBit direction neBit
+bananaIsThrownInDirection (Move 77)  direction = testBit direction seBit || testBit direction neBit
+bananaIsThrownInDirection (Move 78)  direction = testBit direction seBit || testBit direction neBit
+bananaIsThrownInDirection (Move 79)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 80)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 81)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 82)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 83)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 84)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 85)  direction = testBit direction seBit
+bananaIsThrownInDirection (Move 86)  direction = testBit direction seBit
+bananaIsThrownInDirection (Move 87)  direction = testBit direction seBit
+bananaIsThrownInDirection (Move 88)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 89)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 90)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 91)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 92)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 93)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 94)  direction = testBit direction seBit
+bananaIsThrownInDirection (Move 95)  direction = testBit direction seBit
+bananaIsThrownInDirection (Move 96)  direction = testBit direction seBit
+bananaIsThrownInDirection (Move 97)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 98)  direction = testBit direction swBit
+bananaIsThrownInDirection (Move 99)  direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 100) direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 101) direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection (Move 102) direction = testBit direction seBit
+bananaIsThrownInDirection (Move 103) direction = testBit direction seBit
+bananaIsThrownInDirection (Move 104) direction = testBit direction swBit || testBit direction seBit
+bananaIsThrownInDirection move       _         = error $ "bananaIsThrownInDirection: " ++ show move
+
 
 bananaBlastHitOpponent :: Coord -> WormPositions -> Bool
 bananaBlastHitOpponent coord' wormPositions' =
