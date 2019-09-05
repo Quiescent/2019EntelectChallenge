@@ -3320,6 +3320,7 @@ https://wiki.haskell.org/Playing_by_the_rules
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
+** TODO IDEA: Run away strategy
 ** TODO Swap to traditional search when I can "see" then end
    :LOGBOOK:
    - Note taken on [2019-09-01 Sun 10:46] \\
@@ -3328,7 +3329,6 @@ https://wiki.haskell.org/Playing_by_the_rules
      unless I get much, much faster.
    :END:
 ** TODO IDEA: Always follow up a snowball with shots
-** TODO IDEA: Run away strategy
 ** IN_PROGRESS WormId 5 comes into existence somewhere somehow!?
    :LOGBOOK:
    - Note taken on [2019-08-31 Sat 11:06] \\
