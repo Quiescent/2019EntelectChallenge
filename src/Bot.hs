@@ -5295,7 +5295,9 @@ myRunawayMovesFrom wormId' state =
   in if thisPlayersCurrentWormId state /= wormId'
      then [doNothing]
      else filter (\ move ->
-                    (isAMoveMove move && isValidMoveMove coord' state move) ||
+                    (isAMoveMove move                        &&
+                     isValidMoveMove coord' state move       &&
+                     (not $ isOnLavaForRound (currentRound state) (displaceCoordByMove coord' move))) ||
                     (isADigMove  move && isValidDigMove coord' (shiftDigToMoveRange move) (gameMap state))) $
           map Move [8..23]
 
