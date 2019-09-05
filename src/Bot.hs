@@ -4794,7 +4794,7 @@ digReward myMove
   | otherwise         = 0
 
 rangeToConsiderInMinigame :: Int
-rangeToConsiderInMinigame = 7
+rangeToConsiderInMinigame = 10
 
 wormsNearMyCurrentWorm :: State -> AList
 wormsNearMyCurrentWorm state =
@@ -5067,12 +5067,30 @@ pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
              (OpponentsPayoff opponentsPayoff)
              (MaxScore (10 * ((10 * maxPayoffScore) + maxPoints) + maxAverageDistance))
 
+allIntegerDistances :: V.Vector Int
+allIntegerDistances =
+  V.fromList $ do
+    this <- [0..mapLength - 1]
+    that <- [0..mapLength - 1]
+    return $ integerDistance' this that
+  where
+    integerDistance' :: Coord -> Coord -> Int
+    integerDistance' xy' xy'' =
+      let (x',  y')  = fromCoord xy'
+          (x'', y'') = fromCoord xy''
+      in (abs $ (x'' - x') * (x'' - x')) +
+         (abs $ (y'' - y') * (y'' - y'))
+
+integerDistance :: Coord -> Coord -> Int
+integerDistance xy' xy'' =
+  allManhattanDistances `UV.unsafeIndex` (xy' * mapLength + xy'')
+
 maxSumOfDistancePairs :: Int
-maxSumOfDistancePairs = mapDim * 3
+maxSumOfDistancePairs = (mapDim * mapDim) * 3
 
 distancePayOff :: State -> WormId -> Payoff
 distancePayOff (State { wormPositions = wormPositions' }) wormId' =
-  let totalDistanceToOpponents = aListAllPairOffs manhattanDistance (aListWithOnlyOneOfMyIds wormId' wormPositions')
+  let totalDistanceToOpponents = aListAllPairOffs integerDistance (aListWithOnlyOneOfMyIds wormId' wormPositions')
   in Payoff (MyPayoff totalDistanceToOpponents)
             (OpponentsPayoff (maxSumOfDistancePairs - totalDistanceToOpponents))
             (MaxScore maxSumOfDistancePairs)
