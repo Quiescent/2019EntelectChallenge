@@ -3205,6 +3205,9 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS IDEA: Run away strategy
    :LOGBOOK:
+   - Note taken on [2019-09-05 Thu 06:50] \\
+     I think that I should improve this by encouraging my worms not to move
+     to the edge of the map.
    - State "IN_PROGRESS" from "TODO"       [2019-09-05 Thu 05:39]
    :END:
 ** IN_PROGRESS Make the Search Faster
