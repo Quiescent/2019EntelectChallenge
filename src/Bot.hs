@@ -5652,16 +5652,19 @@ nonMoveMoveWouldBeValuableToOpponent myPossibleWormPositions state move =
                                         positions
                                         move) $
        wormPositions' : myPossibleWormPositions)) ||
-     (wormIsNotFrozen'                     &&
-      wormsAreClose                        &&
-      isABananaMove move                   &&
-      wormHasBananasLeft thatWormsId state &&
+     (wormIsNotFrozen'                                                        &&
+      wormsAreClose                                                           &&
+      isABananaMove move                                                      &&
+      wormHasBananasLeft thatWormsId state                                    &&
+      bananaIsThrownInDirection move (myDirectionsFrom coord' wormPositions') &&
       any (\ target -> bananaBlastHitMe target wormPositions')
           (displaceToBananaDestination move coord')) ||
-     (wormIsNotFrozen'                       &&
-      wormsAreClose                          &&
-      isASnowballMove move                   &&
-      wormHasSnowballsLeft thatWormsId state &&
+     (wormIsNotFrozen'                                                   &&
+      wormsAreClose                                                      &&
+      isASnowballMove move                                               &&
+      wormHasSnowballsLeft thatWormsId state                             &&
+      bananaIsThrownInDirection (snowballMoveToBananaRange move)
+                                (myDirectionsFrom coord' wormPositions') &&
       any (\ target -> (snowballBlastHitMe target wormPositions'))
           (displaceToBananaDestination (snowballMoveToBananaRange move) coord')) ||
      (hasASelection move &&
