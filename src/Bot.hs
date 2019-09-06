@@ -5091,9 +5091,13 @@ maxSumOfDistancePairs = (mapDim * mapDim) * 3
 distancePayOff :: State -> WormId -> Payoff
 distancePayOff (State { wormPositions = wormPositions' }) wormId' =
   let totalDistanceToOpponents = aListAllPairOffs integerDistance (aListWithOnlyOneOfMyIds wormId' wormPositions')
-  in Payoff (MyPayoff totalDistanceToOpponents)
-            (OpponentsPayoff (maxSumOfDistancePairs - totalDistanceToOpponents))
-            (MaxScore maxSumOfDistancePairs)
+  in if (not $ aListContainsId wormId' wormPositions')
+     then Payoff (MyPayoff 0)
+                 (OpponentsPayoff 1)
+                 (MaxScore 1)
+     else Payoff (MyPayoff totalDistanceToOpponents)
+                 (OpponentsPayoff (maxSumOfDistancePairs - totalDistanceToOpponents))
+                 (MaxScore maxSumOfDistancePairs)
 
 killSearch :: StdGen -> State -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 -- The first iteration of play randomly is here because we need to use
