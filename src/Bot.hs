@@ -15,6 +15,7 @@ import qualified Data.IntMap.Lazy as IM
 import qualified RIO.Vector.Boxed as V
 import qualified RIO.Vector.Boxed.Partial as PV
 import qualified RIO.Vector.Boxed.Unsafe as UV
+import qualified RIO.Set as Set
 import GHC.Generics (Generic)
 import qualified RIO.ByteString.Lazy as B
 import RIO.List
@@ -31,9 +32,16 @@ import qualified Control.Concurrent.STM.TMVar as TMVar
 import qualified Control.Monad.STM as STM
 import Control.Concurrent
 import Control.DeepSeq
+import qualified Data.PriorityQueue.FingerTree as PQ
 
 -- TODO: think long and hard about this...
 import Prelude (read)
+
+import Debug.Trace
+
+probe :: Show a => String -> a -> a
+probe message x =
+  Debug.Trace.trace (message ++ ": " ++ show x) x
 
 data State = State { opponentsLastCommand :: Maybe String,
                      currentRound         :: Int,
@@ -45,7 +53,7 @@ data State = State { opponentsLastCommand :: Maybe String,
                      myPlayer             :: Player,
                      opponent             :: Player,
                      gameMap              :: GameMap }
-             deriving (Generic, Eq)
+             deriving (Generic, Eq, Ord)
 
 instance NFData State where
   rnf (State opponentsLastCommand'
@@ -89,7 +97,7 @@ type Snowballs = Int
 type WormHealth = Int
 
 data AList = AList Int Int Int Int Int Int
-  deriving (Eq)
+  deriving (Eq, Ord)
 
 instance NFData AList where
   rnf (AList a b c d e f) =
@@ -569,7 +577,7 @@ instance Show State where
     "}"
 
 data GameMap = GameMap Integer Integer Integer Integer
-  deriving (Generic, Eq)
+  deriving (Generic, Eq, Ord)
 
 instance NFData GameMap where
   rnf (GameMap air dirt space medipacks) =
@@ -708,14 +716,14 @@ instance FromJSON State where
             <*> v .: "currentRound"
 
 data Selections = Selections Int
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 instance NFData Selections where
   rnf (Selections selections) = selections `deepseq` ()
 
 -- TODO: Change Int to PlayerScore for stronger types
 data Player = Player Int WormId Selections
-  deriving (Show, Generic, Eq)
+  deriving (Show, Generic, Eq, Ord)
 
 instance NFData Player where
   rnf (Player score' wormId' selections') =
@@ -4252,6 +4260,7 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
               "Recovering..."
           let (myMove, opponentsMove) = toMoves move'
           -- Comment for final submission
+          logStdErr $ "Strategy: " ++ show strategy
           logStdErr $ "Received moves:\n" ++
             "My move: " ++ prettyPrintThisMove initialState myMove ++ "\n" ++
             "Opponents move: " ++ prettyPrintThatMove initialState opponentsMove
@@ -4572,6 +4581,21 @@ startBot g = do
   _             <- forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
   runRound 3 3 3 3 initialRound' initialState stateChannel treeVariable
 
+testStartBot :: Int -> IO ()
+testStartBot initialRound' = do
+  g             <- getStdGen
+  treeVariable  <- newVariable SearchFront
+  stateChannel  <- newComms
+  -- This is where I seed it with a search front
+  initialState  <- fmap fromJust $ testReadGameState initialRound'
+  _             <- forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
+  runRound 3 3 3 3 initialRound' initialState stateChannel treeVariable
+
+testReadGameState :: Int -> IO (Maybe State)
+testReadGameState r = do
+  stateString <- B.readFile $ "./bin/rounds/" ++ show r ++ "/state.json"
+  return $ decode stateString
+
 data PayoffRatio = PayoffRatio !Double
   deriving (Eq)
 
@@ -4661,6 +4685,7 @@ instance Show SearchTree where
 type Reward = Int
 
 data SearchResult = SearchResult Payoff Moves
+                  | Instruction Move
 
 prettyPrintSearchResult :: State -> SearchResult -> String
 prettyPrintSearchResult state (SearchResult payoff moves) =
@@ -4672,13 +4697,18 @@ prettyPrintSearchResult state (SearchResult payoff moves) =
       in "(Moves (" ++ prettyPrintThisMove currentState myMove ++ ", " ++
          prettyPrintThatMove currentState opponentsMove ++ "))" ++
          go moves' (makeMove False move currentState)
+prettyPrintSearchResult state (Instruction move) =
+  "Instruction: " ++ prettyPrintThisMove state move
 
 instance Show SearchResult where
   show (SearchResult payoff moves') =
     "SearchResult (" ++ show payoff ++ ") (Moves " ++ (show $ map toMoves moves') ++ ")"
+  show (Instruction move) =
+    "Instruction: " ++ show move
 
 instance NFData SearchResult where
   rnf (SearchResult payoff moves) = payoff `deepseq` moves `deepseq` ()
+  rnf (Instruction move) = move `deepseq` ()
 
 incInc :: Int -> Int -> SuccessRecord -> SuccessRecord
 incInc reward' maxScore' (SuccessRecord (GamesPlayed gamesPlayed) (PayoffRatio ratio) playerMove') =
@@ -4730,6 +4760,8 @@ initialiseLevel strategy wormId' state result =
      strategy wormId' state result
 
 updateTree :: SearchTree -> Strategy -> WormId -> State -> SearchResult -> SearchTree
+updateTree _           Runaway  _       _          (Instruction move) =
+  SearchedLevel 1 (MyMoves . IM.fromList $ [initSuccessRecordKeyValue 1 1 move]) (OpponentsMoves IM.empty) IM.empty
 updateTree SearchFront strategy wormId' finalState result = initialiseLevel strategy wormId' finalState result
 updateTree level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) _ _ _ result =
   case result of
@@ -4749,6 +4781,7 @@ updateTree level@(SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves op
     _                           -> level
 
 updateSubTree :: Strategy -> WormId -> State -> SearchResult -> StateTransitions -> StateTransitions
+updateSubTree _ _ _ (Instruction _)     transitions = transitions
 updateSubTree _ _ _ (SearchResult _ []) transitions = transitions
 updateSubTree strategy
               wormId'
@@ -4852,48 +4885,83 @@ search g strategy state searchTree =
        Kill           -> killSearch   g state           state searchTree []
        Points         -> pointsSearch g          round' state searchTree [] 0
        GetToTheChoppa -> digSearch    g        0        state searchTree [] 0
-       Runaway        -> runaway      g                 state searchTree [] (thisPlayersCurrentWormId state)
+       Runaway        ->
+         let result = runaway state (thisPlayersCurrentWormId state)
+         in (result, g, state)
 
-runaway :: StdGen -> State -> SearchTree -> Moves -> WormId -> (SearchResult, StdGen, State)
-runaway !g !state SearchFront moves wormId' =
-  (SearchResult (distancePayOff state wormId') (reverse moves), g, state)
-runaway !g !state tree@(SearchedLevel _ _ _ _) moves wormId' =
-  case gameOver state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
-    NoResult        -> runawaySearchSearchedLevel g state tree moves wormId'
-runaway !g
-        !state
-        (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves))
-        moves
-        wormId' =
-  case gameOver state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
-    NoResult        ->
-      let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
-          (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
-          myMove                 = successRecordMove myRecord
-          opponentsMove          = successRecordMove opponentsRecord
-          combinedMove           = fromMoves myMove opponentsMove
-          state'                 = makeMove False combinedMove state
-      in (SearchResult (distancePayOff state' wormId') (reverse (combinedMove:moves)), g'', state')
+runaway :: State -> WormId -> SearchResult
+runaway !state wormId' =
+  go 0 (Set.fromList $ map possibilityToSeen initialPossibilities) $ PQ.fromList initialPossibilities
+  where
+    possibilityToSeen :: (Int, (Move, Int, State)) -> (Coord, State)
+    possibilityToSeen (_, (_, _, state')) = (wormsCoord state', state')
+    initialPossibilities = prepareForEnqueuing 1 state $ myRunawayMovesFrom wormId' state
+    prepareForEnqueuing :: Int -> State -> [Move] -> [(Int, (Move, Int, State))]
+    prepareForEnqueuing steps state' =
+      let steps' = steps + 1
+      in map (\ move ->
+                let nextState = (makeRunawayMove move state')
+                in (priority steps' nextState, (move, steps', nextState)))
+    makeRunawayMove move state'
+      | isADigMove  move = makeMyDigMove  (thisWormsCoord state') (gameMap state') (probe ("Digging " ++ (show $ fromCoord $ wormsCoord state')) move) state'
+      | isAMoveMove move = makeMyMoveMove (wormPositions state')
+                                          (thisWormsCoord state')
+                                          wormId'
+                                          (gameMap state')
+                                          (probe ("Moving from " ++ (show $ fromCoord $ wormsCoord state')) move)
+                                          state'
+      | otherwise        = state'
+    myWormWithHis state' = aListWithOnlyOneOfMyIds wormId' $ wormPositions state'
+    wormsCoord state' = aListFindDataById wormId' $ wormPositions state'
+    -- Anything more than 50 moves is just insanely long
+    priority steps state' =
+      steps + ((maxSumOfDistancePairs - aListAllPairOffs integerDistance (myWormWithHis state')) `div` 3)
+    notAlreadySeen :: Set.Set (Coord, State) -> (Coord, (Move, Int, State)) -> Bool
+    notAlreadySeen seen (_, (_, _, state')) =
+      not $ Set.member ((wormsCoord state'), state') seen
+    withMove :: Move -> (Int, (Move, Int, State)) -> (Int, (Move, Int, State))
+    withMove move (priority', (_, steps', state')) =  (priority', (move, steps', state'))
+    go :: Int -> Set.Set (Coord, State) -> PQ.PQueue Int (Move, Int, State) -> SearchResult
+    go 50 _ searchFront =
+      let ((move, _, _), _) = fromJust $ PQ.minView $ Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) searchFront
+      in Instruction $ move
+    go !n seen searchFront =
+      let ((move, steps, state'), searchFront') = Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) $ fromJust $ PQ.minView searchFront
+          nextPossibilities                          =
+            filter (notAlreadySeen seen) $ prepareForEnqueuing steps state' $ myRunawayMovesFrom wormId' state'
+      in if escaped wormId' state'
+         then Instruction $ move
+         else go (n + 1)
+                 (Set.union seen $ Set.fromList $ map possibilityToSeen nextPossibilities)
+                 (PQ.union searchFront' . PQ.fromList $ map (withMove move) nextPossibilities)
 
-runawaySearchSearchedLevel :: StdGen -> State -> SearchTree -> Moves -> WormId -> (SearchResult, StdGen, State)
-runawaySearchSearchedLevel _ _ SearchFront                   _ _ = error "runawaySearchSearchedLevel: SearchFront"
-runawaySearchSearchedLevel _ _ level@(UnSearchedLevel _ _ _) _ _ = error $ "runawaySearchSearchedLevel: " ++ show level
-runawaySearchSearchedLevel !g
-                           !state
-                           (SearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions)
-                           moves
-                           wormId' =
-  let myBestMove        = successRecordMove $ nextSearchMove gamesPlayed myMoves
-      opponentsBestMove = successRecordMove $ nextSearchMove gamesPlayed opponentsMoves
-      combinedMove      = fromMoves myBestMove opponentsBestMove
-      state'            = makeMove True combinedMove state
-  in runaway g
-             state'
-             (findSubTree combinedMove transitions)
-             (combinedMove:moves)
-             wormId'
+testState :: State
+testState = (State
+              (Just "move 15 14")
+              110
+              (AList (-1) (100) (100) (130) (102) (97))
+              (AList (-1) (709) (506) (510) (477) (508))
+              (AList (-1) (2) (-1) (-1) (-1) (-1))
+              (AList (-1) (-1) (1) (-1) (-1) (-1))
+              (AList (-1) (-1) (-1) (-1) (-1) (-1))
+              (Player 597 (WormId 2) (Selections 0))
+              (Player 914 (WormId 12) (Selections 0))
+              (GameMap
+                 1565454930231473823837895396229990475607854401278457579774236360629880979412587761549012591647444578646527032219811307949308211523267453224341183386807278228319714149932817716098433278288596511710084570560671852138118127359991934255893602400826930665374109081280696252634551283511551620636920227031347549690603421397308999680
+                 1671399858097538298356468009737220561089469146475536710927945266987114492743078441115371132494506100049575526458960094316957583261891887428116963472825968665200413175499820345723817665673523079642245593115982586549565069546751918658648273148913028699139585920699854597273637706225370533001001947061887283507022527298942201856
+                 6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+                 0))
+
+rangeToEscape :: Int
+rangeToEscape = 15
+
+escaped :: WormId -> State -> Bool
+escaped wormId' state =
+  let coord' = aListFindDataById wormId' $ wormPositions state
+  in (== 0) .
+     aListCountOpponentsEntries .
+     aListFilterByData (\ xy -> inRange xy coord' rangeToEscape) $
+     wormPositions state
 
 pointsSearch :: StdGen -> Int -> State -> SearchTree -> Moves -> Reward -> (SearchResult, StdGen, State)
 pointsSearch !g initialRound !state SearchFront moves !reward =

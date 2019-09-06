@@ -26,6 +26,7 @@ dependencies:
 - strict-concurrency >= 0.2.4.3
 - stm >= 2.5.0.0
 - containers >= 0.6.2.1
+- fingertree >= 0.1.4.2
 
 ghc-options:
 - -Wall
