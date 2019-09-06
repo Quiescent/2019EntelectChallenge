@@ -37,12 +37,6 @@ import qualified Data.PriorityQueue.FingerTree as PQ
 -- TODO: think long and hard about this...
 import Prelude (read)
 
-import Debug.Trace
-
-probe :: Show a => String -> a -> a
-probe message x =
-  Debug.Trace.trace (message ++ ": " ++ show x) x
-
 data State = State { opponentsLastCommand :: Maybe String,
                      currentRound         :: Int,
                      wormHealths          :: WormHealths,
@@ -4903,12 +4897,12 @@ runaway !state wormId' =
                 let nextState = (makeRunawayMove move state')
                 in (priority steps' nextState, (move, steps', nextState)))
     makeRunawayMove move state'
-      | isADigMove  move = makeMyDigMove  (thisWormsCoord state') (gameMap state') (probe ("Digging " ++ (show $ fromCoord $ wormsCoord state')) move) state'
+      | isADigMove  move = makeMyDigMove  (thisWormsCoord state') (gameMap state') move state'
       | isAMoveMove move = makeMyMoveMove (wormPositions state')
                                           (thisWormsCoord state')
                                           wormId'
                                           (gameMap state')
-                                          (probe ("Moving from " ++ (show $ fromCoord $ wormsCoord state')) move)
+                                          move
                                           state'
       | otherwise        = state'
     myWormWithHis state' = aListWithOnlyOneOfMyIds wormId' $ wormPositions state'
@@ -4923,11 +4917,11 @@ runaway !state wormId' =
     withMove move (priority', (_, steps', state')) =  (priority', (move, steps', state'))
     go :: Int -> Set.Set (Coord, State) -> PQ.PQueue Int (Move, Int, State) -> SearchResult
     go 50 _ searchFront =
-      let ((move, _, _), _) = fromJust $ PQ.minView $ Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) searchFront
+      let ((move, _, _), _) = fromJust $ PQ.minView searchFront
       in Instruction $ move
     go !n seen searchFront =
-      let ((move, steps, state'), searchFront') = Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) $ fromJust $ PQ.minView searchFront
-          nextPossibilities                          =
+      let ((move, steps, state'), searchFront') = fromJust $ PQ.minView searchFront
+          nextPossibilities                     =
             filter (notAlreadySeen seen) $ prepareForEnqueuing steps state' $ myRunawayMovesFrom wormId' state'
       in if escaped wormId' state'
          then Instruction $ move
