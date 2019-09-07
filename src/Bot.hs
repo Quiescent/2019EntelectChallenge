@@ -4891,17 +4891,23 @@ search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen, St
 search g strategy state searchTree =
   let round' = (currentRound state)
   in case strategy of
-       Dig            -> digSearch    g        0        state searchTree [] 0
-       Kill           -> killSearch   g state           state searchTree []
-       Points         -> pointsSearch g          round' state searchTree [] 0
-       GetToTheChoppa -> digSearch    g        0        state searchTree [] 0
-       EndGame        -> endGame      g state           state searchTree []
+       Dig            -> digSearch    g         0      state searchTree [] 0
+       Kill           -> killSearch   g   state        state searchTree []
+       Points         -> pointsSearch g         round' state searchTree [] 0
+       GetToTheChoppa -> digSearch    g         0      state searchTree [] 0
+       EndGame        -> endGame      g 0 state        state searchTree []
        Runaway        ->
          let result = runaway state (thisPlayersCurrentWormId state)
          in (result, g, state)
 
-endGame :: StdGen -> State -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
-endGame !g finalState !state searchTree moves =
+endGame :: StdGen -> Int -> State -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+endGame !g 25 finalState !state _ moves =
+  case gameOver state of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g, finalState)
+    NoResult        -> case forceGameOver state of
+      GameOver payoff -> (SearchResult payoff (reverse moves), g, finalState)
+      NoResult        -> error "This is not possible..."
+endGame !g !rounds finalState !state searchTree moves =
   case gameOver state of
     GameOver payoff -> (SearchResult payoff (reverse moves), g, finalState)
     NoResult        -> go searchTree
@@ -4918,7 +4924,7 @@ endGame !g finalState !state searchTree moves =
           (opponentsMove, g'') = pickOneAtRandom g' opponentsMoves
           combinedMove         = fromMoves myMove opponentsMove
           state'               = makeMove False combinedMove state
-      in endGame g'' finalState state' SearchFront (combinedMove:moves)
+      in endGame g'' (rounds + 1) finalState state' SearchFront (combinedMove:moves)
     go (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -4926,7 +4932,7 @@ endGame !g finalState !state searchTree moves =
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-      in endGame g'' finalState state' SearchFront (combinedMove:moves)
+      in endGame g'' (rounds + 1) finalState state' SearchFront (combinedMove:moves)
     go (SearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -4935,7 +4941,7 @@ endGame !g finalState !state searchTree moves =
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
           searchTree'            = findSubTree combinedMove transitions
-      in endGame g'' state' state' searchTree' (combinedMove:moves)
+      in endGame g'' (rounds + 1) state' state' searchTree' (combinedMove:moves)
 
 missileRange :: Int
 missileRange = 4
@@ -5361,6 +5367,36 @@ maxRound = 400
 
 killMaxScore :: MaxScore
 killMaxScore = MaxScore 1
+
+forceGameOver :: State -> GameOver
+forceGameOver state =
+  let myWormCount            = aListCountMyEntries $ wormHealths state
+      myAverageHealth :: Double
+      myAverageHealth        = (fromIntegral $ myTotalWormHealth state) / fromIntegral wormCount
+      myScore'               = (playerScore $ myPlayer state) + round myAverageHealth
+      opponentWormCount      = aListCountOpponentsEntries $ wormHealths state
+      opponentsAverageHealth :: Double
+      opponentsAverageHealth = (fromIntegral $ opponentsTotalWormHealth state) / fromIntegral wormCount
+      opponentsScore'        = (playerScore $ opponent state) + round opponentsAverageHealth
+      myScoreIsHigher        = myScore' > opponentsScore'
+  in if myWormCount == 0
+     then if opponentWormCount == 0
+          -- We died on the same round
+          then if myScoreIsHigher
+               -- I won because of points when both players are dead
+               then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
+               -- I lost because of points when both players are dead
+               else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
+          -- The opponent killed all my worms and I didn't kill his
+          else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
+     else if opponentWormCount == 0
+          -- I Killed his worms and he didn't kill mine
+          then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
+          else if myScoreIsHigher
+               -- I won because of points when both players are dead
+               then GameOver $ Payoff (MyPayoff 1) (OpponentsPayoff 0) killMaxScore
+               -- I lost because of points when both players are dead
+               else GameOver $ Payoff (MyPayoff 0) (OpponentsPayoff 1) killMaxScore
 
 gameOver :: State -> GameOver
 gameOver state =
