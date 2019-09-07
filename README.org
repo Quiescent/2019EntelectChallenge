@@ -3235,6 +3235,9 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS Swap to traditional search when I can "see" then end
    :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 12:31] \\
+     It turns out that it was the end game condition which was the last
+     problem in getting this to work without blowing up in my face.
    - Note taken on [2019-09-07 Sat 11:50] \\
      There's a problem with the end state where it checks conditions on
      non-existent worms.  I'm tracking down the issue by turning on `prof'
