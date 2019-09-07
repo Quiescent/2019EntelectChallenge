@@ -4889,13 +4889,24 @@ runaway !state wormId' =
   where
     possibilityToSeen :: (Int, (Move, Int, State)) -> (Coord, UniqueDigMove)
     possibilityToSeen (_, (move, _, state')) = (wormsCoord state', onlyDigMovesAreUnique move)
-    initialPossibilities = prepareForEnqueuing 0 state $ myRunawayMovesFrom wormId' state
-    prepareForEnqueuing :: Int -> State -> [Move] -> [(Int, (Move, Int, State))]
-    prepareForEnqueuing steps state' =
+    opponentsDamagingMoves = filter (\ move -> (not $ isADigMove move) &&
+                                               (not $ hasASelection move)) $
+                             opponentsMovesFrom (filter isAMoveMove myInitialMoves) [] state
+    myInitialMoves = myRunawayMovesFrom wormId' state
+    initialPossibilities = prepareForEnqueuing initialPriority 0 state myInitialMoves
+    initialPriority steps state' =
+      3 * integerDistanceResolution * steps +
+      (maxSumOfDistancePairs - aListAllPairOffs integerDistance (myWormWithHis state')) +
+      if anyDamageMoveHitsWithPositions opponentsDamagingMoves (myWormWithHis state') state'
+      then integerDistanceResolution
+      else 0
+    prepareForEnqueuing :: (Int -> State -> Int) -> Int -> State -> [Move] -> [(Int, (Move, Int, State))]
+    prepareForEnqueuing priority' steps state' =
       let steps' = steps + 1
       in map (\ move ->
                 let nextState = (makeRunawayMove move state')
-                in (priority steps' nextState, (move, steps', nextState)))
+                in (priority' steps' nextState, (move, steps', nextState)))
+    prepareForEnqueuing' = prepareForEnqueuing priority
     makeRunawayMove move state'
       | isADigMove  move = makeMyDigMove  (thisWormsCoord state') (gameMap state') move state'
       | isAMoveMove move = makeMyMoveMove (wormPositions state')
@@ -4922,12 +4933,46 @@ runaway !state wormId' =
     go !n seen searchFront =
       let ((move, steps, state'), searchFront') = fromJust $ PQ.minView searchFront
           nextPossibilities                     =
-            filter (notAlreadySeen seen) $ prepareForEnqueuing steps state' $ myRunawayMovesFrom wormId' state'
+            filter (notAlreadySeen seen) $ prepareForEnqueuing' steps state' $ myRunawayMovesFrom wormId' state'
       in if escaped wormId' state'
          then Instruction $ move
          else go (n + 1)
                  (Set.union seen $ Set.fromList $ map possibilityToSeen nextPossibilities)
                  (PQ.union searchFront' . PQ.fromList $ map (withMove move) nextPossibilities)
+
+anyDamageMoveHitsWithPositions :: [Move] -> WormPositions -> State -> Bool
+anyDamageMoveHitsWithPositions opponentsDamagingMoves wormPositions' state =
+  let coord'           = thatWormsCoord state
+      gameMap'         = gameMap state
+      thatWormsId      = thatPlayersCurrentWormId state
+      wormIsNotFrozen' = not $ wormIsFrozen thatWormsId state
+      wormsAreClose    = aListMinPairOff thatWormsId manhattanDistance wormPositions' < maxManhattanDistanceForBombs
+  in any (\ move ->
+            (wormIsNotFrozen'                       &&
+             wormsAreClose                          &&
+             isAShootMove move                      &&
+             (isJust $
+              shotHitsWorm coord'
+                           gameMap'
+                           (myDirectionsFrom coord' wormPositions')
+                           wormPositions'
+                           move)) ||
+           (wormIsNotFrozen'                                                        &&
+            wormsAreClose                                                           &&
+            isABananaMove move                                                      &&
+            wormHasBananasLeft thatWormsId state                                    &&
+            bananaIsThrownInDirection move (myDirectionsFrom coord' wormPositions') &&
+            any (\ target -> bananaBlastHitMe target wormPositions')
+            (displaceToBananaDestination move coord')) ||
+           (wormIsNotFrozen'                                                   &&
+            wormsAreClose                                                      &&
+            isASnowballMove move                                               &&
+            wormHasSnowballsLeft thatWormsId state                             &&
+            bananaIsThrownInDirection (snowballMoveToBananaRange move)
+                                      (myDirectionsFrom coord' wormPositions') &&
+            any (\ target -> (snowballBlastHitMe target wormPositions'))
+            (displaceToBananaDestination (snowballMoveToBananaRange move) coord')))
+     opponentsDamagingMoves
 
 data UniqueDigMove = UniqueDigMove Int
                    | A_MOVE
