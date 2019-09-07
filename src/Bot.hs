@@ -4845,6 +4845,7 @@ data Strategy = Dig
 choppaRadius :: Int
 choppaRadius = 5
 
+-- TODO: When do I go for end game??
 determineStrategy :: Int -> Coord -> WormPositions -> Strategy
 determineStrategy currentRound' currentWormsCoord' wormPositions' =
   if currentRound' > 30
@@ -4852,7 +4853,9 @@ determineStrategy currentRound' currentWormsCoord' wormPositions' =
        then if aListCountOpponentsEntries wormPositions' /= 0
             then Runaway
             else Points
-       else Kill
+       else if currentRound' > 302
+            then EndGame
+            else Kill
   else if aListCountOpponentsEntries wormPositions' == 0
        then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
             then Points
