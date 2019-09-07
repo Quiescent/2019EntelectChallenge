@@ -13,7 +13,6 @@ import Lava
 
 import qualified Data.IntMap.Lazy as IM
 import qualified RIO.Vector.Boxed as V
-import qualified RIO.Vector.Boxed.Partial as PV
 import qualified RIO.Vector.Boxed.Unsafe as UV
 import qualified RIO.Set as Set
 import GHC.Generics (Generic)
@@ -2888,7 +2887,7 @@ collideWorms !originalWormHealths !originalWormPositions !originalGameMap state 
 
 isOnLavaForRound :: Int -> Coord -> Bool
 isOnLavaForRound currentRound' coord' =
-  testBit (lava PV.! currentRound') coord'
+  testBit (lava `UV.unsafeIndex` currentRound') coord'
 
 lavaDamage :: Int
 lavaDamage = 3
