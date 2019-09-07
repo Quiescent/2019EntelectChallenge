@@ -4726,25 +4726,31 @@ initSuccessRecordKeyValue initPlayed initPayoff move@(Move idx) =
 
 initialiseLevel :: Strategy -> WormId -> State -> SearchResult -> SearchTree
 initialiseLevel strategy wormId' state result =
-  let myMoveMoves        = myMoveMovesFrom        state
-      opponentsMoveMoves = opponentsMoveMovesFrom state
-      myCoord            = thisWormsCoord state
-      opponentsCoord     = thatWormsCoord state
-      weAlignForAShot    = aligns myCoord opponentsCoord && inRange myCoord opponentsCoord missileRange
-      myMovesFrom'       = case strategy of
-        GetToTheChoppa -> myGetToTheChoppaMoves
-        Kill           -> myMovesFrom myMoveMoves opponentsMoveMoves
-        Points         -> myMovesFrom myMoveMoves opponentsMoveMoves
-        Dig            -> myDigMovesFrom
-        Runaway        -> myRunawayMovesFrom wormId'
-        EndGame        -> myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
+  let wormHealths'          = wormHealths state
+      myWormIsDead          = not $ aListContainsId wormId'                          wormHealths'
+      opponentWormIsDead    = not $ aListContainsId (thatPlayersCurrentWormId state) wormHealths'
+      doNothingMoves        = always [doNothing]
+      nothingOrTheseMoves f = if myWormIsDead       then doNothingMoves else f
+      nothingOrThoseMoves f = if opponentWormIsDead then doNothingMoves else f
+      myMoveMoves           = myMoveMovesFrom        state
+      opponentsMoveMoves    = opponentsMoveMovesFrom state
+      myCoord               = thisWormsCoord state
+      opponentsCoord        = thatWormsCoord state
+      weAlignForAShot       = aligns myCoord opponentsCoord && inRange myCoord opponentsCoord missileRange
+      myMovesFrom'          = case strategy of
+        GetToTheChoppa -> nothingOrTheseMoves $ myGetToTheChoppaMoves
+        Kill           -> nothingOrTheseMoves $ myMovesFrom myMoveMoves opponentsMoveMoves
+        Points         -> nothingOrTheseMoves $ myMovesFrom myMoveMoves opponentsMoveMoves
+        Dig            -> nothingOrTheseMoves $ myDigMovesFrom
+        Runaway        -> nothingOrTheseMoves $ myRunawayMovesFrom wormId'
+        EndGame        -> nothingOrTheseMoves $ myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
       opponentsMovesFrom' = case strategy of
-        GetToTheChoppa -> (always [doNothing])
-        Kill           -> opponentsMovesFrom myMoveMoves opponentsMoveMoves
-        Points         -> opponentsMovesFrom myMoveMoves opponentsMoveMoves
-        Dig            -> (always [doNothing])
-        Runaway        -> opponentsRunawayMovesFrom
-        EndGame        -> opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
+        GetToTheChoppa -> doNothingMoves
+        Kill           -> nothingOrThoseMoves $ opponentsMovesFrom myMoveMoves opponentsMoveMoves
+        Points         -> nothingOrThoseMoves $ opponentsMovesFrom myMoveMoves opponentsMoveMoves
+        Dig            -> doNothingMoves
+        Runaway        -> nothingOrThoseMoves $ opponentsRunawayMovesFrom
+        EndGame        -> nothingOrThoseMoves $ opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
   in updateTree
      (UnSearchedLevel
       0
@@ -5546,12 +5552,15 @@ myEndGameMovesFrom myMoveMoves
   let myUsefulNonMoveMoves' = myUsefulNonMoveMoves opponentsMoveMoves state
       coord'                = thisWormsCoord state
       isOnLava              = isOnLavaForRound (currentRound state) coord'
-  in if isOnLava
-     then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
-                            in isCloserByManhattanDistance targetOfMove coord') myMoveMoves
-     else if theOpponentAndIAlignForAShot
-          then (filter (not . aligns coord' . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
-          else (filter (aligns coord'       . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+      roundsExhausted       = currentRound state > maxRound
+      moves                 =
+        if isOnLava
+        then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
+                               in isCloserByManhattanDistance targetOfMove coord') myMoveMoves
+        else if theOpponentAndIAlignForAShot
+             then (filter (not . aligns coord' . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+             else (filter (aligns coord'       . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+  in if roundsExhausted || moves == [] then [doNothing] else moves
 
 opponentsEndGameMovesFrom :: [Move] -> [Move] -> Bool -> State -> [Move]
 opponentsEndGameMovesFrom myMoveMoves
@@ -5561,14 +5570,17 @@ opponentsEndGameMovesFrom myMoveMoves
   let opponentsUsefulNonMoveMoves' = opponentsUsefulNonMoveMoves myMoveMoves state
       coord'                       = thisWormsCoord state
       isOnLava                     = isOnLavaForRound (currentRound state) coord'
-  in if isOnLava
-     then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
-                            in isCloserByManhattanDistance targetOfMove coord') opponentsMoveMoves
-     else if theOpponentAndIAlignForAShot
-          then (filter (not . aligns coord' . displaceCoordByMove coord') opponentsMoveMoves) ++
-               opponentsUsefulNonMoveMoves'
-          else (filter (aligns coord'       . displaceCoordByMove coord') opponentsMoveMoves)
-               ++ opponentsUsefulNonMoveMoves'
+      roundsExhausted              = currentRound state > maxRound
+      moves                        =
+        if isOnLava
+        then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
+                               in isCloserByManhattanDistance targetOfMove coord') opponentsMoveMoves
+        else if theOpponentAndIAlignForAShot
+             then (filter (not . aligns coord' . displaceCoordByMove coord') opponentsMoveMoves) ++
+                  opponentsUsefulNonMoveMoves'
+             else (filter (aligns coord'       . displaceCoordByMove coord') opponentsMoveMoves)
+                  ++ opponentsUsefulNonMoveMoves'
+  in if roundsExhausted || moves == [] then [doNothing] else moves
 
 aligns :: Coord -> Coord -> Bool
 aligns xy' xy'' =
