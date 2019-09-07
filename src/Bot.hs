@@ -4217,7 +4217,6 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
   E.catch (go gen iterationsBeforeComms treeFromPreviousRound) exceptionHandler
   where
     exceptionHandler e = do
-      -- Comment for final submission
       logStdErr $ "Worker died during [" ++
         show strategy ++ "] with exception " ++ show (e::SomeException) ++ "\n" ++
         "State: " ++ readableShow initialState ++ "\n" ++
@@ -4255,12 +4254,12 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
               "Read state:\n" ++
               show nextState ++ "\n" ++
               "Recovering..."
-          let (myMove, opponentsMove) = toMoves move'
+          -- let (myMove, opponentsMove) = toMoves move'
           -- Comment for final submission
-          logStdErr $ "Strategy: " ++ show strategy
-          logStdErr $ "Received moves:\n" ++
-            "My move: " ++ prettyPrintThisMove initialState myMove ++ "\n" ++
-            "Opponents move: " ++ prettyPrintThatMove initialState opponentsMove
+          -- logStdErr $ "Strategy: " ++ show strategy
+          -- logStdErr $ "Received moves:\n" ++
+          --   "My move: " ++ prettyPrintThisMove initialState myMove ++ "\n" ++
+          --   "Opponents move: " ++ prettyPrintThatMove initialState opponentsMove
           -- logStdErr $ "Making moves: " ++ show (toMoves move') ++ ", to state:\n" ++
           --   show initialState ++ "\n" ++
           --   "To create new state:\n" ++
@@ -4391,7 +4390,7 @@ prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
 treeAfterAlottedTime :: State -> Clock -> Integer -> CommsVariable SearchTree -> IO SearchTree
-treeAfterAlottedTime state clock startingTime treeVariable = do
+treeAfterAlottedTime _ clock startingTime treeVariable = do
   searchTree   <- go SearchFront
   return searchTree
   where
@@ -4399,14 +4398,15 @@ treeAfterAlottedTime state clock startingTime treeVariable = do
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
-        then (logStdErr $ "Current round: " ++
-                          (show $ currentRound state) ++
-                          ", MyWorm: " ++
-                          (show $ thisPlayersCurrentWormId state) ++
-                          ", Opponent worm: " ++
-                          (show $ thatPlayersCurrentWormId state) ++
-                          "\n" ++
-                          prettyPrintSearchTree state searchTree) >> return searchTree
+        then return searchTree
+        -- (logStdErr $ "Current round: " ++
+        --                   (show $ currentRound state) ++
+        --                   ", MyWorm: " ++
+        --                   (show $ thisPlayersCurrentWormId state) ++
+        --                   ", Opponent worm: " ++
+        --                   (show $ thatPlayersCurrentWormId state) ++
+        --                   "\n" ++
+        --                   prettyPrintSearchTree state searchTree) >> return searchTree
         else do
           searchTree' <- readVariable treeVariable
           Control.Concurrent.threadDelay pollInterval
