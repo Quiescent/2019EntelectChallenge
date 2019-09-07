@@ -4892,15 +4892,15 @@ search g strategy state searchTree =
        Kill           -> killSearch   g state           state searchTree []
        Points         -> pointsSearch g          round' state searchTree [] 0
        GetToTheChoppa -> digSearch    g        0        state searchTree [] 0
-       EndGame        -> endGame      g                 state searchTree []
+       EndGame        -> endGame      g state           state searchTree []
        Runaway        ->
          let result = runaway state (thisPlayersCurrentWormId state)
          in (result, g, state)
 
-endGame :: StdGen -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
-endGame !g !state searchTree moves =
+endGame :: StdGen -> State -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+endGame !g finalState !state searchTree moves =
   case gameOver state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g, finalState)
     NoResult        -> go searchTree
   where
     go SearchFront =
@@ -4915,7 +4915,7 @@ endGame !g !state searchTree moves =
           (opponentsMove, g'') = pickOneAtRandom g' opponentsMoves
           combinedMove         = fromMoves myMove opponentsMove
           state'               = makeMove False combinedMove state
-      in endGame g'' state' SearchFront (combinedMove:moves)
+      in endGame g'' state state' SearchFront (combinedMove:moves)
     go (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -4923,7 +4923,7 @@ endGame !g !state searchTree moves =
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-      in endGame g'' state' SearchFront (combinedMove:moves)
+      in endGame g'' state state' SearchFront (combinedMove:moves)
     go (SearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -4932,7 +4932,7 @@ endGame !g !state searchTree moves =
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
           searchTree'            = findSubTree combinedMove transitions
-      in endGame g'' state' searchTree' (combinedMove:moves)
+      in endGame g'' state' state' searchTree' (combinedMove:moves)
 
 missileRange :: Int
 missileRange = 4
