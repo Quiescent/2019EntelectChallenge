@@ -4855,12 +4855,14 @@ determineStrategy :: Int -> Coord -> WormPositions -> Strategy
 determineStrategy currentRound' currentWormsCoord' wormPositions' =
   if currentRound' > 30
   then if currentRound' < startUsingAmmoRound
-       then if aListCountOpponentsEntries wormPositions' /= 0
+       then if aListCountOpponentsEntries wormPositions' > 1
             then Runaway
             else Points
        else if currentRound' > 302
             then EndGame
-            else Kill
+            else if aListCountOpponentsEntries wormPositions' == 0
+                 then Points
+                 else Kill
   else if aListCountOpponentsEntries wormPositions' == 0
        then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
             then Points
