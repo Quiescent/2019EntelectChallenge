@@ -3235,6 +3235,10 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS Swap to traditional search when I can "see" then end
    :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 13:06] \\
+     There's something horribly wrong with how I'm filtering out my move
+     moves in the end game.  I'm not moving when I'm aligned and I'm not
+     considering moving when I'm not aligned (!?)
    - Note taken on [2019-09-07 Sat 12:40] \\
      Another big problem surfaced.  The way that I update trees needs to
      change for the end game search to work.  The final state here is only
