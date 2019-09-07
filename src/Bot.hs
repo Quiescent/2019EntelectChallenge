@@ -36,6 +36,12 @@ import qualified Data.PriorityQueue.FingerTree as PQ
 -- TODO: think long and hard about this...
 import Prelude (read)
 
+import Debug.Trace
+
+probe :: Show a => String -> a -> a
+probe message x =
+  Debug.Trace.trace (message ++ ": " ++ show x) x
+
 data State = State { opponentsLastCommand :: Maybe String,
                      currentRound         :: Int,
                      wormHealths          :: WormHealths,
@@ -4914,14 +4920,14 @@ dirtIsNorthWest coord gameMap' =
 
 countDirtAroundWorm :: Coord -> GameMap -> Int
 countDirtAroundWorm coord gameMap' =
-  if dirtIsNorth     coord gameMap' then 1 else 0 +
-  if dirtIsNorthEast coord gameMap' then 1 else 0 +
-  if dirtIsEast      coord gameMap' then 1 else 0 +
-  if dirtIsSouthEast coord gameMap' then 1 else 0 +
-  if dirtIsSouth     coord gameMap' then 1 else 0 +
-  if dirtIsSouthWest coord gameMap' then 1 else 0 +
-  if dirtIsWest      coord gameMap' then 1 else 0 +
-  if dirtIsNorthWest coord gameMap' then 1 else 0
+  (if dirtIsNorth     coord gameMap' then 1 else 0) +
+  (if dirtIsNorthEast coord gameMap' then 1 else 0) +
+  (if dirtIsEast      coord gameMap' then 1 else 0) +
+  (if dirtIsSouthEast coord gameMap' then 1 else 0) +
+  (if dirtIsSouth     coord gameMap' then 1 else 0) +
+  (if dirtIsSouthWest coord gameMap' then 1 else 0) +
+  (if dirtIsWest      coord gameMap' then 1 else 0) +
+  (if dirtIsNorthWest coord gameMap' then 1 else 0)
 
 thereIsNoJuicyDirtAllAround :: Coord -> GameMap -> Bool
 thereIsNoJuicyDirtAllAround coord gameMap' =
@@ -5017,10 +5023,10 @@ findDemDirt !state wormId' =
     withMove move (priority', (_, steps', state')) =  (priority', (move, steps', state'))
     go :: Int -> Set.Set (Coord, UniqueDigMove) -> PQ.PQueue Int (Move, Int, State) -> SearchResult
     go 1000 _ searchFront =
-      let ((move, _, _), _) = fromJust $ PQ.minView searchFront
+      let ((move, _, _), _) = fromJust $ PQ.minView $ Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (priority y z, x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) searchFront
       in Instruction $ move
     go !n seen searchFront =
-      let ((move, steps, state'), searchFront') = fromJust $ PQ.minView searchFront
+      let ((move, steps, state'), searchFront') = Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (priority y z, x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) $ fromJust $ PQ.minView searchFront
           nextPossibilities                     =
             filter (notAlreadySeen seen) $ prepareForEnqueuing steps state' $ myRunawayMovesFrom wormId' state'
       in if foundDemDirts wormId' state'
@@ -6191,6 +6197,25 @@ inRange xy' xy'' range' =
   in sqrt (((dx::Double) ** 2) + (dy ** 2)) <= (fromIntegral range')
 
 -- For the REPL!
+
+-- breaking in find dem dirts
+testState187 :: State
+testState187 =
+  (State
+   (Just "select 3; dig 17 5")
+   187
+   (AList (160) (100) (110) (123) (91) (85))
+   (AList (545) (742) (611) (633) (274) (216))
+   (AList (-1) (3) (-1) (-1) (3) (-1))
+   (AList (-1) (-1) (3) (-1) (-1) (3))
+   (AList (-1) (-1) (-1) (-1) (-1) (-1))
+   (Player 1160 (WormId 1) (Selections 5))
+   (Player 1084 (WormId 4) (Selections 2))
+   (GameMap
+    2775124646409943009228158515019022988580037962621154450005064524925937445917531323816066477060741902244711699549173179094742987229293815672868550073815573958634717850699497623248287039361628013177544008898171705275408368628524840431373953259369421963076471376506955832789102466419356333912760901708876983602379523405260808192
+    461730141919069112966204890948188048117285585132839840697117102691058026238134878848317247081208776451390859129598223171522807555865524979589596785817672934885409474733140438573963904600491578174786154778482733412274828278219012483167922290370537401437223625473595017119086523317565819725161272384357849595246425290990393344
+    6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+    0))
 
 -- Find Dem Dirts!!
 testState43 :: State
