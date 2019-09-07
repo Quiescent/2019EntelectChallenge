@@ -3248,6 +3248,7 @@ I should never do nothing unless that leads to death.
      hope to see the end.  This is almost entirely a heuristic based search
      unless I get much, much faster.
    :END:
+** TODO What do I do after round 200 when worms aren't nearby?
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
