@@ -3235,6 +3235,13 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS Swap to traditional search when I can "see" then end
    :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 12:40] \\
+     Another big problem surfaced.  The way that I update trees needs to
+     change for the end game search to work.  The final state here is only
+     applicable to searches where I don't look ahead.
+     
+     Actually a better solution is to keep track of the state where I hit
+     the search front(!)
    - Note taken on [2019-09-07 Sat 12:31] \\
      It turns out that it was the end game condition which was the last
      problem in getting this to work without blowing up in my face.
