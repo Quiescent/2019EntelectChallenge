@@ -3233,8 +3233,9 @@ I should never do nothing unless that leads to death.
      East.
    - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 09:00]
    :END:
-** TODO Swap to traditional search when I can "see" then end
+** IN_PROGRESS Swap to traditional search when I can "see" then end
    :LOGBOOK:
+   - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 09:21]
    - Note taken on [2019-09-07 Sat 08:58] \\
      The idea here is that when the board is small enough I should switch
      to the following strategy:
