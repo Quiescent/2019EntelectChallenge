@@ -5550,15 +5550,20 @@ myEndGameMovesFrom myMoveMoves
                    state =
   let myUsefulNonMoveMoves' = myUsefulNonMoveMoves opponentsMoveMoves state
       coord'                = thisWormsCoord state
-      isOnLava              = isOnLavaForRound (currentRound state) coord'
-      roundsExhausted       = currentRound state > maxRound
+      thatCoord'            = thatWormsCoord state
+      currentRound'         = currentRound state
+      isOnLava              = isOnLavaForRound currentRound' coord'
+      roundsExhausted       = currentRound' > maxRound
+      notOnLavaAnd f pos    = (not $ isOnLavaForRound currentRound' pos) && f pos
+      myMovesOutOfAlignment = filter (notOnLavaAnd (not . aligns thatCoord') . displaceCoordByMove coord') myMoveMoves
+      myMovesIntoAlignment  = filter (notOnLavaAnd (aligns thatCoord')       . displaceCoordByMove coord') myMoveMoves
       moves                 =
         if isOnLava
         then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
                                in isCloserByManhattanDistance targetOfMove coord') myMoveMoves
         else if theOpponentAndIAlignForAShot
-             then (filter (not . aligns coord' . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
-             else (filter (aligns coord'       . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+             then myMovesOutOfAlignment  ++ myUsefulNonMoveMoves'
+             else myMovesIntoAlignment ++ myUsefulNonMoveMoves'
   in if roundsExhausted || moves == [] then [doNothing] else moves
 
 opponentsEndGameMovesFrom :: [Move] -> [Move] -> Bool -> State -> [Move]
@@ -5568,17 +5573,22 @@ opponentsEndGameMovesFrom myMoveMoves
                           state =
   let opponentsUsefulNonMoveMoves' = opponentsUsefulNonMoveMoves myMoveMoves state
       coord'                       = thatWormsCoord state
+      thisCoord'                   = thisWormsCoord state
+      currentRound'                = currentRound state
       isOnLava                     = isOnLavaForRound (currentRound state) coord'
-      roundsExhausted              = currentRound state > maxRound
+      roundsExhausted              = currentRound' > maxRound
+      notOnLavaAnd f pos           = (not $ isOnLavaForRound currentRound' pos) && f pos
+      movesOutOfAlignment          = filter (notOnLavaAnd (not . aligns thisCoord') . displaceCoordByMove coord')
+                                     opponentsMoveMoves
+      movesIntoAlignment           = filter (notOnLavaAnd (aligns thisCoord')       . displaceCoordByMove coord')
+                                     opponentsMoveMoves
       moves                        =
         if isOnLava
         then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
                                in isCloserByManhattanDistance targetOfMove coord') opponentsMoveMoves
         else if theOpponentAndIAlignForAShot
-             then (filter (not . aligns coord' . displaceCoordByMove coord') opponentsMoveMoves) ++
-                  opponentsUsefulNonMoveMoves'
-             else (filter (aligns coord'       . displaceCoordByMove coord') opponentsMoveMoves)
-                  ++ opponentsUsefulNonMoveMoves'
+             then movesOutOfAlignment ++ opponentsUsefulNonMoveMoves'
+             else movesIntoAlignment  ++ opponentsUsefulNonMoveMoves'
   in if roundsExhausted || moves == [] then [doNothing] else moves
 
 aligns :: Coord -> Coord -> Bool
