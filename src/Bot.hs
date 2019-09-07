@@ -4224,7 +4224,10 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
         "restarting worker"
       iterativelyImproveSearch gen initialState SearchFront stateChannel treeVariable
     nearbyWorms    = wormsNearMyCurrentWorm initialState
-    strategy       = determineStrategy (currentRound initialState) (thisWormsCoord initialState) nearbyWorms
+    strategy       = determineStrategy (currentRound initialState)
+                                       (thisWormsCoord initialState)
+                                       nearbyWorms
+                                       (gameMap initialState)
     startingWormId = thisPlayersCurrentWormId initialState
     state'         = if strategy == Dig || strategy == GetToTheChoppa
                      then withOnlyWormsContainedIn nearbyWorms initialState
@@ -4749,6 +4752,7 @@ initialiseLevel strategy wormId' state result =
         Points         -> nothingOrTheseMoves (myMovesFrom myMoveMoves opponentsMoveMoves)
         Dig            -> nothingOrTheseMoves myDigMovesFrom
         Runaway        -> nothingOrTheseMoves (myRunawayMovesFrom wormId')
+        FindDemDirt    -> nothingOrTheseMoves (myRunawayMovesFrom wormId')
         EndGame        -> nothingOrTheseMoves (myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot)
       opponentsMovesFrom' = case strategy of
         GetToTheChoppa -> doNothingMoves
@@ -4756,6 +4760,7 @@ initialiseLevel strategy wormId' state result =
         Points         -> nothingOrThoseMoves (opponentsMovesFrom myMoveMoves opponentsMoveMoves)
         Dig            -> doNothingMoves
         Runaway        -> nothingOrThoseMoves opponentsRunawayMovesFrom
+        FindDemDirt    -> nothingOrThoseMoves opponentsRunawayMovesFrom
         EndGame        -> nothingOrThoseMoves (opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot)
   in updateTree
      (UnSearchedLevel
@@ -4852,29 +4857,95 @@ data Strategy = Dig
               | GetToTheChoppa
               | Runaway
               | EndGame
+              | FindDemDirt
               deriving (Eq, Show)
 
 choppaRadius :: Int
 choppaRadius = 5
 
--- TODO: When do I go for end game??
-determineStrategy :: Int -> Coord -> WormPositions -> Strategy
-determineStrategy currentRound' currentWormsCoord' wormPositions' =
-  if currentRound' > 30
-  then if currentRound' < startUsingAmmoRound
-       then if aListCountOpponentsEntries wormPositions' > 1
-            then Runaway
-            else Points
-       else if currentRound' > 302
-            then EndGame
-            else if aListCountOpponentsEntries wormPositions' == 0
-                 then Points
-                 else Kill
-  else if aListCountOpponentsEntries wormPositions' == 0
-       then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
-            then Points
-            else GetToTheChoppa
-       else Points
+dirtIsNorth :: Coord -> GameMap -> Bool
+dirtIsNorth coord gameMap' =
+  if isOnNorthernBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 8)) gameMap'
+
+dirtIsNorthEast :: Coord -> GameMap -> Bool
+dirtIsNorthEast coord gameMap' =
+  if isOnNorthernBorder coord || isOnEasternBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 9)) gameMap'
+
+dirtIsEast :: Coord -> GameMap -> Bool
+dirtIsEast coord gameMap' =
+  if isOnEasternBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 10)) gameMap'
+
+dirtIsSouthEast :: Coord -> GameMap -> Bool
+dirtIsSouthEast coord gameMap' =
+  if isOnEasternBorder coord || isOnSouthernBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 11)) gameMap'
+
+dirtIsSouth :: Coord -> GameMap -> Bool
+dirtIsSouth coord gameMap' =
+  if isOnSouthernBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 12)) gameMap'
+
+dirtIsSouthWest :: Coord -> GameMap -> Bool
+dirtIsSouthWest coord gameMap' =
+  if isOnSouthernBorder coord || isOnWesternBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 13)) gameMap'
+
+dirtIsWest :: Coord -> GameMap -> Bool
+dirtIsWest coord gameMap' =
+  if isOnWesternBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 14)) gameMap'
+
+dirtIsNorthWest :: Coord -> GameMap -> Bool
+dirtIsNorthWest coord gameMap' =
+  if isOnWesternBorder coord || isOnNorthernBorder coord
+  then False
+  else dirtAt (displaceCoordByMove coord (Move 15)) gameMap'
+
+countDirtAroundWorm :: Coord -> GameMap -> Int
+countDirtAroundWorm coord gameMap' =
+  if dirtIsNorth     coord gameMap' then 1 else 0 +
+  if dirtIsNorthEast coord gameMap' then 1 else 0 +
+  if dirtIsEast      coord gameMap' then 1 else 0 +
+  if dirtIsSouthEast coord gameMap' then 1 else 0 +
+  if dirtIsSouth     coord gameMap' then 1 else 0 +
+  if dirtIsSouthWest coord gameMap' then 1 else 0 +
+  if dirtIsWest      coord gameMap' then 1 else 0 +
+  if dirtIsNorthWest coord gameMap' then 1 else 0
+
+thereIsNoJuicyDirtAllAround :: Coord -> GameMap -> Bool
+thereIsNoJuicyDirtAllAround coord gameMap' =
+  countDirtAroundWorm coord gameMap' == 0
+
+determineStrategy :: Int -> Coord -> WormPositions -> GameMap -> Strategy
+determineStrategy currentRound' currentWormsCoord' wormPositions' gameMap' =
+  let pointsStrat = if thereIsNoJuicyDirtAllAround currentWormsCoord' gameMap'
+                    then FindDemDirt
+                    else Points
+  in if currentRound' > 30
+     then if currentRound' < startUsingAmmoRound
+          then if aListCountOpponentsEntries wormPositions' > 1
+               then Runaway
+               else pointsStrat
+          else if currentRound' > 302
+               then Kill
+               else if aListCountOpponentsEntries wormPositions' == 0
+                    then pointsStrat
+                    else Kill
+     else if aListCountOpponentsEntries wormPositions' == 0
+          then if manhattanDistanceToMiddle currentWormsCoord' < choppaRadius
+               then pointsStrat
+               else GetToTheChoppa
+          else pointsStrat
 
 withOnlyWormsContainedIn :: AList -> ModifyState
 withOnlyWormsContainedIn toKeep =
@@ -4903,9 +4974,63 @@ search g strategy state searchTree =
        Points         -> pointsSearch g       round' state searchTree [] 0
        GetToTheChoppa -> digSearch    g       0      state searchTree [] 0
        EndGame        -> endGame      g state        state searchTree []
+       FindDemDirt    ->
+         let result = findDemDirt state (thisPlayersCurrentWormId state)
+         in (result, g, state)
        Runaway        ->
          let result = runaway state (thisPlayersCurrentWormId state)
          in (result, g, state)
+
+maxDirtAroundWorm :: Int
+maxDirtAroundWorm = 8
+
+findDemDirt :: State -> WormId -> SearchResult
+findDemDirt !state wormId' =
+  go 0 (Set.fromList $ map possibilityToSeen initialPossibilities) $ PQ.fromList initialPossibilities
+  where
+    possibilityToSeen :: (Int, (Move, Int, State)) -> (Coord, UniqueDigMove)
+    possibilityToSeen (_, (move, _, state')) = (wormsCoord state', onlyDigMovesAreUnique move)
+    myInitialMoves = myRunawayMovesFrom wormId' state
+    initialPossibilities = prepareForEnqueuing 0 state myInitialMoves
+    prepareForEnqueuing :: Int -> State -> [Move] -> [(Int, (Move, Int, State))]
+    prepareForEnqueuing steps state' =
+      let steps' = steps + 1
+      in map (\ move ->
+                let nextState = (makeRunawayMove move state')
+                in (priority steps' nextState, (move, steps', nextState)))
+    makeRunawayMove move state'
+      | isADigMove  move = makeMyDigMove  (thisWormsCoord state') (gameMap state') move state'
+      | isAMoveMove move = makeMyMoveMove (wormPositions state')
+                                          (thisWormsCoord state')
+                                          wormId'
+                                          (gameMap state')
+                                          move
+                                          state'
+      | otherwise        = state'
+    wormsCoord state' = aListFindDataById wormId' $ wormPositions state'
+    priority steps state' = steps + (maxDirtAroundWorm - countDirtAroundWorm (wormsCoord state') (gameMap state'))
+    notAlreadySeen :: Set.Set (Coord, UniqueDigMove) -> (Coord, (Move, Int, State)) -> Bool
+    notAlreadySeen seen (_, (move, _, state')) =
+      not $ Set.member (wormsCoord state', onlyDigMovesAreUnique move) seen
+    withMove :: Move -> (Int, (Move, Int, State)) -> (Int, (Move, Int, State))
+    withMove move (priority', (_, steps', state')) =  (priority', (move, steps', state'))
+    go :: Int -> Set.Set (Coord, UniqueDigMove) -> PQ.PQueue Int (Move, Int, State) -> SearchResult
+    go 1000 _ searchFront =
+      let ((move, _, _), _) = fromJust $ PQ.minView searchFront
+      in Instruction $ move
+    go !n seen searchFront =
+      let ((move, steps, state'), searchFront') = fromJust $ PQ.minView searchFront
+          nextPossibilities                     =
+            filter (notAlreadySeen seen) $ prepareForEnqueuing steps state' $ myRunawayMovesFrom wormId' state'
+      in if foundDemDirts wormId' state'
+         then Instruction $ move
+         else go (n + 1)
+                 (Set.union seen $ Set.fromList $ map possibilityToSeen nextPossibilities)
+                 (PQ.union searchFront' . PQ.fromList $ map (withMove move) nextPossibilities)
+
+foundDemDirts :: WormId -> State -> Bool
+foundDemDirts wormId' state' =
+  countDirtAroundWorm (aListFindDataById wormId' $ wormPositions state') (gameMap state') >= 3
 
 endGame :: StdGen -> State -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
 endGame !g initialState !state searchTree moves =
