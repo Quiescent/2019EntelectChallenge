@@ -3225,8 +3225,12 @@ I should never do nothing unless that leads to death.
     - CLOSING NOTE [2019-09-07 Sat 08:56]
     - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 07:41]
     :END:
-** IN_PROGRESS Fix spurious Shoot East
+** DONE Fix spurious Shoot East
+   CLOSED: [2019-09-07 Sat 09:20]
    :LOGBOOK:
+   - CLOSING NOTE [2019-09-07 Sat 09:20] \\
+     False alarm.  I had two worms alive and the one could definitely shoot
+     East.
    - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 09:00]
    :END:
 ** TODO Swap to traditional search when I can "see" then end
