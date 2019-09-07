@@ -37,6 +37,12 @@ import qualified Data.PriorityQueue.FingerTree as PQ
 -- TODO: think long and hard about this...
 import Prelude (read)
 
+import Debug.Trace
+
+probe :: Show a => String -> a -> a
+probe message x =
+  Debug.Trace.trace (message ++ ": " ++ show x) x
+
 data State = State { opponentsLastCommand :: Maybe String,
                      currentRound         :: Int,
                      wormHealths          :: WormHealths,
@@ -4887,9 +4893,9 @@ runaway :: State -> WormId -> SearchResult
 runaway !state wormId' =
   go 0 (Set.fromList $ map possibilityToSeen initialPossibilities) $ PQ.fromList initialPossibilities
   where
-    possibilityToSeen :: (Int, (Move, Int, State)) -> (Coord, State)
-    possibilityToSeen (_, (_, _, state')) = (wormsCoord state', state')
-    initialPossibilities = prepareForEnqueuing 1 state $ myRunawayMovesFrom wormId' state
+    possibilityToSeen :: (Int, (Move, Int, State)) -> (Coord, UniqueDigMove)
+    possibilityToSeen (_, (move, _, state')) = (wormsCoord state', onlyDigMovesAreUnique move)
+    initialPossibilities = prepareForEnqueuing 0 state $ myRunawayMovesFrom wormId' state
     prepareForEnqueuing :: Int -> State -> [Move] -> [(Int, (Move, Int, State))]
     prepareForEnqueuing steps state' =
       let steps' = steps + 1
@@ -4897,30 +4903,30 @@ runaway !state wormId' =
                 let nextState = (makeRunawayMove move state')
                 in (priority steps' nextState, (move, steps', nextState)))
     makeRunawayMove move state'
-      | isADigMove  move = makeMyDigMove  (thisWormsCoord state') (gameMap state') move state'
+      | isADigMove  move = makeMyDigMove  (thisWormsCoord state') (gameMap state') (probe ("Digging " ++ (show $ fromCoord $ wormsCoord state')) move) state'
       | isAMoveMove move = makeMyMoveMove (wormPositions state')
                                           (thisWormsCoord state')
                                           wormId'
                                           (gameMap state')
-                                          move
+                                          (probe ("Moving from " ++ (show $ fromCoord $ wormsCoord state')) move)
                                           state'
       | otherwise        = state'
     myWormWithHis state' = aListWithOnlyOneOfMyIds wormId' $ wormPositions state'
     wormsCoord state' = aListFindDataById wormId' $ wormPositions state'
-    -- Anything more than 50 moves is just insanely long
     priority steps state' =
-      steps + ((maxSumOfDistancePairs - aListAllPairOffs integerDistance (myWormWithHis state')) `div` 3)
-    notAlreadySeen :: Set.Set (Coord, State) -> (Coord, (Move, Int, State)) -> Bool
-    notAlreadySeen seen (_, (_, _, state')) =
-      not $ Set.member ((wormsCoord state'), state') seen
+      3 * integerDistanceResolution * steps +
+      (maxSumOfDistancePairs - aListAllPairOffs integerDistance (myWormWithHis state'))
+    notAlreadySeen :: Set.Set (Coord, UniqueDigMove) -> (Coord, (Move, Int, State)) -> Bool
+    notAlreadySeen seen (_, (move, _, state')) =
+      not $ Set.member (wormsCoord state', onlyDigMovesAreUnique move) seen
     withMove :: Move -> (Int, (Move, Int, State)) -> (Int, (Move, Int, State))
     withMove move (priority', (_, steps', state')) =  (priority', (move, steps', state'))
-    go :: Int -> Set.Set (Coord, State) -> PQ.PQueue Int (Move, Int, State) -> SearchResult
-    go 50 _ searchFront =
-      let ((move, _, _), _) = fromJust $ PQ.minView searchFront
+    go :: Int -> Set.Set (Coord, UniqueDigMove) -> PQ.PQueue Int (Move, Int, State) -> SearchResult
+    go 1000 _ searchFront =
+      let ((move, _, _), _) = fromJust $ PQ.minView $ Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (priority y z, x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) searchFront
       in Instruction $ move
     go !n seen searchFront =
-      let ((move, steps, state'), searchFront') = fromJust $ PQ.minView searchFront
+      let ((move, steps, state'), searchFront') = Debug.Trace.trace ("Searchfront: " ++ show (map (\ (x, y, z) -> (priority y z, x, y, fromCoord $ wormsCoord z)) $ toList searchFront)) $ fromJust $ PQ.minView searchFront
           nextPossibilities                     =
             filter (notAlreadySeen seen) $ prepareForEnqueuing steps state' $ myRunawayMovesFrom wormId' state'
       in if escaped wormId' state'
@@ -4928,6 +4934,22 @@ runaway !state wormId' =
          else go (n + 1)
                  (Set.union seen $ Set.fromList $ map possibilityToSeen nextPossibilities)
                  (PQ.union searchFront' . PQ.fromList $ map (withMove move) nextPossibilities)
+
+data UniqueDigMove = UniqueDigMove Int
+                   | A_MOVE
+                   | A_SHOOT
+                   | A_SELECT
+                   | A_BANANA_THROW
+                   | A_SNOWBALL_THROW
+                   deriving (Show, Eq, Ord)
+
+onlyDigMovesAreUnique :: Move -> UniqueDigMove
+onlyDigMovesAreUnique move@(Move x)
+  | isAMoveMove     move = A_MOVE
+  | isADigMove      move = UniqueDigMove x
+  | hasASelection   move = A_SELECT
+  | isABananaMove   move = A_BANANA_THROW
+  | isASnowballMove move = A_SNOWBALL_THROW
 
 testState76 :: State
 testState76 =
@@ -4965,7 +4987,7 @@ testState = (State
                  0))
 
 rangeToEscape :: Int
-rangeToEscape = 15
+rangeToEscape = 10
 
 escaped :: WormId -> State -> Bool
 escaped wormId' state =
@@ -5147,6 +5169,9 @@ pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
              (OpponentsPayoff opponentsPayoff)
              (MaxScore (10 * ((10 * maxPayoffScore) + maxPoints) + maxAverageDistance))
 
+integerDistanceResolution :: Int
+integerDistanceResolution = 1000000
+
 allIntegerDistances :: V.Vector Int
 allIntegerDistances =
   V.fromList $ do
@@ -5158,15 +5183,16 @@ allIntegerDistances =
     integerDistance' xy' xy'' =
       let (x',  y')  = fromCoord xy'
           (x'', y'') = fromCoord xy''
-      in (abs $ (x'' - x') * (x'' - x')) +
-         (abs $ (y'' - y') * (y'' - y'))
+          dx         = fromIntegral $ x' - x''
+          dy         = fromIntegral $ y' - y''
+      in round $ (fromIntegral integerDistanceResolution) * sqrt (((dx::Double) ** 2) + (dy ** 2))
 
 integerDistance :: Coord -> Coord -> Int
 integerDistance xy' xy'' =
   allManhattanDistances `UV.unsafeIndex` (xy' * mapLength + xy'')
 
 maxSumOfDistancePairs :: Int
-maxSumOfDistancePairs = (mapDim * mapDim) * 3
+maxSumOfDistancePairs = (mapDim * integerDistanceResolution) * 3
 
 distancePayOff :: State -> WormId -> Payoff
 distancePayOff (State { wormPositions = wormPositions' }) wormId' =
