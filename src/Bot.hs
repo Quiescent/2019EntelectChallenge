@@ -4935,6 +4935,7 @@ data UniqueDigMove = UniqueDigMove Int
                    | A_SELECT
                    | A_BANANA_THROW
                    | A_SNOWBALL_THROW
+                   | UNKNOWN_MOVE
                    deriving (Show, Eq, Ord)
 
 onlyDigMovesAreUnique :: Move -> UniqueDigMove
@@ -4944,6 +4945,7 @@ onlyDigMovesAreUnique move@(Move x)
   | hasASelection   move = A_SELECT
   | isABananaMove   move = A_BANANA_THROW
   | isASnowballMove move = A_SNOWBALL_THROW
+  | otherwise            = UNKNOWN_MOVE
 
 testState76 :: State
 testState76 =
