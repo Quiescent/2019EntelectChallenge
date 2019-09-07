@@ -5562,8 +5562,8 @@ myEndGameMovesFrom myMoveMoves
         then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
                                in isCloserByManhattanDistance targetOfMove coord') myMoveMoves
         else if theOpponentAndIAlignForAShot
-             then myMovesOutOfAlignment  ++ myUsefulNonMoveMoves'
-             else myMovesIntoAlignment ++ myUsefulNonMoveMoves'
+             then myMovesOutOfAlignment ++ myUsefulNonMoveMoves'
+             else myMovesIntoAlignment  ++ myUsefulNonMoveMoves'
   in if roundsExhausted || moves == [] then [doNothing] else moves
 
 opponentsEndGameMovesFrom :: [Move] -> [Move] -> Bool -> State -> [Move]
