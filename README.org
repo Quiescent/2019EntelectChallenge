@@ -3235,6 +3235,9 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS Swap to traditional search when I can "see" then end
    :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 13:16] \\
+     Found the problem.  I was passing the wrong state down as the final
+     state when doing random and unsearched nodes.
    - Note taken on [2019-09-07 Sat 13:06] \\
      There's something horribly wrong with how I'm filtering out my move
      moves in the end game.  I'm not moving when I'm aligned and I'm not
