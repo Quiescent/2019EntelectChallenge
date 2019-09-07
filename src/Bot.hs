@@ -5213,24 +5213,17 @@ maxAverageDistance = mapDim
 
 pointAndHealthPayOff :: Int -> State -> Int -> Payoff
 pointAndHealthPayOff initialRound (State { wormHealths   = wormHealths',
-                                           wormPositions = wormPositions',
                                            currentRound  = currentRound' }) !reward =
   let myTotalHealth        = aListSumMyEntries wormHealths'
       opponentsTotalHealth = aListSumOpponentsEntries wormHealths'
       maxPoints            = (currentRound' - initialRound) * digPoints
       -- Health is much more important than reward and the reward term
       -- gets bigger as you go deeper.
-      myPayoff             = 10 * (30 * myTotalHealth +
-                                   reward) +
-                             (aListAllPairOffs manhattanDistance  wormPositions' `div`
-                              (aListCountMyEntries wormPositions' * aListCountOpponentsEntries wormPositions'))
-      opponentsPayoff      = maxAverageDistance +
-                             10 * (maxPoints +
-                                   10 * (opponentsTotalHealth +
-                                         2 * (maximumHealth - myTotalHealth)))
+      myPayoff             = (30 * myTotalHealth + reward)
+      opponentsPayoff      = (maxPoints + 10 * (opponentsTotalHealth + 2 * (maximumHealth - myTotalHealth)))
    in Payoff (MyPayoff myPayoff)
              (OpponentsPayoff opponentsPayoff)
-             (MaxScore (10 * ((10 * maxPayoffScore) + maxPoints) + maxAverageDistance))
+             (MaxScore $ 10 * maxPayoffScore + maxPoints)
 
 integerDistanceResolution :: Int
 integerDistanceResolution = 1000000
