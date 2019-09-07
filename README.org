@@ -3225,6 +3225,21 @@ I should never do nothing unless that leads to death.
     - CLOSING NOTE [2019-09-07 Sat 08:56]
     - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 07:41]
     :END:
+** TODO Fix spurious Shoot East
+** TODO Swap to traditional search when I can "see" then end
+   :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 08:58] \\
+     The idea here is that when the board is small enough I should switch
+     to the following strategy:
+      - If I'm in the line of fire or I can't hit any opponent then I can
+        move or shoot.
+      - Otherwise I just shoot.
+     Always run these games to completion.
+   - Note taken on [2019-09-01 Sun 10:46] \\
+     I did some back of the napkin calculations and I can't really ever
+     hope to see the end.  This is almost entirely a heuristic based search
+     unless I get much, much faster.
+   :END:
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
@@ -3344,13 +3359,6 @@ https://wiki.haskell.org/Playing_by_the_rules
       This is an obsolete optimisation because my search doesn't work this
       way anymore.
     :END:
-** TODO Swap to traditional search when I can "see" then end
-   :LOGBOOK:
-   - Note taken on [2019-09-01 Sun 10:46] \\
-     I did some back of the napkin calculations and I can't really ever
-     hope to see the end.  This is almost entirely a heuristic based search
-     unless I get much, much faster.
-   :END:
 ** TODO IDEA: Always follow up a snowball with shots
 ** IN_PROGRESS WormId 5 comes into existence somewhere somehow!?
    :LOGBOOK:
