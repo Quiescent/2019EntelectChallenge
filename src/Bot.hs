@@ -4726,20 +4726,25 @@ initSuccessRecordKeyValue initPlayed initPayoff move@(Move idx) =
 
 initialiseLevel :: Strategy -> WormId -> State -> SearchResult -> SearchTree
 initialiseLevel strategy wormId' state result =
-  let myMoveMoves         = myMoveMovesFrom        state
-      opponentsMoveMoves  = opponentsMoveMovesFrom state
-      myMovesFrom'        = case strategy of
+  let myMoveMoves        = myMoveMovesFrom        state
+      opponentsMoveMoves = opponentsMoveMovesFrom state
+      myCoord            = thisWormsCoord state
+      opponentsCoord     = thatWormsCoord state
+      weAlignForAShot    = aligns myCoord opponentsCoord && inRange myCoord opponentsCoord missileRange
+      myMovesFrom'       = case strategy of
         GetToTheChoppa -> myGetToTheChoppaMoves
         Kill           -> myMovesFrom myMoveMoves opponentsMoveMoves
         Points         -> myMovesFrom myMoveMoves opponentsMoveMoves
         Dig            -> myDigMovesFrom
         Runaway        -> myRunawayMovesFrom wormId'
+        EndGame        -> myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
       opponentsMovesFrom' = case strategy of
         GetToTheChoppa -> (always [doNothing])
         Kill           -> opponentsMovesFrom myMoveMoves opponentsMoveMoves
         Points         -> opponentsMovesFrom myMoveMoves opponentsMoveMoves
         Dig            -> (always [doNothing])
         Runaway        -> opponentsRunawayMovesFrom
+        EndGame        -> opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
   in updateTree
      (UnSearchedLevel
       0
@@ -4834,6 +4839,7 @@ data Strategy = Dig
               | Kill
               | GetToTheChoppa
               | Runaway
+              | EndGame
               deriving (Eq, Show)
 
 choppaRadius :: Int
@@ -4879,9 +4885,50 @@ search g strategy state searchTree =
        Kill           -> killSearch   g state           state searchTree []
        Points         -> pointsSearch g          round' state searchTree [] 0
        GetToTheChoppa -> digSearch    g        0        state searchTree [] 0
+       EndGame        -> endGame      g                 state searchTree []
        Runaway        ->
          let result = runaway state (thisPlayersCurrentWormId state)
          in (result, g, state)
+
+endGame :: StdGen -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+endGame !g !state searchTree moves =
+  case gameOver state of
+    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
+    NoResult        -> go searchTree
+  where
+    go SearchFront =
+      let myCoord              = thisWormsCoord state
+          opponentsCoord       = thatWormsCoord state
+          weAlignForAShot      = aligns myCoord opponentsCoord && inRange myCoord opponentsCoord missileRange
+          myMoveMoves          = myMoveMovesFrom state
+          opponentsMoveMoves   = myMoveMovesFrom state
+          myMoves              = myEndGameMovesFrom        myMoveMoves opponentsMoveMoves weAlignForAShot state
+          opponentsMoves       = opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot state
+          (myMove, g')         = pickOneAtRandom g  myMoves
+          (opponentsMove, g'') = pickOneAtRandom g' opponentsMoves
+          combinedMove         = fromMoves myMove opponentsMove
+          state'               = makeMove False combinedMove state
+      in endGame g'' state' SearchFront (combinedMove:moves)
+    go (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
+      let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
+          myMove                 = successRecordMove myRecord
+          opponentsMove          = successRecordMove opponentsRecord
+          combinedMove           = fromMoves myMove opponentsMove
+          state'                 = makeMove False combinedMove state
+      in endGame g'' state' SearchFront (combinedMove:moves)
+    go (SearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
+      let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
+          (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
+          myMove                 = successRecordMove myRecord
+          opponentsMove          = successRecordMove opponentsRecord
+          combinedMove           = fromMoves myMove opponentsMove
+          state'                 = makeMove False combinedMove state
+          searchTree'            = findSubTree combinedMove transitions
+      in endGame g'' state' searchTree' (combinedMove:moves)
+
+missileRange :: Int
+missileRange = 4
 
 runaway :: State -> WormId -> SearchResult
 runaway !state wormId' =
@@ -5487,6 +5534,38 @@ myMovesFrom myMoveMoves opponentsMoveMoves state =
   in if myMoves == []
      then [doNothing]
      else myMoves
+
+myEndGameMovesFrom :: [Move] -> [Move] -> Bool -> State -> [Move]
+myEndGameMovesFrom myMoveMoves
+                   opponentsMoveMoves
+                   theOpponentAndIAlignForAShot
+                   state =
+  let myUsefulNonMoveMoves' = myUsefulNonMoveMoves opponentsMoveMoves state
+      coord'                = thisWormsCoord state
+  in if theOpponentAndIAlignForAShot
+     then (filter (not . aligns coord' . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+     else (filter (aligns coord'       . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+
+opponentsEndGameMovesFrom :: [Move] -> [Move] -> Bool -> State -> [Move]
+opponentsEndGameMovesFrom myMoveMoves
+                          opponentsMoveMoves
+                          theOpponentAndIAlignForAShot
+                          state =
+  let opponentsUsefulNonMoveMoves' = opponentsUsefulNonMoveMoves myMoveMoves state
+      coord'                       = thisWormsCoord state
+  in if theOpponentAndIAlignForAShot
+     then (filter (not . aligns coord' . displaceCoordByMove coord') opponentsMoveMoves) ++
+          opponentsUsefulNonMoveMoves'
+     else (filter (aligns coord'       . displaceCoordByMove coord') opponentsMoveMoves)
+          ++ opponentsUsefulNonMoveMoves'
+
+aligns :: Coord -> Coord -> Bool
+aligns xy' xy'' =
+  let (x', y')   = fromCoord xy'
+      (x'', y'') = fromCoord xy''
+  in x' == x'' ||
+     y' == y'' ||
+     (abs (x' - x'')) == (abs (y' -y''))
 
 midCoord :: Coord
 midCoord = toCoord 16 16
