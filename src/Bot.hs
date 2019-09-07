@@ -4898,40 +4898,22 @@ search :: StdGen -> Strategy -> State -> SearchTree -> (SearchResult, StdGen, St
 search g strategy state searchTree =
   let round' = (currentRound state)
   in case strategy of
-       Dig            -> digSearch    g         0      state searchTree [] 0
-       Kill           -> killSearch   g   state        state searchTree []
-       Points         -> pointsSearch g         round' state searchTree [] 0
-       GetToTheChoppa -> digSearch    g         0      state searchTree [] 0
-       EndGame        -> endGame      g 0 state        state searchTree []
+       Dig            -> digSearch    g       0      state searchTree [] 0
+       Kill           -> killSearch   g state        state searchTree []
+       Points         -> pointsSearch g       round' state searchTree [] 0
+       GetToTheChoppa -> digSearch    g       0      state searchTree [] 0
+       EndGame        -> endGame      g state        state searchTree []
        Runaway        ->
          let result = runaway state (thisPlayersCurrentWormId state)
          in (result, g, state)
 
-endGame :: StdGen -> Int -> State -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
-endGame !g 25 finalState !state _ moves =
+endGame :: StdGen -> State -> State -> SearchTree -> Moves -> (SearchResult, StdGen, State)
+endGame !g initialState !state searchTree moves =
   case gameOver state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, finalState)
-    NoResult        -> case forceGameOver state of
-      GameOver payoff -> (SearchResult payoff (reverse moves), g, finalState)
-      NoResult        -> error "This is not possible..."
-endGame !g !rounds finalState !state searchTree moves =
-  case gameOver state of
-    GameOver payoff -> (SearchResult payoff (reverse moves), g, finalState)
+    GameOver payoff -> (SearchResult payoff (reverse moves), g, state)
     NoResult        -> go searchTree
   where
-    go SearchFront =
-      let myCoord              = thisWormsCoord state
-          opponentsCoord       = thatWormsCoord state
-          weAlignForAShot      = aligns myCoord opponentsCoord && inRange myCoord opponentsCoord missileRange
-          myMoveMoves          = myMoveMovesFrom state
-          opponentsMoveMoves   = myMoveMovesFrom state
-          myMoves              = myEndGameMovesFrom        myMoveMoves opponentsMoveMoves weAlignForAShot state
-          opponentsMoves       = opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot state
-          (myMove, g')         = pickOneAtRandom g  myMoves
-          (opponentsMove, g'') = pickOneAtRandom g' opponentsMoves
-          combinedMove         = fromMoves myMove opponentsMove
-          state'               = makeMove False combinedMove state
-      in endGame g'' (rounds + 1) finalState state' SearchFront (combinedMove:moves)
+    go SearchFront = (SearchResult (payOff initialState state) (reverse moves), g, state)
     go (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -4939,7 +4921,7 @@ endGame !g !rounds finalState !state searchTree moves =
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-      in endGame g'' (rounds + 1) finalState state' SearchFront (combinedMove:moves)
+      in endGame g'' initialState state' SearchFront (combinedMove:moves)
     go (SearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -4948,7 +4930,7 @@ endGame !g !rounds finalState !state searchTree moves =
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
           searchTree'            = findSubTree combinedMove transitions
-      in endGame g'' (rounds + 1) state' state' searchTree' (combinedMove:moves)
+      in endGame g'' initialState state' searchTree' (combinedMove:moves)
 
 missileRange :: Int
 missileRange = 4
@@ -5600,8 +5582,8 @@ myEndGameMovesFrom myMoveMoves
         then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
                                in isCloserByManhattanDistance targetOfMove coord') myMoveMoves
         else if theOpponentAndIAlignForAShot
-             then myMovesOutOfAlignment ++ myUsefulNonMoveMoves'
-             else myMovesIntoAlignment  ++ myUsefulNonMoveMoves'
+             then [doNothing] ++ myMovesOutOfAlignment ++ myUsefulNonMoveMoves'
+             else [doNothing] ++ myMovesIntoAlignment  ++ myUsefulNonMoveMoves'
   in if roundsExhausted || moves == [] then [doNothing] else moves
 
 opponentsEndGameMovesFrom :: [Move] -> [Move] -> Bool -> State -> [Move]
