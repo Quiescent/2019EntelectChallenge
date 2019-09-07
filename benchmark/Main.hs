@@ -10,7 +10,6 @@ import System.Environment
 import Control.Concurrent
 import qualified System.IO as IO
 import Data.Maybe
-import System.Clock
 
 main :: IO ()
 main = do
@@ -48,7 +47,6 @@ runSearchForEachRound (directory:directories) = do
   _             <- forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeChannel)
   go directories [] treeChannel stateChannel
   where
-    clock = Realtime
     go []         results _           _            = return $ GamesPlayedPerRound (reverse results)
     go (dir:dirs) results treeChannel stateChannel = do
       state <- loadStateForRound dir
@@ -56,9 +54,8 @@ runSearchForEachRound (directory:directories) = do
       then return (Failed $ "Couldn't load state from: " ++ show dir)
       else do
         logStdErr $ "Benchmarking directory: " ++ dir
-        startingTime <- fmap toNanoSecs $ getTime clock
-        tree         <- treeAfterAlottedTime (fromJust state) clock startingTime treeChannel
-        let count'    = countGames tree
+        tree <- treeAfterAlottedTime (fromJust state) treeChannel
+        let count' = countGames tree
         logStdErr $ "Games played for state: " ++ show count'
         writeComms stateChannel (fromMoves doNothing doNothing, False, (fromJust state))
         go dirs (count' : results) treeChannel stateChannel

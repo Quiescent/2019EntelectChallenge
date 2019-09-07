@@ -12,7 +12,6 @@ import Import
 import Simulate
 import Bot
 
-import System.Clock
 import RIO.List
 import RIO.List.Partial
 import Control.Concurrent
@@ -55,7 +54,6 @@ runSearchForEachRound startFrom repeatTimes directories  =
         else directories
       repeatMode  = isJust repeatTimes
       repeatCount = read $ fromJust repeatTimes
-      clock       = Realtime
   in if repeatMode
      then do
        let directory = head directories'
@@ -66,8 +64,7 @@ runSearchForEachRound startFrom repeatTimes directories  =
        _             <- forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeVariable)
        forM_ [(1::Int)..repeatCount] $ \ i -> do
          logStdErr $ "Round " ++ show i ++ "/" ++ show repeatCount
-         startingTime <- fmap toNanoSecs $ getTime clock
-         _            <- searchForAlottedTime state clock startingTime treeVariable
+         _      <- searchForAlottedTime state treeVariable
          writeComms stateChannel ((fromMoves doNothing doNothing), False, state)
      else if (length directories' < 1)
           then ((putStrLn ("User error: specified directory has less than 1 rounds after starting from: " ++
@@ -84,9 +81,8 @@ runSearchForEachRound startFrom repeatTimes directories  =
     _             <- forkIO (iterativelyImproveSearch gen state SearchFront stateChannel treeVariable)
     mapM_ (\ directory' -> do
               logStdErr $ "Profiling directory: " ++ directory'
-              startingTime <- fmap toNanoSecs $ getTime clock
-              state'       <- fmap fromJust $ loadStateForRound directory'
-              _            <- searchForAlottedTime state' clock startingTime treeVariable
+              state' <- fmap fromJust $ loadStateForRound directory'
+              _      <- searchForAlottedTime state' treeVariable
               -- Simulate the worst case scenario.  Both players do
               -- nothing and we don't have it in the tree.
               writeComms stateChannel ((fromMoves doNothing doNothing), False, state'))

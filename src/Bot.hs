@@ -4389,12 +4389,14 @@ prettyPrintSearchTree state (UnSearchedLevel gamesPlayed (MyMoves myMoves) (Oppo
 prettyPrintSearchTree _     SearchFront =
     "SearchFront"
 
-treeAfterAlottedTime :: State -> Clock -> Integer -> CommsVariable SearchTree -> IO SearchTree
-treeAfterAlottedTime state clock startingTime treeVariable = do
-  searchTree   <- go SearchFront
+treeAfterAlottedTime :: State -> CommsVariable SearchTree -> IO SearchTree
+treeAfterAlottedTime state treeVariable = do
+  startingTime <- fmap toNanoSecs $ getTime clock
+  searchTree   <- go SearchFront startingTime
   return searchTree
   where
-    go searchTree =
+    clock = Realtime
+    go searchTree startingTime =
       (getTime clock) >>=
       \ timeNow ->
         if ((toNanoSecs timeNow) - startingTime) > maxSearchTime
@@ -4409,7 +4411,7 @@ treeAfterAlottedTime state clock startingTime treeVariable = do
         else do
           searchTree' <- readVariable treeVariable
           Control.Concurrent.threadDelay pollInterval
-          go searchTree'
+          go searchTree' startingTime
 
 hasAnyBananaMove :: Move -> Bool
 hasAnyBananaMove = isABananaMove . removeSelectionFromMove
@@ -4484,9 +4486,9 @@ nextStateAndAmmoCounts thisMove
                               aListFromList [(3, thisSnowballCount'), (12, thatSnowballCount')])) nextState
   in (thisBananaCount', thatBananaCount', thisSnowballCount', thatSnowballCount', nextState')
 
-searchForAlottedTime :: State -> Clock -> Integer -> CommsVariable SearchTree -> IO Move
-searchForAlottedTime state clock startingTime treeChannel = do
-  searchTree <- treeAfterAlottedTime state clock startingTime treeChannel
+searchForAlottedTime :: State -> CommsVariable SearchTree -> IO Move
+searchForAlottedTime state treeChannel = do
+  searchTree <- treeAfterAlottedTime state treeChannel
   let gamesPlayed = countGames searchTree
   return . successRecordMove . chooseBestMove gamesPlayed $ myMovesFromTree searchTree
 
@@ -4512,18 +4514,16 @@ chooseBestMove totalGamesPlayed records =
     noClearWinner               = all (withinPercentile 1) records
     gamesPlayed (SuccessRecord (GamesPlayed x) _ _) = x
 
-runRound :: Clock -> Int -> Int -> Int -> Int -> Int -> Integer -> State -> CommsChannel (CombinedMove, Bool, State) -> CommsVariable SearchTree -> IO ()
-runRound clock
-         !thisBananaCount
+runRound :: Int -> Int -> Int -> Int -> Int -> State -> CommsChannel (CombinedMove, Bool, State) -> CommsVariable SearchTree -> IO ()
+runRound !thisBananaCount
          !thatBananaCount
          !thisSnowballCount
          !thatSnowballCount
          !roundNumber
-         !startingTime
          previousState
          stateChannel
          treeVariable = do
-  move                  <- searchForAlottedTime previousState clock startingTime treeVariable
+  move                  <- searchForAlottedTime previousState treeVariable
   putStrLn $
     -- ASSUME: that the worm is on a valid square to begin with
     "C;" ++
@@ -4531,7 +4531,6 @@ runRound clock
     ";" ++
     formatMove thisWormsCoord makeMySelection move (thisWormsCoord previousState) previousState ++ "\n"
   roundNumber'          <- readRound
-  startingTime'         <- fmap toNanoSecs $ getTime clock
   state                 <- readGameState roundNumber'
   -- TODO fromJust?
   let state'             = force $ fromJust state
@@ -4553,13 +4552,11 @@ runRound clock
                                             previousState
                                             state'
   writeComms stateChannel $ (fromMoves move opponentsLastMove, thatMoveWasInvalid, nextState')
-  runRound clock
-           thisBananaCount'
+  runRound thisBananaCount'
            thatBananaCount'
            thisSnowballCount'
            thatSnowballCount'
            roundNumber'
-           startingTime'
            nextState'
            stateChannel
            treeVariable
@@ -4578,9 +4575,7 @@ startBot g = do
   initialRound' <- readRound
   initialState  <- fmap fromJust $ readGameState initialRound'
   _             <- forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
-  let clock      = Realtime
-  startingTime  <- fmap toNanoSecs $ getTime clock
-  runRound clock 3 3 3 3 initialRound' startingTime initialState stateChannel treeVariable
+  runRound 3 3 3 3 initialRound' initialState stateChannel treeVariable
 
 testStartBot :: Int -> IO ()
 testStartBot initialRound' = do
@@ -4590,9 +4585,7 @@ testStartBot initialRound' = do
   -- This is where I seed it with a search front
   initialState  <- fmap fromJust $ testReadGameState initialRound'
   _             <- forkIO (iterativelyImproveSearch g initialState SearchFront stateChannel treeVariable)
-  let clock      = Realtime
-  startingTime  <- fmap toNanoSecs $ getTime clock
-  runRound clock 3 3 3 3 initialRound' startingTime initialState stateChannel treeVariable
+  runRound 3 3 3 3 initialRound' initialState stateChannel treeVariable
 
 testReadGameState :: Int -> IO (Maybe State)
 testReadGameState r = do
