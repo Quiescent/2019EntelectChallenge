@@ -4726,7 +4726,8 @@ initSuccessRecordKeyValue initPlayed initPayoff move@(Move idx) =
 initialiseLevel :: Strategy -> WormId -> State -> SearchResult -> SearchTree
 initialiseLevel strategy wormId' state result =
   let wormHealths'          = wormHealths state
-      gameIsOver            = aListCountMyEntries wormHealths' == 0 || aListCountOpponentsEntries wormHealths' == 0
+      gameIsOver            = strategy /= GetToTheChoppa &&
+                              (aListCountMyEntries wormHealths' == 0 || aListCountOpponentsEntries wormHealths' == 0)
       doNothingMoves        = always [doNothing]
       nothingOrTheseMoves f = if gameIsOver then doNothingMoves else f
       nothingOrThoseMoves f = if gameIsOver then doNothingMoves else f
