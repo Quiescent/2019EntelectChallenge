@@ -4235,7 +4235,7 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
       newRoundsState <- pollComms stateChannel
       case newRoundsState of
         Just (move', thatLastMoveWasInvalid, nextState) -> do
-          let tree''   = if strategy == Kill
+          let tree''   = if strategy == Kill || strategy == Points || strategy == EndGame
                          then makeMoveInTree move' searchTree
                          else SearchFront
           let state''  = postStateTransformation (wormPositions nextState)
