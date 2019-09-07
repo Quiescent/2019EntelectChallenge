@@ -4726,30 +4726,29 @@ initSuccessRecordKeyValue initPlayed initPayoff move@(Move idx) =
 initialiseLevel :: Strategy -> WormId -> State -> SearchResult -> SearchTree
 initialiseLevel strategy wormId' state result =
   let wormHealths'          = wormHealths state
-      myWormIsDead          = not $ aListContainsId wormId'                          wormHealths'
-      opponentWormIsDead    = not $ aListContainsId (thatPlayersCurrentWormId state) wormHealths'
+      gameIsOver            = aListCountMyEntries wormHealths' == 0 || aListCountOpponentsEntries wormHealths' == 0
       doNothingMoves        = always [doNothing]
-      nothingOrTheseMoves f = if myWormIsDead       then doNothingMoves else f
-      nothingOrThoseMoves f = if opponentWormIsDead then doNothingMoves else f
+      nothingOrTheseMoves f = if gameIsOver then doNothingMoves else f
+      nothingOrThoseMoves f = if gameIsOver then doNothingMoves else f
       myMoveMoves           = myMoveMovesFrom        state
       opponentsMoveMoves    = opponentsMoveMovesFrom state
       myCoord               = thisWormsCoord state
       opponentsCoord        = thatWormsCoord state
       weAlignForAShot       = aligns myCoord opponentsCoord && inRange myCoord opponentsCoord missileRange
       myMovesFrom'          = case strategy of
-        GetToTheChoppa -> nothingOrTheseMoves $ myGetToTheChoppaMoves
-        Kill           -> nothingOrTheseMoves $ myMovesFrom myMoveMoves opponentsMoveMoves
-        Points         -> nothingOrTheseMoves $ myMovesFrom myMoveMoves opponentsMoveMoves
-        Dig            -> nothingOrTheseMoves $ myDigMovesFrom
-        Runaway        -> nothingOrTheseMoves $ myRunawayMovesFrom wormId'
-        EndGame        -> nothingOrTheseMoves $ myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
+        GetToTheChoppa -> nothingOrTheseMoves (myGetToTheChoppaMoves)
+        Kill           -> nothingOrTheseMoves (myMovesFrom myMoveMoves opponentsMoveMoves)
+        Points         -> nothingOrTheseMoves (myMovesFrom myMoveMoves opponentsMoveMoves)
+        Dig            -> nothingOrTheseMoves myDigMovesFrom
+        Runaway        -> nothingOrTheseMoves (myRunawayMovesFrom wormId')
+        EndGame        -> nothingOrTheseMoves (myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot)
       opponentsMovesFrom' = case strategy of
         GetToTheChoppa -> doNothingMoves
-        Kill           -> nothingOrThoseMoves $ opponentsMovesFrom myMoveMoves opponentsMoveMoves
-        Points         -> nothingOrThoseMoves $ opponentsMovesFrom myMoveMoves opponentsMoveMoves
+        Kill           -> nothingOrThoseMoves (opponentsMovesFrom myMoveMoves opponentsMoveMoves)
+        Points         -> nothingOrThoseMoves (opponentsMovesFrom myMoveMoves opponentsMoveMoves)
         Dig            -> doNothingMoves
-        Runaway        -> nothingOrThoseMoves $ opponentsRunawayMovesFrom
-        EndGame        -> nothingOrThoseMoves $ opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot
+        Runaway        -> nothingOrThoseMoves opponentsRunawayMovesFrom
+        EndGame        -> nothingOrThoseMoves (opponentsEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot)
   in updateTree
      (UnSearchedLevel
       0
