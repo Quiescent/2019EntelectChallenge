@@ -4197,6 +4197,7 @@ iterativelyImproveSearch !gen !initialState tree stateChannel treeVariable = do
         Dig            -> SearchFront
         GetToTheChoppa -> SearchFront
         Runaway        -> SearchFront
+        FindDemDirt    -> SearchFront
         _              -> tree
   -- Comment for final submission
   -- let myMoveMoves        = myMoveMovesFrom initialState
@@ -4776,7 +4777,7 @@ initialiseLevel strategy wormId' state result =
      strategy wormId' state result
 
 updateTree :: SearchTree -> Strategy -> WormId -> State -> SearchResult -> SearchTree
-updateTree _           Runaway  _       _          (Instruction move) =
+updateTree _           _        _       _          (Instruction move) =
   SearchedLevel 1 (MyMoves . IM.fromList $ [initSuccessRecordKeyValue 1 1 move]) (OpponentsMoves IM.empty) IM.empty
 updateTree SearchFront strategy wormId' finalState result = initialiseLevel strategy wormId' finalState result
 updateTree level@(UnSearchedLevel gamesPlayed (MyMoves myMoves) (OpponentsMoves opponentsMoves)) _ _ _ result =
@@ -6190,6 +6191,25 @@ inRange xy' xy'' range' =
   in sqrt (((dx::Double) ** 2) + (dy ** 2)) <= (fromIntegral range')
 
 -- For the REPL!
+
+-- Find Dem Dirts!!
+testState43 :: State
+testState43 =
+  (State
+   (Just "move 28 16")
+   43
+   (AList (150) (100) (100) (150) (100) (100))
+   (AList (284) (846) (534) (866) (173) (556))
+   (AList (-1) (3) (-1) (-1) (3) (-1))
+   (AList (-1) (-1) (3) (-1) (-1) (3))
+   (AList (-1) (-1) (-1) (-1) (-1) (-1))
+   (Player 262 (WormId 1) (Selections 5))
+   (Player 254 (WormId 4) (Selections 5))
+   (GameMap
+    2844700420965163311041976884317162057974934749860000826718989907603361309118698670306926875172876881664589861104911072158037988748915008805522805526729089215337638267007066831950586129104366355190549572757151167676510612553583939327946616286844151702683026119086585080986569288734369253394095407848434568514722489531990343680
+    392154367363848811152386521650048978722388797893993463983191720013634163036967532357456848969073797031512697573860330108227806036244331846935341332902179034970704222153085533727516394512834738615846120469424831641701832503135443204052262833902104108541787277198565791278347526745825579807729677768633626018327300780945504256
+    6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+    1978643211784836272485696144148420344918497545934470450078439369470751850024470382542996428993703553288881605695399977643272174256727320436097088476166638664576158383315353600))
 
 -- Doesn't consider moves...?
 testState328 :: State
