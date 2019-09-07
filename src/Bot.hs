@@ -4916,7 +4916,7 @@ endGame !g finalState !state searchTree moves =
           (opponentsMove, g'') = pickOneAtRandom g' opponentsMoves
           combinedMove         = fromMoves myMove opponentsMove
           state'               = makeMove False combinedMove state
-      in endGame g'' state state' SearchFront (combinedMove:moves)
+      in endGame g'' finalState state' SearchFront (combinedMove:moves)
     go (UnSearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves)) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -4924,7 +4924,7 @@ endGame !g finalState !state searchTree moves =
           opponentsMove          = successRecordMove opponentsRecord
           combinedMove           = fromMoves myMove opponentsMove
           state'                 = makeMove False combinedMove state
-      in endGame g'' state state' SearchFront (combinedMove:moves)
+      in endGame g'' finalState state' SearchFront (combinedMove:moves)
     go (SearchedLevel _ (MyMoves myMoves) (OpponentsMoves opponentsMoves) transitions) =
       let (myRecord,        g')  = intMapPickOneAtRandom g  myMoves
           (opponentsRecord, g'') = intMapPickOneAtRandom g' opponentsMoves
@@ -6036,28 +6036,45 @@ inRange xy' xy'' range' =
 
 -- For the REPL!
 
--- New strategy!
-movesFromTestState303 :: [String]
-movesFromTestState303 =
-  map (prettyPrintThisMove testState303) $
-  myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot testState303
+-- Doesn't consider moves...?
+testState328 :: State
+testState328 =
+  (State
+   (Just "shoot SW")
+   328
+   (AList (-1) (51) (67) (65) (-1) (73))
+   (AList (-1) (608) (509) (643) (-1) (546))
+   (AList (-1) (-1) (-1) (-1) (-1) (-1))
+   (AList (-1) (-1) (-1) (-1) (-1) (3))
+   (AList (-1) (-1) (-1) (-1) (-1) (-1))
+   (Player 2015 (WormId 3) (Selections 0))
+   (Player 2113 (WormId 4) (Selections 0))
+   (GameMap
+    392154368467753200308222789086845107198235664832265322512484285449355973663161007594130246896250464269242745620875853393446270557393929643013886612542446335111972769073621254468917052616290614421657851628593264601412103767494372747745587554778849154299448939945692627391346620501347579663592500645446491991156003112111290368
+    2844700419861258921886140616880365929499087882921728968189697342167639498492505195070253477245700214426859813057895548872819524227765411009444260247090800558408154556359016807353333891345828976930672312048061174086271093139249480166796287994961110210214246062034858222516842369235574573974329673447788341206469945584139911168
+    6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+    0))
+
+movesFromTestState328 :: [String]
+movesFromTestState328 = myEndGameMovesFromTestState testState328
+
+myEndGameMovesFromTestState :: State -> [String]
+myEndGameMovesFromTestState state =
+  map (prettyPrintThisMove state) $
+  myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot state
   where
-    myCoord            = thisWormsCoord         testState303
-    opponentsCoord     = thatWormsCoord         testState303
-    myMoveMoves        = myMoveMovesFrom        testState303
-    opponentsMoveMoves = opponentsMoveMovesFrom testState303
+    myCoord            = thisWormsCoord         state
+    opponentsCoord     = thatWormsCoord         state
+    myMoveMoves        = myMoveMovesFrom        state
+    opponentsMoveMoves = opponentsMoveMovesFrom state
     weAlignForAShot    = aligns myCoord opponentsCoord
 
+-- New strategy!
+movesFromTestState303 :: [String]
+movesFromTestState303 = myEndGameMovesFromTestState testState303
+
 movesFromTestState301 :: [String]
-movesFromTestState301 =
-  map (prettyPrintThisMove testState301) $
-  myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot testState301
-  where
-    myCoord            = thisWormsCoord         testState301
-    opponentsCoord     = thatWormsCoord         testState301
-    myMoveMoves        = myMoveMovesFrom        testState301
-    opponentsMoveMoves = opponentsMoveMovesFrom testState301
-    weAlignForAShot    = aligns myCoord opponentsCoord
+movesFromTestState301 = myEndGameMovesFromTestState testState301
 
 testState301 :: State
 testState301 =
