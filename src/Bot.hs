@@ -5936,6 +5936,7 @@ inRange xy' xy'' range' =
 -- For the REPL!
 
 -- Spurious Shoot East
+movesFromTestState305 :: [String]
 movesFromTestState305 =
   map (prettyPrintThisMove testState305) $ myMovesFrom myMoveMoves opponentsMoveMoves testState305
   where
