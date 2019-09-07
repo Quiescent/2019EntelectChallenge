@@ -3236,6 +3236,9 @@ I should never do nothing unless that leads to death.
 ** IN_PROGRESS Swap to traditional search when I can "see" then end
    :LOGBOOK:
    - Note taken on [2019-09-07 Sat 13:49] \\
+     I need to maintain the search tree for the end game search.  It'll be
+     super useful for it to get better with every turn.
+   - Note taken on [2019-09-07 Sat 13:49] \\
      That's fixed he problem.  I wasn't filtering alignment correctly.
      
      I also just excluded lava moves because they're pretty bad in general
