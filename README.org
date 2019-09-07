@@ -3217,7 +3217,10 @@ I should never do nothing unless that leads to death.
       Works beautifully!
     - State "IN_PROGRESS" from "TODO"       [2019-09-06 Fri 05:19]
     :END:
-*** TODO Don't runaway into the same line of fire
+*** IN_PROGRESS Don't runaway into the same line of fire
+    :LOGBOOK:
+    - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 07:41]
+    :END:
 ** IN_PROGRESS Make the Search Faster
    :LOGBOOK:
    - State "IN_PROGRESS" from "TODO"       [2019-08-03 Sat 15:44]
