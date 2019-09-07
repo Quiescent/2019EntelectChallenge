@@ -5542,9 +5542,13 @@ myEndGameMovesFrom myMoveMoves
                    state =
   let myUsefulNonMoveMoves' = myUsefulNonMoveMoves opponentsMoveMoves state
       coord'                = thisWormsCoord state
-  in if theOpponentAndIAlignForAShot
-     then (filter (not . aligns coord' . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
-     else (filter (aligns coord'       . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+      isOnLava              = isOnLavaForRound (currentRound state) coord'
+  in if isOnLava
+     then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
+                            in isCloserByManhattanDistance targetOfMove coord') myMoveMoves
+     else if theOpponentAndIAlignForAShot
+          then (filter (not . aligns coord' . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
+          else (filter (aligns coord'       . displaceCoordByMove coord') myMoveMoves) ++ myUsefulNonMoveMoves'
 
 opponentsEndGameMovesFrom :: [Move] -> [Move] -> Bool -> State -> [Move]
 opponentsEndGameMovesFrom myMoveMoves
@@ -5553,11 +5557,15 @@ opponentsEndGameMovesFrom myMoveMoves
                           state =
   let opponentsUsefulNonMoveMoves' = opponentsUsefulNonMoveMoves myMoveMoves state
       coord'                       = thisWormsCoord state
-  in if theOpponentAndIAlignForAShot
-     then (filter (not . aligns coord' . displaceCoordByMove coord') opponentsMoveMoves) ++
-          opponentsUsefulNonMoveMoves'
-     else (filter (aligns coord'       . displaceCoordByMove coord') opponentsMoveMoves)
-          ++ opponentsUsefulNonMoveMoves'
+      isOnLava                     = isOnLavaForRound (currentRound state) coord'
+  in if isOnLava
+     then filter (\ move -> let targetOfMove = displaceCoordByMove coord' move
+                            in isCloserByManhattanDistance targetOfMove coord') opponentsMoveMoves
+     else if theOpponentAndIAlignForAShot
+          then (filter (not . aligns coord' . displaceCoordByMove coord') opponentsMoveMoves) ++
+               opponentsUsefulNonMoveMoves'
+          else (filter (aligns coord'       . displaceCoordByMove coord') opponentsMoveMoves)
+               ++ opponentsUsefulNonMoveMoves'
 
 aligns :: Coord -> Coord -> Bool
 aligns xy' xy'' =
@@ -6013,6 +6021,47 @@ inRange xy' xy'' range' =
   in sqrt (((dx::Double) ** 2) + (dy ** 2)) <= (fromIntegral range')
 
 -- For the REPL!
+
+-- New strategy!
+movesFromTestState303 :: [String]
+movesFromTestState303 =
+  map (prettyPrintThisMove testState303) $
+  myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot testState303
+  where
+    myCoord            = thisWormsCoord         testState303
+    opponentsCoord     = thatWormsCoord         testState303
+    myMoveMoves        = myMoveMovesFrom        testState303
+    opponentsMoveMoves = opponentsMoveMovesFrom testState303
+    weAlignForAShot    = aligns myCoord opponentsCoord
+
+movesFromTestState301 :: [String]
+movesFromTestState301 =
+  map (prettyPrintThisMove testState301) $
+  myEndGameMovesFrom myMoveMoves opponentsMoveMoves weAlignForAShot testState301
+  where
+    myCoord            = thisWormsCoord         testState301
+    opponentsCoord     = thatWormsCoord         testState301
+    myMoveMoves        = myMoveMovesFrom        testState301
+    opponentsMoveMoves = opponentsMoveMovesFrom testState301
+    weAlignForAShot    = aligns myCoord opponentsCoord
+
+testState301 :: State
+testState301 =
+  (State
+   (Just "shoot E")
+   301
+   (AList (136) (4) (-1) (61) (44) (-1))
+   (AList (514) (579) (-1) (580) (541) (-1))
+   (AList (-1) (-1) (-1) (-1) (3) (-1))
+   (AList (-1) (-1) (-1) (-1) (-1) (-1))
+   (AList (-1) (-1) (-1) (-1) (-1) (-1))
+   (Player 1978 (WormId 1) (Selections 0))
+   (Player 1851 (WormId 4) (Selections 0))
+   (GameMap
+    2895300985501996642351983068914040202468893999336434146066818669370418585578807241609410932770553900377407933211378412767593448588841211744953159031173460542801299703248116179099406268322295059615953197263182445386071456303889118670444195050004127800399549782087402911509180114555925630967462634863609815423110506390675666944
+    341553802827015479842380337053170834228429548417560144635362958246576886576858961054972791371396778318694625467392989498672346196318128907504987828459786350718827622184521882722844675639824531736376966413471993301611740602854734244097680499735831564114145219893147938399008875180996522670459539229625017774515442305575534592
+    6629080181585625330052373157879515106363174975923654940028241518215220371491915860753093469404549744779594064899254521310154986911872521309325836942398486246214762831369093891129029381948948393478392377124518255967952178019953586495403468882361920382811150236794991609840953141122136184821043657629219098402869341311455385880575
+    0))
 
 -- Spurious Shoot East
 movesFromTestState305 :: [String]
