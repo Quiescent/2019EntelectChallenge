@@ -3298,8 +3298,11 @@ I should never do nothing unless that leads to death.
      should only run if it's apparent that the opponents strategy is to
      gang up on me.
    :END:
-** TODO What do I do after round 200 when worms aren't nearby?
+** IN_PROGRESS What do I do after round 200 when worms aren't nearby?
    :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 14:21] \\
+     I'm going with points on this one.
+   - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 14:21]
    - Note taken on [2019-09-07 Sat 13:01] \\
      I should probably go into points mode until there are nearby worms.
    :END:
