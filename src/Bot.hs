@@ -5567,7 +5567,7 @@ opponentsEndGameMovesFrom myMoveMoves
                           theOpponentAndIAlignForAShot
                           state =
   let opponentsUsefulNonMoveMoves' = opponentsUsefulNonMoveMoves myMoveMoves state
-      coord'                       = thisWormsCoord state
+      coord'                       = thatWormsCoord state
       isOnLava                     = isOnLavaForRound (currentRound state) coord'
       roundsExhausted              = currentRound state > maxRound
       moves                        =
