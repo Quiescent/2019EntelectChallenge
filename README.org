@@ -3235,6 +3235,10 @@ I should never do nothing unless that leads to death.
    :END:
 ** IN_PROGRESS Swap to traditional search when I can "see" then end
    :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 14:03] \\
+     I'm not searching enough.  I'm going to cap the moves into the future
+     to 25.  In many cases that should be enough because at this points the
+     points matter.
    - Note taken on [2019-09-07 Sat 13:49] \\
      I need to maintain the search tree for the end game search.  It'll be
      super useful for it to get better with every turn.
@@ -3283,8 +3287,12 @@ I should never do nothing unless that leads to death.
      hope to see the end.  This is almost entirely a heuristic based search
      unless I get much, much faster.
    :END:
-** TODO I need to change the rule for runaway
+** IN_PROGRESS I need to change the rule for runaway
    :LOGBOOK:
+   - Note taken on [2019-09-07 Sat 14:03] \\
+     I'm breaking the rules by doing two things at the same time, but I
+     feel that I need to because the compile times are sooo long.
+   - State "IN_PROGRESS" from "TODO"       [2019-09-07 Sat 14:03]
    - Note taken on [2019-09-07 Sat 10:50] \\
      Right now the worms run aimlessly and don't get enough points.  They
      should only run if it's apparent that the opponents strategy is to
