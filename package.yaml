@@ -25,7 +25,7 @@ dependencies:
 - deepseq >= 1.4.4.0
 - strict-concurrency >= 0.2.4.3
 - stm >= 2.5.0.0
-- containers >= 0.6.2.1
+- containers >= 0.6.0.1
 - fingertree >= 0.1.4.2
 
 ghc-options:
@@ -47,42 +47,6 @@ executables:
   2019EntelectChallenge-exe:
     main:                Main.hs
     source-dirs:         app
-    dependencies:
-    - 2019EntelectChallenge
-    - optparse-simple
-
-    ghc-options:
-    - -O2
-    - -threaded
-    - -rtsopts
-
-  TestHarness-exe:
-    main:                Main.hs
-    source-dirs:         test-harness
-    dependencies:
-    - 2019EntelectChallenge
-    - optparse-simple
-
-    ghc-options:
-    - -O2
-    - -threaded
-    - -rtsopts
-
-  Profile-exe:
-    main:                Main.hs
-    source-dirs:         profile
-    dependencies:
-    - 2019EntelectChallenge
-    - optparse-simple
-
-    ghc-options:
-    - -O2
-    - -threaded
-    - -rtsopts
-
-  Benchmark-exe:
-    main:                Main.hs
-    source-dirs:         benchmark
     dependencies:
     - 2019EntelectChallenge
     - optparse-simple

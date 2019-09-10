@@ -1,6 +1,8 @@
 module Scratch where
 
-import Bot
+import AList
+import MapArithmetic
+import MakeMove
 
 aStateWithMyWormBehindDirt :: State
 aStateWithMyWormBehindDirt = State {
